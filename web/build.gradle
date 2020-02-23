@@ -3,9 +3,9 @@ plugins {
 }
 
 task bundleWeb(type: NpmTask) {
-  args = ['run', 'webpack', '--', '-o', 'app.bundle.js', '--mode', 'development']
+  args = ['run', 'prod']
 }
 
-task runWeb(type: NpmTask) {
+task serveWeb(type: NpmTask) {
   args = ['run', 'serve']
 }

@@ -7,7 +7,7 @@
     "url": "git+https://github.com/Litarvan/EpiLink.git"
   },
   "scripts": {
-    "webpack": "webpack ",
+    "prod": "webpack -o build/bundle/main.min.js --mode production && cpx build/bundle/main.min.js build/web/ && cpx index.prod.html build/web/",
     "serve": "webpack-dev-server"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
     "node-sass": "4.13.1",
     "webpack": "^4.41.6",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "3.10.3"
+    "webpack-dev-server": "3.10.3",
+    "cpx": "^1.5.0"
   }
 }

@@ -1,12 +1,8 @@
-# Ignore Gradle project-specific cache directory
 .gradle
-
-# Ignore Gradle build output directory
-build
-
-node_modules
-.DS_Store
 .idea
 .vscode
-dist
-app.bundle.js
+
+build
+node_modules
+
+.DS_Store
