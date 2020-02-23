@@ -22,7 +22,7 @@ java_library(
 
 kt_jvm_library(
     name = "bot_lib",
-    srcs = glob(["src/**/*.kt"]),
+    srcs = glob(["**/*.kt"]),
     deps = [
         ":java_deps",
     ],

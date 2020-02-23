@@ -3,8 +3,9 @@
 ## Requirements
 
 - [Bazel](https://bazel.build)
-- Node.JS (frontend)
+- Node.JS
 - Java JDK >= 8 (backend)
+- MSYS2 x86_64 in `C:\msys64` (Windows)
 
 ## Developing
 
@@ -14,6 +15,8 @@ In `Settings => Bazel settings`, fill the `Bazel binary location` with the path 
 
 Import the project with File => Import Bazel Project, for the Project View select
 "Create from scratch" and uncomment `kotlin` for the backend and `typescript` for the frontend.
+
+On Windows, also set `derive_targets_from_directories` to `false`
 
 ### Frontend
 
