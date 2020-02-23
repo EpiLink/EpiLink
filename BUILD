@@ -33,3 +33,13 @@ java_binary(
     main_class = "org.epilink.bot.Main",
     runtime_deps = [":bot_lib"]
 )
+
+alias(
+    name = "tsconfig.json",
+    actual = "//web:tsconfig.json",
+)
+
+alias(
+    name = "webpack.config.js",
+    actual = "//web:webpack.config.js",
+)

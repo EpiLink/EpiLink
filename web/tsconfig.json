@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "jsx": "react",
+    "lib": ["DOM", "ES2015"],
+    "module": "ES2015",
+    "moduleResolution": "node",
+    "paths": {
+      "epilink/*": ["*"]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es5",
+    "types": []
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}
