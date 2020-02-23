@@ -58,7 +58,7 @@ load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
 # Bot
 
 kotlin_repositories()
-register_toolchains("//:kotlin_toolchain")
+register_toolchains("//bot:kotlin_toolchain")
 
 maven_install(
     artifacts = [

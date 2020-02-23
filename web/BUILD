@@ -10,7 +10,7 @@ exports_files([
 
 load("@npm_bazel_typescript//:index.bzl", "ts_library", "ts_devserver")
 load("@io_bazel_rules_sass//:defs.bzl", "sass_binary")
-load("@npm//webpack-cli:index.bzl", webpack = "webpack_cli")
+load("@npm//webpack-cli:index.bzl", "webpack_cli")
 
 sass_binary(
     name = "styles",
@@ -37,7 +37,7 @@ filegroup(
     output_group = "es6_sources",
 )
 
-webpack(
+webpack_cli(
     name = "bundle",
     outs = ["app.bundle.js"],
     args = [
@@ -66,4 +66,24 @@ ts_devserver(
     deps = [":bundle"],
 
     static_files = ["index.html"],
+)
+
+webpack_cli(
+    name = "bundle-prod",
+    outs = ["app.bundle.min.js"],
+    args = [
+        "$(locations //web:app.js)",
+        "--config",
+        "$(location //:webpack.config.js)",
+        "-o",
+        "$@",
+        "--mode",
+        "production",
+    ],
+    data = [
+        "//:webpack.config.js",
+        "//web:app.js",
+        "//web:styles",
+        "@npm//:node_modules",
+    ],
 )
