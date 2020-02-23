@@ -1,9 +1,10 @@
-.ijwb/.idea
-.ijwb/.blaze
+.ijwb
 
 bazel-bin
 bazel-EpiLink
 bazel-out
 bazel-testlogs
+
+node_modules
 
 .DS_Store

@@ -1,0 +1,10 @@
+directories:
+  bot/
+
+derive_targets_from_directories: true
+
+targets:
+
+additional_languages:
+  kotlin
+  typescript

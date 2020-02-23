@@ -1,2 +1,0 @@
-# EpiLink Discord bot
-
