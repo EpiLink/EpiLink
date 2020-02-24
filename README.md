@@ -55,12 +55,14 @@ $ ./gradlew run
 $ ./gradlew bundleWeb
 ```
 
-Output is in `build/web`
+Output is in `build/web` ready to be deployed
 
 ### Bot/Backend
 
 ```
-$ ./gradlew installDist
+$ ./gradlew distZip
 ```
 
-You'll get a nice package, although we should consider something like `jlink` for maximum deployment swag.
+Output is `build/distributions/EpiLink-(version).zip`
+
+TODO: Consider something like `jlink`
