@@ -24,6 +24,8 @@ task in the Gradle view in IntelliJ).
 
 **If you already have `gradle` installed on your system,** you can use `gradle` instead of `./gradlew`.
 
+On Windows, also set `derive_targets_from_directories` to `false`
+
 ### Frontend
 
 Launch the development server:
