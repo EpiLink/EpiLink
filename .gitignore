@@ -1,10 +1,10 @@
-.ijwb
+.gradle
+.idea
+.vscode
 
-bazel-bin
-bazel-EpiLink
-bazel-out
-bazel-testlogs
-
+build
 node_modules
 
 .DS_Store
+app.bundle.js
+web/dist/*
