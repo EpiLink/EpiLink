@@ -55,7 +55,7 @@ $ ./gradlew run
 $ ./gradlew bundleWeb
 ```
 
-TODO : Process web/index.html (for now it has to be copied and edited manually)
+Output is in `build/web`
 
 ### Bot/Backend
 
