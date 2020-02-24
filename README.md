@@ -46,7 +46,14 @@ to kill the process entirely.
 ### Bot/Backend
 
 ```
-$ ./gradlew run
+$ ./gradlew run --args=path/to/config/file.yaml
+```
+
+A sample config file is available in [`bot/config/epilink_config.yaml`](bot/config/epilink_config.yaml). If you wish to
+run EpiLink with it, use:
+
+```
+$ ./gradlew run --args=config/epilink_config.yaml
 ```
 
 ## Building

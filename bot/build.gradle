@@ -11,6 +11,7 @@ repositories {
 
 sourceSets {
     main.kotlin.srcDirs = ["src"]
+    main.resources.srcDirs = ["resources"]
 }
 
 compileKotlin {
@@ -22,5 +23,9 @@ application {
 }
 
 dependencies {
-    compile "io.ktor:ktor-server-netty:$ktorVersion"
+    implementation "io.ktor:ktor-server-netty:$ktorVersion"
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+    implementation "ch.qos.logback:logback-classic:1.2.3"
 }
