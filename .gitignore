@@ -7,5 +7,4 @@ node_modules
 
 .DS_Store
 app.bundle.js
-web/dist/*
 *.db
