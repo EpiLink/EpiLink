@@ -1,0 +1,23 @@
+# This configuration file allows you to configure the back-end side of things
+# The configuration file's location should be passed as the first argument when launching EpiLink
+
+# The name of the server. You can customize this if you want
+name: My EpiLink Instance
+
+# The port that should be used for the server.
+serverPort: 9090
+
+# The tokens to use when connecting
+# Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
+# environment values.
+tokens:
+  # The token for the Discord bot
+  discordToken: ~
+  # The client ID for Discord's OAuth2
+  discordOAuthClientId: ~
+  # The secret for Discord's OAuth2
+  discordOAuthSecret: ~
+  # The client ID for Microsoft's OAuth2
+  msftOAuthClientId: ~
+  # The secret for Microsoft's OAuth2
+  msftOAuthSecret: ~
