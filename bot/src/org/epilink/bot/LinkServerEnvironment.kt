@@ -15,19 +15,22 @@ import io.ktor.server.netty.Netty
 class LinkServerEnvironment(
     private val cfg: LinkConfiguration
 ) {
-    private var server: ApplicationEngine? = null
+    private var server: ApplicationEngine = ktorServer()
+    private var database: LinkServerDatabase = LinkServerDatabase(cfg)
     val name: String
         get() = cfg.name
 
     fun start() {
-        val serv = embeddedServer(Netty, cfg.serverPort) {
+        server.start(wait = true)
+    }
+
+    fun ktorServer() =
+        embeddedServer(Netty, cfg.serverPort) {
             routing {
                 get("/") {
-                    call.respondText("Hello World!")
+                    val usersCount = database.countUsers()
+                    call.respondText("EpiLink back-end server, welcome! $usersCount registered users.")
                 }
             }
         }
-        server = serv
-        serv.start(wait = true)
-    }
 }

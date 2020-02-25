@@ -7,6 +7,9 @@ name: My EpiLink Instance
 # The port that should be used for the server.
 serverPort: 9090
 
+# Name and location of the EpiLink SQLite database
+db: epilink.db
+
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
 # environment values.

@@ -9,6 +9,7 @@ import java.nio.file.Path
 data class LinkConfiguration(
     val name: String,
     val serverPort: Int,
+    val db: String,
     val tokens: LinkTokens
 )
 
