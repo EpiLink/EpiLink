@@ -1,0 +1,11 @@
+# Code owners file
+
+# General Gradle build files are owned by @utybo
+*.gradle            @utybo
+gradle.properties   @utybo
+gradle*             @utybo
+
+# Bot back-end is owned by @utybo
+/bot/               @utybo
+# Front-end is owned by @Litarvan
+/web/               @Litarvan
