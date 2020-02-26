@@ -15,7 +15,7 @@ sessionDuration: 2592000000
 # environment values.
 tokens:
   # The application JWT tokens' signature's secret key
-  jwtSecret: ~
+  jwtSecret: I am a secret ! Please change me :(
   # The token for the Discord bot
   discordToken: ~
   # The client ID for Discord's OAuth2
