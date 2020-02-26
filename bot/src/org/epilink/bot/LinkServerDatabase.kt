@@ -25,16 +25,15 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
     private val db: Database =
         Database.connect("jdbc:sqlite:${cfg.db}", driver = "org.sqlite.JDBC")
             .apply {
+                // Required for SQLite
                 transactionManager.defaultIsolationLevel =
                     Connection.TRANSACTION_SERIALIZABLE
-            }
 
-    init {
-        // Create the tables if they do not already exist
-        transaction(db) {
-            SchemaUtils.create(Users, TrueIdentities)
-        }
-    }
+                // Create the tables if they do not already exist
+                transaction(this) {
+                    SchemaUtils.create(Users, TrueIdentities)
+                }
+            }
 
     /*
      * All functions regarding user creation, deletion, retrieval etc., will be
@@ -64,7 +63,7 @@ object Users : IntIdTable() {
      * The Discord ID of the user
      */
     val discordId = varchar("discordId", 32).uniqueIndex()
-    
+
     /**
      * The SHA256 hash of the User's Microsoft ID
      */
