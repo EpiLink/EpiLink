@@ -7,6 +7,9 @@ name: My EpiLink Instance
 # The port that should be used for the server.
 serverPort: 9090
 
+# Time in milliseconds before a session expire. Here, one month
+sessionDuration: 2592000000
+
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
 # environment values.

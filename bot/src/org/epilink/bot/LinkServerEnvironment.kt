@@ -1,6 +1,18 @@
 package org.epilink.bot
 
+import java.util.*
+
+import com.auth0.jwt.JWT
+import com.auth0.jwt.JWTVerifier
+import com.auth0.jwt.algorithms.Algorithm
+
 import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.auth.Authentication
+import io.ktor.auth.authenticate
+import io.ktor.auth.authentication
+import io.ktor.auth.jwt.JWTPrincipal
+import io.ktor.auth.jwt.jwt
 import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
@@ -21,13 +33,50 @@ class LinkServerEnvironment(
 
     fun start() {
         val serv = embeddedServer(Netty, cfg.serverPort) {
+            install(Authentication) {
+                jwt {
+                    realm = cfg.name
+                    verifier(makeJwtVerifier(cfg.name, "user"))
+                    validate { credential ->
+                        if (credential.payload.audience.contains("user")) JWTPrincipal(credential.payload) else null
+                    }
+                }
+            }
+
             routing {
                 get("/") {
                     call.respondText("Hello World!")
                 }
+
+                authenticate() {
+                    get("/admin") {
+                        val principal = call.authentication.principal<JWTPrincipal>()
+                        call.respondText("Hello ${principal?.payload?.subject}")
+                    }
+                }
+
+                get("/login") {
+                    val jwt = JWT.create()
+                            .withSubject("test n°" + Random().nextInt(1000))
+                            .withIssuedAt(Date())
+                            .withExpiresAt(Date(System.currentTimeMillis() + cfg.sessionDuration))
+                            .withAudience("user")
+                            .withIssuer(cfg.name)
+                            .sign(algorithm);
+
+                    call.respondText(jwt)
+                }
             }
         }
+
         server = serv
         serv.start(wait = true)
     }
 }
+
+private val algorithm = Algorithm.HMAC256("secret")
+private fun makeJwtVerifier(issuer: String, audience: String): JWTVerifier = JWT
+        .require(algorithm)
+        .withAudience(audience)
+        .withIssuer(issuer)
+        .build()
