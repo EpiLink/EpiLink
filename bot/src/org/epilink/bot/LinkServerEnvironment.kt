@@ -21,7 +21,7 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 
-private val JWT_USER_AUDIENCE = "user";
+private const val JWT_USER_AUDIENCE = "user"
 
 /**
  * This class is responsible for holding configuration information and
@@ -30,14 +30,19 @@ private val JWT_USER_AUDIENCE = "user";
 class LinkServerEnvironment(
     private val cfg: LinkConfiguration
 ) {
+    private var database: LinkServerDatabase = LinkServerDatabase(cfg)
     private val jwtAlgorithm = Algorithm.HMAC256(cfg.tokens.jwtSecret)
-    private var server: ApplicationEngine? = null
+    private var server: ApplicationEngine = ktorServer()
 
     val name: String
         get() = cfg.name
 
     fun start() {
-        val serv = embeddedServer(Netty, cfg.serverPort) {
+        server.start(wait = true)
+    }
+
+    fun ktorServer() =
+        embeddedServer(Netty, cfg.serverPort) {
             install(Authentication) {
                 jwt {
                     realm = cfg.name
@@ -48,7 +53,8 @@ class LinkServerEnvironment(
 
             routing {
                 get("/") {
-                    call.respondText("Hello World!")
+                    val usersCount = database.countUsers()
+                    call.respondText("EpiLink back-end server, welcome! $usersCount registered users.")
                 }
 
                 authenticate() {
@@ -70,17 +76,12 @@ class LinkServerEnvironment(
                             .withExpiresAt(Date(System.currentTimeMillis() + cfg.sessionDuration))
                             .withAudience(JWT_USER_AUDIENCE)
                             .withIssuer(cfg.name)
-                            .sign(jwtAlgorithm);
+                            .sign(jwtAlgorithm)
 
                     call.respondText(jwt)
                 }
             }
         }
-
-        server = serv
-        serv.start(wait = true)
-    }
-
     private fun makeJwtVerifier(issuer: String, audience: String): JWTVerifier = JWT
             .require(jwtAlgorithm)
             .withAudience(audience)

@@ -7,6 +7,10 @@ name: My EpiLink Instance
 # The port that should be used for the server.
 serverPort: 9090
 
+# Name and location of the EpiLink SQLite database
+db: epilink.db
+
+
 # Time in milliseconds before a session expires. Here, one month
 sessionDuration: 2592000000
 
