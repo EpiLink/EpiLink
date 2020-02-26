@@ -1,9 +1,15 @@
 .gradle
 .idea
 .vscode
+.project
+.classpath
+.settings
 
+bin
 build
 node_modules
+
+epilink.db
 
 .DS_Store
 app.bundle.js

@@ -24,9 +24,13 @@ application {
 
 dependencies {
     implementation "io.ktor:ktor-server-netty:$ktorVersion"
+    implementation "io.ktor:ktor-auth:$ktorVersion"
+    implementation "io.ktor:ktor-auth-jwt:$ktorVersion"
+
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+
     implementation "ch.qos.logback:logback-classic:1.2.3"
     implementation "org.jetbrains.exposed:exposed-core:$exposedVersion"
     implementation "org.jetbrains.exposed:exposed-dao:$exposedVersion"
