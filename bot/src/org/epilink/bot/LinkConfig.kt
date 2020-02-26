@@ -14,6 +14,8 @@ data class LinkConfiguration(
 )
 
 data class LinkTokens(
+    val jwtSecret: String?,
+
     val discordToken: String?,
     val discordOAuthClientId: String?,
     val discordOAuthSecret: String?,

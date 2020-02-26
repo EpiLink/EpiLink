@@ -1,19 +1,21 @@
 # This configuration file allows you to configure the back-end side of things
 # The configuration file's location should be passed as the first argument when launching EpiLink
 
-# The name of the server. You can customize this if you want
+# The name of the server. You can customize this if you want to.
 name: My EpiLink Instance
 
 # The port that should be used for the server.
 serverPort: 9090
 
-# Time in milliseconds before a session expire. Here, one month
+# Time in milliseconds before a session expires. Here, one month
 sessionDuration: 2592000000
 
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
 # environment values.
 tokens:
+  # The application JWT tokens' signature's secret key
+  jwtSecret: ~
   # The token for the Discord bot
   discordToken: ~
   # The client ID for Discord's OAuth2

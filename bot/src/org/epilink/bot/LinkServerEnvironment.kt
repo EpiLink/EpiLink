@@ -20,6 +20,8 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 
+private val JWT_USER_AUDIENCE = "user";
+
 /**
  * This class is responsible for holding configuration information and
  * references to things like the Discord client, the Database environment, etc.
@@ -27,7 +29,9 @@ import io.ktor.server.netty.Netty
 class LinkServerEnvironment(
     private val cfg: LinkConfiguration
 ) {
+    private val jwtAlgorithm = Algorithm.HMAC256(cfg.tokens.jwtSecret)
     private var server: ApplicationEngine? = null
+
     val name: String
         get() = cfg.name
 
@@ -36,9 +40,9 @@ class LinkServerEnvironment(
             install(Authentication) {
                 jwt {
                     realm = cfg.name
-                    verifier(makeJwtVerifier(cfg.name, "user"))
+                    verifier(makeJwtVerifier(cfg.name, JWT_USER_AUDIENCE))
                     validate { credential ->
-                        if (credential.payload.audience.contains("user")) JWTPrincipal(credential.payload) else null
+                        if (credential.payload.audience.contains(JWT_USER_AUDIENCE)) JWTPrincipal(credential.payload) else null
                     }
                 }
             }
@@ -60,9 +64,9 @@ class LinkServerEnvironment(
                             .withSubject("test n°" + Random().nextInt(1000))
                             .withIssuedAt(Date())
                             .withExpiresAt(Date(System.currentTimeMillis() + cfg.sessionDuration))
-                            .withAudience("user")
+                            .withAudience(JWT_USER_AUDIENCE)
                             .withIssuer(cfg.name)
-                            .sign(algorithm);
+                            .sign(jwtAlgorithm);
 
                     call.respondText(jwt)
                 }
@@ -72,11 +76,10 @@ class LinkServerEnvironment(
         server = serv
         serv.start(wait = true)
     }
-}
 
-private val algorithm = Algorithm.HMAC256("secret")
-private fun makeJwtVerifier(issuer: String, audience: String): JWTVerifier = JWT
-        .require(algorithm)
-        .withAudience(audience)
-        .withIssuer(issuer)
-        .build()
+    private fun makeJwtVerifier(issuer: String, audience: String): JWTVerifier = JWT
+            .require(jwtAlgorithm)
+            .withAudience(audience)
+            .withIssuer(issuer)
+            .build()
+}
