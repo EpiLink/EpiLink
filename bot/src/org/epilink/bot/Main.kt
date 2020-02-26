@@ -15,10 +15,23 @@ fun main(args: Array<String>) {
         """.trimIndent())
         exitProcess(1)
     }
+
+    logger.debug("Loading configuration")
+    val cfg = loadConfigFromFile(Paths.get(args[0]))
+
+    if (cfg.tokens.jwtSecret == "I am a secret ! Please change me :(") {
+        logger.error("Please change the default JWT secret in the configuration file")
+        return
+    }
+
+    if (cfg.sessionDuration < 0) {
+        logger.error("Session duration can't be negative")
+        return
+    }
+
     logger.debug("Creating environment")
-    val env = LinkServerEnvironment(
-        cfg = loadConfigFromFile(Paths.get(args[0]))
-    )
+    val env = LinkServerEnvironment(cfg)
+
     logger.info("Environment created, starting ${env.name}")
     env.start()
 }

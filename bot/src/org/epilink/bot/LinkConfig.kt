@@ -9,15 +9,19 @@ import java.nio.file.Path
 data class LinkConfiguration(
     val name: String,
     val serverPort: Int,
-    val tokens: LinkTokens
+    val tokens: LinkTokens,
+    val sessionDuration: Long
 )
 
 data class LinkTokens(
-    private val discordToken: String?,
-    private val discordOAuthClientId: String?,
-    private val discordOAuthSecret: String?,
-    private val msftOAuthClientId: String?,
-    private val msftOAuthSecret: String?
+    val jwtSecret: String?,
+
+    val discordToken: String?,
+    val discordOAuthClientId: String?,
+    val discordOAuthSecret: String?,
+
+    val msftOAuthClientId: String?,
+    val msftOAuthSecret: String?
 )
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
