@@ -55,6 +55,7 @@ class User(id: EntityID<Int>): IntEntity(id) {
     var discordId by Users.discordId
     var msftIdHash by Users.msftIdHash
     var creationDate by Users.creationDate
+    val trueIdentity by TrueIdentity optionalBackReferencedOn TrueIdentities.user
 }
 
 object TrueIdentities : IntIdTable() {
@@ -69,4 +70,15 @@ class TrueIdentity(id: EntityID<Int>) : IntEntity(id) {
 
     var user by User referencedOn TrueIdentities.user
     var email by TrueIdentities.email
+}
+
+object Bans : IntIdTable() {
+    var msftIdHash = binary("msftIdHash", 64)
+    var expiresOn = datetime("expiresOn")
+}
+
+class Ban(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<Ban>(Bans)
+    var msftIdHash by Bans.msftIdHash
+    var expiresOn by Bans.expiresOn
 }
