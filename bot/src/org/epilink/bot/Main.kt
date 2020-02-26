@@ -24,10 +24,12 @@ fun main(args: Array<String>) = mainBody("epilink") {
         args,
         helpFormatter = DefaultHelpFormatter(
             prologue = """
-                EpiLink is a user authentication server with a website. This is the
-                back-end of the website. You can use the command line arguments to 
-                specify some specific requirements, but you should use the config
-                file for most configuration options.
+                EpiLink is a user authentication service with a website and a 
+                Discord bot. This is the back-end of the website, the database
+                management tool and the Discord bot of EpiLink. You can use the
+                command line arguments to specify some specific requirements, 
+                but you should use the config file for most configuration 
+                options.
             """.trimIndent(),
             epilogue = """
                 For more information, visit EpiLink's official documentation.
