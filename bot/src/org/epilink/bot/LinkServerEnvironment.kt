@@ -13,6 +13,7 @@ import io.ktor.auth.authenticate
 import io.ktor.auth.authentication
 import io.ktor.auth.jwt.JWTPrincipal
 import io.ktor.auth.jwt.jwt
+import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
@@ -41,9 +42,7 @@ class LinkServerEnvironment(
                 jwt {
                     realm = cfg.name
                     verifier(makeJwtVerifier(cfg.name, JWT_USER_AUDIENCE))
-                    validate { credential ->
-                        if (credential.payload.audience.contains(JWT_USER_AUDIENCE)) JWTPrincipal(credential.payload) else null
-                    }
+                    validate { JWTPrincipal(it.payload) }
                 }
             }
 
@@ -55,6 +54,11 @@ class LinkServerEnvironment(
                 authenticate() {
                     get("/admin") {
                         val principal = call.authentication.principal<JWTPrincipal>()
+
+                        if (principal == null) {
+                            call.respond(401)
+                        }
+
                         call.respondText("Hello ${principal?.payload?.subject}")
                     }
                 }
