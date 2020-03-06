@@ -40,19 +40,8 @@ fun main(args: Array<String>) = mainBody("epilink") {
     logger.debug("Loading configuration")
     val cfg = loadConfigFromFile(Paths.get(cliArgs.config))
 
-    if (cfg.tokens.jwtSecret == "I am a secret ! Please change me :(") {
-        if (cliArgs.allowUnsecureJwtSecret) {
-            logger.warn("Default JWT secret found in configuration but allowed through -u flag.")
-        } else {
-            logger.error("Please change the default JWT secret in the configuration file.")
-            logger.info("If you cannot change the secret (e.g. in a developer environment), run EpiLink with the -u flag.")
-            exitProcess(1)
-        }
-    }
-
-    if (cfg.sessionDuration < 0) {
-        logger.error("Session duration can't be negative")
-        exitProcess(2)
+    if(!cfg.isConfigurationSane(cliArgs)) {
+        exitProcess(1)
     }
 
     logger.debug("Creating environment")
@@ -60,4 +49,29 @@ fun main(args: Array<String>) = mainBody("epilink") {
 
     logger.info("Environment created, starting ${env.name}")
     env.start()
+}
+
+/**
+ * Checks the sanity of configuration options, logging information and guidance
+ * for resolving issues.
+ */
+private fun LinkConfiguration.isConfigurationSane(args: CliArgs): Boolean {
+    var hasErrors: Boolean = false
+    if (tokens.jwtSecret == "I am a secret ! Please change me :(") {
+        if (args.allowUnsecureJwtSecret) {
+            logger.warn("Default JWT secret found in configuration but allowed through -u flag.")
+            logger.warn("DO NOT USE -u IF YOU ARE IN A PRODUCTION ENVIRONMENT!")
+        } else {
+            logger.error("Please change the default JWT secret in the configuration file.")
+            logger.info("If you cannot change the secret (e.g. in a developer environment), run EpiLink with the -u flag.")
+            hasErrors = true
+        }
+    }
+
+    if (server.sessionDuration < 0) {
+        logger.error("Session duration can't be negative")
+        hasErrors = true
+    }
+
+    return !hasErrors
 }

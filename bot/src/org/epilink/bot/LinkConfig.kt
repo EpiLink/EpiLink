@@ -8,9 +8,14 @@ import java.nio.file.Path
 
 data class LinkConfiguration(
     val name: String,
-    val serverPort: Int,
+    val server: LinkWebServerConfiguration,
     val db: String,
-    val tokens: LinkTokens,
+    val tokens: LinkTokens
+)
+
+data class LinkWebServerConfiguration(
+    val port: Int,
+    val frontendUrl: String?,
     val sessionDuration: Long
 )
 
