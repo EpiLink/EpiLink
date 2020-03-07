@@ -4,15 +4,17 @@
 # The name of the server. You can customize this if you want to.
 name: My EpiLink Instance
 
-# The port that should be used for the server.
-serverPort: 9090
+# HTTP server configuration
+server:
+  # The port that should be used for the server.
+  port: 9090
+  # Time in milliseconds before a session expires. Here, one month
+  sessionDuration: 2592000000
+  # The URL of the front-end, WITH a trailing slash /, or null if the URL is unknown or the frontend is bootstrapped
+  frontendUrl: ~
 
 # Name and location of the EpiLink SQLite database
 db: epilink.db
-
-
-# Time in milliseconds before a session expires. Here, one month
-sessionDuration: 2592000000
 
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as

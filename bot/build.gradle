@@ -26,6 +26,7 @@ dependencies {
     implementation "io.ktor:ktor-server-netty:$ktorVersion"
     implementation "io.ktor:ktor-auth:$ktorVersion"
     implementation "io.ktor:ktor-auth-jwt:$ktorVersion"
+    implementation "io.ktor:ktor-jackson:$ktorVersion"
 
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
