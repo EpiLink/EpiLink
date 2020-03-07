@@ -54,7 +54,7 @@ run EpiLink with it, use:
 
 ```
 $ ./gradlew run --args="config/epilink_config.yaml -u"
-``
+```
 
 The last flag is required because EpiLink will throw an error if you leave the default JWT secret as-is. 
 
@@ -77,3 +77,9 @@ $ ./gradlew distZip
 Output is `build/distributions/EpiLink-(version).zip`
 
 TODO: Consider something like `jlink`
+
+### Both
+
+The front-end can also be bundled into the back-end, producing a single Java app that you can launch right away.
+
+To bundle the front-end into the back-end, run any of the previous Gradle command with `-PwithFrontend`.
