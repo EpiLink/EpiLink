@@ -3,6 +3,7 @@ package org.epilink.bot
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
+import io.ktor.application.ApplicationCall
 import io.ktor.auth.Authentication
 import io.ktor.auth.jwt.JWTPrincipal
 import io.ktor.features.ContentNegotiation
@@ -15,8 +16,16 @@ import io.ktor.application.install
 import io.ktor.auth.authenticate
 import io.ktor.auth.authentication
 import io.ktor.auth.jwt.jwt
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.resolveResource
+import io.ktor.http.content.resource
+import io.ktor.http.content.resources
+import io.ktor.http.content.static
+import io.ktor.http.defaultForFileExtension
+import io.ktor.http.fromFileExtension
 import io.ktor.jackson.jackson
+import io.ktor.request.path
 import io.ktor.response.respond
 import io.ktor.response.respondRedirect
 import io.ktor.response.respondText
@@ -24,6 +33,8 @@ import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.route
 import io.ktor.routing.routing
+import java.lang.IllegalArgumentException
+import java.lang.IllegalStateException
 
 private const val JWT_USER_AUDIENCE = "user"
 
@@ -55,10 +66,23 @@ class LinkServerApi(
     private val jwtAlgorithm = Algorithm.HMAC256(jwtSecret)
 
     /**
+     * True if the server should also serve the front-end, false if it should
+     * attempt to redirect to the front-end.
+     */
+    private val serveFrontEnd =
+        // Detect the presence of the frontend
+        LinkServerApi::class.java.getResource("/.hasFrontend") != null &&
+                // Check that no URL is set
+                wsCfg.frontendUrl == null
+
+    /**
      * Start the server. If wait is true, this function will block until the
      * server stops.
      */
     fun startServer(wait: Boolean) {
+        if (serveFrontEnd) {
+            logger.info("Front-end will be served. To disable that, set a front-end URL in the config file.")
+        }
         server.start(wait)
     }
 
@@ -84,32 +108,71 @@ class LinkServerApi(
 
             routing {
                 /*
-                 * Main endpoint. If the user directly tries to connect to the
-                 * back-end, redirect them to the front-end (or 404 if the url
-                 * is unknown).
-                 *
-                 * Once the opportunity will be given to bootstrap the front-end
-                 * in the back-end, this could also just serve the front-end.
-                 */
-                get("/") {
-                    val url = wsCfg.frontendUrl
-                    if (url == null) {
-                        // 404
-                        call.respond(HttpStatusCode.NotFound)
-                    } else {
-                        // Redirect to frontend
-                        call.respondRedirect(url, permanent = true)
-                    }
-                }
-                /*
                  * Main API endpoint
                  */
                 route("/api/v1") {
                     epilinkApiV1()
                 }
+
+                /*
+                 * Main endpoint. If the user directly tries to connect to the
+                 * back-end, redirect them to the front-end (or 404 if the url
+                 * is unknown).
+                 */
+                get("/{...}") {
+                    if (serveFrontEnd) {
+                        call.respondBootstrapped()
+                    } else {
+                        val url = wsCfg.frontendUrl
+                        if (url == null) {
+                            // 404
+                            call.respond(HttpStatusCode.NotFound)
+                        } else {
+                            // Redirect to frontend
+                            call.respondRedirect(
+                                url + call.parameters.getAll("path")?.joinToString(
+                                    "/"
+                                ),
+                                permanent = true
+                            )
+                        }
+                    }
+                }
             }
         }
 
+    private suspend fun ApplicationCall.respondBootstrapped() {
+        // The path (without the initial /)
+        val path = request.path().substring(1)
+        if (path.isEmpty())
+            // Request on /, respond with the index
+            respondDefaultFrontEnd()
+        else {
+            // Request somewhere else: is it something in the frontend?
+            val f = resolveResource(path, "frontend")
+            if (f != null) {
+                // Respond with the frontend element
+                respond(f)
+            } else {
+                // Respond with the index
+                respondDefaultFrontEnd()
+            }
+        }
+
+    }
+
+    /**
+     * Default response for bootstrap requests: simply serve the index. Only
+     * called when the frontend is here for sure.
+     */
+    private suspend fun ApplicationCall.respondDefaultFrontEnd() {
+        val def = resolveResource("index.prod.html", "frontend") {
+            ContentType.defaultForFileExtension("html")
+        }
+            // Should not happen
+            ?: throw IllegalStateException("Could not find front-end index in JAR file")
+        respond(def)
+    }
 
     private fun makeJwtVerifier(issuer: String, audience: String): JWTVerifier =
         JWT.require(jwtAlgorithm)
@@ -141,3 +204,4 @@ class LinkServerApi(
         }
     }
 }
+
