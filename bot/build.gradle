@@ -41,3 +41,39 @@ dependencies {
 
     implementation "com.xenomachina:kotlin-argparser:2.0.7"
 }
+
+
+import java.nio.file.FileAlreadyExistsException
+import java.nio.file.Files
+import java.nio.file.Paths
+
+// Front-end bootstrapping support
+// Can be enabled via -PwithFrontend
+
+task bootstrapFrontEnd {
+    dependsOn 'bundleFrontEndIntoResources'
+    doLast {
+        try {
+            Files.createFile(Paths.get("$buildDir/resources/main/.hasFrontend"))
+        } catch (FileAlreadyExistsException ignored) {
+        }
+    }
+}
+
+task bundleFrontEndIntoResources(type: Copy) {
+    dependsOn ':web:bundleWeb'
+    mustRunAfter 'processResources'
+    from '../web/build/web'
+    into 'build/resources/main/frontend'
+    duplicatesStrategy DuplicatesStrategy.INCLUDE // overwrite
+}
+
+task cleanFrontEnd(type: Delete) {
+    delete "$buildDir/resources/main/frontend", "$buildDir/resources/main/.hasFrontend"
+}
+
+if (project.hasProperty("withFrontend")) {
+    classes.dependsOn 'bootstrapFrontEnd'
+} else {
+    classes.dependsOn 'cleanFrontEnd'
+}
