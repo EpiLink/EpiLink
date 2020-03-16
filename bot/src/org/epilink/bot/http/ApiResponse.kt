@@ -1,4 +1,4 @@
-package org.epilink.bot
+package org.epilink.bot.http
 
 /**
  * Something that can be sent by the EpiLink API. Anything served from

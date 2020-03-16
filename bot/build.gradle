@@ -16,6 +16,7 @@ sourceSets {
 
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
 }
 
 application {
@@ -23,6 +24,8 @@ application {
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
     implementation "io.ktor:ktor-server-netty:$ktorVersion"
     implementation "io.ktor:ktor-auth:$ktorVersion"
     implementation "io.ktor:ktor-auth-jwt:$ktorVersion"
