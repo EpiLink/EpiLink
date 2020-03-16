@@ -2,8 +2,8 @@ package org.epilink.bot
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.DefaultHelpFormatter
-import com.xenomachina.argparser.HelpFormatter
 import com.xenomachina.argparser.mainBody
+import org.epilink.bot.config.*
 import org.slf4j.LoggerFactory
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -38,11 +38,8 @@ fun main(args: Array<String>) = mainBody("epilink") {
     ).parseInto(::CliArgs)
 
     logger.debug("Loading configuration")
-    val cfg = loadConfigFromFile(Paths.get(cliArgs.config))
 
-    if(!cfg.isConfigurationSane(cliArgs)) {
-        exitProcess(1)
-    }
+    val cfg = loadEpilinkConfig(cliArgs)
 
     logger.debug("Creating environment")
     val env = LinkServerEnvironment(cfg)
@@ -52,26 +49,29 @@ fun main(args: Array<String>) = mainBody("epilink") {
 }
 
 /**
- * Checks the sanity of configuration options, logging information and guidance
- * for resolving issues.
+ * Loads the configuration and performs safety checks on it.
  */
-private fun LinkConfiguration.isConfigurationSane(args: CliArgs): Boolean {
-    var hasErrors: Boolean = false
-    if (tokens.jwtSecret == "I am a secret ! Please change me :(") {
-        if (args.allowUnsecureJwtSecret) {
-            logger.warn("Default JWT secret found in configuration but allowed through -u flag.")
-            logger.warn("DO NOT USE -u IF YOU ARE IN A PRODUCTION ENVIRONMENT!")
-        } else {
-            logger.error("Please change the default JWT secret in the configuration file.")
-            logger.info("If you cannot change the secret (e.g. in a developer environment), run EpiLink with the -u flag.")
-            hasErrors = true
+private fun loadEpilinkConfig(cliArgs: CliArgs): LinkConfiguration {
+    val cfg = loadConfigFromFile(
+        Paths.get(cliArgs.config)
+    )
+
+    val configReport = cfg.isConfigurationSane(cliArgs)
+    var shouldExit = false
+    configReport.forEach {
+        when (it) {
+            is ConfigError -> {
+                logger.error(it.message)
+                if (it.shouldFail) shouldExit = true
+            }
+            is ConfigWarning -> logger.warn(it.message)
+            is ConfigInfo -> logger.info(it.message)
         }
     }
 
-    if (server.sessionDuration < 0) {
-        logger.error("Session duration can't be negative")
-        hasErrors = true
+    if (shouldExit) {
+        exitProcess(1)
     }
 
-    return !hasErrors
+    return cfg
 }
