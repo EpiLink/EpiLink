@@ -67,5 +67,6 @@ class User(id: EntityID<Int>) : IntEntity(id) {
      *
      * @see TrueIdentities
      */
+    @UsesTrueIdentity
     val trueIdentity by TrueIdentity optionalBackReferencedOn TrueIdentities.user
 }
