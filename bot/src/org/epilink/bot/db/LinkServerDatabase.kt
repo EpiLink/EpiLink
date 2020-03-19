@@ -1,11 +1,15 @@
 package org.epilink.bot.db
 
+import org.apache.commons.codec.binary.Base64
 import org.epilink.bot.config.LinkConfiguration
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.transactions.transactionManager
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.sql.Connection
 
 /**
@@ -48,4 +52,26 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         newSuspendedTransaction {
             User.count()
         }
+
+    suspend fun doesMicrosoftUserExist(microsoftUid: String?): Boolean {
+        if (microsoftUid == null)
+            return false
+        // Hash id
+        val hash = microsoftUid.hashSha256()
+        return newSuspendedTransaction {
+            User.count(Users.msftIdHash eq hash) > 0
+        }
+    }
+
+    suspend fun doesDiscordUserExist(discordId: String?): Boolean =
+        if(discordId == null)
+            false
+        else newSuspendedTransaction {
+            User.count(Users.discordId eq discordId) > 0
+        }
 }
+
+private fun String.hashSha256() =
+    MessageDigest.getInstance("SHA-256").digest(
+        this.toByteArray(StandardCharsets.UTF_8)
+    )
