@@ -1,6 +1,5 @@
 package org.epilink.bot.db
 
-import org.apache.commons.codec.binary.Base64
 import org.epilink.bot.config.LinkConfiguration
 import org.epilink.bot.http.sessions.RegisterSession
 import org.jetbrains.exposed.sql.Database
@@ -52,7 +51,7 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
      * (newSuspendedTransaction will be used to call JB Exposed stuff).
      */
     suspend fun countUsers(): Int =
-        newSuspendedTransaction {
+        newSuspendedTransaction(db = db) {
             User.count()
         }
 
@@ -61,13 +60,13 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
             return false
         // Hash id
         val hash = microsoftUid.hashSha256()
-        return newSuspendedTransaction {
+        return newSuspendedTransaction(db = db) {
             User.count(Users.msftIdHash eq hash) > 0
         }
     }
 
     suspend fun getUser(discordId: String): User? =
-        newSuspendedTransaction {
+        newSuspendedTransaction(db = db) {
             User.find { Users.discordId eq discordId }.firstOrNull()
         }
 
@@ -85,7 +84,7 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         if (adv is Disallowed) {
             throw LinkException(adv.reason)
         }
-        return newSuspendedTransaction {
+        return newSuspendedTransaction(db = db) {
             User.new {
                 discordId = safeDiscId
                 msftIdHash = safeMsftId.hashSha256()
@@ -128,12 +127,12 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
     }
 
     private suspend fun countUserWithHash(hash: ByteArray): Int =
-        newSuspendedTransaction {
+        newSuspendedTransaction(db = db) {
             User.count(Users.msftIdHash eq hash)
         }
 
     private suspend fun getBansFor(hash: ByteArray): List<Ban> =
-        newSuspendedTransaction {
+        newSuspendedTransaction(db = db) {
             Ban.find { Bans.msftIdHash eq hash }.toList()
         }
 }
