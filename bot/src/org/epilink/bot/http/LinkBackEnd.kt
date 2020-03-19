@@ -86,6 +86,12 @@ class LinkBackEnd(
                     call.sessions.getOrSet { RegisterSession() }
                 call.respondRegistrationStatus(session)
             }
+
+            @ApiEndpoint("DELETE /api/v1/register")
+            delete {
+                call.sessions.clear<RegisterSession>()
+                call.respond(HttpStatusCode.OK)
+            }
         }
     }
 
