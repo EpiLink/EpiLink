@@ -102,6 +102,14 @@ The `attachment` is either:
 * `null` if `next` is `login`
 * A [RegistrationInformation](#registrationinformation) if `next` is `continue`
 
+#### AdditionalRegistrationOptions
+
+```json5
+{
+  "keepIdentity": true // or false 
+}
+```
+
 ### Get information - GET /register/info
 
 **Retrieve information on the current registration process**
@@ -158,11 +166,22 @@ Response: a [RegistrationContinuation](#registrationcontinuation).
 ```http request
 POST /api/v1/register
 RegistrationSessionId: abcdef12345 # mandatory
+Content-Type: application/json # mandatory
 ```
 
 Complete the registration request.
+
+Content is a [AdditionalRegistrationOptions](#additionalregistrationoptions) JSON object.
 
 Response: No data attachment in the usual ApiResponse.
 
 * If the request was unsuccessful, the message contains more information
 * If the request was successful, the user has been logged in and the response contains a SessionId header that can be used to access user-related resources.
+
+## Connected user information /user
+
+All endpoints under `/user` expect the `SessionId` header to be set.
+
+### GET /user
+
+(Temporary) Returns some text on the logged in user.

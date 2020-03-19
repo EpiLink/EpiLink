@@ -18,6 +18,7 @@ import io.ktor.sessions.header
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.logger
 
@@ -101,6 +102,12 @@ class LinkHttpServer(
             install(Sessions) {
                 header<RegisterSession>(
                     "RegistrationSessionId",
+                    // TODO SessionStorageMemory should only be used for dev
+                    //      purposes
+                    SessionStorageMemory()
+                )
+                header<ConnectedSession>(
+                    "SessionId",
                     // TODO SessionStorageMemory should only be used for dev
                     //      purposes
                     SessionStorageMemory()

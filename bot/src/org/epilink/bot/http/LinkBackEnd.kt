@@ -4,11 +4,10 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.application.ApplicationCall
+import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
-import io.ktor.auth.OAuth2RequestParameters
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.ClientRequestException
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -16,18 +15,15 @@ import io.ktor.content.TextContent
 import io.ktor.http.*
 import io.ktor.request.receive
 import io.ktor.response.respond
+import io.ktor.response.respondText
 import io.ktor.routing.*
-import io.ktor.sessions.clear
-import io.ktor.sessions.getOrSet
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.sessions.*
+import org.epilink.bot.LinkException
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.db.User
-import org.epilink.bot.http.classes.InstanceInformation
-import org.epilink.bot.http.classes.RegistrationAuthCode
-import org.epilink.bot.http.classes.RegistrationContinuation
-import org.epilink.bot.http.classes.RegistrationInformation
+import org.epilink.bot.http.classes.*
+import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 
 /**
@@ -100,6 +96,25 @@ class LinkBackEnd(
             )
         }
 
+        route("user") {
+            intercept(ApplicationCallPipeline.Features) {
+                if (call.sessions.get<ConnectedSession>() == null) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                    return@intercept finish()
+                }
+                proceed()
+            }
+
+            @ApiEndpoint("GET /api/v1/user")
+            get {
+                val session = call.sessions.get<ConnectedSession>()!!
+                call.respondText(
+                    "Connected as " + session.discordId,
+                    ContentType.Text.Plain
+                )
+            }
+        }
+
         route("register") {
             @ApiEndpoint("GET /api/v1/register/info")
             get("info") {
@@ -112,6 +127,45 @@ class LinkBackEnd(
             delete {
                 call.sessions.clear<RegisterSession>()
                 call.respond(HttpStatusCode.OK)
+            }
+
+            @ApiEndpoint("POST /api/v1/register")
+            post {
+                val session = call.sessions.get<RegisterSession>()
+                if (session == null)
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse(false, "Missing session header", null)
+                    )
+                else if (
+                    session.discordId == null ||
+                    session.email == null ||
+                    session.microsoftUid == null
+                )
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse(
+                            false,
+                            "Incomplete registration process",
+                            session
+                        )
+                    )
+                else {
+                    val options: AdditionalRegistrationOptions = call.receive()
+                    try {
+                        val u = env.database.createUser(
+                            session,
+                            options.keepIdentity
+                        )
+                        call.loginAs(u)
+                        call.respond(ApiResponse(true, "Account created, logged in."))
+                    } catch (e: LinkException) {
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiResponse(false, e.message)
+                        )
+                    }
+                }
             }
 
             @ApiEndpoint("POST /register/authcode/discord")
@@ -147,7 +201,7 @@ class LinkBackEnd(
     ) {
         val session = call.sessions.getOrSet { RegisterSession() }
         // Get token
-        val token = getDiscordToken(authcode.code)
+        val token = getDiscordToken(authcode.code, authcode.redirectUri)
         // Get information
         val (id, username, avatarUrl) = getDiscordInfo(token)
         val user = env.database.getUser(id)
@@ -179,7 +233,7 @@ class LinkBackEnd(
         }
     }
 
-    private suspend fun getDiscordToken(authcode: String): String {
+    private suspend fun getDiscordToken(authcode: String, redirectUri: String): String {
         val res =
             client.post<String>("https://discordapp.com/api/v6/oauth2/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
@@ -189,6 +243,7 @@ class LinkBackEnd(
                         append("client_secret", secrets.discordOAuthSecret!!)
                         append("grant_type", "authorization_code")
                         append("code", authcode)
+                        append("redirect_uri", redirectUri)
                     }.build().formUrlEncode(),
                     ContentType.Application.FormUrlEncoded
                 )
@@ -242,7 +297,10 @@ class LinkBackEnd(
         )
     }
 
-    private suspend fun getMicrosoftToken(code: String, redirectUri: String): String {
+    private suspend fun getMicrosoftToken(
+        code: String,
+        redirectUri: String
+    ): String {
         // TODO also inject tenant here once that's added instead of using common
         val res =
             client.post<String>("https://login.microsoftonline.com/common/oauth2/v2.0/token") {
@@ -279,7 +337,7 @@ class LinkBackEnd(
 
     private suspend fun ApplicationCall.loginAs(user: User) {
         sessions.clear<RegisterSession>()
-        TODO()
+        sessions.set(ConnectedSession(user.discordId))
     }
 
     private suspend fun ApplicationCall.respondRegistrationStatus(

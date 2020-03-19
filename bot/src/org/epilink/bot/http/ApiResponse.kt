@@ -25,3 +25,6 @@ data class ApiResponse<T>(
      */
     val data: T?
 )
+
+fun ApiResponse(success: Boolean, message: String?): ApiResponse<Nothing?> =
+    ApiResponse(success, message, null)

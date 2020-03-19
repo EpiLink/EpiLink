@@ -2,6 +2,7 @@ package org.epilink.bot.db
 
 import org.apache.commons.codec.binary.Base64
 import org.epilink.bot.config.LinkConfiguration
+import org.epilink.bot.http.sessions.RegisterSession
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -11,6 +12,8 @@ import org.jetbrains.exposed.sql.transactions.transactionManager
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.sql.Connection
+import java.time.LocalDateTime
+import javax.naming.LinkException
 
 /**
  * The class that manages the database and handles all business logic.
@@ -67,6 +70,31 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         newSuspendedTransaction {
             User.find { Users.discordId eq discordId }.firstOrNull()
         }
+
+    @OptIn(UsesTrueIdentity::class)
+    suspend fun createUser(
+        session: RegisterSession,
+        keepIdentity: Boolean
+    ): User {
+        // TODO safety checks (e.g. ban checks)
+        val safeDiscId = session.discordId ?: throw LinkException("Missing Discord ID")
+        val safeMsftId = session.microsoftUid ?: throw LinkException("Missing Microsoft ID")
+        val safeEmail = session.email ?: throw LinkException("Missing email")
+        return newSuspendedTransaction {
+            User.new {
+                discordId = safeDiscId
+                msftIdHash = safeMsftId.hashSha256()
+                creationDate = LocalDateTime.now()
+            }.also { u ->
+                if(keepIdentity) {
+                    TrueIdentity.new {
+                        user = u
+                        email = safeEmail
+                    }
+                }
+            }
+        }
+    }
 }
 
 private fun String.hashSha256() =
