@@ -12,9 +12,13 @@ import io.ktor.routing.routing
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.sessions.SessionStorageMemory
+import io.ktor.sessions.Sessions
+import io.ktor.sessions.header
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.logger
 
 internal const val JWT_USER_AUDIENCE = "user"
@@ -89,6 +93,18 @@ class LinkHttpServer(
              */
             install(ContentNegotiation) {
                 jackson {}
+            }
+
+            /*
+             * Used for sessions
+             */
+            install(Sessions) {
+                header<RegisterSession>(
+                    "RegistrationSessionId",
+                    // TODO SessionStorageMemory should only be used for dev
+                    //      purposes
+                    SessionStorageMemory()
+                )
             }
 
             routing {

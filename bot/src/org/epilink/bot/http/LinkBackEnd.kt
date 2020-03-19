@@ -64,6 +64,7 @@ class LinkBackEnd(
      */
     fun Route.epilinkApiV1() {
         route("meta") {
+            @ApiEndpoint("GET /api/v1/meta/info")
             get("info") {
                 call.respond(ApiResponse(true, data = getInstanceInformation()))
             }
@@ -78,12 +79,36 @@ class LinkBackEnd(
             )
         }
 
+        route("register") {
+            @ApiEndpoint("GET /api/v1/register/info")
+            get("info") {
+                val session =
+                    call.sessions.getOrSet { RegisterSession() }
+                call.respondRegistrationStatus(session)
+            }
+        }
+    }
+
     private fun getInstanceInformation(): InstanceInformation =
         InstanceInformation(
             title = env.name,
             logo = null, // TODO add a cfg entry for the logo
             authorizeStub_msft = authStubMsft,
             authorizeStub_discord = authStubDiscord
+        )
+
+    private suspend fun ApplicationCall.respondRegistrationStatus(
+        session: RegisterSession
+    ) {
+        respond(
+            ApiResponse(
+                success = true,
+                data = RegistrationInformation(
+                    email = session.email,
+                    discordAvatarUrl = session.discordAvatarUrl,
+                    discordUsername = session.discordUsername
+                )
+            )
         )
     }
 }
