@@ -13,6 +13,7 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import org.epilink.bot.LinkServerEnvironment
+import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.logger
 
@@ -30,10 +31,8 @@ class LinkHttpServer(
      * Configuration specifically or the web server
      */
     private val wsCfg: LinkWebServerConfiguration,
-    /**
-     * The secret to use. Separate from wsCfg because this is a secret token.
-     */
-    jwtSecret: String
+
+    secrets: LinkTokens
 ) {
     /**
      * The actual Ktor application instance
@@ -43,7 +42,7 @@ class LinkHttpServer(
     /**
      * The algorithm to use for JWT related duties
      */
-    private val jwtAlgorithm = Algorithm.HMAC256(jwtSecret)
+    private val jwtAlgorithm = Algorithm.HMAC256(secrets.jwtSecret)
 
     /**
      * True if the server should also serve the front-end, false if it should
@@ -56,8 +55,7 @@ class LinkHttpServer(
                 wsCfg.frontendUrl == null
 
     private val backend =
-        LinkBackEnd(this, env, jwtAlgorithm, wsCfg.sessionDuration)
-
+        LinkBackEnd(this, env, jwtAlgorithm, wsCfg.sessionDuration, secrets)
     /**
      * Start the server. If wait is true, this function will block until the
      * server stops.

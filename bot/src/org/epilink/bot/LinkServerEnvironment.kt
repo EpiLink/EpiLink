@@ -16,7 +16,7 @@ class LinkServerEnvironment(
         LinkServerDatabase(cfg)
         private set
     private var server: LinkHttpServer =
-        LinkHttpServer(this, cfg.server, cfg.tokens.jwtSecret)
+        LinkHttpServer(this, cfg.server, cfg.tokens)
 
     val name: String
         get() = cfg.name
