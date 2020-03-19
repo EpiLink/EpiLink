@@ -79,9 +79,12 @@ Used for sending an OAuth2 authentication code.
 
 ```http request
 {
-  "code": "..."
+  "code": "...",
+  "redirectUri": "..."
 }
 ```
+
+`redirectUri` is the exact URI that was used for the original authentication request that obtained the code.
 
 #### RegistrationContinuation
 
@@ -141,9 +144,10 @@ The request content is a JSON [RegistrationAuthCode](#registrationauthcode)
 
 Response: a [RegistrationContinuation](#registrationcontinuation).
 
-**Be careful with the response!** There are three possible scenarios:
+**Be careful with the response!** There are four possible scenarios:
 
-* The API response has the error flag set (usually also with a HTTP error code): You can display the message to the user safely. It may, for example, tell the user that he is banned.
+* HTTP error, no body: There was an error processing the request, usually internal 
+* HTTP error with API response body (success set to false and message non-null): You can display the message to the user safely. It may, for example, tell the user that he is banned.
 * The continuation's `next` is set to `continue`: You can go on with the registration requests.
 * The continuation's `next` is set to `login`: The registration is no longer valid, and the user has been logged in. The response has SessionId header that you can use right away. 
 

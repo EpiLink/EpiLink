@@ -63,11 +63,9 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         }
     }
 
-    suspend fun doesDiscordUserExist(discordId: String?): Boolean =
-        if(discordId == null)
-            false
-        else newSuspendedTransaction {
-            User.count(Users.discordId eq discordId) > 0
+    suspend fun getUser(discordId: String): User? =
+        newSuspendedTransaction {
+            User.find { Users.discordId eq discordId }.firstOrNull()
         }
 }
 
