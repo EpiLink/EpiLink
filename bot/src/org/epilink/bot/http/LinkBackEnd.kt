@@ -281,7 +281,11 @@ class LinkBackEnd(
         val token = getMicrosoftToken(authcode.code, authcode.redirectUri)
         // Get information
         val (id, email) = getMicrosoftInfo(token)
-        // TODO check for banned user, already existing, etc.
+        val adv = env.database.isAllowedToCreateAccount(null, id)
+        if (adv is Disallowed) {
+            call.respond(ApiResponse(false, adv.reason, null))
+            return
+        }
         val newSession = session.copy(
             email = email,
             microsoftUid = id

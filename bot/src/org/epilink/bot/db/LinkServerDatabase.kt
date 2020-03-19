@@ -76,17 +76,22 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         session: RegisterSession,
         keepIdentity: Boolean
     ): User {
-        // TODO safety checks (e.g. ban checks)
-        val safeDiscId = session.discordId ?: throw LinkException("Missing Discord ID")
-        val safeMsftId = session.microsoftUid ?: throw LinkException("Missing Microsoft ID")
+        val safeDiscId =
+            session.discordId ?: throw LinkException("Missing Discord ID")
+        val safeMsftId =
+            session.microsoftUid ?: throw LinkException("Missing Microsoft ID")
         val safeEmail = session.email ?: throw LinkException("Missing email")
+        val adv = isAllowedToCreateAccount(safeDiscId, safeMsftId)
+        if (adv is Disallowed) {
+            throw LinkException(adv.reason)
+        }
         return newSuspendedTransaction {
             User.new {
                 discordId = safeDiscId
                 msftIdHash = safeMsftId.hashSha256()
                 creationDate = LocalDateTime.now()
             }.also { u ->
-                if(keepIdentity) {
+                if (keepIdentity) {
                     TrueIdentity.new {
                         user = u
                         email = safeEmail
@@ -95,6 +100,42 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
             }
         }
     }
+
+    private fun Ban.isActive(): Boolean {
+        val expiry = expiresOn
+        return expiry == null || expiry.isBefore(LocalDateTime.now())
+    }
+
+    suspend fun isAllowedToCreateAccount(
+        discordId: String?,
+        microsoftId: String?
+    ): DatabaseAdvisory {
+        if (microsoftId != null) {
+            val hash = microsoftId.hashSha256()
+            val b = getBansFor(hash)
+            if (b.any { it.isActive() }) {
+                return Disallowed("This Microsoft account is banned")
+            }
+            if (countUserWithHash(hash) > 0)
+                return Disallowed("This Microsoft account is already linked to another account")
+        }
+        if (discordId != null) {
+            val u = getUser(discordId)
+            if (u != null)
+                return Disallowed("This Discord account already exists")
+        }
+        return Allowed
+    }
+
+    private suspend fun countUserWithHash(hash: ByteArray): Int =
+        newSuspendedTransaction {
+            User.count(Users.msftIdHash eq hash)
+        }
+
+    private suspend fun getBansFor(hash: ByteArray): List<Ban> =
+        newSuspendedTransaction {
+            Ban.find { Bans.msftIdHash eq hash }.toList()
+        }
 }
 
 private fun String.hashSha256() =
