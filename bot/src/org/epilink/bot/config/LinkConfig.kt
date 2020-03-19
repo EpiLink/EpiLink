@@ -26,7 +26,8 @@ data class LinkTokens(
     val discordOAuthClientId: String?,
     val discordOAuthSecret: String?,
     val msftOAuthClientId: String?,
-    val msftOAuthSecret: String?
+    val msftOAuthSecret: String?,
+    val msftTenant: String
 )
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {

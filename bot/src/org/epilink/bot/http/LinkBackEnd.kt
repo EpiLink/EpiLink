@@ -21,6 +21,7 @@ import io.ktor.sessions.*
 import org.epilink.bot.LinkException
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkTokens
+import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.User
 import org.epilink.bot.http.classes.*
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -54,7 +55,7 @@ class LinkBackEnd(
 ) {
     // TODO config entry for custom tenant instead of just common
     private val authStubMsft =
-        "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?" +
+        "https://login.microsoftonline.com/${secrets.msftTenant}/oauth2/v2.0/authorize?" +
                 listOf(
                     "client_id=${secrets.msftOAuthClientId}",
                     "response_type=code",
@@ -158,7 +159,12 @@ class LinkBackEnd(
                             options.keepIdentity
                         )
                         call.loginAs(u)
-                        call.respond(ApiResponse(true, "Account created, logged in."))
+                        call.respond(
+                            ApiResponse(
+                                true,
+                                "Account created, logged in."
+                            )
+                        )
                     } catch (e: LinkException) {
                         call.respond(
                             HttpStatusCode.BadRequest,
@@ -233,7 +239,10 @@ class LinkBackEnd(
         }
     }
 
-    private suspend fun getDiscordToken(authcode: String, redirectUri: String): String {
+    private suspend fun getDiscordToken(
+        authcode: String,
+        redirectUri: String
+    ): String {
         val res =
             client.post<String>("https://discordapp.com/api/v6/oauth2/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
@@ -307,7 +316,7 @@ class LinkBackEnd(
     ): String {
         // TODO also inject tenant here once that's added instead of using common
         val res =
-            client.post<String>("https://login.microsoftonline.com/common/oauth2/v2.0/token") {
+            client.post<String>("https://login.microsoftonline.com/${secrets.msftTenant}/oauth2/v2.0/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 body = TextContent(
                     ParametersBuilder().apply {

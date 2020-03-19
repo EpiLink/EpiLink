@@ -33,3 +33,6 @@ tokens:
   msftOAuthClientId: ~
   # The secret for Microsoft's OAuth2
   msftOAuthSecret: ~
+  # The tenant for Microsoft OAuth requests.
+  # This can be "common" (allow everyone) or an ID specific to a company/school.
+  msftTenant: common
