@@ -45,32 +45,33 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
      *
      * Most functions will be suspending functions, as Ktor uses coroutines.
      * (newSuspendedTransaction will be used to call JB Exposed stuff).
+     *
+     * Here's for example a function that counts the number of users in the database
+     *
+     *     suspend fun countUsers(): Int =
+     *         newSuspendedTransaction(db = db) {
+     *             User.count()
+     *         }
      */
-    suspend fun countUsers(): Int =
-        newSuspendedTransaction(db = db) {
-            User.count()
-        }
 
-    suspend fun doesMicrosoftUserExist(microsoftUid: String?): Boolean {
-        if (microsoftUid == null)
-            return false
-        // Hash id
-        val hash = microsoftUid.hashSha256()
-        return newSuspendedTransaction(db = db) {
-            User.count(Users.msftIdHash eq hash) > 0
-        }
-    }
-
+    /**
+     * Returns the server user that has the given Discord account ID associated, or null if no such user exists.
+     */
     suspend fun getUser(discordId: String): User? =
         newSuspendedTransaction(db = db) {
             User.find { Users.discordId eq discordId }.firstOrNull()
         }
 
-    @OptIn(UsesTrueIdentity::class)
-    suspend fun createUser(
-        session: RegisterSession,
-        keepIdentity: Boolean
-    ): User {
+    /**
+     * Create a user in the database using the given registration session's information.
+     *
+     * @param session The session to get the information from
+     * @param keepIdentity If true, a [TrueIdentity] object will be associated to the user and recorded in the
+     * database
+     * @throws LinkException If the session's data is invalid, the user is banned, or another erroneous scenario
+     */
+    @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
+    suspend fun createUser(session: RegisterSession, keepIdentity: Boolean): User {
         val safeDiscId = session.discordId ?: throw LinkException("Missing Discord ID")
         val safeMsftId = session.microsoftUid ?: throw LinkException("Missing Microsoft ID")
         val safeEmail = session.email ?: throw LinkException("Missing email")
@@ -94,11 +95,19 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         }
     }
 
+    /**
+     * Checks whether a ban is currently active or not
+     */
     private fun Ban.isActive(): Boolean {
         val expiry = expiresOn
         return expiry == null || expiry.isBefore(LocalDateTime.now())
     }
 
+    /**
+     * Checks whether an account with the given Discord user ID and Microsoft user ID could be created.
+     *
+     * If a parameter is null, the checks for this parameter are ignored.
+     */
     suspend fun isAllowedToCreateAccount(discordId: String?, microsoftId: String?): DatabaseAdvisory {
         // Check Microsoft account if provided
         if (microsoftId != null) {
@@ -120,12 +129,22 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         return Allowed
     }
 
+    /**
+     * Counts how many users have the given hash as their Microsoft ID hash in the database
+     */
     private suspend fun countUserWithHash(hash: ByteArray): Int =
         newSuspendedTransaction(db = db) { User.count(Users.msftIdHash eq hash) }
 
+    /**
+     * Returns a list of all the bans in the database for the given Microsoft ID hash as a list.
+     */
     private suspend fun getBansFor(hash: ByteArray): List<Ban> =
         newSuspendedTransaction(db = db) { Ban.find { Bans.msftIdHash eq hash }.toList() }
 }
 
-private fun String.hashSha256() =
+/**
+ * Utility function for hashing a String using the SHA-256 algorithm. The String is first converted to a byte array
+ * using the UTF-8 charset.
+ */
+private fun String.hashSha256(): ByteArray =
     MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))
