@@ -32,6 +32,7 @@ data class LinkTokens(
 )
 
 data class LinkDiscordConfig(
+    val welcomeUrl: String?,
     val roles: List<LinkDiscordRoleSpec>?,
     val servers: List<LinkDiscordServerSpec>?
 )

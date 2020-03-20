@@ -137,6 +137,7 @@ class LinkBackEnd(
                             call.receive()
                         try {
                             val u = env.database.createUser(this, options.keepIdentity)
+                            env.discord.updateRoles(u, true)
                             call.loginAs(u)
                             call.respond(ApiResponse(true, "Account created, logged in."))
                         } catch (e: LinkException) {

@@ -18,13 +18,14 @@ class LinkServerEnvironment(
         LinkServerDatabase(cfg)
         private set
 
-    private val discordBot: LinkDiscordBot =
+    val discord: LinkDiscordBot =
         LinkDiscordBot(
             this,
             cfg.discord,
             cfg.tokens.discordToken ?: error("Discord token cannot be null"),
             cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null")
         )
+
 
     private var server: LinkHttpServer =
         LinkHttpServer(this, cfg.server, cfg.tokens)
@@ -33,7 +34,7 @@ class LinkServerEnvironment(
         get() = cfg.name
 
     fun start() {
-        runBlocking { discordBot.start() }
+        runBlocking { discord.start() }
         server.startServer(wait = true)
     }
 }
