@@ -1,5 +1,7 @@
 # Backend API
 
+[Go back to main Documentation page](/docs/README.md)
+
 This is documentation of the backend API of EpiLink.
 
 This document reflects the API as it is implemented in the back-end, although it may not be fully accurate.
