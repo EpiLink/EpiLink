@@ -11,7 +11,7 @@ There are (or, rather, will be) several ways of deploying EpiLink:
 - All-in-one package (includes back-end, front-end and JRE)
 - Separate packages (one for back-end, one for front-end, requires a JRE to be installed) 
 
-All-in-one is recommended for most use cases, although it is not necessarily the most secure one.
+All-in-one is recommended for most use cases, although it is not necessarily the most secure or fastest one.
 
 ## Running
 
