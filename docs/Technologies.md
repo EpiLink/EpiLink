@@ -1,5 +1,7 @@
 # Technologies used within EpiLink
 
+[Go back to main Documentation page](/docs/README.md)
+
 EpiLink uses the following technologies to do its thing:
 
 ## Overall

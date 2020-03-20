@@ -1,5 +1,7 @@
 # EpiLink
 
+README | [Documentation](/docs/README.md)
+
 EpiLink is an account verification server, allowing you to link a Discord identity to a Microsoft (including Office 365)
 identity.
 
