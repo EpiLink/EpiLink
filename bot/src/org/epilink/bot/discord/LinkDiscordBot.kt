@@ -10,6 +10,7 @@ import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
+import discord4j.rest.http.client.ClientException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
@@ -80,7 +81,19 @@ class LinkDiscordBot(
             is Allowed -> {
                 val roles = getRolesForAuthorizedUser(dbUser)
                 guilds.mapNotNull { g ->
-                    g.getMemberById(userSnowflake).awaitFirstOrNull()?.to(g)
+                    try {
+                        g.getMemberById(userSnowflake).awaitSingle()?.to(g)
+                    } catch (ex: ClientException) {
+                        // We need to catch the exception when Discord tells us the member could not be found.
+                        // This happens when the user is not a member of the guild.
+                        // This kind of error has the error code 10007 in the response.
+                        val resp = ex.errorResponse ?: throw ex
+                        if (resp.fields["code"].toString() == "10007") {
+                            null // Simply ignore this one
+                        } else {
+                            throw ex
+                        }
+                    }
                 }.forEach { (m, g) ->
                     updateAuthorizedUserRoles(m, g, roles)
                 }
