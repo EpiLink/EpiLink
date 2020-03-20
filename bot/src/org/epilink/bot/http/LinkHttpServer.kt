@@ -12,8 +12,14 @@ import io.ktor.routing.routing
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.sessions.SessionStorageMemory
+import io.ktor.sessions.Sessions
+import io.ktor.sessions.header
 import org.epilink.bot.LinkServerEnvironment
+import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.http.sessions.ConnectedSession
+import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.logger
 
 internal const val JWT_USER_AUDIENCE = "user"
@@ -30,10 +36,8 @@ class LinkHttpServer(
      * Configuration specifically or the web server
      */
     private val wsCfg: LinkWebServerConfiguration,
-    /**
-     * The secret to use. Separate from wsCfg because this is a secret token.
-     */
-    jwtSecret: String
+
+    secrets: LinkTokens
 ) {
     /**
      * The actual Ktor application instance
@@ -43,7 +47,7 @@ class LinkHttpServer(
     /**
      * The algorithm to use for JWT related duties
      */
-    private val jwtAlgorithm = Algorithm.HMAC256(jwtSecret)
+    private val jwtAlgorithm = Algorithm.HMAC256(secrets.jwtSecret)
 
     /**
      * True if the server should also serve the front-end, false if it should
@@ -56,8 +60,7 @@ class LinkHttpServer(
                 wsCfg.frontendUrl == null
 
     private val backend =
-        LinkBackEnd(this, env, jwtAlgorithm, wsCfg.sessionDuration)
-
+        LinkBackEnd(this, env, jwtAlgorithm, wsCfg.sessionDuration, secrets)
     /**
      * Start the server. If wait is true, this function will block until the
      * server stops.
@@ -91,6 +94,24 @@ class LinkHttpServer(
              */
             install(ContentNegotiation) {
                 jackson {}
+            }
+
+            /*
+             * Used for sessions
+             */
+            install(Sessions) {
+                header<RegisterSession>(
+                    "RegistrationSessionId",
+                    // TODO SessionStorageMemory should only be used for dev
+                    //      purposes
+                    SessionStorageMemory()
+                )
+                header<ConnectedSession>(
+                    "SessionId",
+                    // TODO SessionStorageMemory should only be used for dev
+                    //      purposes
+                    SessionStorageMemory()
+                )
             }
 
             routing {

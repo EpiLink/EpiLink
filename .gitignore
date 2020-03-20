@@ -14,3 +14,4 @@ epilink.db
 .DS_Store
 app.bundle.js
 *.db
+bot/config/epilink_config_real.yaml
