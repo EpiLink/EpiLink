@@ -27,7 +27,7 @@ data class ApiResponse<T>(
 )
 
 /**
- * Utility function for build an [ApiResponse] object with null data.
+ * Utility function for building an [ApiResponse] object with null data.
  */
 fun ApiResponse(success: Boolean, message: String?): ApiResponse<Nothing?> =
     ApiResponse(success, message, null)

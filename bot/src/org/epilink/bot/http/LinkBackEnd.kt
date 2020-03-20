@@ -23,7 +23,7 @@ import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.User
-import org.epilink.bot.http.classes.*
+import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 
@@ -233,7 +233,7 @@ class LinkBackEnd(
     /**
      * Retrieve a user's own information using a Discord OAuth2 token.
      */
-    private suspend fun getDiscordInfo(token: String): DiscordInfo {
+    private suspend fun getDiscordInfo(token: String): DiscordUserInfo {
         val data = client.getJson("https://discordapp.com/api/v6/users/@me", bearer = token)
         val userid = data["id"] as String? ?: error("Missing Discord ID")
         val username = data["username"] as String? ?: error("Missing Discord username")
@@ -242,7 +242,7 @@ class LinkBackEnd(
         val avatarHash = data["avatar"] as String?
         val avatar =
             if (avatarHash != null) "https://cdn.discordapp.com/avatars/$userid/$avatarHash.png?size=256" else null
-        return DiscordInfo(userid, displayableUsername, avatar)
+        return DiscordUserInfo(userid, displayableUsername, avatar)
     }
 
     /**
@@ -296,14 +296,14 @@ class LinkBackEnd(
     /**
      * Retrieve a user's own information with Microsoft Graph using a Microsoft OAuth2 token.
      */
-    private suspend fun getMicrosoftInfo(token: String): MicrosoftInfo {
+    private suspend fun getMicrosoftInfo(token: String): MicrosoftUserInfo {
         // https://graph.microsoft.com/v1.0/me
         val data = client.getJson("https://graph.microsoft.com/v1.0/me", bearer = token)
         val email = data["mail"] as String?
             ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
             ?: error("User does not have an email address")
         val id = data["id"] as String? ?: error("User does not have an ID")
-        return MicrosoftInfo(id, email)
+        return MicrosoftUserInfo(id, email)
     }
 
     /**
