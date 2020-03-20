@@ -25,21 +25,17 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
      * The Database instance managed by JetBrains Exposed used for transactions.
      */
     @OptIn(UsesTrueIdentity::class) // Creation of TrueIdentities table
-    private val db: Database =
-        Database.connect("jdbc:sqlite:${cfg.db}", driver = "org.sqlite.JDBC")
-            .apply {
-                // Required for SQLite
-                transactionManager.defaultIsolationLevel =
-                    Connection.TRANSACTION_SERIALIZABLE
+    private val db: Database = Database.connect("jdbc:sqlite:${cfg.db}", driver = "org.sqlite.JDBC")
+        .apply {
+            // Required for SQLite
+            transactionManager.defaultIsolationLevel =
+                Connection.TRANSACTION_SERIALIZABLE
 
-                // Create the tables if they do not already exist
-                transaction(this) {
-                    SchemaUtils.create(
-                        Users,
-                        TrueIdentities
-                    )
-                }
+            // Create the tables if they do not already exist
+            transaction(this) {
+                SchemaUtils.create(Users, TrueIdentities)
             }
+        }
 
     /*
      * All functions regarding user creation, deletion, retrieval etc., will be
@@ -75,10 +71,8 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         session: RegisterSession,
         keepIdentity: Boolean
     ): User {
-        val safeDiscId =
-            session.discordId ?: throw LinkException("Missing Discord ID")
-        val safeMsftId =
-            session.microsoftUid ?: throw LinkException("Missing Microsoft ID")
+        val safeDiscId = session.discordId ?: throw LinkException("Missing Discord ID")
+        val safeMsftId = session.microsoftUid ?: throw LinkException("Missing Microsoft ID")
         val safeEmail = session.email ?: throw LinkException("Missing email")
         val adv = isAllowedToCreateAccount(safeDiscId, safeMsftId)
         if (adv is Disallowed) {
@@ -105,10 +99,8 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         return expiry == null || expiry.isBefore(LocalDateTime.now())
     }
 
-    suspend fun isAllowedToCreateAccount(
-        discordId: String?,
-        microsoftId: String?
-    ): DatabaseAdvisory {
+    suspend fun isAllowedToCreateAccount(discordId: String?, microsoftId: String?): DatabaseAdvisory {
+        // Check Microsoft account if provided
         if (microsoftId != null) {
             val hash = microsoftId.hashSha256()
             val b = getBansFor(hash)
@@ -118,26 +110,22 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
             if (countUserWithHash(hash) > 0)
                 return Disallowed("This Microsoft account is already linked to another account")
         }
+        // Check Discord account if provided
         if (discordId != null) {
             val u = getUser(discordId)
             if (u != null)
                 return Disallowed("This Discord account already exists")
         }
+        // We have not returned yet: no problems found
         return Allowed
     }
 
     private suspend fun countUserWithHash(hash: ByteArray): Int =
-        newSuspendedTransaction(db = db) {
-            User.count(Users.msftIdHash eq hash)
-        }
+        newSuspendedTransaction(db = db) { User.count(Users.msftIdHash eq hash) }
 
     private suspend fun getBansFor(hash: ByteArray): List<Ban> =
-        newSuspendedTransaction(db = db) {
-            Ban.find { Bans.msftIdHash eq hash }.toList()
-        }
+        newSuspendedTransaction(db = db) { Ban.find { Bans.msftIdHash eq hash }.toList() }
 }
 
 private fun String.hashSha256() =
-    MessageDigest.getInstance("SHA-256").digest(
-        this.toByteArray(StandardCharsets.UTF_8)
-    )
+    MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))
