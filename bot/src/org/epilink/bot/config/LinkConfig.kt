@@ -11,7 +11,8 @@ data class LinkConfiguration(
     val name: String,
     val server: LinkWebServerConfiguration,
     val db: String,
-    val tokens: LinkTokens
+    val tokens: LinkTokens,
+    val discord: LinkDiscordConfig
 )
 
 data class LinkWebServerConfiguration(
@@ -28,6 +29,21 @@ data class LinkTokens(
     val msftOAuthClientId: String?,
     val msftOAuthSecret: String?,
     val msftTenant: String
+)
+
+data class LinkDiscordConfig(
+    val roles: List<LinkDiscordRoleSpec>?,
+    val servers: List<LinkDiscordServerSpec>?
+)
+
+data class LinkDiscordRoleSpec(
+    val name: String
+    // Later on, the rules to follow for each role will also be defined here.
+)
+
+data class LinkDiscordServerSpec(
+    val id: String,
+    val roles: Map<String, String>
 )
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
