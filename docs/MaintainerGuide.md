@@ -35,11 +35,9 @@ name: My EpiLink Instance
 db: epilink.db
 ```
 
-* `name`
-  This is the name of your instance. This name is public and should describe your instance. For example "MyAmazingOrg Account Checker".
+* `name`: This is the name of your instance. This name is public and should describe your instance. For example "MyAmazingOrg Account Checker".
 
-* `db`
-  This is the location of the database. Use a full, absolute path instead of a relative path just to be on the safe side.
+* `db`: This is the location of the SQLite database. Use a full, absolute path instead of a relative path just to be on the safe side.
 
 ### HTTP Server Settings
 
@@ -50,12 +48,9 @@ server:
   frontendUrl: ~
 ```
 
-* `port`
-  The port on which the back-end will be served
-* `sessionDuration`
-  Unused at the moment.
-* `frontendUrl`:
-  The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
+* `port`: The port on which the back-end will be served
+* `sessionDuration`: Unused at the moment.
+* `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
 
 
 ### Credentials
