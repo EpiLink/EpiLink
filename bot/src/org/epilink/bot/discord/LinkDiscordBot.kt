@@ -170,14 +170,15 @@ class LinkDiscordBot(
      * Update the roles of a member on a given guild, based on the given EpiLink roles from the role list.
      */
     private suspend fun updateAuthorizedUserRoles(member: Member, guild: Guild, roles: List<String>) {
-        withContext(Dispatchers.Default) {
-            val guildId = guild.id.asString()
-            val serverConfig = config.servers!!.first { it.id == guildId }
+        val guildId = guild.id.asString()
+        val serverConfig = config.servers!!.first { it.id == guildId }
+        coroutineScope { // Put all of that in a scope to avoid leaking the coroutines launched by async
             roles.mapNotNull { serverConfig.roles[it] } // Get roles that can be added
                 .map { Snowflake.of(it) } // Turn the IDs to snowflakes
                 .map { async { member.addRole(it).await() } } // Add the roles asynchronously
-                .forEach { it.await() } // Await all the role additions
+                .awaitAll() // Await all the role additions
         }
+
     }
 
     /**
