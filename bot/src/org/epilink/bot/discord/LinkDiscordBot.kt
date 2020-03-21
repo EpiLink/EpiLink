@@ -16,6 +16,7 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkDiscordConfig
+import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.db.Allowed
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.User
@@ -171,7 +172,7 @@ class LinkDiscordBot(
      */
     private suspend fun updateAuthorizedUserRoles(member: Member, guild: Guild, roles: List<String>) {
         val guildId = guild.id.asString()
-        val serverConfig = config.servers!!.first { it.id == guildId }
+        val serverConfig = getConfigForGuild(guildId)
         coroutineScope { // Put all of that in a scope to avoid leaking the coroutines launched by async
             roles.mapNotNull { serverConfig.roles[it] } // Get roles that can be added
                 .map { Snowflake.of(it) } // Turn the IDs to snowflakes
@@ -195,33 +196,36 @@ class LinkDiscordBot(
      * Initial server message sent upon connection with the server not knowing who the person is
      */
     private suspend fun sendGreetings(member: Member, guild: Guild) {
+        val guildConfig = getConfigForGuild(guild.id.asString())
         member.privateChannel.awaitSingle().createEmbed {
-            with(it) {
-                setTitle(":warning: Protected server")
-                setDescription(
+            it.from(
+                guildConfig.welcomeEmbed ?: DiscordEmbed(
+                    title = ":closed_lock_with_key: Authentication required for ${guild.name}",
+                    description =
                     """
                     **Welcome to ${guild.name}**. Access to this server is restricted. Please log in using the link
                     below to get full access to the server's channels.
-                    """.trimIndent()
+                    """.trimIndent(),
+                    fields = run {
+                        val ml = mutableListOf<DiscordEmbedField>()
+                        if (config.welcomeUrl != null)
+                            ml += DiscordEmbedField("Log in", config.welcomeUrl)
+                        ml += DiscordEmbedField(
+                            "Need help?",
+                            "Contact the administrators of ${guild.name} if you need help with the procedure."
+                        )
+                        ml
+                    },
+                    footer = DiscordEmbedFooter("Powered by EpiLink"),
+                    color = 0xffff00
                 )
-                if (config.welcomeUrl != null)
-                    addField("Log in", config.welcomeUrl, true)
-                addField(
-                    "Need help?",
-                    "Contact the administrators of ${guild.name} if you need help with the procedure.",
-                    true
-                )
-                addField(
-                    "My data",
-                    "Your data is processed following the Terms of Services and Privacy Policy you can review during the registering process.",
-                    true
-                )
-                setFooter("Powered by EpiLink", null)
-                setColor(Color.green)
-                // TODO set logo if available in config
-            }
+            )
         }.awaitSingle()
     }
+
+    private fun getConfigForGuild(guildId: String): LinkDiscordServerSpec =
+        config.servers?.first { it.id == guildId }
+            ?: error("Configuration not found, but guild was expected to be monitored")
 
     /**
      * Check if a guild is monitored: that is, EpiLink knows how to handle it and is expected to do so.
