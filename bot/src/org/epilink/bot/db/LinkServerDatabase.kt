@@ -33,7 +33,7 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
 
             // Create the tables if they do not already exist
             transaction(this) {
-                SchemaUtils.create(Users, TrueIdentities)
+                SchemaUtils.create(Users, TrueIdentities, Bans)
             }
         }
 
@@ -140,6 +140,26 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
      */
     private suspend fun getBansFor(hash: ByteArray): List<Ban> =
         newSuspendedTransaction(db = db) { Ban.find { Bans.msftIdHash eq hash }.toList() }
+
+    /**
+     * Checks whether a user should be able to join a server (i.e. not banned, no irregularities)
+     *
+     * @return a database advisory with a end-user friendly reason.
+     */
+    suspend fun canUserJoinServers(dbUser: User): DatabaseAdvisory {
+        if (getBansFor(dbUser.msftIdHash).any { it.isActive() }) {
+            return Disallowed("You are banned from joining any server at the moment.")
+        }
+        return Allowed
+    }
+
+    /**
+     * Checks whether the user has his true identity recorded within the system.
+     */
+    @OptIn(UsesTrueIdentity::class) // Checks identity, but does not actually access it or leak it
+    suspend fun isUserIdentifiable(dbUser: User): Boolean {
+        return newSuspendedTransaction(db = db) { dbUser.trueIdentity != null }
+    }
 }
 
 /**

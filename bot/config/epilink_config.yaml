@@ -36,3 +36,72 @@ tokens:
   # The tenant for Microsoft OAuth requests.
   # This can be "common" (allow everyone) or an ID specific to a company/school.
   msftTenant: common
+
+# Configuration for everything related to handling Discord servers
+# When something is optional, you can omit it entirely.
+# When something is nullable, you can replace its value by ~ to indicate that the value is unknown.
+discord:
+  # The URL displayed as the log-in URL in the bot's default welcome messages (nullable)
+  welcomeUrl: "https://my.amazing.welcome.page/hello"
+  # Reserved for later use
+  roles: ~
+  servers:
+    - # Each server gets one entry here.
+      # The Discord ID of the server
+      id: 123456789
+      # Roles dictionary. The role on the left denotes the EpiLink role (either internal or custom)
+      # and the value on the right indicates the Discord role ID to attribute to those who match the EpiLink role
+      # Check the maintainer guide for information on the roles.
+      roles:
+        _known: 1239121323
+        _identified: 195923842
+      # True if the server should send a message to unknown users who join the server, false otherwise.
+      # (optional, true by default)
+      enableWelcomeMessage: true
+      # The embed to be displayed when the user first joins. If null, displays a default message.
+      # (nullable, optional with null by default)
+      welcomeEmbed:
+        # ALL of the fields of an embed here are nullable and optional (null by default) unless otherwise noted
+        # i.e. you can omit any of them if you don't need them
+        # -----
+        # The title of the embed
+        title: Welcome to my great server!
+        # The description (main content) of the embed
+        description: |
+          This is an example embed, because I forgot to change the configuration file. Woops!
+
+          In the mean time, remember that life begins with an L and ends with an E. Yeah, I don't know what that is supposed to mean either.
+        # The URL that is accessed when clicking on the embed's title
+        url: "https://hello/world"
+        # A color, either with its name (only supports a few simple color names) or its hexadecimal code with a leading number sign: #ab12ef
+        color: "#12eb99"
+        # The footer of the embed (small field at the bottom)
+        footer:
+          # The text displayed in the footer (mandatory if the footer is declared)
+          text: This is my footer
+          # The URL to an icon that is displayed in the footer
+          iconUrl: "https://my/amazing/image.png"
+        # URL to the image to display in the embed
+        image: "https://my/great/stuff.png"
+        # URL to the thumbnail image of the embed
+        thumbnail: "https://my/great/thumbnail.png"
+        # Author information (displayed at the very top of the embed)
+        author:
+          # The name of the author (mandatory if the author is declared)
+          name: My amazing bot
+          # The URL to go to when clicking on the author's name
+          url: "https://my.bot.website/yes"
+          # The URL for the author's icon
+          iconUrl: "https://amazing.url/image.png"
+        # A list of the fields of the embed
+        fields:
+          # One item per field. Name is the field's title and value is the field's content.
+          # Both are mandatory for each field.
+          - name: My field
+            value: |
+              This is the content of my field. How extraordinary.
+
+              YEET
+            # Inline fields (true) will be displayed side by side, non-inline fields (false) will be displayed with one
+            # on each entire line. Optional, default is true.
+            inline: true
