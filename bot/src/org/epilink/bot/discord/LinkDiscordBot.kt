@@ -197,6 +197,9 @@ class LinkDiscordBot(
      */
     private suspend fun sendGreetings(member: Member, guild: Guild) {
         val guildConfig = getConfigForGuild(guild.id.asString())
+        if (!guildConfig.enableWelcomeMessage)
+            return
+
         member.privateChannel.awaitSingle().createEmbed {
             it.from(
                 guildConfig.welcomeEmbed ?: DiscordEmbed(

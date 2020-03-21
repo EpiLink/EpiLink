@@ -45,6 +45,7 @@ data class LinkDiscordRoleSpec(
 
 data class LinkDiscordServerSpec(
     val id: String,
+    val enableWelcomeMessage: Boolean = true,
     val welcomeEmbed: DiscordEmbed? = null,
     val roles: Map<String, String>
 )
