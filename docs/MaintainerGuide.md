@@ -117,3 +117,96 @@ You will need to create a secret manually, as Azure AD does not create one for y
 * `organizations` to accept only business/school accounts
 * Your tenant's ID to accept only accounts from your tenant. You can get it by connecting to the Azure portal with your work account and going to `?` -> Show Diagnostics. In the JSON file, you will find a list of tenants, simply pick the ID of the one you want.v
 
+### Discord configuration
+
+```yaml
+discord:
+  welomeUrl: ~
+  roles:
+  servers:
+  - id: ...
+    ...
+  - ...
+```
+
+* `welcomeUrl`: The URL the bot will send. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can customize the message with `welcomeEmbed` in each server. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
+* `roles`: Unused. Leave it to `~` for now.
+* `servers`: A list of [server configurations](#discord-server-configuration).
+
+Depending on the situation, a server may or may not be *monitored*. A *monitored* server is one where EpiLink is actively managing authentication.
+
+* If EpiLink is connected to the server on Discord *and* the server is described in the EpiLink configuration, then it is **monitored**.
+* If EpiLink is connected to the server on Discord *but the server is not described* in the EpiLink configuration, then it is **not monitored** (unmonitored server).
+* If EpiLink is *not connected to the server on Discord* but the server is described in the EpiLink configuration, then it is **not monitored** (orphan server).
+
+#### Discord server configuration
+
+Each server needs one entry in the "servers" field of the Discord configuration.
+
+```yaml
+- id: 123456789
+  roles:
+    ...
+  enableWelcomeMessage: true
+  welcomeEmbed:
+    ...
+```
+
+* `id`: The ID of the server this entry represents
+* `roles`: The [role specifications](#discord-server-role-specification) for the server.
+* `enableWelcomeMessage` *(optional, true by default)*: True if a welcome message should be sent to users who join the server but are not authenticated. False if no welcome message should be sent. The exact content of the message is determined
+* `welcomeEmbed`: The embed that is sent to users who join a Discord server but are not authenticated through this EpiLink instance. Use the [Discord embed configuration](#discord-embed-configuration) to configure it, or set it to `~` (or remove it entirely) to use the default message.
+
+#### Discord server role specification
+
+```yaml
+_epilinkRole: 987645
+customRole: 1234567
+```
+
+EpiLink needs to know how to convert roles it determines should be added to the user to actual Discord roles. The role specification gives this information.
+
+The specification simply consists in the EpiLink role name on the left, a colon, and the Discord ID of the role that should be bound to that EpiLink role on the right.
+
+The EpiLink role name begins with a `_` to indicate that it is a role EpiLink determines automatically:
+
+* `_known`: The user has an account at EpiLink, is not banned and is authenticated. Use this role when you need to know that the user is part of the organization.
+* `_identified`: The user is `_known` and also has his true identity kept in the system. That is, you could potentially get their e-mail address. Use this role when you need to also be able to determine who the user is at any time.
+
+Role names that do not begin with a `_` are custom roles you define through rules. This feature is not implemented yet.
+
+You do not have to specify all possible roles in the server role specification. EpiLink will ignore any role that does not match, is not recognized, or is not defined.
+
+#### Discord embed configuration
+
+You can define Discord embeds in YAML using the following schema:
+
+```yaml
+title: ... # Optional
+description: | # Optional
+  ...
+  ...
+  ...
+url: "https://..." # Optional
+color: "#..." # Optional
+footer: # Optional
+  text: ...
+  iconUrl: "https://..." # Optional
+image: "https://..." # Optional
+thumbnail: "https://..." # Optional
+author: # Optional
+  name: ...
+  url: "https://..." # Optional
+  iconUrl: "https://..." # Optional
+fields: # Optional
+  - name: ...
+    value: |
+      ...
+      ...
+      ...
+    inline: true # Optional, true by default
+  - ...
+```
+
+Most of these should be familiar if you have ever used Discord embed. You can remove elements you do not use (those that are marked with `# Optional`).
+

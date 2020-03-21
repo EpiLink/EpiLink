@@ -30,7 +30,14 @@ import kotlin.reflect.KClass
 import discord4j.core.`object`.entity.User as DUser
 
 /**
- * This class manages the Discord bot for EpiLink
+ * This class manages the Discord bot for EpiLink.
+ *
+ * Because the bot may have joined guilds it does not have configurations for, the bot has a concept of monitored
+ * guilds.
+ *
+ * - Guilds in which the bot is connected and has configurations for is **monitored**.
+ * - Guilds in which the bot is connected but does *not* have configurations for is **unmonitored**.
+ * - Guilds in which the bot is not but has configurations for is **orphaned**. Not currently checked.
  */
 class LinkDiscordBot(
     /**
@@ -220,12 +227,17 @@ class LinkDiscordBot(
                         ml
                     },
                     footer = DiscordEmbedFooter("Powered by EpiLink"),
-                    color = 0xffff00
+                    color = "#ffff00"
                 )
             )
         }.awaitSingle()
     }
 
+    /**
+     * Retrieve the configuration for a given guild, or throw an error if such a configuration could not be found.
+     *
+     * Expects the guild to be monitored.
+     */
     private fun getConfigForGuild(guildId: String): LinkDiscordServerSpec =
         config.servers?.first { it.id == guildId }
             ?: error("Configuration not found, but guild was expected to be monitored")
