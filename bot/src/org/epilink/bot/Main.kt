@@ -3,7 +3,10 @@ package org.epilink.bot
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.mainBody
+import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.*
+import org.epilink.bot.config.rulebook.Rulebook
+import org.epilink.bot.config.rulebook.loadRules
 import org.slf4j.LoggerFactory
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -39,23 +42,25 @@ fun main(args: Array<String>) = mainBody("epilink") {
 
     logger.debug("Loading configuration")
 
-    val cfg = loadEpilinkConfig(cliArgs)
+    val cfg = loadConfigFromFile(Paths.get(cliArgs.config))
+
+    val rulebook = runBlocking {
+        cfg.discord.rulebook?.let {
+            logger.info("Loading rulebook, this may take some time...")
+            loadRules(it)
+        }
+    }
+    logger.debug("Checking config...")
+    checkConfig(cfg, cliArgs)
 
     logger.debug("Creating environment")
-    val env = LinkServerEnvironment(cfg)
+    val env = LinkServerEnvironment(cfg, rulebook ?: Rulebook(mapOf()))
 
     logger.info("Environment created, starting ${env.name}")
     env.start()
 }
 
-/**
- * Loads the configuration and performs safety checks on it.
- */
-private fun loadEpilinkConfig(cliArgs: CliArgs): LinkConfiguration {
-    val cfg = loadConfigFromFile(
-        Paths.get(cliArgs.config)
-    )
-
+private fun checkConfig(cfg: LinkConfiguration, cliArgs: CliArgs) {
     val configReport = cfg.isConfigurationSane(cliArgs)
     var shouldExit = false
     configReport.forEach {
@@ -73,5 +78,4 @@ private fun loadEpilinkConfig(cliArgs: CliArgs): LinkConfiguration {
         exitProcess(1)
     }
 
-    return cfg
 }

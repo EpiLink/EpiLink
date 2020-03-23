@@ -1,6 +1,7 @@
 package org.epilink.bot.db
 
 import org.epilink.bot.config.LinkConfiguration
+import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.sessions.RegisterSession
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -156,9 +157,25 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
     /**
      * Checks whether the user has his true identity recorded within the system.
      */
-    @OptIn(UsesTrueIdentity::class) // Checks identity, but does not actually access it or leak it
+    @UsesTrueIdentity
     suspend fun isUserIdentifiable(dbUser: User): Boolean {
         return newSuspendedTransaction(db = db) { dbUser.trueIdentity != null }
+    }
+
+    @UsesTrueIdentity
+    suspend fun accessIdentity(
+        dbUser: User,
+        automated: Boolean,
+        author: String,
+        reason: String,
+        discord: LinkDiscordBot
+    ): String {
+        val identity = newSuspendedTransaction {
+            dbUser.trueIdentity?.email ?: error("Cannot get true identity of user")
+        }
+        // TODO record this in the database
+        discord.sendIdentityAccessNotification(dbUser.discordId, automated, author, reason)
+        return identity
     }
 }
 

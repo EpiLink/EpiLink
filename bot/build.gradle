@@ -26,12 +26,16 @@ application {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-scripting-common:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-scripting-jvm:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-scripting-jvm-host-embeddable:$kotlinVersion"
 
     implementation "io.ktor:ktor-server-netty:$ktorVersion"
     implementation "io.ktor:ktor-auth:$ktorVersion"
     implementation "io.ktor:ktor-auth-jwt:$ktorVersion"
     implementation "io.ktor:ktor-jackson:$ktorVersion"
     implementation "io.ktor:ktor-client-apache:$ktorVersion"
+    implementation "io.ktor:ktor-client-auth-jvm:$ktorVersion"
 
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"

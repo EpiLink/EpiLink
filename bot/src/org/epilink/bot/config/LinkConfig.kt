@@ -10,6 +10,7 @@ import java.nio.file.Path
 
 data class LinkConfiguration(
     val name: String,
+    val privacy: LinkPrivacy = LinkPrivacy(),
     val server: LinkWebServerConfiguration,
     val db: String,
     val tokens: LinkTokens,
@@ -34,13 +35,15 @@ data class LinkTokens(
 
 data class LinkDiscordConfig(
     val welcomeUrl: String?,
+    val rulebook: String? = null,
     val roles: List<LinkDiscordRoleSpec>?,
     val servers: List<LinkDiscordServerSpec>?
 )
 
 data class LinkDiscordRoleSpec(
-    val name: String
-    // Later on, the rules to follow for each role will also be defined here.
+    val name: String,
+    val displayName: String? = null,
+    val rule: String
 )
 
 data class LinkDiscordServerSpec(
@@ -48,6 +51,12 @@ data class LinkDiscordServerSpec(
     val enableWelcomeMessage: Boolean = true,
     val welcomeEmbed: DiscordEmbed? = null,
     val roles: Map<String, String>
+)
+
+data class LinkPrivacy(
+    val notifyAutomatedAccess: Boolean = true,
+    val notifyHumanAccess: Boolean = true,
+    val discloseHumanRequesterIdentity: Boolean = false
 )
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
