@@ -14,17 +14,19 @@ import org.epilink.bot.config.rulebook.StrongIdentityRule
 import org.epilink.bot.config.rulebook.WeakIdentityRule
 import org.epilink.bot.db.*
 import org.epilink.bot.logger
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 import discord4j.core.`object`.entity.User as DUser
 
 /**
  * This class is responsible for managing and updating the roles of Discord users.
  */
-class LinkRoleManager(
-    private val database: LinkServerDatabase,
-    private val bot: LinkDiscordBot,
-    private val config: LinkDiscordConfig,
-    private val rulebook: Rulebook
-) {
+class LinkRoleManager : KoinComponent {
+    private val database: LinkServerDatabase by inject()
+    private val bot: LinkDiscordBot by inject()
+    private val config: LinkDiscordConfig by inject()
+    private val rulebook: Rulebook by inject()
+
     /**
      * Updates all the roles of a Discord user on a given collection of guilds. The user does not have to be present on
      * the given guilds -- this function handles the case where the member is absent well. If tellUserIfFailed is true,
@@ -42,24 +44,29 @@ class LinkRoleManager(
                 bot.sendCouldNotJoin(discordUser, null, adv.reason)
             return
         }
-
-        val roles =
-            getRolesForAuthorizedUser(dbUser, discordUser, getRulesRelevantForGuilds(*guilds.toTypedArray()))
-        guilds.mapNotNull { g ->
-            try {
-                g.getMemberById(discordUser.id).awaitSingle()?.to(g)
-            } catch (ex: ClientException) {
-                // We need to catch the exception when Discord tells us the member could not be found.
-                // This happens when the user is not a member of the guild.
-                // This kind of error has the error code 10007 in the response.
-                if (ex.errorCode == "10007") {
-                    null // Simply ignore this one
-                } else {
-                    throw ex
+        coroutineScope {
+            val connectedToAs = guilds.map { g ->
+                async {
+                    try {
+                        g.getMemberById(discordUser.id).awaitSingle()?.to(g)
+                    } catch (ex: ClientException) {
+                        // We need to catch the exception when Discord tells us the member could not be found.
+                        // This happens when the user is not a member of the guild.
+                        // This kind of error has the error code 10007 in the response.
+                        if (ex.errorCode == "10007") {
+                            null // Simply ignore this one
+                        } else {
+                            throw ex
+                        }
+                    }
                 }
+            }.awaitAll().filterNotNull()
+            val guildsToCheck = connectedToAs.map { it.second }
+            val roles =
+                getRolesForAuthorizedUser(dbUser, discordUser, getRulesRelevantForGuilds(*guildsToCheck.toTypedArray()))
+            connectedToAs.forEach { (m, g) ->
+                updateAuthorizedUserRoles(m, g, roles)
             }
-        }.forEach { (m, g) ->
-            updateAuthorizedUserRoles(m, g, roles)
         }
     }
 

@@ -21,6 +21,8 @@ import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.logger
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 
 internal const val JWT_USER_AUDIENCE = "user"
 
@@ -28,17 +30,15 @@ internal const val JWT_USER_AUDIENCE = "user"
  * This class represents the Ktor server.
  */
 class LinkHttpServer(
+    secrets: LinkTokens
+): KoinComponent {
     /**
      * The environment this server lives in
      */
-    private val env: LinkServerEnvironment,
-    /**
-     * Configuration specifically or the web server
-     */
-    private val wsCfg: LinkWebServerConfiguration,
+    private val env: LinkServerEnvironment by inject()
 
-    secrets: LinkTokens
-) {
+    private val wsCfg: LinkWebServerConfiguration by inject()
+
     /**
      * The actual Ktor application instance
      */
@@ -59,8 +59,7 @@ class LinkHttpServer(
                 // Check that no URL is set
                 wsCfg.frontendUrl == null
 
-    private val backend =
-        LinkBackEnd(this, env, jwtAlgorithm, wsCfg.sessionDuration, secrets)
+    private val backend: LinkBackEnd by inject()
     /**
      * Start the server. If wait is true, this function will block until the
      * server stops.

@@ -4,6 +4,7 @@ import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Member
+import discord4j.core.`object`.entity.PrivateChannel
 import discord4j.core.`object`.util.Permission
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
@@ -20,10 +21,10 @@ import kotlinx.coroutines.reactive.awaitSingle
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
-import org.epilink.bot.config.rulebook.Rulebook
-import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.User
 import org.epilink.bot.logger
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 import org.reactivestreams.Publisher
 import java.awt.Color
 import kotlin.coroutines.resume
@@ -45,24 +46,20 @@ import discord4j.core.`object`.entity.User as DUser
  */
 class LinkDiscordBot(
     /**
-     * The environment the bot lives in
-     */
-    database: LinkServerDatabase,
-    /**
-     * The Discord configuration that is used for checking servers, roles, etc.
-     */
-    private val config: LinkDiscordConfig,
-    private val privacyConfig: LinkPrivacy,
-    /**
      * The token to be used for logging in the bot
      */
     token: String,
     /**
      * The Discord client ID associated with the bot. Used for generating an invite link.
      */
-    private val discordClientId: String,
-    rulebook: Rulebook
-) {
+    private val discordClientId: String
+) : KoinComponent {
+    private val config: LinkDiscordConfig by inject()
+
+    private val privacyConfig: LinkPrivacy by inject()
+
+    private val roleManager: LinkRoleManager by inject()
+
     /**
      * Coroutine scope used for firing coroutines as answers to events
      */
@@ -74,8 +71,6 @@ class LinkDiscordBot(
     private val client = DiscordClientBuilder(token).build().apply {
         eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
     }
-
-    private val roleManager = LinkRoleManager(database, this, config, rulebook)
 
     /**
      * Starts the Discord bot, suspending until the bot is ready.
@@ -153,8 +148,9 @@ class LinkDiscordBot(
                     """.trimIndent(),
                 fields = run {
                     val ml = mutableListOf<DiscordEmbedField>()
-                    if (config.welcomeUrl != null)
-                        ml += DiscordEmbedField("Log in", config.welcomeUrl)
+                    val welcomeUrl = config.welcomeUrl
+                    if (welcomeUrl != null)
+                        ml += DiscordEmbedField("Log in", welcomeUrl)
                     ml += DiscordEmbedField(
                         "Need help?",
                         "Contact the administrators of ${guild.name} if you need help with the procedure."
@@ -203,18 +199,18 @@ class LinkDiscordBot(
     }
 
 
-    suspend fun sendDirectMessage(discordId: String, embed: EmbedCreateSpec.() -> Unit) =
+    private suspend fun sendDirectMessage(discordId: String, embed: EmbedCreateSpec.() -> Unit) =
         sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), embed)
 
-    suspend fun sendDirectMessage(discordId: String, message: String) =
+    private suspend fun sendDirectMessage(discordId: String, message: String) =
         sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), message)
 
-    suspend fun sendDirectMessage(discordUser: DUser, message: String) =
-        discordUser.privateChannel.awaitSingle()
+    private suspend fun sendDirectMessage(discordUser: DUser, message: String) =
+        discordUser.getCheckedPrivateChannel()
             .createMessage(message).awaitSingle()
 
-    suspend fun sendDirectMessage(discordUser: DUser, embed: EmbedCreateSpec.() -> Unit) =
-        discordUser.privateChannel.awaitSingle()
+    private suspend fun sendDirectMessage(discordUser: DUser, embed: EmbedCreateSpec.() -> Unit) =
+        discordUser.getCheckedPrivateChannel()
             .createEmbed(embed).awaitSingle()
 
     // TODO move to RoleManager ?
@@ -234,6 +230,15 @@ class LinkDiscordBot(
         roleManager.updateRolesOnGuilds(dbUser, guilds, discordUser, tellUserIfFailed)
     }
 }
+
+private suspend fun DUser.getCheckedPrivateChannel(): PrivateChannel =
+    try {
+        this.privateChannel.awaitSingle()
+    } catch (ex: ClientException) {
+        if (ex.errorCode == "50007")
+            throw UserDoesNotAcceptPrivateMessagesException(ex)
+        else throw ex
+    }
 
 /**
  * Logs into the Discord client, suspending until a Ready event is received.
