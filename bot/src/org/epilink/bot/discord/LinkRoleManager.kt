@@ -16,6 +16,9 @@ import org.epilink.bot.db.*
 import org.epilink.bot.logger
 import discord4j.core.`object`.entity.User as DUser
 
+/**
+ * This class is responsible for managing and updating the roles of Discord users.
+ */
 class LinkRoleManager(
     private val database: LinkServerDatabase,
     private val bot: LinkDiscordBot,

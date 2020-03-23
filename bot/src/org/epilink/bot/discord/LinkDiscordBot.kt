@@ -268,5 +268,5 @@ fun LinkDiscordConfig.getConfigForGuild(guildId: String): LinkDiscordServerSpec 
         ?: error("Configuration not found, but guild was expected to be monitored")
 
 
-val ClientException.errorCode: String?
+internal val ClientException.errorCode: String?
     get() = this.errorResponse?.fields?.get("code")?.toString()

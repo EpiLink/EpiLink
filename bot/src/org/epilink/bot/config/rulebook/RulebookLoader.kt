@@ -15,12 +15,21 @@ import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
 
+/**
+ * Execute the Rulebook script located at the given path, and return the rulebook that was created from it.
+ */
 suspend fun loadRules(path: Path): Rulebook =
     loadRules(path.toFile().toScriptSource())
 
+/**
+ * Execute the string as a Rulebook script, and return the rulebook that was created form it.
+ */
 suspend fun loadRules(string: String): Rulebook =
     loadRules(string.toScriptSource())
 
+/**
+ * Execute the Rulebook script from the given source code, and return the rulebook that was created from it.
+ */
 suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.Default) {
     val builder = RulebookBuilder()
     val compileConfig = createJvmCompilationConfigurationFromTemplate<RulebookScript> {
@@ -46,6 +55,9 @@ suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.De
     builder.buildRulebook()
 }
 
+/**
+ * Create a rulebook by using the Rulebook DSL directly.
+ */
 suspend fun loadRules(block: RulebookBuilder.() -> Unit): Rulebook = withContext(Dispatchers.Default) {
     RulebookBuilder().apply(block).buildRulebook()
 }

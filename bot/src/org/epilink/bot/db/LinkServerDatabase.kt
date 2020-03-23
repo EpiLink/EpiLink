@@ -162,6 +162,9 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         return newSuspendedTransaction(db = db) { dbUser.trueIdentity != null }
     }
 
+    /**
+     * Retrieve the identity of a user. This access is logged within the system and the user is notified.
+     */
     @UsesTrueIdentity
     suspend fun accessIdentity(
         dbUser: User,

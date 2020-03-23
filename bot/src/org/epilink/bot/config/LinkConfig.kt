@@ -113,7 +113,14 @@ fun LinkConfiguration.isConfigurationSane(
     return report
 }
 
-fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<ConfigReportElement> {
+/**
+ * Report whether the rulebook and the config have some incoherent elements. Checks include:
+ *
+ * - Missing rules
+ * - Missing role definitions
+ * - Unused rules
+ */
+private fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
     val roleNamesUsedInServers =
         servers.map { it.roles.keys }.flatten().toSet() - StandardRoles.values().map { it.roleName }
@@ -124,7 +131,7 @@ fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<Confi
     val rolesMissingInRoles = roleNamesUsedInServers - roleNamesDeclaredInRoles
     for (role in rolesMissingInRoles) {
         report += ConfigError(
-            false,
+            true,
             "Role $role is referenced in a server config but is not defined in the Discord roles config"
         )
     }
@@ -133,7 +140,7 @@ fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<Confi
     val missingRules = ruleNamesUsedInRoles - rulesDeclared
     for (rule in missingRules) {
         report += ConfigError(
-            false,
+            true,
             "Rule $rule is used in a Discord role config but is not defined in the rulebook"
         )
     }
