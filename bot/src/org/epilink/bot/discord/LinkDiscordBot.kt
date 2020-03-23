@@ -18,6 +18,7 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
+import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.User
@@ -50,6 +51,7 @@ class LinkDiscordBot(
      * The Discord configuration that is used for checking servers, roles, etc.
      */
     private val config: LinkDiscordConfig,
+    private val privacyConfig: LinkPrivacy,
     /**
      * The token to be used for logging in the bot
      */
@@ -189,12 +191,25 @@ class LinkDiscordBot(
 
     suspend fun sendIdentityAccessNotification(discordId: String, automated: Boolean, author: String, reason: String) {
         // TODO properly notify following the privacy options of the backend
-        client.getUserById(Snowflake.of(discordId)).awaitSingle().privateChannel.awaitSingle()
-            .createMessage(
-                "Your identity was accessed by **$author**" + (if (automated) " automatically." else ".") + "\n*$reason*"
-            ).awaitSingle()
+        if (privacyConfig.shouldNotify(automated)) {
+            val str = buildString {
+                append("Your identity was accessed")
+                if (privacyConfig.shouldDiscloseIdentity()) {
+                    append(" by *$author*")
+                }
+                if (automated) {
+                    append(" automatically")
+                }
+                appendln(".")
+                appendln("Reason: *$reason*")
+            }
+            client.getUserById(Snowflake.of(discordId)).awaitSingle().privateChannel.awaitSingle()
+                .createMessage(str).awaitSingle()
+        }
+
     }
 
+    // TODO move to RoleManager ?
     suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean) {
         val discordId = dbUser.discordId
         val guilds = getMonitoredGuilds()

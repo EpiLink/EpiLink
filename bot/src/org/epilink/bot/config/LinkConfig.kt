@@ -57,7 +57,13 @@ data class LinkPrivacy(
     val notifyAutomatedAccess: Boolean = true,
     val notifyHumanAccess: Boolean = true,
     val discloseHumanRequesterIdentity: Boolean = false
-)
+) {
+    fun shouldNotify(automated: Boolean): Boolean =
+        if(automated) notifyAutomatedAccess else notifyHumanAccess
+
+    fun shouldDiscloseIdentity(automated: Boolean): Boolean =
+        if(automated) true else discloseHumanRequesterIdentity
+}
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
     registerModule(KotlinModule())

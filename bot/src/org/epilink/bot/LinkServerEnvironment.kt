@@ -24,6 +24,7 @@ class LinkServerEnvironment(
         LinkDiscordBot(
             database,
             cfg.discord,
+            cfg.privacy,
             cfg.tokens.discordToken ?: error("Discord token cannot be null"),
             cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null"),
             rulebook
