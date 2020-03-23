@@ -92,7 +92,7 @@ class LinkRoleManager(
             // Get all of that as a single flattened list of roles in the guilds
             .flatten() // List<EpiLink role name>
             // Get rid of the EpiLink implicit roles (_known, _identified, ...)
-            .filter { !it.startsWith("_") }
+            .minus(StandardRoles.values().map { it.roleName })
             // Get rid of duplicates, we want a list of distinct roles
             .distinct()
             // Map each role to the name of the rule that defines it
@@ -146,7 +146,9 @@ class LinkRoleManager(
                 discord = bot
             )
         } else null
-        val baseSet = if (identity != null) setOf("_known", "_identified") else setOf("_known")
+        val baseSet =
+            if (identity != null) setOf(StandardRoles.Identified.roleName, StandardRoles.Known.roleName)
+            else setOf(StandardRoles.Known.roleName)
         rules.map { rule ->
             async {
                 runCatching {

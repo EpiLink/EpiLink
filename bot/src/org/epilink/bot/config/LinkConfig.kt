@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.epilink.bot.CliArgs
 import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.discord.DiscordEmbed
+import org.epilink.bot.discord.StandardRoles
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -108,7 +109,10 @@ fun LinkConfiguration.isConfigurationSane(
 
 fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
-    val roleNamesUsedInServers = servers?.map { it.roles.keys }?.flatten()?.toSet() ?: setOf()
+    val roleNamesUsedInServers =
+        if (servers == null) setOf()
+        else
+            servers.map { it.roles.keys }.flatten().toSet() - StandardRoles.values().map { it.roleName }
     val rolesDeclaredInRoles = roles ?: listOf()
     val rulesDeclared = rulebook.rules.keys
 
