@@ -130,7 +130,7 @@ discord:
 ```
 
 * `welcomeUrl`: The URL the bot will send. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can customize the message with `welcomeEmbed` in each server. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
-* `roles`: Undocumented. Leave it to `[]` for now. Optional, empty list `[]` by default.
+* `roles` *(optional, empty list `[]` by default)*: A list of [custom roles specifications](#discord-custom-roles-configuration). You can omit it if you do not use custom roles.
 * `servers`: A list of [server configurations](#discord-server-configuration).
 
 Depending on the situation, a server may or may not be *monitored*. A *monitored* server is one where EpiLink is actively managing authentication.
@@ -138,6 +138,22 @@ Depending on the situation, a server may or may not be *monitored*. A *monitored
 * If EpiLink is connected to the server on Discord *and* the server is described in the EpiLink configuration, then it is **monitored**.
 * If EpiLink is connected to the server on Discord *but the server is not described* in the EpiLink configuration, then it is **not monitored** (unmonitored server).
 * If EpiLink is *not connected to the server on Discord* but the server is described in the EpiLink configuration, then it is **not monitored** (orphan server).
+
+#### Discord custom roles configuration
+
+```yaml
+- name: myRole
+  displayName: My Role
+  rule: MyRule
+```
+
+This section is used to define roles that are defined by [rules](/docs/Rulebooks.md): more specifically, which rules determine which role.
+
+Each element is made of:
+
+* `name`: The name of the role. This is the name you add in your rules (`roles += "myRoleName"`), and the one you use in the server role dictionary (`myRoleName: 123455`).
+* `displayName` *(optional)*: The name of the role, as displayed to the user. Unused at the moment.
+* `rule`: The rule that determines this role. This is the name of the rule defined in the [rulebook](/docs/Rulebooks.md) that determines if this role should be added. This can be a weak identity or a strong identity rule. A rule can be used for more than one role.
 
 #### Discord server configuration
 
@@ -210,3 +226,39 @@ fields: # Optional
 
 Most of these should be familiar if you have ever used Discord embed. You can remove elements you do not use (those that are marked with `# Optional`).
 
+### Rulebook configuration
+
+```yaml
+rulebook: |
+  "MyBeautifulRule" {
+     ...
+  }
+
+# OR #
+
+rulebookFile: myFile.rule.kts
+```
+
+Custom roles can be determined using custom rules. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](/docs/Rulebooks.md)
+
+* You can use no rulebooks whatsoever: in this case, simply do not declare `rulebook` nor `rulebookFile`.
+* You can put the rulebook directly in the configuration file (using `rulebook`). In this case, do not declare `rulebookFile`
+* You can put the rulebook in a separate file (using `rulebookFile`). The value of `rulebookFile` is the path to the rulebook file **relative to the configuration file**. If the rulebook named `epilink.rule.kts` is located in the same folder as your config file, you can just use `rulebookFile: epilink.rule.kts`
+* Using *both* `rulebook` and `rulebookFile` at the same time will result in an error upon launching EpiLink.
+
+### Privacy configuration
+
+```yaml
+privacy:
+  notifyAutomatedAccess: true
+  notifyHumanAccess: true
+  discloseHumanRequesterIdentity: false
+```
+
+This section determines how EpiLink should react when some privacy-related events occur.
+
+This entire section is optional. If omitted, all of its parameters take the default values.
+
+* `notifyAutomatedAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed automatically (e.g. to refresh rules). The identity of the requester is always disclosed (e.g. "EpiLink Discord bot"), and the message clarifies that this access was done automatically.
+* `notifyHumanAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed by a human (manual identity request). The identity of the requester may or may not be disclosed depending on the value of `discloseHumanRequesterIdentity`.
+* `discloseHumanRequesterIdentity` *(optional, false by default)*: If true, the private message sent when a human manual identity request occurs also indicates *who* initiated the request. If false, the private message does not contain that information. This value is unused when `notifyHumanAccess` is false.
