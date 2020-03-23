@@ -1,6 +1,7 @@
 package org.epilink.bot.db
 
 import org.epilink.bot.config.LinkConfiguration
+import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.sessions.RegisterSession
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -33,7 +34,7 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
 
             // Create the tables if they do not already exist
             transaction(this) {
-                SchemaUtils.create(Users, TrueIdentities, Bans)
+                SchemaUtils.create(Users, TrueIdentities, Bans, IdentityAccesses)
             }
         }
 
@@ -156,9 +157,36 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
     /**
      * Checks whether the user has his true identity recorded within the system.
      */
-    @OptIn(UsesTrueIdentity::class) // Checks identity, but does not actually access it or leak it
+    @UsesTrueIdentity
     suspend fun isUserIdentifiable(dbUser: User): Boolean {
         return newSuspendedTransaction(db = db) { dbUser.trueIdentity != null }
+    }
+
+    /**
+     * Retrieve the identity of a user. This access is logged within the system and the user is notified.
+     */
+    @UsesTrueIdentity
+    suspend fun accessIdentity(
+        dbUser: User,
+        automated: Boolean,
+        author: String,
+        reason: String,
+        discord: LinkDiscordBot
+    ): String {
+        val identity = newSuspendedTransaction {
+            val identity = dbUser.trueIdentity?.email ?: error("Cannot get true identity of user")
+            // Record the identity access
+            IdentityAccess.new {
+                target = dbUser.id
+                authorName = author
+                this.automated = automated
+                this.reason = reason
+                timestamp = LocalDateTime.now()
+            }
+            identity
+        }
+        discord.sendIdentityAccessNotification(dbUser.discordId, automated, author, reason)
+        return identity
     }
 }
 

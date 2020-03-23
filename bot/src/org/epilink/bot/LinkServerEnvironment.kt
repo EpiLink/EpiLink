@@ -2,6 +2,7 @@ package org.epilink.bot
 
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkConfiguration
+import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.LinkHttpServer
@@ -12,7 +13,8 @@ import org.epilink.bot.http.LinkHttpServer
  * server, etc.
  */
 class LinkServerEnvironment(
-    private val cfg: LinkConfiguration
+    private val cfg: LinkConfiguration,
+    rulebook: Rulebook
 ) {
     var database: LinkServerDatabase =
         LinkServerDatabase(cfg)
@@ -20,12 +22,13 @@ class LinkServerEnvironment(
 
     val discord: LinkDiscordBot =
         LinkDiscordBot(
-            this,
+            database,
             cfg.discord,
+            cfg.privacy,
             cfg.tokens.discordToken ?: error("Discord token cannot be null"),
-            cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null")
+            cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null"),
+            rulebook
         )
-
 
     private var server: LinkHttpServer =
         LinkHttpServer(this, cfg.server, cfg.tokens)

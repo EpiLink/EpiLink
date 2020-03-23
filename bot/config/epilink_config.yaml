@@ -17,6 +17,14 @@ server:
 # Name and location of the EpiLink SQLite database
 db: epilink.db
 
+# Rulebook declaration
+# See the docs for more information
+#----#
+#rulebook: |
+#  "MyRule" { ... }
+# OR #
+#rulebookFile: myFile.rule.kts
+
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
 # environment values.
@@ -43,8 +51,8 @@ tokens:
 discord:
   # The URL displayed as the log-in URL in the bot's default welcome messages (nullable)
   welcomeUrl: "https://my.amazing.welcome.page/hello"
-  # Reserved for later use
-  roles: ~
+  # See the documentation on custom roles for more details on this option. You can omit it if you do not need it.
+  roles: []
   servers:
     - # Each server gets one entry here.
       # The Discord ID of the server
