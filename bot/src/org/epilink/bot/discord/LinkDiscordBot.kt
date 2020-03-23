@@ -10,6 +10,7 @@ import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
+import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -125,15 +126,13 @@ class LinkDiscordBot(
      */
     suspend fun sendCouldNotJoin(user: DUser, guild: Guild?, reason: String) {
         val guildName = guild?.name ?: "any server"
-        user.privateChannel.awaitSingle().createEmbed {
-            with(it) {
-                setTitle(":x: Could not authenticate on $guildName")
-                setDescription("Failed to authenticate you on $guildName. Please contact an administrator if you think that should not be happening.")
-                addField("Reason", reason, true)
-                setFooter("Powered by EpiLink", null)
-                setColor(Color.red)
-            }
-        }.awaitSingle()
+        sendDirectMessage(user) {
+            setTitle(":x: Could not authenticate on $guildName")
+            setDescription("Failed to authenticate you on $guildName. Please contact an administrator if you think that should not be happening.")
+            addField("Reason", reason, true)
+            setFooter("Powered by EpiLink", null)
+            setColor(Color.red)
+        }
     }
 
 
@@ -144,31 +143,28 @@ class LinkDiscordBot(
         val guildConfig = config.getConfigForGuild(guild.id.asString())
         if (!guildConfig.enableWelcomeMessage)
             return
-
-        member.privateChannel.awaitSingle().createEmbed {
-            it.from(
-                guildConfig.welcomeEmbed ?: DiscordEmbed(
-                    title = ":closed_lock_with_key: Authentication required for ${guild.name}",
-                    description =
-                    """
+        sendDirectMessage(member) {
+            guildConfig.welcomeEmbed ?: DiscordEmbed(
+                title = ":closed_lock_with_key: Authentication required for ${guild.name}",
+                description =
+                """
                     **Welcome to ${guild.name}**. Access to this server is restricted. Please log in using the link
                     below to get full access to the server's channels.
                     """.trimIndent(),
-                    fields = run {
-                        val ml = mutableListOf<DiscordEmbedField>()
-                        if (config.welcomeUrl != null)
-                            ml += DiscordEmbedField("Log in", config.welcomeUrl)
-                        ml += DiscordEmbedField(
-                            "Need help?",
-                            "Contact the administrators of ${guild.name} if you need help with the procedure."
-                        )
-                        ml
-                    },
-                    footer = DiscordEmbedFooter("Powered by EpiLink"),
-                    color = "#ffff00"
-                )
-            )
-        }.awaitSingle()
+                fields = run {
+                    val ml = mutableListOf<DiscordEmbedField>()
+                    if (config.welcomeUrl != null)
+                        ml += DiscordEmbedField("Log in", config.welcomeUrl)
+                    ml += DiscordEmbedField(
+                        "Need help?",
+                        "Contact the administrators of ${guild.name} if you need help with the procedure."
+                    )
+                    ml
+                },
+                footer = DiscordEmbedFooter("Powered by EpiLink"),
+                color = "#ffff00"
+            ).let(this::from)
+        }
     }
 
     /**
@@ -190,11 +186,10 @@ class LinkDiscordBot(
     }
 
     suspend fun sendIdentityAccessNotification(discordId: String, automated: Boolean, author: String, reason: String) {
-        // TODO properly notify following the privacy options of the backend
         if (privacyConfig.shouldNotify(automated)) {
             val str = buildString {
                 append("Your identity was accessed")
-                if (privacyConfig.shouldDiscloseIdentity()) {
+                if (privacyConfig.shouldDiscloseIdentity(automated)) {
                     append(" by *$author*")
                 }
                 if (automated) {
@@ -203,11 +198,24 @@ class LinkDiscordBot(
                 appendln(".")
                 appendln("Reason: *$reason*")
             }
-            client.getUserById(Snowflake.of(discordId)).awaitSingle().privateChannel.awaitSingle()
-                .createMessage(str).awaitSingle()
+            sendDirectMessage(discordId, str)
         }
-
     }
+
+
+    suspend fun sendDirectMessage(discordId: String, embed: EmbedCreateSpec.() -> Unit) =
+        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), embed)
+
+    suspend fun sendDirectMessage(discordId: String, message: String) =
+        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), message)
+
+    suspend fun sendDirectMessage(discordUser: DUser, message: String) =
+        discordUser.privateChannel.awaitSingle()
+            .createMessage(message).awaitSingle()
+
+    suspend fun sendDirectMessage(discordUser: DUser, embed: EmbedCreateSpec.() -> Unit) =
+        discordUser.privateChannel.awaitSingle()
+            .createEmbed(embed).awaitSingle()
 
     // TODO move to RoleManager ?
     suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean) {
