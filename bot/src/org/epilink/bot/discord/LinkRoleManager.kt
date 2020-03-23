@@ -137,15 +137,16 @@ class LinkRoleManager(
         val did = discordUser.id.asString()
         val dname = discordUser.username
         val ddisc = discordUser.discriminator
-        val identity = if (database.isUserIdentifiable(dbUser)) {
-            database.accessIdentity(
-                dbUser,
-                automated = true,
-                author = "EpiLink Discord Bot",
-                reason = "EpiLink has accessed your identity automatically in order to update your roles on Discord servers.",
-                discord = bot
-            )
-        } else null
+        val identity =
+            if (database.isUserIdentifiable(dbUser) && rules.any { it is StrongIdentityRule }) {
+                database.accessIdentity(
+                    dbUser,
+                    automated = true,
+                    author = "EpiLink Discord Bot",
+                    reason = "EpiLink has accessed your identity automatically in order to update your roles on Discord servers.",
+                    discord = bot
+                )
+            } else null
         val baseSet =
             if (identity != null) setOf(StandardRoles.Identified.roleName, StandardRoles.Known.roleName)
             else setOf(StandardRoles.Known.roleName)
