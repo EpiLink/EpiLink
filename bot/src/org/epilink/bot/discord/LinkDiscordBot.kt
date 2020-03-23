@@ -4,6 +4,7 @@ import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Member
+import discord4j.core.`object`.entity.PrivateChannel
 import discord4j.core.`object`.util.Permission
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
@@ -205,11 +206,11 @@ class LinkDiscordBot(
         sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), message)
 
     private suspend fun sendDirectMessage(discordUser: DUser, message: String) =
-        discordUser.privateChannel.awaitSingle()
+        discordUser.getCheckedPrivateChannel()
             .createMessage(message).awaitSingle()
 
     private suspend fun sendDirectMessage(discordUser: DUser, embed: EmbedCreateSpec.() -> Unit) =
-        discordUser.privateChannel.awaitSingle()
+        discordUser.getCheckedPrivateChannel()
             .createEmbed(embed).awaitSingle()
 
     // TODO move to RoleManager ?
@@ -229,6 +230,15 @@ class LinkDiscordBot(
         roleManager.updateRolesOnGuilds(dbUser, guilds, discordUser, tellUserIfFailed)
     }
 }
+
+private suspend fun DUser.getCheckedPrivateChannel(): PrivateChannel =
+    try {
+        this.privateChannel.awaitSingle()
+    } catch (ex: ClientException) {
+        if (ex.errorCode == "50007")
+            throw UserDoesNotAcceptPrivateMessagesException(ex)
+        else throw ex
+    }
 
 /**
  * Logs into the Discord client, suspending until a Ready event is received.

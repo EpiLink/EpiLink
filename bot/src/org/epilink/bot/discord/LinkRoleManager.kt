@@ -44,24 +44,29 @@ class LinkRoleManager : KoinComponent {
                 bot.sendCouldNotJoin(discordUser, null, adv.reason)
             return
         }
-
-        val roles =
-            getRolesForAuthorizedUser(dbUser, discordUser, getRulesRelevantForGuilds(*guilds.toTypedArray()))
-        guilds.mapNotNull { g ->
-            try {
-                g.getMemberById(discordUser.id).awaitSingle()?.to(g)
-            } catch (ex: ClientException) {
-                // We need to catch the exception when Discord tells us the member could not be found.
-                // This happens when the user is not a member of the guild.
-                // This kind of error has the error code 10007 in the response.
-                if (ex.errorCode == "10007") {
-                    null // Simply ignore this one
-                } else {
-                    throw ex
+        coroutineScope {
+            val connectedToAs = guilds.map { g ->
+                async {
+                    try {
+                        g.getMemberById(discordUser.id).awaitSingle()?.to(g)
+                    } catch (ex: ClientException) {
+                        // We need to catch the exception when Discord tells us the member could not be found.
+                        // This happens when the user is not a member of the guild.
+                        // This kind of error has the error code 10007 in the response.
+                        if (ex.errorCode == "10007") {
+                            null // Simply ignore this one
+                        } else {
+                            throw ex
+                        }
+                    }
                 }
+            }.awaitAll().filterNotNull()
+            val guildsToCheck = connectedToAs.map { it.second }
+            val roles =
+                getRolesForAuthorizedUser(dbUser, discordUser, getRulesRelevantForGuilds(*guildsToCheck.toTypedArray()))
+            connectedToAs.forEach { (m, g) ->
+                updateAuthorizedUserRoles(m, g, roles)
             }
-        }.forEach { (m, g) ->
-            updateAuthorizedUserRoles(m, g, roles)
         }
     }
 

@@ -1,5 +1,7 @@
 package org.epilink.bot
 
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.apache.Apache
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkConfiguration
 import org.epilink.bot.config.rulebook.Rulebook
@@ -7,7 +9,9 @@ import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.LinkBackEnd
+import org.epilink.bot.http.LinkDiscordBackEnd
 import org.epilink.bot.http.LinkHttpServer
+import org.epilink.bot.http.LinkMicrosoftBackEnd
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.dsl.module
@@ -51,9 +55,26 @@ class LinkServerEnvironment(
         // HTTP (Ktor) server
         single { LinkHttpServer(cfg.tokens) }
 
-        single { LinkBackEnd(cfg.tokens) }
+        single { LinkBackEnd() }
 
         single { cfg.server }
+
+        single { HttpClient(Apache) }
+
+        single {
+            LinkDiscordBackEnd(
+                cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null"),
+                cfg.tokens.discordOAuthSecret ?: error("Discord OAuth secret cannot be null")
+            )
+        }
+
+        single {
+            LinkMicrosoftBackEnd(
+                cfg.tokens.msftOAuthClientId ?: error("Microsoft client ID cannot be null"),
+                cfg.tokens.msftOAuthSecret ?: error("Microsoft OAuth secret cannot be null"),
+                cfg.tokens.msftTenant
+            )
+        }
     }
 
     val name: String

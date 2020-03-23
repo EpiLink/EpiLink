@@ -6,11 +6,8 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
 import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.content.TextContent
 import io.ktor.http.*
 import io.ktor.request.receive
 import io.ktor.response.respond
@@ -19,7 +16,6 @@ import io.ktor.routing.*
 import io.ktor.sessions.*
 import org.epilink.bot.LinkException
 import org.epilink.bot.LinkServerEnvironment
-import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.User
@@ -33,12 +29,7 @@ import org.koin.core.inject
 /**
  * The back-end, defining API endpoints and more
  */
-class LinkBackEnd(
-    /**
-     * Tokens
-     */
-    private val secrets: LinkTokens
-): KoinComponent {
+class LinkBackEnd : KoinComponent {
     /**
      * The environment the back end lives in
      */
@@ -48,28 +39,9 @@ class LinkBackEnd(
 
     private val discord: LinkDiscordBot by inject()
 
-    // TODO config entry for custom tenant instead of just common
-    private val authStubMsft = "https://login.microsoftonline.com/${secrets.msftTenant}/oauth2/v2.0/authorize?" +
-            listOf(
-                "client_id=${secrets.msftOAuthClientId}",
-                "response_type=code",
-                "prompt=select_account",
-                "scope=User.Read"
-            ).joinToString("&")
+    private val discordBackEnd: LinkDiscordBackEnd by inject()
 
-    private val authStubDiscord = "https://discordapp.com/api/oauth2/authorize?" +
-            listOf(
-                "response_type=code",
-                "client_id=${secrets.discordOAuthClientId}",
-                // Allows access to user information (w/o email address)
-                "scope=identify",
-                "prompt=consent"
-            ).joinToString("&")
-
-    /**
-     * The HTTP client that is used by most actions when other servers need to be contacted for information (e.g. OAuth)
-     */
-    private val client = HttpClient(Apache)
+    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
 
     /**
      * Defines the API endpoints. Served under /api/v1
@@ -169,8 +141,8 @@ class LinkBackEnd(
         InstanceInformation(
             title = env.name,
             logo = null, // TODO add a cfg entry for the logo
-            authorizeStub_msft = authStubMsft,
-            authorizeStub_discord = authStubDiscord
+            authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
+            authorizeStub_discord = discordBackEnd.getAuthorizeStub()
         )
 
     /**
@@ -180,9 +152,9 @@ class LinkBackEnd(
     private suspend fun processDiscordAuthCode(call: ApplicationCall, authcode: RegistrationAuthCode) {
         val session = call.sessions.getOrSet { RegisterSession() }
         // Get token
-        val token = getDiscordToken(authcode.code, authcode.redirectUri)
+        val token = discordBackEnd.getDiscordToken(authcode.code, authcode.redirectUri)
         // Get information
-        val (id, username, avatarUrl) = getDiscordInfo(token)
+        val (id, username, avatarUrl) = discordBackEnd.getDiscordInfo(token)
         val user = db.getUser(id)
         if (user != null) {
             call.loginAs(user)
@@ -199,48 +171,6 @@ class LinkBackEnd(
             )
         }
     }
-
-    /**
-     * Consume the authcode and return a token.
-     *
-     * @param authcode The authorization code to consume
-     * @param redirectUri The redirect_uri that was used in the authorization request that returned the authorization
-     * code
-     */
-    private suspend fun getDiscordToken(authcode: String, redirectUri: String): String {
-        val res = client.post<String>("https://discordapp.com/api/v6/oauth2/token") {
-            header(HttpHeaders.Accept, ContentType.Application.Json)
-            body = TextContent(
-                ParametersBuilder().apply {
-                    appendOauthParameters(
-                        secrets.discordOAuthClientId!!,
-                        secrets.discordOAuthSecret!!,
-                        authcode,
-                        redirectUri
-                    )
-                }.build().formUrlEncode(),
-                ContentType.Application.FormUrlEncoded
-            )
-        }
-        val data: Map<String, Any?> = ObjectMapper().readValue(res)
-        return data["access_token"] as String? ?: error("Did not receive any access token from Discord")
-    }
-
-    /**
-     * Retrieve a user's own information using a Discord OAuth2 token.
-     */
-    private suspend fun getDiscordInfo(token: String): DiscordUserInfo {
-        val data = client.getJson("https://discordapp.com/api/v6/users/@me", bearer = token)
-        val userid = data["id"] as String? ?: error("Missing Discord ID")
-        val username = data["username"] as String? ?: error("Missing Discord username")
-        val discriminator = data["discriminator"] as String? ?: error("Missing Discord discriminator")
-        val displayableUsername = "$username#$discriminator"
-        val avatarHash = data["avatar"] as String?
-        val avatar =
-            if (avatarHash != null) "https://cdn.discordapp.com/avatars/$userid/$avatarHash.png?size=256" else null
-        return DiscordUserInfo(userid, displayableUsername, avatar)
-    }
-
     /**
      * Take a Microsoft authorization code, consume it and apply the information retrieve form it to the current
      * registration session
@@ -248,9 +178,9 @@ class LinkBackEnd(
     private suspend fun processMicrosoftAuthCode(call: ApplicationCall, authcode: RegistrationAuthCode) {
         val session = call.sessions.getOrSet { RegisterSession() }
         // Get token
-        val token = getMicrosoftToken(authcode.code, authcode.redirectUri)
+        val token = microsoftBackEnd.getMicrosoftToken(authcode.code, authcode.redirectUri)
         // Get information
-        val (id, email) = getMicrosoftInfo(token)
+        val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
         val adv = db.isAllowedToCreateAccount(null, id)
         if (adv is Disallowed) {
             call.respond(ApiResponse(false, adv.reason, null))
@@ -265,41 +195,6 @@ class LinkBackEnd(
                 RegistrationContinuation("continue", newSession.toRegistrationInformation())
             )
         )
-    }
-
-    /**
-     * Consume the authcode and return a token.
-     *
-     * @param code The authorization code to consume
-     * @param redirectUri The redirect_uri that was used in the authorization request that returned the authorization
-     * code
-     */
-    private suspend fun getMicrosoftToken(code: String, redirectUri: String): String {
-        val res = client.post<String>("https://login.microsoftonline.com/${secrets.msftTenant}/oauth2/v2.0/token") {
-            header(HttpHeaders.Accept, ContentType.Application.Json)
-            body = TextContent(
-                ParametersBuilder().apply {
-                    append("scope", "User.Read")
-                    appendOauthParameters(secrets.msftOAuthClientId!!, secrets.msftOAuthSecret!!, code, redirectUri)
-                }.build().formUrlEncode(),
-                ContentType.Application.FormUrlEncoded
-            )
-        }
-        val data: Map<String, Any?> = ObjectMapper().readValue(res)
-        return data["access_token"] as String? ?: error("Did not receive any access token from Microsoft")
-    }
-
-    /**
-     * Retrieve a user's own information with Microsoft Graph using a Microsoft OAuth2 token.
-     */
-    private suspend fun getMicrosoftInfo(token: String): MicrosoftUserInfo {
-        // https://graph.microsoft.com/v1.0/me
-        val data = client.getJson("https://graph.microsoft.com/v1.0/me", bearer = token)
-        val email = data["mail"] as String?
-            ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
-            ?: error("User does not have an email address")
-        val id = data["id"] as String? ?: error("User does not have an ID")
-        return MicrosoftUserInfo(id, email)
     }
 
     /**
@@ -324,7 +219,7 @@ class LinkBackEnd(
 /**
  * Utility function for appending classic OAuth parameters to a ParametersBuilder object all at once.
  */
-private fun ParametersBuilder.appendOauthParameters(
+fun ParametersBuilder.appendOauthParameters(
     clientId: String, secret: String, authcode: String, redirectUri: String
 ) {
     append("grant_type", "authorization_code")
@@ -338,7 +233,7 @@ private fun ParametersBuilder.appendOauthParameters(
  * Utility function for performing a GET on the given url (with the given bearer as the "Authorization: Bearer" header),
  * turning the JSON result into a map and returning that map.
  */
-private suspend fun HttpClient.getJson(url: String, bearer: String): Map<String, Any?> {
+suspend fun HttpClient.getJson(url: String, bearer: String): Map<String, Any?> {
     val result = get<String>(url) {
         header("Authorization", "Bearer $bearer")
         header(HttpHeaders.Accept, ContentType.Application.Json)
