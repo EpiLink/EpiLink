@@ -122,15 +122,15 @@ You will need to create a secret manually, as Azure AD does not create one for y
 ```yaml
 discord:
   welomeUrl: ~
-  roles:
+  roles: []
   servers:
-  - id: ...
-    ...
-  - ...
+    - id: ...
+      ...
+    - ...
 ```
 
 * `welcomeUrl`: The URL the bot will send. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can customize the message with `welcomeEmbed` in each server. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
-* `roles`: Unused. Leave it to `~` for now.
+* `roles`: Undocumented. Leave it to `[]` for now. Optional, empty list `[]` by default.
 * `servers`: A list of [server configurations](#discord-server-configuration).
 
 Depending on the situation, a server may or may not be *monitored*. A *monitored* server is one where EpiLink is actively managing authentication.

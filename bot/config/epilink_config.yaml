@@ -44,7 +44,7 @@ discord:
   # The URL displayed as the log-in URL in the bot's default welcome messages (nullable)
   welcomeUrl: "https://my.amazing.welcome.page/hello"
   # Reserved for later use
-  roles: ~
+  roles: []
   servers:
     - # Each server gets one entry here.
       # The Discord ID of the server

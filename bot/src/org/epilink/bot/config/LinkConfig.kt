@@ -40,8 +40,8 @@ data class LinkDiscordConfig(
     val rulebook: String? = null,
     // The path to the rulebook file (.kts) is relative to the path of the config file (.yaml)
     val rulebookFile: String? = null,
-    val roles: List<LinkDiscordRoleSpec>?,
-    val servers: List<LinkDiscordServerSpec>?
+    val roles: List<LinkDiscordRoleSpec> = listOf(),
+    val servers: List<LinkDiscordServerSpec> = listOf()
 )
 
 data class LinkDiscordRoleSpec(
@@ -103,6 +103,12 @@ fun LinkConfiguration.isConfigurationSane(
     if (server.sessionDuration < 0) {
         report += ConfigError(true, "Session duration can't be negative")
     }
+
+    discord.roles.map { it.name }.filter { it.startsWith("_") }.forEach {
+        report +=
+            ConfigWarning("A role was registered with the name ${it}, which starts with an underscore. Underscores are reserved for standard EpiLink roles like _known.")
+    }
+
     report += discord.checkCoherenceWithRulebook(rulebook)
     return report
 }
@@ -110,10 +116,8 @@ fun LinkConfiguration.isConfigurationSane(
 fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
     val roleNamesUsedInServers =
-        if (servers == null) setOf()
-        else
-            servers.map { it.roles.keys }.flatten().toSet() - StandardRoles.values().map { it.roleName }
-    val rolesDeclaredInRoles = roles ?: listOf()
+        servers.map { it.roles.keys }.flatten().toSet() - StandardRoles.values().map { it.roleName }
+    val rolesDeclaredInRoles = roles
     val rulesDeclared = rulebook.rules.keys
 
     val roleNamesDeclaredInRoles = rolesDeclaredInRoles.map { it.name }.toSet()

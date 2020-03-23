@@ -83,7 +83,7 @@ class LinkRoleManager(
 
     private fun getRulesRelevantForGuilds(vararg guilds: Guild): Set<Rule> {
         // Maps role names to their rules in the global config
-        val rolesInGlobalConfig = config.roles?.associateBy({ it.name }, { it.rule }) ?: return setOf()
+        val rolesInGlobalConfig = config.roles.associateBy({ it.name }, { it.rule })
         return guilds
             // Get the guilds' configs
             .map { guild -> config.getConfigForGuild(guild.id.asString()) } // List<Guild config>

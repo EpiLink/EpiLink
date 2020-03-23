@@ -172,7 +172,7 @@ class LinkDiscordBot(
      */
     private fun isMonitored(guildId: Snowflake): Boolean {
         val id = guildId.asString()
-        return config.servers?.any { it.id == id } ?: false
+        return config.servers.any { it.id == id }
     }
 
     /**
@@ -264,7 +264,7 @@ suspend fun Publisher<Void>.await() {
  * Expects the guild to be monitored (i.e. expects a configuration to be present).
  */
 fun LinkDiscordConfig.getConfigForGuild(guildId: String): LinkDiscordServerSpec =
-    this.servers?.first { it.id == guildId }
+    this.servers.firstOrNull { it.id == guildId }
         ?: error("Configuration not found, but guild was expected to be monitored")
 
 
