@@ -34,7 +34,7 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
 
             // Create the tables if they do not already exist
             transaction(this) {
-                SchemaUtils.create(Users, TrueIdentities, Bans)
+                SchemaUtils.create(Users, TrueIdentities, Bans, IdentityAccesses)
             }
         }
 
@@ -171,9 +171,17 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
         discord: LinkDiscordBot
     ): String {
         val identity = newSuspendedTransaction {
-            dbUser.trueIdentity?.email ?: error("Cannot get true identity of user")
+            val identity = dbUser.trueIdentity?.email ?: error("Cannot get true identity of user")
+            // Record the identity access
+            IdentityAccess.new {
+                target = dbUser.id
+                authorName = author
+                this.automated = automated
+                this.reason = reason
+                timestamp = LocalDateTime.now()
+            }
+            identity
         }
-        // TODO record this in the database
         discord.sendIdentityAccessNotification(dbUser.discordId, automated, author, reason)
         return identity
     }
