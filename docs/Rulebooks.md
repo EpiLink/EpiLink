@@ -52,7 +52,7 @@ In the example above, two rules are defined, `StartsWithZ` as a weak identity ru
 
 Strong identity rules are skipped for users who chose not to have their identity kept by EpiLink.
 
-**Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](/docs/MaintainerGuide.md#privacy-settings)
+**Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](/docs/MaintainerGuide.md#privacy-configuration)
 
 ### Accessing information
 
