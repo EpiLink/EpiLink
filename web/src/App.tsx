@@ -1,6 +1,6 @@
-import React from 'react';
+import { h, Component } from 'preact';
 
-export class App extends React.Component
+export class App extends Component
 {
     constructor(props: Readonly<{}>)
     {
