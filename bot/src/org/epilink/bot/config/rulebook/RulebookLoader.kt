@@ -3,6 +3,7 @@ package org.epilink.bot.config.rulebook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.nio.file.Path
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.defaultImports
 import kotlin.script.experimental.api.implicitReceivers
@@ -14,8 +15,8 @@ import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
 
-suspend fun loadRules(file: File): Rulebook =
-    loadRules(file.toScriptSource())
+suspend fun loadRules(path: Path): Rulebook =
+    loadRules(path.toFile().toScriptSource())
 
 suspend fun loadRules(string: String): Rulebook =
     loadRules(string.toScriptSource())

@@ -37,6 +37,8 @@ data class LinkTokens(
 data class LinkDiscordConfig(
     val welcomeUrl: String?,
     val rulebook: String? = null,
+    // The path to the rulebook file (.kts) is relative to the path of the config file (.yaml)
+    val rulebookFile: String? = null,
     val roles: List<LinkDiscordRoleSpec>?,
     val servers: List<LinkDiscordServerSpec>?
 )
