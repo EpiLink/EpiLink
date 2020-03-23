@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.epilink.bot.CliArgs
+import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.discord.DiscordEmbed
 import java.nio.file.Files
 import java.nio.file.Path
@@ -59,10 +60,10 @@ data class LinkPrivacy(
     val discloseHumanRequesterIdentity: Boolean = false
 ) {
     fun shouldNotify(automated: Boolean): Boolean =
-        if(automated) notifyAutomatedAccess else notifyHumanAccess
+        if (automated) notifyAutomatedAccess else notifyHumanAccess
 
     fun shouldDiscloseIdentity(automated: Boolean): Boolean =
-        if(automated) true else discloseHumanRequesterIdentity
+        if (automated) true else discloseHumanRequesterIdentity
 }
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
@@ -78,10 +79,13 @@ fun loadConfigFromString(config: String): LinkConfiguration =
     yamlKotlinMapper.readValue(config, LinkConfiguration::class.java)
 
 /**
- * Checks the sanity of configuration options, logging information and guidance
+ * Checks the sanity of configuration options and coherence with the rulebook, logging information and guidance
  * for resolving issues.
  */
-fun LinkConfiguration.isConfigurationSane(args: CliArgs): List<ConfigReportElement> {
+fun LinkConfiguration.isConfigurationSane(
+    args: CliArgs,
+    rulebook: Rulebook
+): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
     if (tokens.jwtSecret == "I am a secret ! Please change me :(") {
         if (args.allowUnsecureJwtSecret) {
@@ -95,6 +99,38 @@ fun LinkConfiguration.isConfigurationSane(args: CliArgs): List<ConfigReportEleme
 
     if (server.sessionDuration < 0) {
         report += ConfigError(true, "Session duration can't be negative")
+    }
+    report += discord.checkCoherenceWithRulebook(rulebook)
+    return report
+}
+
+fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<ConfigReportElement> {
+    val report = mutableListOf<ConfigReportElement>()
+    val roleNamesUsedInServers = servers?.map { it.roles.keys }?.flatten()?.toSet() ?: setOf()
+    val rolesDeclaredInRoles = roles ?: listOf()
+    val rulesDeclared = rulebook.rules.keys
+
+    val roleNamesDeclaredInRoles = rolesDeclaredInRoles.map { it.name }.toSet()
+    val rolesMissingInRoles = roleNamesUsedInServers - roleNamesDeclaredInRoles
+    for (role in rolesMissingInRoles) {
+        report += ConfigError(
+            false,
+            "Role $role is referenced in a server config but is not defined in the Discord roles config"
+        )
+    }
+
+    val ruleNamesUsedInRoles = rolesDeclaredInRoles.map { it.rule }.toSet()
+    val missingRules = ruleNamesUsedInRoles - rulesDeclared
+    for (rule in missingRules) {
+        report += ConfigError(
+            false,
+            "Rule $rule is used in a Discord role config but is not defined in the rulebook"
+        )
+    }
+
+    val unusedRules = rulesDeclared - ruleNamesUsedInRoles
+    for (rule in unusedRules) {
+        report += ConfigWarning("Rule $rule is defined in the rulebook but is never used")
     }
 
     return report

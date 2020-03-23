@@ -49,19 +49,20 @@ fun main(args: Array<String>) = mainBody("epilink") {
             logger.info("Loading rulebook, this may take some time...")
             loadRules(it)
         }
-    }
+    } ?: Rulebook(mapOf())
+
     logger.debug("Checking config...")
-    checkConfig(cfg, cliArgs)
+    checkConfig(cfg, rulebook, cliArgs)
 
     logger.debug("Creating environment")
-    val env = LinkServerEnvironment(cfg, rulebook ?: Rulebook(mapOf()))
+    val env = LinkServerEnvironment(cfg, rulebook)
 
     logger.info("Environment created, starting ${env.name}")
     env.start()
 }
 
-private fun checkConfig(cfg: LinkConfiguration, cliArgs: CliArgs) {
-    val configReport = cfg.isConfigurationSane(cliArgs)
+private fun checkConfig(cfg: LinkConfiguration, rulebook: Rulebook, cliArgs: CliArgs) {
+    val configReport = cfg.isConfigurationSane(cliArgs, rulebook)
     var shouldExit = false
     configReport.forEach {
         when (it) {
@@ -77,5 +78,4 @@ private fun checkConfig(cfg: LinkConfiguration, cliArgs: CliArgs) {
     if (shouldExit) {
         exitProcess(1)
     }
-
 }
