@@ -22,14 +22,12 @@ class LinkServerEnvironment(
 
     val discord: LinkDiscordBot =
         LinkDiscordBot(
-            this,
+            database,
             cfg.discord,
             cfg.tokens.discordToken ?: error("Discord token cannot be null"),
             cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null"),
             rulebook
         )
-
-    val privacy = cfg.privacy
 
     private var server: LinkHttpServer =
         LinkHttpServer(this, cfg.server, cfg.tokens)
