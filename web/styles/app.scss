@@ -1,5 +1,21 @@
-@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+@import 'fonts';
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
 
 body {
-  font-family: 'Roboto', 'Arial', sans-serif;
+  @include lato;
+
+  min-width: 100vw;
+  min-height: 100vh;
+
+  background: #202427;
+
+  display: inline-block;
+
+  color: white;
 }
+
+@import 'layout';
