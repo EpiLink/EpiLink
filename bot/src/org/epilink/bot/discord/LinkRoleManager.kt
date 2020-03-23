@@ -14,17 +14,19 @@ import org.epilink.bot.config.rulebook.StrongIdentityRule
 import org.epilink.bot.config.rulebook.WeakIdentityRule
 import org.epilink.bot.db.*
 import org.epilink.bot.logger
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 import discord4j.core.`object`.entity.User as DUser
 
 /**
  * This class is responsible for managing and updating the roles of Discord users.
  */
-class LinkRoleManager(
-    private val database: LinkServerDatabase,
-    private val bot: LinkDiscordBot,
-    private val config: LinkDiscordConfig,
-    private val rulebook: Rulebook
-) {
+class LinkRoleManager : KoinComponent {
+    private val database: LinkServerDatabase by inject()
+    private val bot: LinkDiscordBot by inject()
+    private val config: LinkDiscordConfig by inject()
+    private val rulebook: Rulebook by inject()
+
     /**
      * Updates all the roles of a Discord user on a given collection of guilds. The user does not have to be present on
      * the given guilds -- this function handles the case where the member is absent well. If tellUserIfFailed is true,

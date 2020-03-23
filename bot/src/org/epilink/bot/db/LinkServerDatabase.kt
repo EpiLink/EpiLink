@@ -1,6 +1,5 @@
 package org.epilink.bot.db
 
-import org.epilink.bot.config.LinkConfiguration
 import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.sessions.RegisterSession
 import org.jetbrains.exposed.sql.Database
@@ -21,12 +20,12 @@ import javax.naming.LinkException
  * Most of the functions declared here are suspending functions intended to be used
  * from within Ktor responses.
  */
-class LinkServerDatabase(cfg: LinkConfiguration) {
+class LinkServerDatabase(db: String) {
     /**
      * The Database instance managed by JetBrains Exposed used for transactions.
      */
     @OptIn(UsesTrueIdentity::class) // Creation of TrueIdentities table
-    private val db: Database = Database.connect("jdbc:sqlite:${cfg.db}", driver = "org.sqlite.JDBC")
+    private val db: Database = Database.connect("jdbc:sqlite:$db", driver = "org.sqlite.JDBC")
         .apply {
             // Required for SQLite
             transactionManager.defaultIsolationLevel =

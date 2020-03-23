@@ -1,6 +1,5 @@
 package org.epilink.bot.http
 
-import com.auth0.jwt.algorithms.Algorithm
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.application.ApplicationCall
@@ -22,37 +21,33 @@ import org.epilink.bot.LinkException
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.db.Disallowed
+import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.User
+import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 
 /**
  * The back-end, defining API endpoints and more
  */
 class LinkBackEnd(
     /**
-     * The HTTP server that created this back end
-     */
-    private val server: LinkHttpServer,
-    /**
-     * The environment the back end lives in
-     */
-    private val env: LinkServerEnvironment,
-    /**
-     * The algorithm to use for JWT
-     */
-    private val jwtAlgorithm: Algorithm,
-    /**
-     * The duration of a session (for use with [makeJwt])
-     */
-    private val sessionDuration: Long,
-
-    /**
      * Tokens
      */
     private val secrets: LinkTokens
-) {
+): KoinComponent {
+    /**
+     * The environment the back end lives in
+     */
+    private val env: LinkServerEnvironment by inject()
+
+    private val db: LinkServerDatabase by inject()
+
+    private val discord: LinkDiscordBot by inject()
+
     // TODO config entry for custom tenant instead of just common
     private val authStubMsft = "https://login.microsoftonline.com/${secrets.msftTenant}/oauth2/v2.0/authorize?" +
             listOf(
@@ -136,8 +131,8 @@ class LinkBackEnd(
                         val options: AdditionalRegistrationOptions =
                             call.receive()
                         try {
-                            val u = env.database.createUser(this, options.keepIdentity)
-                            env.discord.updateRoles(u, true)
+                            val u = db.createUser(this, options.keepIdentity)
+                            discord.updateRoles(u, true)
                             call.loginAs(u)
                             call.respond(ApiResponse(true, "Account created, logged in."))
                         } catch (e: LinkException) {
@@ -188,7 +183,7 @@ class LinkBackEnd(
         val token = getDiscordToken(authcode.code, authcode.redirectUri)
         // Get information
         val (id, username, avatarUrl) = getDiscordInfo(token)
-        val user = env.database.getUser(id)
+        val user = db.getUser(id)
         if (user != null) {
             call.loginAs(user)
             call.respond(ApiResponse(true, "Logged in", RegistrationContinuation("login", null)))
@@ -256,7 +251,7 @@ class LinkBackEnd(
         val token = getMicrosoftToken(authcode.code, authcode.redirectUri)
         // Get information
         val (id, email) = getMicrosoftInfo(token)
-        val adv = env.database.isAllowedToCreateAccount(null, id)
+        val adv = db.isAllowedToCreateAccount(null, id)
         if (adv is Disallowed) {
             call.respond(ApiResponse(false, adv.reason, null))
             return
@@ -275,7 +270,7 @@ class LinkBackEnd(
     /**
      * Consume the authcode and return a token.
      *
-     * @param authcode The authorization code to consume
+     * @param code The authorization code to consume
      * @param redirectUri The redirect_uri that was used in the authorization request that returned the authorization
      * code
      */
