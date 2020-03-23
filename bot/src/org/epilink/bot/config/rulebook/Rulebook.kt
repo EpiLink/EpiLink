@@ -75,11 +75,17 @@ class RulebookBuilder {
 
     @RulebookDsl
     operator fun String.invoke(ruleDeterminer: RuleDeterminer) {
+        if (builtRules.containsKey(this)) {
+            error("Duplicate role names: $this was defined more than once")
+        }
         builtRules[this] = WeakIdentityRule(this, ruleDeterminer)
     }
 
     @RulebookDsl
     operator fun String.rem(ruleDeterminerWithIdentity: RuleDeterminerWithIdentity) {
+        if (builtRules.containsKey(this)) {
+            error("Duplicate role names: $this was defined more than once")
+        }
         builtRules[this] =
             StrongIdentityRule(this, ruleDeterminerWithIdentity)
     }
