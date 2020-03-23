@@ -11,7 +11,8 @@
     "serve": "webpack-dev-server"
   },
   "dependencies": {
-    "preact": "^10.3.4"
+    "preact": "^10.3.4",
+    "preact-router": "^3.2.1"
   },
   "devDependencies": {
     "css-loader": "^3.4.2",

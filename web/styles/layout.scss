@@ -1,4 +1,36 @@
 @import 'fonts';
+@import 'vars';
+
+#layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  width: 100vw;
+  height: 100vh;
+}
+
+#content {
+  &, & div {
+    width: $content-width;
+    height: $content-height;
+
+    box-sizing: border-box;
+
+    &.expanded {
+      width: 1000px;
+    }
+  }
+
+  margin-bottom: $footer-height;
+
+  background-color: #FDFDFD;
+  color: black;
+
+  box-shadow: rgba(10, 10, 10, 0.65) 0 4px 10px 4px;
+
+  border-radius: 4px;
+}
 
 #footer {
   position: absolute;
@@ -6,7 +38,7 @@
   left: 0;
 
   width: 100vw;
-  height: 45px;
+  height: $footer-height;
 
   background-color: white;
   color: black;
@@ -15,11 +47,16 @@
 
   &, #left-footer, #navigation {
     display: flex;
-    justify-content: space-between;
     align-items: center;
   }
 
+  justify-content: space-between;
+
   #left-footer {
+    #home-button {
+      display: contents;
+    }
+
     #logo {
       width: 27px;
       height: 27px;

@@ -1,0 +1,21 @@
+@import '../fonts';
+
+#not-found {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+
+  padding: 50px;
+
+  #title {
+    @include lato(bold);
+    font-size: 112px;
+
+    margin: 0;
+  }
+
+  #description {
+    font-size: 25px;
+  }
+}
