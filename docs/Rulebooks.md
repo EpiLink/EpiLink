@@ -27,10 +27,10 @@ This section will cover the basics of rulebooks. This assumes some knowledge of 
 ### Rule declaration
 
 ```kotlin
-"StartsWithZ" {
-    // This code gets executed whenever MyCustomRule is applied
+"StartsWithA" {
+    // This code gets executed whenever StartsWithA is applied
     if (userDiscordName.startsWith("A"))
-        roles += "a_club" 
+        roles += "a_club"
 }
 
 "EmailIsInDomain" % { email ->
