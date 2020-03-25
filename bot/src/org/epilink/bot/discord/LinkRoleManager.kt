@@ -91,6 +91,11 @@ class LinkRoleManager : KoinComponent {
                         dbUser,
                         ev.member,
                         getRulesRelevantForGuilds(guild).map { it.first },
+                        // We can put the guild name here even if the guild does not require strong rules
+                        // because this argument is ignored if no such rule is used.
+                        // So, either a strong rule is used and the only guild it can be used on is [guild], or
+                        // there is no strong rule at all and this is ignored. So we can just pass the guild in
+                        // either way.
                         listOf(guild.name)
                     )
                 )
@@ -114,7 +119,7 @@ class LinkRoleManager : KoinComponent {
     ): List<Pair<Rule, Set<String>>> = withContext(Dispatchers.Default) {
         // Maps role names to their rules in the global config
         val rolesInGlobalConfig = config.roles.associateBy({ it.name }, { it.rule })
-        return guilds
+        guilds
             // Get each guild's config, paired with the guild's name
             .map { it.name to config.getConfigForGuild(it.id.asString()) } // List<Pair<Guild name, Guild config>>
             // Get the EpiLink roles required by each guild, paired with the guild's name
