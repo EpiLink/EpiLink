@@ -62,8 +62,14 @@ class LinkRoleManager : KoinComponent {
                 }
             }.awaitAll().filterNotNull()
             val guildsToCheck = connectedToAs.map { it.second }
-            val roles =
-                getRolesForAuthorizedUser(dbUser, discordUser, getRulesRelevantForGuilds(*guildsToCheck.toTypedArray()))
+            val rules = getRulesRelevantForGuilds(*guildsToCheck.toTypedArray())
+            val roles = getRolesForAuthorizedUser(
+                dbUser,
+                discordUser,
+                rules.map { it.first },
+                rules.filter { it.first is StrongIdentityRule }.map { it.second }.flatten().distinct()
+            )
+
             connectedToAs.forEach { (m, g) ->
                 updateAuthorizedUserRoles(m, g, roles)
             }
@@ -81,7 +87,12 @@ class LinkRoleManager : KoinComponent {
                 is Allowed -> updateAuthorizedUserRoles(
                     ev.member,
                     guild,
-                    getRolesForAuthorizedUser(dbUser, ev.member, getRulesRelevantForGuilds(guild))
+                    getRolesForAuthorizedUser(
+                        dbUser,
+                        ev.member,
+                        getRulesRelevantForGuilds(guild).map { it.first },
+                        listOf(guild.name)
+                    )
                 )
                 is Disallowed -> bot.sendCouldNotJoin(ev.member, guild, canJoin.reason)
             }
@@ -90,33 +101,49 @@ class LinkRoleManager : KoinComponent {
         }
     }
 
-
-    private fun getRulesRelevantForGuilds(vararg guilds: Guild): Set<Rule> {
+    /**
+     * Returns a list of every rule that is relevant for the given guilds, paired with which guilds (by name) are
+     * *actually* going to be used for each rule.
+     *
+     * To get only the rules, use the result with `result.map { it.first }`
+     *
+     * The guild names are only intended for displaying them as part of ID access notifications.
+     */
+    private suspend fun getRulesRelevantForGuilds(
+        vararg guilds: Guild
+    ): List<Pair<Rule, Set<String>>> = withContext(Dispatchers.Default) {
         // Maps role names to their rules in the global config
         val rolesInGlobalConfig = config.roles.associateBy({ it.name }, { it.rule })
         return guilds
-            // Get the guilds' configs
-            .map { guild -> config.getConfigForGuild(guild.id.asString()) } // List<Guild config>
-            // Get the epilink roles required by each guild
-            .map { it.roles.keys } // List<List<EpiLink role name>>
-            // Get all of that as a single flattened list of roles in the guilds
-            .flatten() // List<EpiLink role name>
+            // Get each guild's config, paired with the guild's name
+            .map { it.name to config.getConfigForGuild(it.id.asString()) } // List<Pair<Guild name, Guild config>>
+            // Get the EpiLink roles required by each guild, paired with the guild's name
+            .flatMap { (name, cfg) -> cfg.roles.keys.map { it to name } } // List<Pair<Role name, Guild name>>
+            // .also { println("#### 1 #### $it") }
+            // Group using the role name, mapped to the list of guild names
+            // Semantics: A map of the role names and the guilds that wish to use these roles
+            .groupBy({ it.first }, { it.second }) // Map<Role name, List<Guild name>>
+            // .also { println("#### 2 #### $it") }
             // Get rid of the EpiLink implicit roles (_known, _identified, ...)
-            .minus(StandardRoles.values().map { it.roleName })
-            // Get rid of duplicates, we want a list of distinct roles
-            .distinct()
+            .minus(StandardRoles.values().map { it.roleName }) // Map<Role name, List<Guild name>>
+            // .also { println("#### 3 ####$it") }
             // Map each role to the name of the rule that defines it
+            // Semantics: A list of rules paired with the guilds that require this rule.
             .mapNotNull {
-                rolesInGlobalConfig[it]
-            } // List<Rule name>
-            // Get rid of duplicates: a rule may define more than one role
-            .distinct()
-            // Finally, match each rule name to the actual rule
+                rolesInGlobalConfig[it.key]?.to(it.value)
+            } // List<Pair<Rule name, List<Guild name>>>
+            // Turn this into a clean map
+            .groupBy({ it.first }, { it.second }) // Map<Rule name, List<List<Guild name>>>
+            // Clean the set of guild names
+            // Semantics: A map of each rule name and the guilds that require that rule.
+            .mapValues { it.value.flatten().toSet() } // Map<Rule name, Set<Guild name>>
+            // .also { println("#### 4 ####$it") }
+            // Finally, match each rule name to the actual rule object.
+            // Semantics: The list of each rule paired with the guilds that require that rule.
             .mapNotNull {
-                rulebook.rules[it]
-            } // List<Rule>
-            // And return all of that as a set
-            .toSet() // Set<Rule>
+                rulebook.rules[it.key]?.to(it.value)
+            } // List<Pair<Rule, Set<String>>>
+        // .also { println("#### F ####$it") }
     }
 
     /**
@@ -136,13 +163,17 @@ class LinkRoleManager : KoinComponent {
 
     /**
      * Get the role list for a user who we assume has the right to connect to servers (i.e. is not banned),
-     * along with the list of rules to execute
+     * along with the list of rules to execute.
+     *
+     * [strongIdGuildNames] should contain the name of the guilds that required strong identity rules. It is ignored
+     * if no such rules were used.
      */
     @OptIn(UsesTrueIdentity::class)
     private suspend fun getRolesForAuthorizedUser(
         dbUser: User,
         discordUser: discord4j.core.`object`.entity.User,
-        rules: Collection<Rule>
+        rules: Collection<Rule>,
+        strongIdGuildNames: Collection<String>
     ): Set<String> = withContext(Dispatchers.IO) {
         val did = discordUser.id.asString()
         val dname = discordUser.username
@@ -153,7 +184,9 @@ class LinkRoleManager : KoinComponent {
                     dbUser,
                     automated = true,
                     author = "EpiLink Discord Bot",
-                    reason = "EpiLink has accessed your identity automatically in order to update your roles on Discord servers.",
+                    reason =
+                    "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: "
+                            + strongIdGuildNames.joinToString(", "),
                     discord = bot
                 )
             } else null
