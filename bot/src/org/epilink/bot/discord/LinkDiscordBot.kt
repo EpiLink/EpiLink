@@ -15,6 +15,7 @@ import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
@@ -229,6 +230,9 @@ class LinkDiscordBot(
         }
         roleManager.updateRolesOnGuilds(dbUser, guilds, discordUser, tellUserIfFailed)
     }
+
+    suspend fun launchInScope(function: suspend CoroutineScope.() -> Unit): Job =
+        scope.launch { function() }
 }
 
 private suspend fun DUser.getCheckedPrivateChannel(): PrivateChannel =

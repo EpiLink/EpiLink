@@ -104,7 +104,9 @@ class LinkBackEnd : KoinComponent {
                             call.receive()
                         try {
                             val u = db.createUser(this, options.keepIdentity)
-                            discord.updateRoles(u, true)
+                            discord.launchInScope {
+                                discord.updateRoles(u, true)
+                            }
                             call.loginAs(u)
                             call.respond(ApiResponse(true, "Account created, logged in."))
                         } catch (e: LinkException) {
@@ -171,6 +173,7 @@ class LinkBackEnd : KoinComponent {
             )
         }
     }
+
     /**
      * Take a Microsoft authorization code, consume it and apply the information retrieve form it to the current
      * registration session
