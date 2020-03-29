@@ -10,7 +10,6 @@ import org.epilink.bot.config.*
 import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.config.rulebook.loadRules
 import org.slf4j.LoggerFactory
-import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -24,7 +23,7 @@ class CliArgs(parser: ArgParser) {
 
     val allowUnsecureJwtSecret by parser.flagging(
         "-u", "--unsecure-jwt-secret",
-        help = "allows using the default JWT secret in the config file"
+        help = "(deprecated) has no effect"
     )
 }
 
@@ -45,6 +44,10 @@ fun main(args: Array<String>) = mainBody("epilink") {
             """.trimIndent()
         )
     ).parseInto(::CliArgs)
+
+    if(cliArgs.allowUnsecureJwtSecret) {
+        logger.warn("Using -u / --unsecure-jwt-secret is deprecated. This flag will be removed soon.")
+    }
 
     logger.debug("Loading configuration")
 

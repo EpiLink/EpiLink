@@ -22,11 +22,11 @@ data class LinkConfiguration(
 data class LinkWebServerConfiguration(
     val port: Int,
     val frontendUrl: String?,
-    val sessionDuration: Long
+    val sessionDuration: Long? = null
 )
 
 data class LinkTokens(
-    val jwtSecret: String,
+    val jwtSecret: String? = null,
     val discordToken: String?,
     val discordOAuthClientId: String?,
     val discordOAuthSecret: String?,
@@ -86,22 +86,17 @@ fun loadConfigFromString(config: String): LinkConfiguration =
  * for resolving issues.
  */
 fun LinkConfiguration.isConfigurationSane(
-    args: CliArgs,
+    @Suppress("UNUSED_PARAMETER") args: CliArgs,
     rulebook: Rulebook
 ): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
-    if (tokens.jwtSecret == "I am a secret ! Please change me :(") {
-        if (args.allowUnsecureJwtSecret) {
-            report += ConfigWarning("Default JWT secret found in configuration but allowed through -u flag.")
-            report += ConfigWarning("DO NOT USE -u IF YOU ARE IN A PRODUCTION ENVIRONMENT!")
-        } else {
-            report += ConfigError(true, "Please change the default JWT secret in the configuration file.")
-            report += ConfigInfo("If you cannot change the secret (e.g. in a developer environment), run EpiLink with the -u flag.")
-        }
+
+    if (server.sessionDuration != null) {
+        report += ConfigWarning("The sessionDuration configuration field is deprecated and will be removed.")
     }
 
-    if (server.sessionDuration < 0) {
-        report += ConfigError(true, "Session duration can't be negative")
+    if(tokens.jwtSecret != null) {
+        report += ConfigWarning("The jwtSecret configuration field is deprecated and will be removed.")
     }
 
     discord.roles.map { it.name }.filter { it.startsWith("_") }.forEach {

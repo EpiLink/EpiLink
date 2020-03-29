@@ -53,7 +53,7 @@ class LinkServerEnvironment(
 
     private val epilinkWebModule = module {
         // HTTP (Ktor) server
-        single { LinkHttpServer(cfg.tokens) }
+        single { LinkHttpServer() }
 
         single { LinkBackEnd() }
 
