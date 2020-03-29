@@ -1,7 +1,9 @@
-import { h, Component } from 'preact';
-import Router from 'preact-router';
+import { h }             from 'preact';
+import Router            from 'preact-router';
 
-import { Home } from './views/Home';
+import { LinkComponent } from './LinkComponent';
+
+import { Home }     from './views/Home';
 import { NotFound } from './views/NotFound';
 
 const ROUTES = [
@@ -11,29 +13,29 @@ const ROUTES = [
     { title: 'À Propos', path: '/about' }
 ];
 
-export class App extends Component
+export class App extends LinkComponent
 {
     constructor(props: Readonly<{}>)
     {
-        super(props);
+        super(props, ['count']);
     }
-
-    render()
+    
+    renderStateful({ count, increment }: any): any
     {
         return (
             <div id="layout">
                 <div id="content">
                     <Router>
-                        <Home path="/" />
-                        <NotFound default />
+                        <Home path="/"/>
+                        <NotFound default/>
                     </Router>
                 </div>
-
+                
                 <div id="footer">
                     <div id="left-footer">
                         <a id="home-button" href="/">
-                            <img id="logo" src="../assets/logo.svg" />
-                            <span id="title">EpiLink</span>
+                            <img id="logo" src="../assets/logo.svg"/>
+                            <span id="title">EpiLink (Count: {count})</span>
                         </a>
                         <span id="version">v1.0.0</span>
                     </div>

@@ -7,12 +7,13 @@
     "url": "git+https://github.com/Litarvan/EpiLink.git"
   },
   "scripts": {
-    "prod": "webpack -o build/bundle/main.min.js --mode production && cpx build/bundle/main.min.js build/web/ && copy index.prod.html build/web/",
-    "serve": "webpack-dev-server"
+    "prod": "webpack -o build/bundle/main.min.js --mode production --env.prod true && cpx build/bundle/main.min.js build/web/ && copy index.prod.html build/web/",
+    "serve": "webpack-dev-server --env.prod false"
   },
   "dependencies": {
     "preact": "^10.3.4",
-    "preact-router": "^3.2.1"
+    "preact-router": "^3.2.1",
+    "unistore": "^3.5.1"
   },
   "devDependencies": {
     "css-loader": "^3.4.2",

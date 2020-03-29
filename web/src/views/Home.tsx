@@ -1,10 +1,12 @@
-import { h, Component } from 'preact';
+import { h } from 'preact';
 
-export class Home extends Component
+import { LinkComponent } from '../LinkComponent';
+
+export class Home extends LinkComponent
 {
     constructor(props: Readonly<{}>)
     {
-        super(props);
+        super(props, []);
     }
 
     login()
@@ -12,7 +14,7 @@ export class Home extends Component
         alert('Not implemented');
     }
 
-    render()
+    renderStateful({ increment }: any): any
     {
         return (
             <div id="home">
@@ -21,7 +23,7 @@ export class Home extends Component
 
                 <button id="discord" onClick={this.login}>
                     <img id="discord-logo" src="../../assets/discord.svg" />
-                    <span id="discord-text">Se connecter via Discord</span>
+                    <span id="discord-text" onClick={increment}>Se connecter via Discord</span>
                 </button>
             </div>
         );

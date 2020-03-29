@@ -1,8 +1,13 @@
+const path = require('path');
+
 module.exports = (env, argv) => ({
     mode: argv.mode,
     entry: "./src/main.tsx",
     resolve: {
-        extensions: [".ts", ".tsx", ".js"]
+        extensions: [".ts", ".tsx", ".js"],
+        alias: {
+            environment: path.join(__dirname, 'src', 'environment', `environment${env.prod === 'true' ? 'prod' : 'dev'}.ts`)
+        }
     },
     module: {
         rules: [
