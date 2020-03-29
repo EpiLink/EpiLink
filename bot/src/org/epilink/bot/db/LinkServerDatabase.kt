@@ -1,5 +1,6 @@
 package org.epilink.bot.db
 
+import org.epilink.bot.LinkDisplayableException
 import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.sessions.RegisterSession
 import org.jetbrains.exposed.sql.Database
@@ -12,7 +13,6 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.sql.Connection
 import java.time.LocalDateTime
-import javax.naming.LinkException
 
 /**
  * The class that manages the database and handles all business logic.
@@ -68,29 +68,29 @@ class LinkServerDatabase(db: String) {
      * @param session The session to get the information from
      * @param keepIdentity If true, a [TrueIdentity] object will be associated to the user and recorded in the
      * database
-     * @throws LinkException If the session's data is invalid, the user is banned, or another erroneous scenario
+     * @throws LinkDisplayableException If the session's data is invalid, the user is banned, or another erroneous scenario
      */
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     suspend fun createUser(session: RegisterSession, keepIdentity: Boolean): User {
-        val safeDiscId = session.discordId ?: throw LinkException("Missing Discord ID")
-        val safeMsftId = session.microsoftUid ?: throw LinkException("Missing Microsoft ID")
-        val safeEmail = session.email ?: throw LinkException("Missing email")
-        val adv = isAllowedToCreateAccount(safeDiscId, safeMsftId)
-        if (adv is Disallowed) {
-            throw LinkException(adv.reason)
-        }
-        return newSuspendedTransaction(db = db) {
-            User.new {
-                discordId = safeDiscId
-                msftIdHash = safeMsftId.hashSha256()
-                creationDate = LocalDateTime.now()
-            }.also { u ->
+        // true in the exception because the end-user is at fault for trying to register with bad information.
+        val safeDiscId = session.discordId ?: throw LinkDisplayableException("Missing Discord ID", true)
+        val safeMsftId = session.microsoftUid ?: throw LinkDisplayableException("Missing Microsoft ID", true)
+        val safeEmail = session.email ?: throw LinkDisplayableException("Missing email", true)
+        return when (val adv = isAllowedToCreateAccount(safeDiscId, safeMsftId)) {
+            is Disallowed -> throw LinkDisplayableException(adv.reason, true)
+            is Allowed -> newSuspendedTransaction(db = db) {
+                val u = User.new {
+                    discordId = safeDiscId
+                    msftIdHash = safeMsftId.hashSha256()
+                    creationDate = LocalDateTime.now()
+                }
                 if (keepIdentity) {
                     TrueIdentity.new {
                         user = u
                         email = safeEmail
                     }
                 }
+                return@newSuspendedTransaction u
             }
         }
     }
@@ -100,7 +100,7 @@ class LinkServerDatabase(db: String) {
      */
     private fun Ban.isActive(): Boolean {
         val expiry = expiresOn
-        return expiry == null || expiry.isBefore(LocalDateTime.now())
+        return /* Ban does not expire */ expiry == null || /* Ban has expired */ expiry.isBefore(LocalDateTime.now())
     }
 
     /**

@@ -9,11 +9,15 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.*
+import io.ktor.request.ContentTransformationException
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
 import io.ktor.sessions.*
+import io.ktor.util.pipeline.PipelineContext
+import kotlinx.coroutines.coroutineScope
+import org.epilink.bot.LinkDisplayableException
 import org.epilink.bot.LinkException
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.db.Disallowed
@@ -23,6 +27,7 @@ import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
+import org.epilink.bot.logger
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
@@ -49,6 +54,26 @@ class LinkBackEnd : KoinComponent {
      * Anything responded in here SHOULD use [ApiResponse] in JSON form.
      */
     fun Route.epilinkApiV1() {
+
+        // Make sure that exceptions are not left for Ktor to try and figure out.
+        // Ktor would figure it out, but we a) need to log them b) respond with an ApiResponse
+        intercept(ApplicationCallPipeline.Monitoring) {
+            try {
+                coroutineScope {
+                    proceed()
+                }
+            } catch (ex: Exception) {
+                logger.error(
+                    "Uncaught exception encountered while processing v1 API call. Catch it and return a proper thing!",
+                    ex
+                )
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse(false, "Programming is so hard we have no idea of what happened just now. Retry maybe?")
+                )
+            }
+        }
+
         route("meta") {
             @ApiEndpoint("GET /api/v1/meta/info")
             get("info") {
@@ -59,7 +84,7 @@ class LinkBackEnd : KoinComponent {
         route("user") {
             intercept(ApplicationCallPipeline.Features) {
                 if (call.sessions.get<ConnectedSession>() == null) {
-                    call.respond(HttpStatusCode.Unauthorized)
+                    call.respond(HttpStatusCode.Unauthorized, ApiResponse(false, "You are not authenticated."))
                     return@intercept finish()
                 }
                 proceed()
@@ -88,52 +113,55 @@ class LinkBackEnd : KoinComponent {
             @ApiEndpoint("POST /api/v1/register")
             post {
                 val session = call.sessions.get<RegisterSession>()
-                with(session) {
-                    if (this == null)
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ApiResponse(false, "Missing session header", null)
-                        )
-                    else if (discordId == null || email == null || microsoftUid == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ApiResponse(false, "Incomplete registration process", session)
-                        )
-                    } else {
-                        val options: AdditionalRegistrationOptions =
-                            call.receive()
-                        try {
+                catchLinkErrors {
+                    with(session) {
+                        if (this == null)
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse(false, "Missing session header", null)
+                            )
+                        else if (discordId == null || email == null || microsoftUid == null) {
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiResponse(false, "Incomplete registration process", session)
+                            )
+                        } else {
+                            val options: AdditionalRegistrationOptions =
+                                call.receiveCatching() ?: return@post
                             val u = db.createUser(this, options.keepIdentity)
                             discord.launchInScope {
                                 discord.updateRoles(u, true)
                             }
                             call.loginAs(u)
                             call.respond(ApiResponse(true, "Account created, logged in."))
-                        } catch (e: LinkException) {
-                            call.respond(
-                                HttpStatusCode.BadRequest,
-                                ApiResponse(false, e.message)
-                            )
                         }
                     }
                 }
             }
+        }
 
-            @ApiEndpoint("POST /register/authcode/discord")
-            @ApiEndpoint("POST /register/authcode/msft")
-            post("authcode/{service}") {
+        @ApiEndpoint("POST /register/authcode/discord")
+        @ApiEndpoint("POST /register/authcode/msft")
+        post("authcode/{service}") {
+            catchLinkErrors {
                 when (val service = call.parameters["service"]) {
                     null -> error("Invalid service") // Should not happen
                     "discord" -> processDiscordAuthCode(call, call.receive())
                     "msft" -> processMicrosoftAuthCode(call, call.receive())
                     else -> call.respond(
-                        HttpStatusCode.BadRequest,
+                        HttpStatusCode.NotFound,
                         ApiResponse(false, "Invalid service: $service", null)
                     )
                 }
             }
-
         }
+    }
+
+    private suspend inline fun <reified T : Any> ApplicationCall.receiveCatching(): T? = try {
+        receive()
+    } catch (ex: ContentTransformationException) {
+        logger.error("Incorrect input from user", ex)
+        null
     }
 
     /**
@@ -217,6 +245,31 @@ class LinkBackEnd : KoinComponent {
      */
     private fun RegisterSession.toRegistrationInformation() =
         RegistrationInformation(email = email, discordAvatarUrl = discordAvatarUrl, discordUsername = discordUsername)
+
+    private suspend inline fun PipelineContext<Unit, ApplicationCall>.catchLinkErrors(
+        body: PipelineContext<Unit, ApplicationCall>.() -> Unit
+    ) {
+        try {
+            body(this)
+        } catch (ex: LinkDisplayableException) {
+            logException(ex, true)
+            call.respond(
+                if (ex.isEndUserAtFault) HttpStatusCode.BadRequest else HttpStatusCode.InternalServerError,
+                ApiResponse(false, ex.message)
+            )
+        } catch (ex: LinkException) {
+            logException(ex)
+            call.respond(HttpStatusCode.InternalServerError, ApiResponse(false, "Encountered an internal error"))
+        }
+    }
+
+    @PublishedApi
+    internal fun logException(ex: Exception, debugOnly: Boolean = false) {
+        if (debugOnly)
+            logger.debug("Caught an exception", ex)
+        else
+            logger.error("Caught an exception", ex)
+    }
 }
 
 /**

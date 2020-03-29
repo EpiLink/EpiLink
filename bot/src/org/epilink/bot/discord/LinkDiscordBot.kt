@@ -19,6 +19,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
+import org.epilink.bot.LinkDisplayableException
+import org.epilink.bot.LinkException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
@@ -235,13 +237,17 @@ class LinkDiscordBot(
         scope.launch { function() }
 }
 
+/**
+ * @throws UserDoesNotAcceptPrivateMessagesException if the user does not accept private messages
+ * @throws LinkException if an unexpected exception happens upon retrieval of the private channel
+ */
 private suspend fun DUser.getCheckedPrivateChannel(): PrivateChannel =
     try {
         this.privateChannel.awaitSingle()
     } catch (ex: ClientException) {
         if (ex.errorCode == "50007")
             throw UserDoesNotAcceptPrivateMessagesException(ex)
-        else throw ex
+        else throw LinkException("Unexpected exception on private channel retrieval", ex)
     }
 
 /**
@@ -271,10 +277,12 @@ suspend fun Publisher<Void>.await() {
  * Retrieve the configuration for a given guild, or throw an error if such a configuration could not be found.
  *
  * Expects the guild to be monitored (i.e. expects a configuration to be present).
+ *
+ * @throws LinkException If the configuration could not be found.
  */
 fun LinkDiscordConfig.getConfigForGuild(guildId: String): LinkDiscordServerSpec =
     this.servers.firstOrNull { it.id == guildId }
-        ?: error("Configuration not found, but guild was expected to be monitored")
+        ?: throw LinkException("Configuration not found, but guild was expected to be monitored")
 
 
 internal val ClientException.errorCode: String?
