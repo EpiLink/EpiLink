@@ -10,6 +10,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
+import org.epilink.bot.LinkDisplayableException
+import org.epilink.bot.LinkException
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
@@ -47,7 +49,13 @@ class LinkMicrosoftBackEnd(
             )
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
-        return data["access_token"] as String? ?: error("Did not receive any access token from Microsoft")
+        (data["error"] as? String)?.let {
+            if (it == "invalid_grant")
+                throw LinkDisplayableException("Invalid authorization code", true)
+            else
+                throw LinkException("Microsoft OAuth failed: $it (" + (data["error_description"] ?: "no description") + ")")
+        }
+        return data["access_token"] as String? ?: throw LinkException("Did not receive any access token from Microsoft")
     }
 
     /**
@@ -57,8 +65,8 @@ class LinkMicrosoftBackEnd(
         val data = client.getJson("https://graph.microsoft.com/v1.0/me", bearer = token)
         val email = data["mail"] as String?
             ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
-            ?: error("User does not have an email address")
-        val id = data["id"] as String? ?: error("User does not have an ID")
+            ?: throw LinkDisplayableException("This account does not have an email address", true)
+        val id = data["id"] as String? ?: throw LinkDisplayableException("This user does not have an ID", true)
         return MicrosoftUserInfo(id, email)
     }
 

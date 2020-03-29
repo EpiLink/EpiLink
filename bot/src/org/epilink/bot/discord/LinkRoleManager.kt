@@ -7,6 +7,8 @@ import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.rest.http.client.ClientException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.reactive.awaitSingle
+import org.epilink.bot.LinkDisplayableException
+import org.epilink.bot.LinkException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.rulebook.Rule
 import org.epilink.bot.config.rulebook.Rulebook
@@ -31,6 +33,8 @@ class LinkRoleManager : KoinComponent {
      * Updates all the roles of a Discord user on a given collection of guilds. The user does not have to be present on
      * the given guilds -- this function handles the case where the member is absent well. If tellUserIfFailed is true,
      * this additionally sends the user a DM on why the roles may have failed to update (e.g. banned user).
+     *
+     * @throws LinkDisplayableException If something fails during the member retrieval from each guild.
      */
     suspend fun updateRolesOnGuilds(
         dbUser: User,
@@ -56,7 +60,7 @@ class LinkRoleManager : KoinComponent {
                         if (ex.errorCode == "10007") {
                             null // Simply ignore this one
                         } else {
-                            throw ex
+                            throw LinkException("Unexpected exception upon member retrieval for guild ${g.name}", ex)
                         }
                     }
                 }
