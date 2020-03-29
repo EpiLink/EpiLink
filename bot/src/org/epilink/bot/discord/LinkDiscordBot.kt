@@ -255,7 +255,7 @@ private suspend fun DiscordClient.loginAndAwaitReady() {
             }
         this.login()
             .doOnError {
-                cont.resumeWithException(it)
+                logger.error("Encountered general Discord error", it)
             }.subscribe()
     }
 }
