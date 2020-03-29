@@ -55,10 +55,8 @@ A sample config file is available in [`bot/config/epilink_config.yaml`](bot/conf
 run EpiLink with it, use:
 
 ```
-$ ./gradlew run --args="config/epilink_config.yaml -u"
-```
-
-The last flag is required because EpiLink will throw an error if you leave the default JWT secret as-is. 
+$ ./gradlew run --args="config/epilink_config.yaml"
+``` 
 
 ## Building
 

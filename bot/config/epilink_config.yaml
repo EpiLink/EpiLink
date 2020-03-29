@@ -8,8 +8,6 @@ name: My EpiLink Instance
 server:
   # The port that should be used for the server.
   port: 9090
-  # Time in milliseconds before a session expires. Here, one month
-  sessionDuration: 2592000000
   # The URL of the front-end, WITH a trailing slash /, or null if the URL is unknown
   # Leave as ~ if the front-end is bootstrapped (i.e. the front-end is served on the same server as the back-end)
   frontendUrl: ~
@@ -29,8 +27,6 @@ db: epilink.db
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
 # environment values.
 tokens:
-  # The application JWT tokens' signature's secret key
-  jwtSecret: I am a secret ! Please change me :(
   # The token for the Discord bot
   discordToken: ~
   # The client ID for Discord's OAuth2
