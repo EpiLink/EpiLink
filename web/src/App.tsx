@@ -17,11 +17,17 @@ export class App extends LinkComponent
 {
     constructor(props: Readonly<{}>)
     {
-        super(props, ['count']);
+        super(props, ['meta']);
     }
     
-    renderStateful({ count, increment }: any): any
+    renderStateful({ meta, fetchMeta }: any): any
     {
+        if (!meta) {
+            fetchMeta();
+        }
+        
+        console.log(`Discord OAuth URL : '${meta && meta.authorizeStub_discord}'`);
+        
         return (
             <div id="layout">
                 <div id="content">
@@ -35,9 +41,8 @@ export class App extends LinkComponent
                     <div id="left-footer">
                         <a id="home-button" href="/">
                             <img id="logo" src="../assets/logo.svg"/>
-                            <span id="title">EpiLink (Count: {count})</span>
+                            <span id="title">EpiLink</span>
                         </a>
-                        <span id="version">v1.0.0</span>
                     </div>
                     <ul id="navigation">
                         {ROUTES.map(route =>

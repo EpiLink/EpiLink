@@ -1,19 +1,19 @@
 import createStore, { Store } from 'unistore';
 
-import { increment } from './count';
+import { fetchMeta, LinkMeta } from './meta';
 
 export class LinkState
 {
-    count: number;
+    meta: LinkMeta | null;
     
     constructor()
     {
-        this.count = 0;
+        this.meta = null;
     }
 }
 
 export const actions = (store: Store<LinkState>) => ({
-    increment: (_: LinkState) => increment(store)
+    fetchMeta: (_: LinkState) => fetchMeta(store)
 });
 
 export default createStore(new LinkState());

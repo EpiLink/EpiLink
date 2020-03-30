@@ -1,36 +1,25 @@
 import { API_URL } from 'environment';
 
-export async function request<T>(path: string): Promise<ApiSuccess<T>>
+export async function request<T>(path: string): Promise<T>
 {
-    const json = await fetch(API_URL).then(r => r.json());
+    const json = await fetch(API_URL, { method: 'POST' }).then(r => r.json());
     if (!json.success) {
         throw json as ApiError;
     }
     
-    return json as ApiSuccess<T>;
+    return (json as ApiSuccess<T>).data;
 }
 
-export class ApiResponse
+export interface ApiResponse
 {
     message: string;
-    
-    constructor(message: string)
-    {
-        this.message = message;
-    }
 }
 
-export class ApiSuccess<T> extends ApiResponse
+export interface ApiSuccess<T> extends ApiResponse
 {
     data: T;
-    
-    constructor(message: string, data: T)
-    {
-        super(message);
-        this.data = data;
-    }
 }
 
-export class ApiError extends ApiResponse
+export interface ApiError extends ApiResponse
 {
 }

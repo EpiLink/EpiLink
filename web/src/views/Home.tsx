@@ -14,7 +14,7 @@ export class Home extends LinkComponent
         alert('Not implemented');
     }
 
-    renderStateful({ increment }: any): any
+    renderStateful()
     {
         return (
             <div id="home">
@@ -23,7 +23,7 @@ export class Home extends LinkComponent
 
                 <button id="discord" onClick={this.login}>
                     <img id="discord-logo" src="../../assets/discord.svg" />
-                    <span id="discord-text" onClick={increment}>Se connecter via Discord</span>
+                    <span id="discord-text">Se connecter via Discord</span>
                 </button>
             </div>
         );
