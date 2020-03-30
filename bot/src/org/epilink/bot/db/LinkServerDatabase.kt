@@ -1,6 +1,7 @@
 package org.epilink.bot.db
 
-import org.epilink.bot.config.LinkConfiguration
+import org.epilink.bot.LinkDisplayableException
+import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.sessions.RegisterSession
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -12,7 +13,6 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.sql.Connection
 import java.time.LocalDateTime
-import javax.naming.LinkException
 
 /**
  * The class that manages the database and handles all business logic.
@@ -20,12 +20,12 @@ import javax.naming.LinkException
  * Most of the functions declared here are suspending functions intended to be used
  * from within Ktor responses.
  */
-class LinkServerDatabase(cfg: LinkConfiguration) {
+class LinkServerDatabase(db: String) {
     /**
      * The Database instance managed by JetBrains Exposed used for transactions.
      */
     @OptIn(UsesTrueIdentity::class) // Creation of TrueIdentities table
-    private val db: Database = Database.connect("jdbc:sqlite:${cfg.db}", driver = "org.sqlite.JDBC")
+    private val db: Database = Database.connect("jdbc:sqlite:$db", driver = "org.sqlite.JDBC")
         .apply {
             // Required for SQLite
             transactionManager.defaultIsolationLevel =
@@ -33,7 +33,7 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
 
             // Create the tables if they do not already exist
             transaction(this) {
-                SchemaUtils.create(Users, TrueIdentities, Bans)
+                SchemaUtils.create(Users, TrueIdentities, Bans, IdentityAccesses)
             }
         }
 
@@ -68,29 +68,29 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
      * @param session The session to get the information from
      * @param keepIdentity If true, a [TrueIdentity] object will be associated to the user and recorded in the
      * database
-     * @throws LinkException If the session's data is invalid, the user is banned, or another erroneous scenario
+     * @throws LinkDisplayableException If the session's data is invalid, the user is banned, or another erroneous scenario
      */
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     suspend fun createUser(session: RegisterSession, keepIdentity: Boolean): User {
-        val safeDiscId = session.discordId ?: throw LinkException("Missing Discord ID")
-        val safeMsftId = session.microsoftUid ?: throw LinkException("Missing Microsoft ID")
-        val safeEmail = session.email ?: throw LinkException("Missing email")
-        val adv = isAllowedToCreateAccount(safeDiscId, safeMsftId)
-        if (adv is Disallowed) {
-            throw LinkException(adv.reason)
-        }
-        return newSuspendedTransaction(db = db) {
-            User.new {
-                discordId = safeDiscId
-                msftIdHash = safeMsftId.hashSha256()
-                creationDate = LocalDateTime.now()
-            }.also { u ->
+        // true in the exception because the end-user is at fault for trying to register with bad information.
+        val safeDiscId = session.discordId ?: throw LinkDisplayableException("Missing Discord ID", true)
+        val safeMsftId = session.microsoftUid ?: throw LinkDisplayableException("Missing Microsoft ID", true)
+        val safeEmail = session.email ?: throw LinkDisplayableException("Missing email", true)
+        return when (val adv = isAllowedToCreateAccount(safeDiscId, safeMsftId)) {
+            is Disallowed -> throw LinkDisplayableException(adv.reason, true)
+            is Allowed -> newSuspendedTransaction(db = db) {
+                val u = User.new {
+                    discordId = safeDiscId
+                    msftIdHash = safeMsftId.hashSha256()
+                    creationDate = LocalDateTime.now()
+                }
                 if (keepIdentity) {
                     TrueIdentity.new {
                         user = u
                         email = safeEmail
                     }
                 }
+                return@newSuspendedTransaction u
             }
         }
     }
@@ -100,7 +100,7 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
      */
     private fun Ban.isActive(): Boolean {
         val expiry = expiresOn
-        return expiry == null || expiry.isBefore(LocalDateTime.now())
+        return /* Ban does not expire */ expiry == null || /* Ban has expired */ expiry.isBefore(LocalDateTime.now())
     }
 
     /**
@@ -156,9 +156,36 @@ class LinkServerDatabase(cfg: LinkConfiguration) {
     /**
      * Checks whether the user has his true identity recorded within the system.
      */
-    @OptIn(UsesTrueIdentity::class) // Checks identity, but does not actually access it or leak it
+    @UsesTrueIdentity
     suspend fun isUserIdentifiable(dbUser: User): Boolean {
         return newSuspendedTransaction(db = db) { dbUser.trueIdentity != null }
+    }
+
+    /**
+     * Retrieve the identity of a user. This access is logged within the system and the user is notified.
+     */
+    @UsesTrueIdentity
+    suspend fun accessIdentity(
+        dbUser: User,
+        automated: Boolean,
+        author: String,
+        reason: String,
+        discord: LinkDiscordBot
+    ): String {
+        val identity = newSuspendedTransaction {
+            val identity = dbUser.trueIdentity?.email ?: error("Cannot get true identity of user")
+            // Record the identity access
+            IdentityAccess.new {
+                target = dbUser.id
+                authorName = author
+                this.automated = automated
+                this.reason = reason
+                timestamp = LocalDateTime.now()
+            }
+            identity
+        }
+        discord.sendIdentityAccessNotification(dbUser.discordId, automated, author, reason)
+        return identity
     }
 }
 

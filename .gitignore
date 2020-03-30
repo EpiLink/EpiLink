@@ -15,3 +15,4 @@ epilink.db
 app.bundle.js
 *.db
 bot/config/epilink_config_real.yaml
+bot/config/epilink.rule.kts

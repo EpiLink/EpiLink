@@ -2,17 +2,19 @@
 
 [README](/README.md) | Documentation
 
+| Links |
+|:---- |
+| 📖 [**Instance Maintainer Guide**](/docs/MaintainerGuide.md) |
+| 🎯 [**Rulebooks**](/docs/Rulebooks.md) |
+| ❔ [**Learn about the technologies we use**](/docs/Technologies.md) |
+| ⚙ [**API Documentation**\*](/docs/Api.md) |
+
+
 These documentation pages describe how to configure, develop on and use EpiLink.
 
 This section is kind of empty right now, but will be expanded as the project
 grows.
 
-## Links
-| Links |
-|:----:|
-| 📖 [**Instance Maintainer Guide**](/docs/MaintainerGuide.md) |
-| ❔ [**Learn about the technologies we use**](/docs/Technologies.md) |
-| ⚙ [**API Documentation**\*](/docs/Api.md) |
 
 \* The API is not intended to be used as an external API, although it technically could be used as such. Instance maintainers may forbid (e.g. through their ToS) usage of the API by anything other than the front-end.
 

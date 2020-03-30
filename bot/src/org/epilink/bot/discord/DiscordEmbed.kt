@@ -1,6 +1,8 @@
 package org.epilink.bot.discord
 
 import discord4j.core.spec.EmbedCreateSpec
+import org.epilink.bot.LinkDisplayableException
+import org.epilink.bot.LinkException
 import java.awt.Color
 
 /**
@@ -51,17 +53,21 @@ data class DiscordEmbed(
 ) {
     /**
      * The [color] field in the form of a [java.awt.Color] object
+     *
+     * @throws LinkException if the color is in an unrecognized format
      */
     val awtColor: Color? by lazy {
-        val c = color
         when {
-            c == null -> null
-            c.startsWith("#") -> Color(Integer.parseInt(c.substring(1), 16))
+            this.color == null -> null
+            this.color.startsWith("#") -> runCatching {
+                // Color is guaranteed to not be null at this point
+                Color(Integer.parseInt(this.color!!.substring(1), 16))
+            }.getOrElse { throw LinkException("Invalid hexadecimal color format: $color", it) }
             else -> {
                 // Try and parse a java.awt.Color static field
                 runCatching {
-                    Color::class.java.getField(c)?.get(null) as? Color
-                }.getOrNull() ?: error("Unrecognized color: $color")
+                    Color::class.java.getField(this.color)?.get(null) as? Color
+                }.getOrElse { throw LinkException("Unrecognized color: $color", it) }
             }
         }
     }

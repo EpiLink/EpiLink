@@ -1,10 +1,6 @@
 package org.epilink.bot.http
 
-import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.application.install
-import io.ktor.auth.Authentication
-import io.ktor.auth.jwt.JWTPrincipal
-import io.ktor.auth.jwt.jwt
 import io.ktor.features.ContentNegotiation
 import io.ktor.jackson.jackson
 import io.ktor.routing.route
@@ -15,39 +11,23 @@ import io.ktor.server.netty.Netty
 import io.ktor.sessions.SessionStorageMemory
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.header
-import org.epilink.bot.LinkServerEnvironment
-import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.logger
-
-internal const val JWT_USER_AUDIENCE = "user"
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 
 /**
  * This class represents the Ktor server.
  */
-class LinkHttpServer(
-    /**
-     * The environment this server lives in
-     */
-    private val env: LinkServerEnvironment,
-    /**
-     * Configuration specifically or the web server
-     */
-    private val wsCfg: LinkWebServerConfiguration,
+class LinkHttpServer : KoinComponent {
+    private val wsCfg: LinkWebServerConfiguration by inject()
 
-    secrets: LinkTokens
-) {
     /**
      * The actual Ktor application instance
      */
     private var server: ApplicationEngine = ktorServer(wsCfg.port)
-
-    /**
-     * The algorithm to use for JWT related duties
-     */
-    private val jwtAlgorithm = Algorithm.HMAC256(secrets.jwtSecret)
 
     /**
      * True if the server should also serve the front-end, false if it should
@@ -59,8 +39,8 @@ class LinkHttpServer(
                 // Check that no URL is set
                 wsCfg.frontendUrl == null
 
-    private val backend =
-        LinkBackEnd(this, env, jwtAlgorithm, wsCfg.sessionDuration, secrets)
+    private val backend: LinkBackEnd by inject()
+
     /**
      * Start the server. If wait is true, this function will block until the
      * server stops.
@@ -77,17 +57,6 @@ class LinkHttpServer(
      */
     private fun ktorServer(port: Int) =
         embeddedServer(Netty, port) {
-            install(Authentication) {
-                jwt {
-                    realm = env.name
-                    verifier(
-                        makeJwtVerifier(
-                            jwtAlgorithm, env.name, JWT_USER_AUDIENCE
-                        )
-                    )
-                    validate { JWTPrincipal(it.payload) }
-                }
-            }
             /*
              * Used for automatically converting stuff to JSON when calling
              * "respond" with generic objects.

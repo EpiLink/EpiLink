@@ -4,23 +4,30 @@ import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Member
+import discord4j.core.`object`.entity.PrivateChannel
 import discord4j.core.`object`.util.Permission
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
+import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
-import org.epilink.bot.LinkServerEnvironment
+import org.epilink.bot.LinkDisplayableException
+import org.epilink.bot.LinkException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
-import org.epilink.bot.db.Allowed
-import org.epilink.bot.db.Disallowed
+import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.db.User
 import org.epilink.bot.logger
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 import org.reactivestreams.Publisher
 import java.awt.Color
 import kotlin.coroutines.resume
@@ -28,6 +35,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KClass
 import discord4j.core.`object`.entity.User as DUser
+
 
 /**
  * This class manages the Discord bot for EpiLink.
@@ -41,14 +49,6 @@ import discord4j.core.`object`.entity.User as DUser
  */
 class LinkDiscordBot(
     /**
-     * The environment the bot lives in
-     */
-    private val env: LinkServerEnvironment,
-    /**
-     * The Discord configuration that is used for checking servers, roles, etc.
-     */
-    private val config: LinkDiscordConfig,
-    /**
      * The token to be used for logging in the bot
      */
     token: String,
@@ -56,7 +56,13 @@ class LinkDiscordBot(
      * The Discord client ID associated with the bot. Used for generating an invite link.
      */
     private val discordClientId: String
-) {
+) : KoinComponent {
+    private val config: LinkDiscordConfig by inject()
+
+    private val privacyConfig: LinkPrivacy by inject()
+
+    private val roleManager: LinkRoleManager by inject()
+
     /**
      * Coroutine scope used for firing coroutines as answers to events
      */
@@ -75,42 +81,6 @@ class LinkDiscordBot(
     suspend fun start() {
         client.loginAndAwaitReady()
         logger.info("Discord bot launched, invite link: " + getInviteLink())
-    }
-
-    /**
-     * Updates all the roles of a Discord user. If tellUserIfFailed is true, this additionally sends the user a DM
-     * on why the roles may have failed to update (e.g. banned user).
-     */
-    suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean) {
-        val discordId = dbUser.discordId
-        val guilds = getMonitoredGuilds()
-        val userSnowflake = Snowflake.of(discordId)
-        when (val adv = env.database.canUserJoinServers(dbUser)) {
-            is Allowed -> {
-                val roles = getRolesForAuthorizedUser(dbUser)
-                guilds.mapNotNull { g ->
-                    try {
-                        g.getMemberById(userSnowflake).awaitSingle()?.to(g)
-                    } catch (ex: ClientException) {
-                        // We need to catch the exception when Discord tells us the member could not be found.
-                        // This happens when the user is not a member of the guild.
-                        // This kind of error has the error code 10007 in the response.
-                        val resp = ex.errorResponse ?: throw ex
-                        if (resp.fields["code"].toString() == "10007") {
-                            null // Simply ignore this one
-                        } else {
-                            throw ex
-                        }
-                    }
-                }.forEach { (m, g) ->
-                    updateAuthorizedUserRoles(m, g, roles)
-                }
-            }
-            is Disallowed -> {
-                if (tellUserIfFailed)
-                    sendCouldNotJoin(client.getUserById(userSnowflake).awaitSingle(), null, adv.reason)
-            }
-        }
     }
 
     /**
@@ -146,108 +116,62 @@ class LinkDiscordBot(
         if (!isMonitored(this.guildId)) {
             return // Ignore unmonitored guilds' join events
         }
-        val guild = this.guild.awaitSingle()
-        val dbUser = env.database.getUser(member.id.asString())
-        if (dbUser != null) {
-            when (val canJoin = env.database.canUserJoinServers(dbUser)) {
-                is Allowed -> updateAuthorizedUserRoles(member, guild, getRolesForAuthorizedUser(dbUser))
-                is Disallowed -> sendCouldNotJoin(member, guild, canJoin.reason)
-            }
-        } else {
-            sendGreetings(member, guild)
-        }
+        roleManager.handleNewUser(this)
     }
 
     /**
      * Send a DM to the user about why connecting failed
      */
-    private suspend fun sendCouldNotJoin(user: DUser, guild: Guild?, reason: String) {
+    suspend fun sendCouldNotJoin(user: DUser, guild: Guild?, reason: String) {
         val guildName = guild?.name ?: "any server"
-        user.privateChannel.awaitSingle().createEmbed {
-            with(it) {
-                setTitle(":x: Could not authenticate on $guildName")
-                setDescription("Failed to authenticate you on $guildName. Please contact an administrator if you think that should not be happening.")
-                addField("Reason", reason, true)
-                setFooter("Powered by EpiLink", null)
-                setColor(Color.red)
-            }
-        }.awaitSingle()
-    }
-
-    /**
-     * Update the roles of a member on a given guild, based on the given EpiLink roles from the role list.
-     */
-    private suspend fun updateAuthorizedUserRoles(member: Member, guild: Guild, roles: List<String>) {
-        val guildId = guild.id.asString()
-        val serverConfig = getConfigForGuild(guildId)
-        coroutineScope { // Put all of that in a scope to avoid leaking the coroutines launched by async
-            roles.mapNotNull { serverConfig.roles[it] } // Get roles that can be added
-                .map { Snowflake.of(it) } // Turn the IDs to snowflakes
-                .map { async { member.addRole(it).await() } } // Add the roles asynchronously
-                .awaitAll() // Await all the role additions
+        sendDirectMessage(user) {
+            setTitle(":x: Could not authenticate on $guildName")
+            setDescription("Failed to authenticate you on $guildName. Please contact an administrator if you think that should not be happening.")
+            addField("Reason", reason, true)
+            setFooter("Powered by EpiLink", null)
+            setColor(Color.red)
         }
-
     }
 
-    /**
-     * Get the role list for a user who we assume has the right to connect to servers (i.e. is not banned)
-     */
-    private suspend fun getRolesForAuthorizedUser(dbUser: User): List<String> {
-        val list = mutableListOf("_known")
-        if (env.database.isUserIdentifiable(dbUser))
-            list += "_identified"
-        return list
-    }
 
     /**
      * Initial server message sent upon connection with the server not knowing who the person is
      */
-    private suspend fun sendGreetings(member: Member, guild: Guild) {
-        val guildConfig = getConfigForGuild(guild.id.asString())
+    suspend fun sendGreetings(member: Member, guild: Guild) {
+        val guildConfig = config.getConfigForGuild(guild.id.asString())
         if (!guildConfig.enableWelcomeMessage)
             return
-
-        member.privateChannel.awaitSingle().createEmbed {
-            it.from(
-                guildConfig.welcomeEmbed ?: DiscordEmbed(
-                    title = ":closed_lock_with_key: Authentication required for ${guild.name}",
-                    description =
-                    """
+        sendDirectMessage(member) {
+            guildConfig.welcomeEmbed ?: DiscordEmbed(
+                title = ":closed_lock_with_key: Authentication required for ${guild.name}",
+                description =
+                """
                     **Welcome to ${guild.name}**. Access to this server is restricted. Please log in using the link
                     below to get full access to the server's channels.
                     """.trimIndent(),
-                    fields = run {
-                        val ml = mutableListOf<DiscordEmbedField>()
-                        if (config.welcomeUrl != null)
-                            ml += DiscordEmbedField("Log in", config.welcomeUrl)
-                        ml += DiscordEmbedField(
-                            "Need help?",
-                            "Contact the administrators of ${guild.name} if you need help with the procedure."
-                        )
-                        ml
-                    },
-                    footer = DiscordEmbedFooter("Powered by EpiLink"),
-                    color = "#ffff00"
-                )
-            )
-        }.awaitSingle()
+                fields = run {
+                    val ml = mutableListOf<DiscordEmbedField>()
+                    val welcomeUrl = config.welcomeUrl
+                    if (welcomeUrl != null)
+                        ml += DiscordEmbedField("Log in", welcomeUrl)
+                    ml += DiscordEmbedField(
+                        "Need help?",
+                        "Contact the administrators of ${guild.name} if you need help with the procedure."
+                    )
+                    ml
+                },
+                footer = DiscordEmbedFooter("Powered by EpiLink"),
+                color = "#ffff00"
+            ).let(this::from)
+        }
     }
-
-    /**
-     * Retrieve the configuration for a given guild, or throw an error if such a configuration could not be found.
-     *
-     * Expects the guild to be monitored.
-     */
-    private fun getConfigForGuild(guildId: String): LinkDiscordServerSpec =
-        config.servers?.first { it.id == guildId }
-            ?: error("Configuration not found, but guild was expected to be monitored")
 
     /**
      * Check if a guild is monitored: that is, EpiLink knows how to handle it and is expected to do so.
      */
     private fun isMonitored(guildId: Snowflake): Boolean {
         val id = guildId.asString()
-        return config.servers?.any { it.id == id } ?: false
+        return config.servers.any { it.id == id }
     }
 
     /**
@@ -259,7 +183,72 @@ class LinkDiscordBot(
     ) {
         on(event.java).subscribe { scope.launch { handler(it) } }
     }
+
+    suspend fun sendIdentityAccessNotification(discordId: String, automated: Boolean, author: String, reason: String) {
+        if (privacyConfig.shouldNotify(automated)) {
+            val str = buildString {
+                append("Your identity was accessed")
+                if (privacyConfig.shouldDiscloseIdentity(automated)) {
+                    append(" by *$author*")
+                }
+                if (automated) {
+                    append(" automatically")
+                }
+                appendln(".")
+                appendln("Reason: *$reason*")
+            }
+            sendDirectMessage(discordId, str)
+        }
+    }
+
+
+    private suspend fun sendDirectMessage(discordId: String, embed: EmbedCreateSpec.() -> Unit) =
+        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), embed)
+
+    private suspend fun sendDirectMessage(discordId: String, message: String) =
+        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), message)
+
+    private suspend fun sendDirectMessage(discordUser: DUser, message: String) =
+        discordUser.getCheckedPrivateChannel()
+            .createMessage(message).awaitSingle()
+
+    private suspend fun sendDirectMessage(discordUser: DUser, embed: EmbedCreateSpec.() -> Unit) =
+        discordUser.getCheckedPrivateChannel()
+            .createEmbed(embed).awaitSingle()
+
+    // TODO move to RoleManager ?
+    suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean) {
+        val discordId = dbUser.discordId
+        val guilds = getMonitoredGuilds()
+        val userSnowflake = Snowflake.of(discordId)
+        val discordUser = try {
+            client.getUserById(userSnowflake).awaitSingle()
+        } catch (ex: ClientException) {
+            if (ex.errorCode == "10013") {
+                return // User has not joined any guild yet
+            } else {
+                throw ex
+            }
+        }
+        roleManager.updateRolesOnGuilds(dbUser, guilds, discordUser, tellUserIfFailed)
+    }
+
+    suspend fun launchInScope(function: suspend CoroutineScope.() -> Unit): Job =
+        scope.launch { function() }
 }
+
+/**
+ * @throws UserDoesNotAcceptPrivateMessagesException if the user does not accept private messages
+ * @throws LinkException if an unexpected exception happens upon retrieval of the private channel
+ */
+private suspend fun DUser.getCheckedPrivateChannel(): PrivateChannel =
+    try {
+        this.privateChannel.awaitSingle()
+    } catch (ex: ClientException) {
+        if (ex.errorCode == "50007")
+            throw UserDoesNotAcceptPrivateMessagesException(ex)
+        else throw LinkException("Unexpected exception on private channel retrieval", ex)
+    }
 
 /**
  * Logs into the Discord client, suspending until a Ready event is received.
@@ -272,7 +261,7 @@ private suspend fun DiscordClient.loginAndAwaitReady() {
             }
         this.login()
             .doOnError {
-                cont.resumeWithException(it)
+                logger.error("Encountered general Discord error", it)
             }.subscribe()
     }
 }
@@ -283,3 +272,18 @@ private suspend fun DiscordClient.loginAndAwaitReady() {
 suspend fun Publisher<Void>.await() {
     if (awaitFirstOrNull() != null) error("Did not expect a return value here")
 }
+
+/**
+ * Retrieve the configuration for a given guild, or throw an error if such a configuration could not be found.
+ *
+ * Expects the guild to be monitored (i.e. expects a configuration to be present).
+ *
+ * @throws LinkException If the configuration could not be found.
+ */
+fun LinkDiscordConfig.getConfigForGuild(guildId: String): LinkDiscordServerSpec =
+    this.servers.firstOrNull { it.id == guildId }
+        ?: throw LinkException("Configuration not found, but guild was expected to be monitored")
+
+
+internal val ClientException.errorCode: String?
+    get() = this.errorResponse?.fields?.get("code")?.toString()
