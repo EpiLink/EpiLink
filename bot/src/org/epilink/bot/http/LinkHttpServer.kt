@@ -1,7 +1,9 @@
 package org.epilink.bot.http
 
 import io.ktor.application.install
+import io.ktor.features.CORS
 import io.ktor.features.ContentNegotiation
+import io.ktor.http.HttpMethod
 import io.ktor.jackson.jackson
 import io.ktor.routing.route
 import io.ktor.routing.routing
@@ -57,6 +59,20 @@ class LinkHttpServer : KoinComponent {
      */
     private fun ktorServer(port: Int) =
         embeddedServer(Netty, port) {
+            /*
+             * Allows the frontend to call the API even when they
+             * are on a different host
+             */
+            if (wsCfg.frontendUrl != null) {
+                install(CORS) {
+                    method(HttpMethod.Options)
+                    method(HttpMethod.Delete)
+
+                    host(wsCfg.frontendUrl!!.dropLast(1).replace(Regex("https?://"), ""))
+                }
+            }
+
+
             /*
              * Used for automatically converting stuff to JSON when calling
              * "respond" with generic objects.
