@@ -50,7 +50,7 @@ class LinkDiscordBackEnd(
                 )
             }
         }.getOrElse {
-            throw LinkException("Failed to contact Discord servers for token retrieval.")
+            throw LinkException("Failed to contact Discord servers for token retrieval.", it)
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
         (data["error"] as? String)?.let {

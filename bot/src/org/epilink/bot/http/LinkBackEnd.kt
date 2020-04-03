@@ -283,6 +283,7 @@ fun ParametersBuilder.appendOauthParameters(
     append("client_secret", secret)
     append("code", authcode)
     append("redirect_uri", redirectUri)
+    append("scope", "identify")
 }
 
 /**

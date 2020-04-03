@@ -68,6 +68,12 @@ class LinkHttpServer : KoinComponent {
                     method(HttpMethod.Options)
                     method(HttpMethod.Delete)
 
+                    header("Content-Type")
+                    header("RegistrationSessionId")
+                    header("SessionId")
+                    exposeHeader("RegistrationSessionId")
+                    exposeHeader("SessionId")
+
                     host(wsCfg.frontendUrl!!.dropLast(1).replace(Regex("https?://"), ""))
                 }
             }

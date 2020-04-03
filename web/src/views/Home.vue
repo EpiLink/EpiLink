@@ -11,28 +11,34 @@
 </template>
 
 <script>
+    import { getRedirectURI } from '../api';
+
     export default {
         name: 'link-home',
 
-        data() {
-            return {
-                popup: null
-            }
-        },
-        beforeDestroy() {
-            if (this.popup) {
-                this.popup.close();
+        mounted() {
+            // TODO: Is user logged for REAL
+
+            if (this.$store.state.user && !this.$store.state.email) {
+                this.$router.push({ name: 'microsoft' });
             }
         },
         methods: {
             login() {
-                const width = 550, height = 750;
-                const x = screen.width / 2 - width / 2, y = screen.height / 2 - height / 2 - 30;
+                const width = 650, height = 750;
+                const x = screen.width / 2 - width / 2, y = screen.height / 2 - height / 2 - 65;
 
-                const url = `${this.$store.state.meta.authorizeStub_discord}&redirect_uri=${window.location.origin}/auth/redirect`;
+                const url = `${this.$store.state.meta.authorizeStub_discord}&redirect_uri=${getRedirectURI('discord')}`;
                 const options = `menubar=no, status=no, scrollbars=no, menubar=no, width=${width}, height=${height}, top=${y}, left=${x}`;
 
-                this.popup = window.open(url,'EpiLink - Discord', options);
+                this.$router.push({
+                    name: 'auth',
+                    params: { service: 'discord' }
+                });
+
+                setTimeout(() => {
+                    this.$store.commit('openPopup', window.open(url,'EpiLink - Discord', options));
+                }, 300);
             }
         }
     }
@@ -86,7 +92,7 @@
         justify-content: space-evenly;
         align-items: center;
 
-        transition: background-color 150ms ease;
+        transition: background-color 150ms;
 
         #discord-logo {
             height: 30px;

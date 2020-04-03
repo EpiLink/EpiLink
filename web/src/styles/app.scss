@@ -11,15 +11,17 @@ body {
   min-width: 100vw;
   min-height: 100vh;
 
-  background: #202427;
-
   display: inline-block;
 
   color: white;
+
+  animation: bg-fade 0.25s ease 1 both;
+
+  overflow-y: hidden;
 }
 
 a {
-  transition: color 225ms ease;
+  transition: color 225ms;
 
   &, &:visited {
     color: black;
@@ -28,5 +30,15 @@ a {
 
   &:hover {
     color: #444;
+  }
+}
+
+@keyframes bg-fade {
+  0% {
+    background-color: white;
+  }
+
+  100% {
+    background-color: #202427;
   }
 }
