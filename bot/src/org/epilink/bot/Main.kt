@@ -68,6 +68,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
             withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
                 val path = cfgPath.parent.resolve(file)
                 logger.info("Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this may take some time...")
+                // TODO When switching to Java 11, replace by Files.readString
                 val s = Files.readAllLines(path, StandardCharsets.UTF_8).joinToString("\n")
                 loadRules(s).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.")}
             }
