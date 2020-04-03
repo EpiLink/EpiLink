@@ -3,6 +3,8 @@ package org.epilink.bot.http
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.HttpClient
+import io.ktor.client.call.receive
+import io.ktor.client.features.ClientRequestException
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.content.TextContent
@@ -38,36 +40,51 @@ class LinkMicrosoftBackEnd(
      * code
      */
     suspend fun getMicrosoftToken(code: String, redirectUri: String): String {
-        val res = client.post<String>("https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token") {
-            header(HttpHeaders.Accept, ContentType.Application.Json)
-            body = TextContent(
-                ParametersBuilder().apply {
-                    append("scope", "User.Read")
-                    appendOauthParameters(clientId, secret, code, redirectUri)
-                }.build().formUrlEncode(),
-                ContentType.Application.FormUrlEncoded
-            )
+        val res = runCatching {
+            client.post<String>("https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token") {
+                header(HttpHeaders.Accept, ContentType.Application.Json)
+                body = TextContent(
+                    ParametersBuilder().apply {
+                        append("scope", "User.Read")
+                        appendOauthParameters(clientId, secret, code, redirectUri)
+                    }.build().formUrlEncode(),
+                    ContentType.Application.FormUrlEncoded
+                )
+            }
+        }.getOrElse { ex ->
+            if (ex is ClientRequestException) {
+                val data = ObjectMapper()
+                    .readValue<Map<String, Any?>>(ex.response.call.receive<String>())
+                when (val errt = data["error"] as? String) {
+                    "invalid_grant" -> throw LinkDisplayableException("Invalid authorization code", true, ex)
+                    else -> throw LinkException(
+                        "Microsoft OAuth failed: $errt (" + (data["error_description"] ?: "no description") + ")", ex
+                    )
+                }
+            } else {
+                throw LinkException("Microsoft API call failed", ex)
+            }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
-        (data["error"] as? String)?.let {
-            if (it == "invalid_grant")
-                throw LinkDisplayableException("Invalid authorization code", true)
-            else
-                throw LinkException("Microsoft OAuth failed: $it (" + (data["error_description"] ?: "no description") + ")")
-        }
-        return data["access_token"] as String? ?: throw LinkException("Did not receive any access token from Microsoft")
+        return data["access_token"] as String?
+            ?: throw LinkException("Did not receive any access token from Microsoft")
+
     }
 
     /**
      * Retrieve a user's own information with Microsoft Graph using a Microsoft OAuth2 token.
      */
     suspend fun getMicrosoftInfo(token: String): MicrosoftUserInfo {
-        val data = client.getJson("https://graph.microsoft.com/v1.0/me", bearer = token)
-        val email = data["mail"] as String?
-            ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
-            ?: throw LinkDisplayableException("This account does not have an email address", true)
-        val id = data["id"] as String? ?: throw LinkDisplayableException("This user does not have an ID", true)
-        return MicrosoftUserInfo(id, email)
+        try {
+            val data = client.getJson("https://graph.microsoft.com/v1.0/me", bearer = token)
+            val email = data["mail"] as String?
+                ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
+                ?: throw LinkDisplayableException("This account does not have an email address", true)
+            val id = data["id"] as String? ?: throw LinkDisplayableException("This user does not have an ID", true)
+            return MicrosoftUserInfo(id, email)
+        } catch (ex: ClientRequestException) {
+            throw LinkDisplayableException("Failed to contact the Microsoft API.", ex.response.status.value == 400, ex)
+        }
     }
 
     fun getAuthorizeStub(): String = authStubMsft
