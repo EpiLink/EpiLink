@@ -3,6 +3,7 @@ package org.epilink.bot.http
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.HttpClient
+import io.ktor.client.features.ClientRequestException
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.content.TextContent
@@ -49,8 +50,11 @@ class LinkDiscordBackEnd(
                     ContentType.Application.FormUrlEncoded
                 )
             }
-        }.getOrElse {
-            throw LinkException("Failed to contact Discord servers for token retrieval.")
+        }.getOrElse { ex ->
+            throw LinkDisplayableException(
+                "Failed to contact Discord API for obtaining token.",
+                ex is ClientRequestException && ex.response.status.value == 400, ex
+            )
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
         (data["error"] as? String)?.let {

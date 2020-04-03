@@ -138,20 +138,20 @@ class LinkBackEnd : KoinComponent {
                     }
                 }
             }
-        }
 
-        @ApiEndpoint("POST /register/authcode/discord")
-        @ApiEndpoint("POST /register/authcode/msft")
-        post("authcode/{service}") {
-            catchLinkErrors {
-                when (val service = call.parameters["service"]) {
-                    null -> error("Invalid service") // Should not happen
-                    "discord" -> processDiscordAuthCode(call, call.receive())
-                    "msft" -> processMicrosoftAuthCode(call, call.receive())
-                    else -> call.respond(
-                        HttpStatusCode.NotFound,
-                        ApiResponse(false, "Invalid service: $service", null)
-                    )
+            @ApiEndpoint("POST /register/authcode/discord")
+            @ApiEndpoint("POST /register/authcode/msft")
+            post("authcode/{service}") {
+                catchLinkErrors {
+                    when (val service = call.parameters["service"]) {
+                        null -> error("Invalid service") // Should not happen
+                        "discord" -> processDiscordAuthCode(call, call.receive())
+                        "msft" -> processMicrosoftAuthCode(call, call.receive())
+                        else -> call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse(false, "Invalid service: $service", null)
+                        )
+                    }
                 }
             }
         }
