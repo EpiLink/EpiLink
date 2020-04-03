@@ -23,6 +23,70 @@ ALL API endpoints either return something of this form, or return no response at
 }
 ```
 
+If `success` is false, then `data` is guaranteed to be a non-null [ErrorData](#errordata) object.
+
+The message is nullable. If there is an error, and the message is null, check the ErrorData's description.
+
+### ErrorData
+
+```json5
+{
+  "code": 123,
+  "description": "Broad description of the error"
+}
+``` 
+
+#### Error codes
+
+These are the different codes that can be seen in [ErrorData](#errordata) objects.
+
+The description you see in the tables is very close to what you will receive in the ErrorData's description (there are
+additional clarifications here).
+
+More information can usually be found in the API response's message.
+
+##### 1xx codes
+
+These codes are specific for the registration process.
+
+| Code | Description |
+|:----:| ----------- |
+| 100 | The registration request is missing some elements |
+| 101 | Account creation is not allowed |
+| 102 | Invalid authorization code (for `/register/authcode` endpoints) |
+| 103 | This account does not have any attached email address |
+| 104 | This account does not have any ID |
+| 105 | This service is not known or does not exist (for `/register/authcode` endpoints) |
+
+
+##### 2xx codes
+
+These codes are for situations where an external API call failed.
+
+| Code | Description |
+|:----:| ----------- |
+| 201 | Something went wrong with a Discord API call |
+| 202 | Something went wrong with a Microsoft API call |
+
+
+##### 3xx codes
+
+These are general codes that can be encountered.
+
+| Code | Description |
+|:----:| ----------- |
+| 300 | You need authentication to be able to access this resource |
+
+
+##### 9xx codes
+
+Special codes for when things really go wrong.
+
+| Code | Description |
+|:----:| ----------- |
+| 999 | An unknown error occurred |
+
+
 ## Meta-information (/meta)
 
 These endpoints can be used to retrieve information from the back-end that is used for operation on the front-end.
