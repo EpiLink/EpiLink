@@ -5,8 +5,6 @@ import request, { deleteSession } from './api';
 
 Vue.use(Vuex);
 
-// TODO: Handle session expiration
-
 export default new Vuex.Store({
     state: {
         expanded: false,
@@ -65,7 +63,7 @@ export default new Vuex.Store({
             }
         },
         async postCode({ state, commit }, { service, code, uri }) {
-            const { next, attachment } = await request('POST', '/authcode/' + service, {
+            const { next, attachment } = await request('POST', '/register/authcode/' + service, {
                 code,
                 redirectUri: uri
             });

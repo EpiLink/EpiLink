@@ -1,0 +1,106 @@
+<template>
+    <div class="stepper">
+        <div class="step" v-for="(name, $i) of steps" :class="{ 'done': step > $i + 1, 'current': ~~step === $i + 1 }">
+            <div class="number">
+                <template v-if="step <= $i + 1">{{ $i + 1 }}</template>
+                <img v-else src="../../assets/check.svg" />
+            </div>
+            <div class="separator"></div>
+            <div class="name" v-html="name" />
+        </div>
+    </div>
+</template>
+
+<script>
+    const STEPS = [
+        'Connexion à Discord',
+        'Connexion à Microsoft',
+        'Validation des paramètres'
+    ];
+
+    export default {
+        name: 'link-stepper',
+        props: ['step'],
+
+        data() {
+            return {
+                steps: STEPS
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+    @import '../styles/fonts';
+
+    .step {
+        display: flex;
+        align-items: center;
+
+        margin-bottom: 15px;
+
+        .number {
+            border-radius: 50%;
+
+            width: 35px;
+            height: 35px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            color: white;
+            font-size: 21px;
+        }
+
+        .separator {
+            height: 1px;
+            flex: 1;
+
+            margin: 0 25px;
+        }
+
+        .name {
+            font-size: 20px;
+        }
+
+        &.done {
+            .number {
+                background-color: #37C837;
+            }
+        }
+
+        &:not(.done) {
+            .number {
+                padding-bottom: 1px;
+                box-sizing: border-box;
+            }
+        }
+
+        &.current {
+            .separator, .number {
+                background-color: #000;
+            }
+
+            .name {
+                color: #000;
+            }
+        }
+
+        &:not(.current) {
+            .name {
+                color: #A7AEC2;
+            }
+
+            .separator {
+                background-color: #C2C2C2;
+            }
+        }
+
+        &:not(.done):not(.current) {
+            .number {
+                background-color: #CACACA;
+            }
+        }
+    }
+</style>

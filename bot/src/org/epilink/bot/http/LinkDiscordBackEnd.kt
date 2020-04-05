@@ -49,6 +49,7 @@ class LinkDiscordBackEnd(
                 body = TextContent(
                     ParametersBuilder().apply {
                         appendOauthParameters(clientId, secret, authcode, redirectUri)
+                        append("scope", "identify")
                     }.build().formUrlEncode(),
                     ContentType.Application.FormUrlEncoded
                 )

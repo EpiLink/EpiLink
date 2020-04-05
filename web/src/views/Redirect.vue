@@ -28,9 +28,13 @@
                 return;
             }
 
-            const code = query.substring(6);
-            console.log(`Code : '${code}'`);
+            let code = query.substring(6);
+            const max = code.indexOf('&');
+            if (max !== -1) {
+                code = code.substring(0, max);
+            }
 
+            console.log(`Code : ${code}`);
             this.status = true;
 
             setTimeout(() => {

@@ -1,7 +1,7 @@
 <template>
-    <div id="discord" :class="{ 'seen': contentSeen }">
+    <div id="auth" :class="{ 'seen': contentSeen }">
         <h1 id="title">{{ doneWithAnimation ? 'Chargement' : 'En attente' }}</h1>
-        <span id="subtitle">{{ doneWithAnimation ? 'Création de la session...' : 'En attente de confirmation dans la fenêtre extérieure' }}</span>
+        <span id="subtitle">{{ doneWithAnimation ? 'Récupération des informations...' : 'En attente de confirmation dans la fenêtre extérieure' }}</span>
 
         <link-loading />
     </div>
@@ -12,7 +12,7 @@
     import LinkLoading        from '../components/Loading';
 
     export default {
-        name: 'link-discord',
+        name: 'link-auth',
         components: { LinkLoading },
 
         mounted() {
@@ -27,7 +27,7 @@
 
                     setTimeout(() => {
                         if (!this.done) {
-                            this.$router.push({ name: 'home' });
+                            this.$router.push({ name: this.$route.params.service === 'discord' ? 'home' : 'microsoft' });
                         }
                     }, 150);
                 }
@@ -69,11 +69,7 @@
                         code: msg.data.code,
                         uri: getRedirectURI(service)
                     }).then(() => setTimeout(() => {
-                        if (service === 'discord') {
-                            this.$router.push({ name: 'microsoft' });
-                        } else {
-                            // TODO: ...
-                        }
+                        this.$router.push({ name: service === 'discord' ? 'microsoft' : 'settings' });
                     }, 250));
                 }
             },
@@ -86,7 +82,7 @@
 </script>
 
 <style lang="scss" scoped>
-    #discord {
+    #auth {
         display: flex;
         flex-direction: column;
         justify-content: center;

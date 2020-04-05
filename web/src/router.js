@@ -6,6 +6,7 @@ import Microsoft from './views/Microsoft';
 import NotFound  from './views/NotFound';
 import Redirect  from './views/Redirect';
 import Auth      from './views/Auth';
+import Settings  from './views/Settings';
 
 Vue.use(VueRouter);
 
@@ -29,6 +30,11 @@ const routes = [
         path: '/microsoft',
         name: 'microsoft',
         component: Microsoft
+    },
+    {
+        path: '/settings',
+        name: 'settings',
+        component: Settings
     },
     {
         path: '*',

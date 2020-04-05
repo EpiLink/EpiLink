@@ -16,6 +16,16 @@ export function getRedirectURI(service) {
     return window.location.origin + '/redirect/' + service;
 }
 
+export function openPopup(title, service, stub) {
+    const width = 650, height = 750;
+    const x = screen.width / 2 - width / 2, y = screen.height / 2 - height / 2 - 65;
+
+    const url = `${stub}&redirect_uri=${getRedirectURI(service)}`;
+    const options = `menubar=no, status=no, scrollbars=no, menubar=no, width=${width}, height=${height}, top=${y}, left=${x}`;
+
+    return window.open(url,`EpiLink - ${title}`, options);
+}
+
 export function deleteSession() {
     session = null;
     localStorage.setItem('session',  null);

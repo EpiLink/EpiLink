@@ -11,7 +11,7 @@
 </template>
 
 <script>
-    import { getRedirectURI } from '../api';
+    import { getRedirectURI, openPopup } from '../api';
 
     export default {
         name: 'link-home',
@@ -19,25 +19,20 @@
         mounted() {
             // TODO: Is user logged for REAL
 
-            if (this.$store.state.user && !this.$store.state.email) {
-                this.$router.push({ name: 'microsoft' });
+            if (this.$store.state.user) {
+                this.$router.push({ name: this.$store.state.user.email ? 'settings' : 'microsoft' });
             }
         },
         methods: {
             login() {
-                const width = 650, height = 750;
-                const x = screen.width / 2 - width / 2, y = screen.height / 2 - height / 2 - 65;
-
-                const url = `${this.$store.state.meta.authorizeStub_discord}&redirect_uri=${getRedirectURI('discord')}`;
-                const options = `menubar=no, status=no, scrollbars=no, menubar=no, width=${width}, height=${height}, top=${y}, left=${x}`;
-
                 this.$router.push({
                     name: 'auth',
                     params: { service: 'discord' }
                 });
 
                 setTimeout(() => {
-                    this.$store.commit('openPopup', window.open(url,'EpiLink - Discord', options));
+                    const popup = openPopup('Connexion à Discord', 'discord', this.$store.state.meta.authorizeStub_discord);
+                    this.$store.commit('openPopup', popup);
                 }, 300);
             }
         }
