@@ -141,29 +141,32 @@ class LinkDiscordBot(
         val guildConfig = config.getConfigForGuild(guild.id.asString())
         if (!guildConfig.enableWelcomeMessage)
             return
-        sendDirectMessage(member) {
-            guildConfig.welcomeEmbed ?: DiscordEmbed(
-                title = ":closed_lock_with_key: Authentication required for ${guild.name}",
-                description =
-                """
+        val embed = guildConfig.welcomeEmbed ?: DiscordEmbed(
+            title = ":closed_lock_with_key: Authentication required for ${guild.name}",
+            description =
+            """
                     **Welcome to ${guild.name}**. Access to this server is restricted. Please log in using the link
                     below to get full access to the server's channels.
                     """.trimIndent(),
-                fields = run {
-                    val ml = mutableListOf<DiscordEmbedField>()
-                    val welcomeUrl = config.welcomeUrl
-                    if (welcomeUrl != null)
-                        ml += DiscordEmbedField("Log in", welcomeUrl)
-                    ml += DiscordEmbedField(
-                        "Need help?",
-                        "Contact the administrators of ${guild.name} if you need help with the procedure."
-                    )
-                    ml
-                },
-                footer = DiscordEmbedFooter("Powered by EpiLink"),
-                color = "#ffff00"
-            ).let(this::from)
-        }
+            fields = run {
+                val ml = mutableListOf<DiscordEmbedField>()
+                val welcomeUrl = config.welcomeUrl
+                if (welcomeUrl != null)
+                    ml += DiscordEmbedField("Log in", welcomeUrl)
+                ml += DiscordEmbedField(
+                    "Need help?",
+                    "Contact the administrators of ${guild.name} if you need help with the procedure."
+                )
+                ml
+            },
+            thumbnail = "https://cdn.discordapp.com/attachments/680809657740427300/696412896472727562/whoareyou.png",
+            footer = DiscordEmbedFooter(
+                "Powered by EpiLink",
+                "https://cdn.discordapp.com/attachments/680809657740427300/680811402172301348/epilink3g.png"
+            ),
+            color = "#3771c8"
+        )
+        sendDirectMessage(member) { from(embed) }
     }
 
     /**
@@ -195,9 +198,34 @@ class LinkDiscordBot(
                     append(" automatically")
                 }
                 appendln(".")
-                appendln("Reason: *$reason*")
             }
-            sendDirectMessage(discordId, str)
+            val embed = DiscordEmbed(
+                title = "Identity access notification",
+                description = str,
+                fields = listOf(
+                    DiscordEmbedField("Reason", reason, false),
+                    if (automated) {
+                        DiscordEmbedField(
+                            "Automated access",
+                            "This access was conducted automatically by a bot. No administrator has accessed your identity.",
+                            false
+                        )
+                    } else {
+                        DiscordEmbedField(
+                            "I need help!",
+                            "Contact an administrator if you believe that this action was conducted against the Terms of Services.",
+                            false
+                        )
+                    }
+                ),
+                color = "#ff6600",
+                thumbnail = "https://media.discordapp.net/attachments/680809657740427300/696411621320425572/idnotify.png",
+                footer = DiscordEmbedFooter(
+                    "Powered by EpiLink",
+                    "https://cdn.discordapp.com/attachments/680809657740427300/680811402172301348/epilink3g.png"
+                )
+            )
+            sendDirectMessage(discordId) { from(embed) }
         }
     }
 
