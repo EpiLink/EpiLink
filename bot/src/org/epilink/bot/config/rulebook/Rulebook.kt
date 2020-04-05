@@ -1,6 +1,5 @@
 package org.epilink.bot.config.rulebook
 
-import org.epilink.bot.db.UsesTrueIdentity
 import kotlin.script.experimental.annotations.KotlinScript
 
 /*

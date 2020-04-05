@@ -13,5 +13,7 @@ object Allowed : DatabaseAdvisory()
 /**
  * The action that is checked would be semantically disallowed for the given reason. The reason must be a end-user
  * friendly string.
+ *
+ * @property reason The explanation behind the disallowed advice. User-friendly.
  */
 class Disallowed(val reason: String): DatabaseAdvisory()

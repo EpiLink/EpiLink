@@ -8,14 +8,16 @@ import io.ktor.application.call
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.http.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.ParametersBuilder
 import io.ktor.request.ContentTransformationException
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.*
 import io.ktor.sessions.*
-import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.*
@@ -26,7 +28,6 @@ import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
-import org.epilink.bot.logger
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 

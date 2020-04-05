@@ -77,9 +77,15 @@ class LinkServerEnvironment(
         }
     }
 
+    /**
+     * The name of this EpiLink instance
+     */
     val name: String
         get() = cfg.name
 
+    /**
+     * Start Koin, the Discord bot and the HTTP server, in that order.
+     */
     fun start() {
         val app = startKoin {
             slf4jLogger(Level.ERROR)

@@ -1,7 +1,6 @@
 package org.epilink.bot.discord
 
 import discord4j.rest.http.client.ClientException
-import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkException
 
 /**

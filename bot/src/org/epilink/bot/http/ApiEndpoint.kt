@@ -8,5 +8,7 @@ package org.epilink.bot.http
  * Denotes that the annotated element is an exposed API endpoint.
  *
  * (This is only for documentation purposes)
+ *
+ * @property value The endpoint (e.g. PUT /api/v9/example)
  */
 annotation class ApiEndpoint(val value: String)

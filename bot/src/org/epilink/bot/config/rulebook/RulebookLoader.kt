@@ -2,7 +2,6 @@ package org.epilink.bot.config.rulebook
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.nio.file.Path
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.defaultImports

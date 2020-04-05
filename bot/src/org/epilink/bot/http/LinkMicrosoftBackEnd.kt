@@ -17,6 +17,9 @@ import org.epilink.bot.StandardErrorCodes.*
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
+/**
+ * This class is responsible for communicating with Microsoft APIs
+ */
 class LinkMicrosoftBackEnd(
     private val clientId: String,
     private val secret: String,
@@ -110,5 +113,8 @@ class LinkMicrosoftBackEnd(
         }
     }
 
+    /**
+     * Retrieve the beginning of the authorization URL that is only missing the redirect_uri
+     */
     fun getAuthorizeStub(): String = authStubMsft
 }

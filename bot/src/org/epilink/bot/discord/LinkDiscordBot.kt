@@ -185,6 +185,15 @@ class LinkDiscordBot(
         on(event.java).subscribe { scope.launch { handler(it) } }
     }
 
+    /**
+     * Send an identity access notification to the given Discord ID with the given information. What is actually sent
+     * (and whether a message is sent at all) is determined through the privacy configuration of EpiLink.
+     *
+     * @param discordId The Discord user this should be sent to
+     * @param automated Whether the access was done automatically or not
+     * @param author The author of the request (bot name or human name)
+     * @param reason The reason behind this identity access
+     */
     suspend fun sendIdentityAccessNotification(discordId: String, automated: Boolean, author: String, reason: String) {
         if (privacyConfig.shouldNotify(automated)) {
             val str = buildString {
@@ -242,6 +251,9 @@ class LinkDiscordBot(
         discordUser.getCheckedPrivateChannel()
             .createEmbed(embed).awaitSingle()
 
+    /**
+     * Trigger a full role update for the given user.
+     */
     // TODO move to RoleManager ?
     suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean) {
         val discordId = dbUser.discordId
@@ -259,6 +271,9 @@ class LinkDiscordBot(
         roleManager.updateRolesOnGuilds(dbUser, guilds, discordUser, tellUserIfFailed)
     }
 
+    /**
+     * Launches a coroutine inside the Discord bot's scope.
+     */
     suspend fun launchInScope(function: suspend CoroutineScope.() -> Unit): Job =
         scope.launch { function() }
 }

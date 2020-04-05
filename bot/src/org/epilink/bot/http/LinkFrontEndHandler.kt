@@ -12,7 +12,9 @@ import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
 
-
+/**
+ * Add the front-end handler to the given route
+ */
 fun Route.frontEndHandler(serveFrontEnd: Boolean, frontEndUrl: String?) {
     /*
      * Main endpoint. If the user directly tries to connect to the
