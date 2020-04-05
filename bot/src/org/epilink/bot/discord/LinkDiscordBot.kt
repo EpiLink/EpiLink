@@ -19,7 +19,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
-import org.epilink.bot.LinkDisplayableException
 import org.epilink.bot.LinkException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
@@ -31,7 +30,6 @@ import org.koin.core.inject
 import org.reactivestreams.Publisher
 import java.awt.Color
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KClass
 import discord4j.core.`object`.entity.User as DUser

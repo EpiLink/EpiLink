@@ -12,8 +12,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
-import org.epilink.bot.LinkDisplayableException
-import org.epilink.bot.LinkException
+import org.epilink.bot.LinkEndpointException
+import org.epilink.bot.StandardErrorCodes.*
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
@@ -38,6 +38,7 @@ class LinkMicrosoftBackEnd(
      * @param code The authorization code to consume
      * @param redirectUri The redirect_uri that was used in the authorization request that returned the authorization
      * code
+     * @throws LinkEndpointException If some error is thrown
      */
     suspend fun getMicrosoftToken(code: String, redirectUri: String): String {
         val res = runCatching {
@@ -53,37 +54,59 @@ class LinkMicrosoftBackEnd(
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val data = ObjectMapper()
-                    .readValue<Map<String, Any?>>(ex.response.call.receive<String>())
+                val data = ObjectMapper().readValue<Map<String, Any?>>(ex.response.call.receive<String>())
                 when (val errt = data["error"] as? String) {
-                    "invalid_grant" -> throw LinkDisplayableException("Invalid authorization code", true, ex)
-                    else -> throw LinkException(
-                        "Microsoft OAuth failed: $errt (" + (data["error_description"] ?: "no description") + ")", ex
+                    "invalid_grant" -> throw LinkEndpointException(
+                        InvalidAuthCode,
+                        "Invalid authorization code",
+                        true,
+                        ex
+                    )
+                    else -> throw LinkEndpointException(
+                        MicrosoftApiFailure,
+                        "Microsoft OAuth failed: $errt (" + (data["error_description"] ?: "no description") + ")",
+                        false,
+                        ex
                     )
                 }
             } else {
-                throw LinkException("Microsoft API call failed", ex)
+                throw LinkEndpointException(MicrosoftApiFailure, "Microsoft API call failed", false, ex)
             }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
         return data["access_token"] as String?
-            ?: throw LinkException("Did not receive any access token from Microsoft")
+            ?: throw LinkEndpointException(MicrosoftApiFailure, "Did not receive any access token from Microsoft")
 
     }
 
     /**
      * Retrieve a user's own information with Microsoft Graph using a Microsoft OAuth2 token.
+     *
+     * @throws LinkEndpointException if something goes wrong when calling the Microsoft Graph API
      */
     suspend fun getMicrosoftInfo(token: String): MicrosoftUserInfo {
         try {
             val data = client.getJson("https://graph.microsoft.com/v1.0/me", bearer = token)
             val email = data["mail"] as String?
                 ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
-                ?: throw LinkDisplayableException("This account does not have an email address", true)
-            val id = data["id"] as String? ?: throw LinkDisplayableException("This user does not have an ID", true)
+                ?: throw LinkEndpointException(
+                    AccountHasNoEmailAddress,
+                    "This account does not have an email address",
+                    true
+                )
+            val id = data["id"] as String? ?: throw LinkEndpointException(
+                AccountHasNoId,
+                "This user does not have an ID",
+                true
+            )
             return MicrosoftUserInfo(id, email)
         } catch (ex: ClientRequestException) {
-            throw LinkDisplayableException("Failed to contact the Microsoft API.", ex.response.status.value == 400, ex)
+            throw LinkEndpointException(
+                MicrosoftApiFailure,
+                "Failed to contact the Microsoft API.",
+                ex.response.status.value == 400,
+                ex
+            )
         }
     }
 

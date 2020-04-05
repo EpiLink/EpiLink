@@ -1,7 +1,6 @@
 package org.epilink.bot.discord
 
 import discord4j.core.spec.EmbedCreateSpec
-import org.epilink.bot.LinkDisplayableException
 import org.epilink.bot.LinkException
 import java.awt.Color
 

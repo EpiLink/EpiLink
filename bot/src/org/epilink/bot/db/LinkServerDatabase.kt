@@ -1,6 +1,7 @@
 package org.epilink.bot.db
 
-import org.epilink.bot.LinkDisplayableException
+import org.epilink.bot.LinkEndpointException
+import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.sessions.RegisterSession
 import org.jetbrains.exposed.sql.Database
@@ -68,16 +69,32 @@ class LinkServerDatabase(db: String) {
      * @param session The session to get the information from
      * @param keepIdentity If true, a [TrueIdentity] object will be associated to the user and recorded in the
      * database
-     * @throws LinkDisplayableException If the session's data is invalid, the user is banned, or another erroneous scenario
+     * @throws LinkEndpointException If the session's data is invalid, the user is banned, or another erroneous scenario
      */
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     suspend fun createUser(session: RegisterSession, keepIdentity: Boolean): User {
         // true in the exception because the end-user is at fault for trying to register with bad information.
-        val safeDiscId = session.discordId ?: throw LinkDisplayableException("Missing Discord ID", true)
-        val safeMsftId = session.microsoftUid ?: throw LinkDisplayableException("Missing Microsoft ID", true)
-        val safeEmail = session.email ?: throw LinkDisplayableException("Missing email", true)
+        val safeDiscId = session.discordId ?: throw LinkEndpointException(
+            StandardErrorCodes.IncompleteRegistrationRequest,
+            "Missing Discord ID",
+            true
+        )
+        val safeMsftId = session.microsoftUid ?: throw LinkEndpointException(
+            StandardErrorCodes.IncompleteRegistrationRequest,
+            "Missing Microsoft ID",
+            true
+        )
+        val safeEmail = session.email ?: throw LinkEndpointException(
+            StandardErrorCodes.IncompleteRegistrationRequest,
+            "Missing email",
+            true
+        )
         return when (val adv = isAllowedToCreateAccount(safeDiscId, safeMsftId)) {
-            is Disallowed -> throw LinkDisplayableException(adv.reason, true)
+            is Disallowed -> throw LinkEndpointException(
+                StandardErrorCodes.AccountCreationNotAllowed,
+                adv.reason,
+                true
+            )
             is Allowed -> newSuspendedTransaction(db = db) {
                 val u = User.new {
                     discordId = safeDiscId
@@ -100,7 +117,7 @@ class LinkServerDatabase(db: String) {
      */
     private fun Ban.isActive(): Boolean {
         val expiry = expiresOn
-        return /* Ban does not expire */ expiry == null || /* Ban has expired */ expiry.isBefore(LocalDateTime.now())
+        return /* Ban does not expire */ expiry == null || /* Ban has not expired */ expiry.isBefore(LocalDateTime.now())
     }
 
     /**
