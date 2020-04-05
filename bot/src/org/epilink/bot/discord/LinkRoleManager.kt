@@ -7,7 +7,7 @@ import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.rest.http.client.ClientException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.reactive.awaitSingle
-import org.epilink.bot.LinkDisplayableException
+import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.rulebook.Rule
@@ -34,7 +34,7 @@ class LinkRoleManager : KoinComponent {
      * the given guilds -- this function handles the case where the member is absent well. If tellUserIfFailed is true,
      * this additionally sends the user a DM on why the roles may have failed to update (e.g. banned user).
      *
-     * @throws LinkDisplayableException If something fails during the member retrieval from each guild.
+     * @throws LinkEndpointException If something fails during the member retrieval from each guild.
      */
     suspend fun updateRolesOnGuilds(
         dbUser: User,
