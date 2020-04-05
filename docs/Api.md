@@ -23,9 +23,9 @@ ALL API endpoints either return something of this form, or return no response at
 }
 ```
 
-If `success` is false, then `data` is guaranteed to be a non-null [ErrorData](#errordata) object.
-
-The message is nullable. If there is an error, and the message is null, check the ErrorData's description.
+* If `success` is false, then `data` is guaranteed to be a non-null [ErrorData](#errordata) object, and `message` is not
+  null.
+* If `success` is true, then `message` may be null and `data` may be null.
 
 ### ErrorData
 
@@ -36,6 +36,9 @@ The message is nullable. If there is an error, and the message is null, check th
 }
 ``` 
 
+Provides information on the error that happened. A list of codes is available below. The description is always the same,
+see the api response's message for more specific information about the error.
+
 #### Error codes
 
 These are the different codes that can be seen in [ErrorData](#errordata) objects.
@@ -43,7 +46,7 @@ These are the different codes that can be seen in [ErrorData](#errordata) object
 The description you see in the tables is very close to what you will receive in the ErrorData's description (there are
 additional clarifications here).
 
-More information can usually be found in the API response's message.
+More information can usually be found in the [ApiResponse](#apiresponse)'s message.
 
 ##### 1xx codes
 
@@ -76,6 +79,7 @@ These are general codes that can be encountered.
 | Code | Description |
 |:----:| ----------- |
 | 300 | You need authentication to be able to access this resource |
+| 301 | You do not have the permission to do that (i.e. you are logged in but can't do that) |
 
 
 ##### 9xx codes
@@ -120,16 +124,20 @@ Returns information about this instance, as a [InstanceInformation](#instanceinf
 
 Registration state is maintained with a `RegisterSessionId` header, which you SHOULD include in all calls.
 
-If you do not have any, (e.g. this is your first API request), you can call any API endpoint: the back-end will generate a session ID and give it back to you.
+If you do not have any, (e.g. this is your first API request), you can call any registration API endpoint: the back-end will generate a session ID and give it back to you.
 
 The OAuth2 design is like so:
 
 * The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get the initial 
-* The consumer then sends this ac
+* The consumer then sends this access code with the [`POST /register/authcode/<service>`](#post-registerauthcodeservice)
+  endpoints.
 
 ### Objects
 
 #### RegistrationInformation
+
+This object provides information on the current registration's process status and information. It can be obtained by
+calling [`GET /register/info`](#get-information---get-registerinfo) or in the responses of most endpoints.
 
 ```json5
 {
@@ -139,18 +147,24 @@ The OAuth2 design is like so:
 }
 ```
 
+Each field represents some information about the current process.
+ 
+* `discordUsername` is the Discord username associated with the current registration process, or null if no Discord account is recorded in the current registration process. 
+* `discordAvatarUrl` is a URL to the avatar of the Discord user. This may be null if the user does not have an avatar, or if no Discord account is recorded in the current registration process.
+* `email` is the user's email address (as provided by the Microsoft Graph API), or null if no Microsoft account is recorded in the current registration process.
+
 #### RegistrationAuthCode
 
 Used for sending an OAuth2 authentication code.
 
-```http request
+```json5
 {
   "code": "...",
   "redirectUri": "..."
 }
 ```
 
-`redirectUri` is the exact URI that was used for the original authentication request that obtained the code.
+`redirectUri` is the exact `redirect_uri` URI that was used for the original authentication request that obtained the code. This is required for security reasons, although no redirection to this address actually happens.
 
 #### RegistrationContinuation
 

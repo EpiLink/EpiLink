@@ -40,7 +40,7 @@ class LinkDiscordBackEnd(
      * @param authcode The authorization code to consume
      * @param redirectUri The redirect_uri that was used in the authorization request that returned the authorization
      * code
-     * @throws LinkException If something wrong happens while contacting the Discord APIs.
+     * @throws LinkEndpointException If something wrong happens while contacting the Discord APIs.
      */
     suspend fun getDiscordToken(authcode: String, redirectUri: String): String {
         val res = runCatching {

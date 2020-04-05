@@ -27,6 +27,9 @@ sealed class ApiResponse<T>(
     abstract val success: Boolean
 }
 
+/**
+ * Sent upon a successful operation, with optionally a message and attached data
+ */
 class ApiSuccessResponse<T>(
     message: String? = null,
     data: T
@@ -35,6 +38,9 @@ class ApiSuccessResponse<T>(
         get() = true
 }
 
+/**
+ * Sent when something wrong happens. A message must be provided.
+ */
 class ApiErrorResponse(
     message: String,
     errorInfo: ApiErrorData
@@ -43,6 +49,12 @@ class ApiErrorResponse(
         get() = false
 }
 
+/**
+ * The data object that is sent in error responses, with an error code and a description
+ *
+ * @property code the error code associated with this error
+ * @property description the description of the error code
+ */
 data class ApiErrorData(val code: Int, val description: String)
 
 /**

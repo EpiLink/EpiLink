@@ -38,6 +38,7 @@ class LinkMicrosoftBackEnd(
      * @param code The authorization code to consume
      * @param redirectUri The redirect_uri that was used in the authorization request that returned the authorization
      * code
+     * @throws LinkEndpointException If some error is thrown
      */
     suspend fun getMicrosoftToken(code: String, redirectUri: String): String {
         val res = runCatching {
@@ -80,6 +81,8 @@ class LinkMicrosoftBackEnd(
 
     /**
      * Retrieve a user's own information with Microsoft Graph using a Microsoft OAuth2 token.
+     *
+     * @throws LinkEndpointException if something goes wrong when calling the Microsoft Graph API
      */
     suspend fun getMicrosoftInfo(token: String): MicrosoftUserInfo {
         try {
