@@ -1,14 +1,16 @@
 <template>
     <div id="app">
-        <div id="content" :class="{ 'has-footer': !redirected, 'expanded': expanded }">
-            <div v-if="redirected || loadedWithAnimation" id="content-wrapper" :class="{ 'seen': contentSeen || redirected }">
-                <transition name="fade">
-                    <router-view></router-view>
-                </transition>
-            </div>
+        <div id="main-view">
+            <div id="content" :class="{ 'expanded': expanded }">
+                <div v-if="redirected || loadedWithAnimation" id="content-wrapper" :class="{ 'seen': contentSeen || redirected }">
+                    <transition name="fade">
+                        <router-view></router-view>
+                    </transition>
+                </div>
 
-            <div id="loading" v-if="!redirected" :class="{ 'seen': !loaded }">
-                <link-loading />
+                <div id="loading" v-if="!redirected" :class="{ 'seen': !loaded }">
+                    <link-loading />
+                </div>
             </div>
         </div>
 
@@ -88,74 +90,73 @@
 
     #app {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
         align-items: center;
 
         width: 100vw;
         height: 100vh;
     }
 
-    #content {
-        &, #loading, #content-wrapper,  #content-wrapper > div {
-            width: $content-width;
-            height: $content-height;
+    #main-view {
+        flex: 1;
 
-            box-sizing: border-box;
-        }
+        display: flex;
+        align-items: center;
 
-        &, #content-wrapper, #content-wrapper > div:not(.fade-enter-active):not(.fade-leave-active) {
-            transition: width 0.5s;
-        }
+        #content {
+            background-color: #FDFDFD;
+            color: black;
 
-        &.expanded, &.expanded > #content-wrapper, &.expanded > #content-wrapper > div {
-            width: 1000px;
-        }
+            box-shadow: rgba(10, 10, 10, 0.65) 0 4px 10px 4px;
 
-        &.has-footer {
-            margin-bottom: $footer-height;
-        }
+            border-radius: 4px;
 
-        background-color: #FDFDFD;
-        color: black;
+            animation: content-fade 0.25s 0.3s ease 1 both;
 
-        box-shadow: rgba(10, 10, 10, 0.65) 0 4px 10px 4px;
+            &, #loading, #content-wrapper > div {
+                width: $content-width;
+                height: $content-height;
 
-        border-radius: 4px;
+                box-sizing: border-box;
+            }
 
-        animation: content-fade 0.25s 0.3s ease 1 both;
+            &, #content-wrapper > div:not(.fade-enter-active):not(.fade-leave-active) {
+                transition: width 0.5s;
+            }
 
-        #content-wrapper {
-            opacity: 0;
-            transition: opacity 0.2s;
+            &.expanded, &.expanded > #content-wrapper > div {
+                width: 1000px;
+            }
 
-            &.seen {
-                opacity: 1;
+            #content-wrapper {
+                opacity: 0;
+                transition: opacity 0.2s;
+
+                &.seen {
+                    opacity: 1;
+                }
+            }
+
+            #loading {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                opacity: 0;
+                transition: opacity 0.2s;
+
+                &.seen {
+                    opacity: 1;
+                }
+
+                .loading {
+                    margin-bottom: 60px;
+                }
             }
         }
     }
 
-    #loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        opacity: 0;
-        transition: opacity 0.2s;
-
-        &.seen {
-            opacity: 1;
-        }
-
-        .loading {
-            margin-bottom: 60px;
-        }
-    }
-
     #footer {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-
         width: 100vw;
         height: $footer-height;
 
