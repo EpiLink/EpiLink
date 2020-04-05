@@ -3,6 +3,8 @@ package org.epilink.bot.config
 /**
  * Base class for elements that are reported while scanning the configuration
  * for error
+ *
+ * @property message The message that describes this report element
  */
 sealed class ConfigReportElement(val message: String)
 

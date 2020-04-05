@@ -6,6 +6,9 @@ import org.epilink.bot.http.ApiErrorData
  * Represents an error code that can be sent by the API, which has an integer code and a string description. The
  * description for a given code should always be the same. If more information needs to be sent, it must be sent as part
  * of the API response's message.
+ *
+ * @property code The integer code
+ * @property description The human-readable description of this error code
  */
 interface LinkErrorCode {
     val code: Int

@@ -13,7 +13,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
 import org.epilink.bot.LinkEndpointException
-import org.epilink.bot.LinkException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
 import org.koin.core.KoinComponent

@@ -1,7 +1,7 @@
 package org.epilink.bot.db
 
 /**
- * Denotes that a specific part of Epilink accesses, in one way or another, the
+ * Denotes that a specific part of EpiLink accesses, in one way or another, the
  * identity of users.
  *
  * Uses can be marked with `@UsesTrueIdentity` if the uses of the marked element

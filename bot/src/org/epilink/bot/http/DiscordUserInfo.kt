@@ -5,7 +5,16 @@ package org.epilink.bot.http
  * *actually* correspond do any real Discord endpoint.
  */
 data class DiscordUserInfo(
+    /**
+     * The ID of the Discord user
+     */
     val id: String,
+    /**
+     * The username (name + discriminator) of the Discord user
+     */
     val username: String,
+    /**
+     * An optional URL to the user's avatar
+     */
     val avatarUrl: String?
 )

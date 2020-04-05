@@ -18,15 +18,27 @@ import kotlin.system.exitProcess
 
 internal val logger = LoggerFactory.getLogger("epilink")
 
+/**
+ * CLI Arguments class for EpiLink
+ */
 class CliArgs(parser: ArgParser) {
+    /**
+     * Path to the configuration file, w.r.t. the current working directory
+     */
     val config by parser.positional("path to the configuration file")
 
+    /**
+     * Unused and deprecated
+     */
     val allowUnsecureJwtSecret by parser.flagging(
         "-u", "--unsecure-jwt-secret",
         help = "(deprecated) has no effect"
     )
 }
 
+/**
+ * Main entry-point for EpiLink, which expects CLI arguments in the arguments.
+ */
 fun main(args: Array<String>) = mainBody("epilink") {
     val cliArgs = ArgParser(
         args,

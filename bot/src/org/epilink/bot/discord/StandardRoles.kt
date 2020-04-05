@@ -2,6 +2,8 @@ package org.epilink.bot.discord
 
 /**
  * The standard roles which are attributed by EpiLink automatically
+ *
+ * @property roleName The name of the role as it can be used in the configuration
  */
 enum class StandardRoles(val roleName: String) {
     /**
