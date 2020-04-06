@@ -89,7 +89,7 @@ class BackEndTest : KoinTest {
     @Test
     fun `Test Microsoft account authcode registration`() {
         mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur")} returns "fake mtk"
+            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkServerDatabase> {
@@ -114,7 +114,7 @@ class BackEndTest : KoinTest {
     @Test
     fun `Test Microsoft account authcode registration when disallowed`() {
         mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur")} returns "fake mtk"
+            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkServerDatabase> {
@@ -128,6 +128,35 @@ class BackEndTest : KoinTest {
             val error = fromJson<ApiError>(call.response)
             assertEquals("Cheh dans ta tronche", error.message)
             assertEquals(101, error.data.code)
+        }
+    }
+
+    @Test
+    fun `Test Discord account authcode registration account does not exist`() {
+        mockHere<LinkDiscordBackEnd> {
+            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
+            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { isAllowedToCreateAccount(any(), any()) } returns Allowed
+            coEvery { getUser("yes") } returns null
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
+                setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
+            }
+            call.assertStatus(HttpStatusCode.OK)
+            val data = fromJson<ApiSuccess>(call.response).data
+            assertEquals("continue", data.getString("next"))
+            val regInfo = data.getMap("attachment")
+            assertEquals(null, regInfo.getValue("email"))
+            assertEquals("no", regInfo.getString("discordUsername"))
+            assertEquals("maybe", regInfo.getString("discordAvatarUrl"))
+            val session = call.sessions.get<RegisterSession>()
+            assertEquals(
+                RegisterSession(discordId = "yes", discordUsername = "no", discordAvatarUrl = "maybe"),
+                session
+            )
         }
     }
     private fun TestApplicationRequest.setJsonBody(json: String) {
