@@ -1,5 +1,6 @@
 package org.epilink.bot.http
 
+import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.jackson.jackson
@@ -18,16 +19,19 @@ import org.epilink.bot.logger
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
+interface LinkHttpServer {
+    /**
+     * Start the server. If wait is true, this function will block until the
+     * server stops.
+     */
+    fun startServer(wait: Boolean)
+}
+
 /**
  * This class represents the Ktor server.
  */
-class LinkHttpServer : KoinComponent {
+class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
     private val wsCfg: LinkWebServerConfiguration by inject()
-
-    /**
-     * The actual Ktor application instance
-     */
-    private var server: ApplicationEngine = ktorServer(wsCfg.port)
 
     /**
      * True if the server should also serve the front-end, false if it should
@@ -41,55 +45,19 @@ class LinkHttpServer : KoinComponent {
 
     private val backend: LinkBackEnd by inject()
 
-    private val storageProvider: SessionStorageProvider by inject()
-
     /**
-     * Start the server. If wait is true, this function will block until the
-     * server stops.
+     * The actual Ktor application instance
      */
-    fun startServer(wait: Boolean) {
+    private var server: ApplicationEngine = embeddedServer(Netty, wsCfg.port) {
+        with(backend) { epilinkApiModule() }
+        frontEndHandler(serveFrontEnd, wsCfg.frontendUrl)
+    }
+
+
+    override fun startServer(wait: Boolean) {
         if (serveFrontEnd) {
             logger.info("Front-end will be served. To disable that, set a front-end URL in the config file.")
         }
         server.start(wait)
     }
-
-    /**
-     * Create the server, and configure it
-     */
-    private fun ktorServer(port: Int) =
-        embeddedServer(Netty, port) {
-            /*
-             * Used for automatically converting stuff to JSON when calling
-             * "respond" with generic objects.
-             */
-            install(ContentNegotiation) {
-                jackson {}
-            }
-
-            /*
-             * Used for sessions
-             */
-            install(Sessions) {
-                header<RegisterSession>(
-                    "RegistrationSessionId",
-                    storageProvider.createStorage("el_reg_")
-                )
-                header<ConnectedSession>(
-                    "SessionId",
-                    storageProvider.createStorage("el_ses_")
-                )
-            }
-
-            routing {
-                /*
-                 * Main API endpoint
-                 */
-                route("/api/v1") {
-                    with(backend) { epilinkApiV1() }
-                }
-
-                frontEndHandler(serveFrontEnd, wsCfg.frontendUrl)
-            }
-        }
 }

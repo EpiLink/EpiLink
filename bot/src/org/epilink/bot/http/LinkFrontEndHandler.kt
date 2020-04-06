@@ -1,5 +1,6 @@
 package org.epilink.bot.http
 
+import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.http.ContentType
@@ -11,29 +12,32 @@ import io.ktor.response.respond
 import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
+import io.ktor.routing.routing
 
 /**
  * Add the front-end handler to the given route
  */
-fun Route.frontEndHandler(serveFrontEnd: Boolean, frontEndUrl: String?) {
-    /*
-     * Main endpoint. If the user directly tries to connect to the
-     * back-end, redirect them to the front-end (or 404 if the url
-     * is unknown).
-     */
-    get("/{...}") {
-        if (serveFrontEnd) {
-            call.respondBootstrapped()
-        } else {
-            if (frontEndUrl == null) {
-                // 404
-                call.respond(HttpStatusCode.NotFound)
+fun Application.frontEndHandler(serveFrontEnd: Boolean, frontEndUrl: String?) {
+    routing {
+        /*
+         * Main endpoint. If the user directly tries to connect to the
+         * back-end, redirect them to the front-end (or 404 if the url
+         * is unknown).
+         */
+        get("/{...}") {
+            if (serveFrontEnd) {
+                call.respondBootstrapped()
             } else {
-                // Redirect to frontend
-                call.respondRedirect(
-                    frontEndUrl + call.parameters.getAll("path")?.joinToString("/"),
-                    permanent = true
-                )
+                if (frontEndUrl == null) {
+                    // 404
+                    call.respond(HttpStatusCode.NotFound)
+                } else {
+                    // Redirect to frontend
+                    call.respondRedirect(
+                        frontEndUrl + call.parameters.getAll("path")?.joinToString("/"),
+                        permanent = true
+                    )
+                }
             }
         }
     }

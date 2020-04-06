@@ -34,6 +34,46 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KClass
 import discord4j.core.`object`.entity.User as DUser
 
+/**
+ * The Discord bot interface
+ */
+interface LinkDiscordBot {
+    /**
+     * Starts the Discord bot, suspending until the bot is ready.
+     */
+    suspend fun start()
+
+    /**
+     * Send a DM to the user about why connecting failed
+     */
+    suspend fun sendCouldNotJoin(user: discord4j.core.`object`.entity.User, guild: Guild?, reason: String)
+
+    /**
+     * Initial server message sent upon connection with the server not knowing who the person is
+     */
+    suspend fun sendGreetings(member: Member, guild: Guild)
+
+    /**
+     * Send an identity access notification to the given Discord ID with the given information. What is actually sent
+     * (and whether a message is sent at all) is determined through the privacy configuration of EpiLink.
+     *
+     * @param discordId The Discord user this should be sent to
+     * @param automated Whether the access was done automatically or not
+     * @param author The author of the request (bot name or human name)
+     * @param reason The reason behind this identity access
+     */
+    suspend fun sendIdentityAccessNotification(discordId: String, automated: Boolean, author: String, reason: String)
+
+    /**
+     * Trigger a full role update for the given user.
+     */
+    suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean)
+
+    /**
+     * Launches a coroutine inside the Discord bot's scope.
+     */
+    suspend fun launchInScope(function: suspend CoroutineScope.() -> Unit): Job
+}
 
 /**
  * This class manages the Discord bot for EpiLink.
@@ -45,7 +85,7 @@ import discord4j.core.`object`.entity.User as DUser
  * - Guilds in which the bot is connected but does *not* have configurations for is **unmonitored**.
  * - Guilds in which the bot is not but has configurations for is **orphaned**. Not currently checked.
  */
-class LinkDiscordBot(
+class LinkDiscordBotImpl(
     /**
      * The token to be used for logging in the bot
      */
@@ -54,7 +94,7 @@ class LinkDiscordBot(
      * The Discord client ID associated with the bot. Used for generating an invite link.
      */
     private val discordClientId: String
-) : KoinComponent {
+) : LinkDiscordBot, KoinComponent {
     private val config: LinkDiscordConfig by inject()
 
     private val privacyConfig: LinkPrivacy by inject()
@@ -73,10 +113,7 @@ class LinkDiscordBot(
         eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
     }
 
-    /**
-     * Starts the Discord bot, suspending until the bot is ready.
-     */
-    suspend fun start() {
+    override suspend fun start() {
         client.loginAndAwaitReady()
         logger.info("Discord bot launched, invite link: " + getInviteLink())
     }
@@ -117,10 +154,7 @@ class LinkDiscordBot(
         roleManager.handleNewUser(this)
     }
 
-    /**
-     * Send a DM to the user about why connecting failed
-     */
-    suspend fun sendCouldNotJoin(user: DUser, guild: Guild?, reason: String) {
+    override suspend fun sendCouldNotJoin(user: DUser, guild: Guild?, reason: String) {
         val guildName = guild?.name ?: "any server"
         sendDirectMessage(user) {
             setTitle(":x: Could not authenticate on $guildName")
@@ -131,11 +165,7 @@ class LinkDiscordBot(
         }
     }
 
-
-    /**
-     * Initial server message sent upon connection with the server not knowing who the person is
-     */
-    suspend fun sendGreetings(member: Member, guild: Guild) {
+    override suspend fun sendGreetings(member: Member, guild: Guild) {
         val guildConfig = config.getConfigForGuild(guild.id.asString())
         if (!guildConfig.enableWelcomeMessage)
             return
@@ -185,16 +215,12 @@ class LinkDiscordBot(
         on(event.java).subscribe { scope.launch { handler(it) } }
     }
 
-    /**
-     * Send an identity access notification to the given Discord ID with the given information. What is actually sent
-     * (and whether a message is sent at all) is determined through the privacy configuration of EpiLink.
-     *
-     * @param discordId The Discord user this should be sent to
-     * @param automated Whether the access was done automatically or not
-     * @param author The author of the request (bot name or human name)
-     * @param reason The reason behind this identity access
-     */
-    suspend fun sendIdentityAccessNotification(discordId: String, automated: Boolean, author: String, reason: String) {
+    override suspend fun sendIdentityAccessNotification(
+        discordId: String,
+        automated: Boolean,
+        author: String,
+        reason: String
+    ) {
         if (privacyConfig.shouldNotify(automated)) {
             val str = buildString {
                 append("Your identity was accessed")
@@ -251,11 +277,8 @@ class LinkDiscordBot(
         discordUser.getCheckedPrivateChannel()
             .createEmbed(embed).awaitSingle()
 
-    /**
-     * Trigger a full role update for the given user.
-     */
     // TODO move to RoleManager ?
-    suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean) {
+    override suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean) {
         val discordId = dbUser.discordId
         val guilds = getMonitoredGuilds()
         val userSnowflake = Snowflake.of(discordId)
@@ -271,10 +294,7 @@ class LinkDiscordBot(
         roleManager.updateRolesOnGuilds(dbUser, guilds, discordUser, tellUserIfFailed)
     }
 
-    /**
-     * Launches a coroutine inside the Discord bot's scope.
-     */
-    suspend fun launchInScope(function: suspend CoroutineScope.() -> Unit): Job =
+    override suspend fun launchInScope(function: suspend CoroutineScope.() -> Unit): Job =
         scope.launch { function() }
 }
 
