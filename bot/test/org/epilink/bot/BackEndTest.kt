@@ -7,18 +7,18 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.*
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
 import org.epilink.bot.db.Allowed
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
+import org.koin.ext.scope
 import org.koin.test.KoinTest
 import org.koin.test.get
 import org.koin.test.mock.declare
@@ -168,7 +168,7 @@ class BackEndTest : KoinTest {
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
         }
         mockHere<LinkServerDatabase> {
-            coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes"}
+            coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
@@ -204,6 +204,68 @@ class BackEndTest : KoinTest {
             val error = fromJson<ApiError>(call.response)
             assertEquals("Cheh dans ta tête", error.message)
             assertEquals(101, error.data.code)
+        }
+    }
+
+    @Test
+    fun `Test full registration sequence, discord then msft`() {
+        mockHere<LinkDiscordBackEnd> {
+            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
+            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
+        }
+        mockHere<LinkMicrosoftBackEnd> {
+            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
+            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        }
+        val db = mockHere<LinkServerDatabase> {
+            coEvery { getUser("yes") } returns null
+            coEvery { isAllowedToCreateAccount(any(), any()) } returns Allowed
+            coEvery { createUser(any(), any()) } returns mockk { every { discordId } returns "yes" }
+        }
+        val bot = mockHere<LinkDiscordBot> {
+            coEvery { launchInScope(any()) } returns mockk()
+        }
+        withTestEpiLink {
+            val regHeader = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
+                setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
+            }.run {
+                assertStatus(HttpStatusCode.OK)
+                val data = fromJson<ApiSuccess>(response).data
+                assertEquals("continue", data.getString("next"))
+                assertEquals("no", data.getMap("attachment").getString("discordUsername"))
+                response.headers["RegistrationSessionId"]!!
+            }
+            handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+                addHeader("RegistrationSessionId", regHeader)
+                setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val data = fromJson<ApiSuccess>(response).data
+                assertEquals("continue", data.getString("next"))
+                assertEquals("fakemail", data.getMap("attachment").getString("email"))
+                assertEquals("no", data.getMap("attachment").getString("discordUsername"))
+            }
+            val loginHeader = handleRequest(HttpMethod.Post, "/api/v1/register") {
+                addHeader("RegistrationSessionId", regHeader)
+                setJsonBody("""{"keepIdentity": true}""")
+            }.run {
+                assertStatus(HttpStatusCode.Created)
+                assertNull(sessions.get<RegisterSession>())
+                assertEquals(ConnectedSession("yes"), sessions.get<ConnectedSession>())
+                response.headers["SessionId"]!!
+            }
+            coVerify { db.createUser(any(), true) }
+            // Simulate the DB knowing about the new user
+            mockHere<LinkServerDatabase> {
+                coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
+            }
+            handleRequest(HttpMethod.Get, "/api/v1/user") {
+                addHeader("SessionId", loginHeader)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                assertTrue { this.response.content!!.contains("yes") }
+            }
+            coVerify { bot.launchInScope(any()) }
         }
     }
 

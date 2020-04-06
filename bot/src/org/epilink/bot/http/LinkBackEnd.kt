@@ -187,7 +187,7 @@ class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                             discord.updateRoles(u, true)
                         }
                         call.loginAs(u)
-                        call.respond(apiSuccess("Account created, logged in."))
+                        call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
                     }
                 }
             }
