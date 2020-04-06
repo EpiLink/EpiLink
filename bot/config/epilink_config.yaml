@@ -15,6 +15,10 @@ server:
 # Name and location of the EpiLink SQLite database
 db: epilink.db
 
+# Redis URI to the Redis instance to use
+# Format: https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax
+redis: "redis://localhost:6379"
+
 # Rulebook declaration
 # See the docs for more information
 #----#

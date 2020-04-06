@@ -41,6 +41,8 @@ class LinkHttpServer : KoinComponent {
 
     private val backend: LinkBackEnd by inject()
 
+    private val storageProvider: SessionStorageProvider by inject()
+
     /**
      * Start the server. If wait is true, this function will block until the
      * server stops.
@@ -71,15 +73,11 @@ class LinkHttpServer : KoinComponent {
             install(Sessions) {
                 header<RegisterSession>(
                     "RegistrationSessionId",
-                    // TODO SessionStorageMemory should only be used for dev
-                    //      purposes
-                    SessionStorageMemory()
+                    storageProvider.createStorage("el_reg_")
                 )
                 header<ConnectedSession>(
                     "SessionId",
-                    // TODO SessionStorageMemory should only be used for dev
-                    //      purposes
-                    SessionStorageMemory()
+                    storageProvider.createStorage("el_ses_")
                 )
             }
 

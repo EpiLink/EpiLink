@@ -37,7 +37,13 @@ data class LinkConfiguration(
     /**
      * Discord-related configurations, defined using a [LinkDiscordConfig] object
      */
-    val discord: LinkDiscordConfig
+    val discord: LinkDiscordConfig,
+    /**
+     * URI of the Redis server to use. Format is from Lettuce
+     *
+     * [Format](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details)
+     */
+    val redis: String?
 )
 
 /**
@@ -239,6 +245,10 @@ fun LinkConfiguration.isConfigurationSane(
 
     if (tokens.jwtSecret != null) {
         report += ConfigWarning("The jwtSecret configuration field is deprecated and will be removed.")
+    }
+
+    if(redis == null) {
+        report += ConfigWarning("No Redis URI provided: Redis is disabled, using in-memory instead. ONLY LEAVE REDIS DISABLED FOR DEVELOPMENT PURPOSES!")
     }
 
     discord.roles.map { it.name }.filter { it.startsWith("_") }.forEach {

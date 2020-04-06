@@ -2,16 +2,13 @@ package org.epilink.bot
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.epilink.bot.config.LinkConfiguration
 import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.discord.LinkRoleManager
-import org.epilink.bot.http.LinkBackEnd
-import org.epilink.bot.http.LinkDiscordBackEnd
-import org.epilink.bot.http.LinkHttpServer
-import org.epilink.bot.http.LinkMicrosoftBackEnd
+import org.epilink.bot.http.*
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.dsl.module
@@ -75,6 +72,8 @@ class LinkServerEnvironment(
                 cfg.tokens.msftTenant
             )
         }
+
+        single { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryStorageProvider() }
     }
 
     /**
@@ -84,16 +83,27 @@ class LinkServerEnvironment(
         get() = cfg.name
 
     /**
-     * Start Koin, the Discord bot and the HTTP server, in that order.
+     * Start Koin, the Discord bot + session storage provider and then the HTTP server, in that order.
      */
     fun start() {
         val app = startKoin {
             slf4jLogger(Level.ERROR)
             modules(epilinkBaseModule, epilinkDiscordModule, epilinkWebModule)
         }
-        runBlocking {
-            app.koin.get<LinkDiscordBot>().start()
+
+        try {
+            runBlocking {
+                coroutineScope {
+                    listOf(
+                        async { app.koin.get<LinkDiscordBot>().start() },
+                        async { app.koin.get<SessionStorageProvider>().start() }
+                    ).awaitAll()
+                }
+            }
+            app.koin.get<LinkHttpServer>().startServer(wait = true)
+        } catch (ex: Exception) {
+            logger.error("Encountered an exception on initialization", ex)
+            return
         }
-        app.koin.get<LinkHttpServer>().startServer(wait = true)
     }
 }
