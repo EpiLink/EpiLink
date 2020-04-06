@@ -14,6 +14,7 @@ import org.epilink.bot.db.Allowed
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.http.*
+import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -155,6 +156,31 @@ class BackEndTest : KoinTest {
             val session = call.sessions.get<RegisterSession>()
             assertEquals(
                 RegisterSession(discordId = "yes", discordUsername = "no", discordAvatarUrl = "maybe"),
+                session
+            )
+        }
+    }
+
+    @Test
+    fun `Test Discord account authcode registration account already exists`() {
+        mockHere<LinkDiscordBackEnd> {
+            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
+            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { getUser("yes") } returns mockk() { every { discordId } returns "yes"}
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
+                setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
+            }
+            call.assertStatus(HttpStatusCode.OK)
+            val data = fromJson<ApiSuccess>(call.response).data
+            assertEquals("login", data.getString("next"))
+            assertEquals(null, data.getValue("attachment"))
+            val session = call.sessions.get<ConnectedSession>()
+            assertEquals(
+                ConnectedSession(discordId = "yes"),
                 session
             )
         }
