@@ -264,7 +264,10 @@ class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
         val adv = db.isAllowedToCreateAccount(null, id)
         if (adv is Disallowed) {
-            call.respond(ApiErrorResponse(adv.reason, AccountCreationNotAllowed.toErrorData()))
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiErrorResponse(adv.reason, AccountCreationNotAllowed.toErrorData())
+            )
             return
         }
         val newSession = session.copy(email = email, microsoftUid = id)

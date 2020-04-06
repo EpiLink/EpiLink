@@ -11,6 +11,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.db.Allowed
+import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.http.*
 import org.epilink.bot.http.sessions.RegisterSession
@@ -31,6 +32,21 @@ data class ApiSuccess(
         assertTrue(success)
     }
 }
+
+data class ApiError(
+    val success: Boolean,
+    val message: String,
+    val data: ApiErrorDetails
+) {
+    init {
+        assertFalse(success)
+    }
+}
+
+data class ApiErrorDetails(
+    val code: Int,
+    val description: String
+)
 
 class BackEndTest : KoinTest {
     @BeforeTest
@@ -95,6 +111,25 @@ class BackEndTest : KoinTest {
         }
     }
 
+    @Test
+    fun `Test Microsoft account authcode registration when disallowed`() {
+        mockHere<LinkMicrosoftBackEnd> {
+            coEvery { getMicrosoftToken("fake mac", "fake mur")} returns "fake mtk"
+            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { isAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche")
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+                setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
+            }
+            call.assertStatus(HttpStatusCode.BadRequest)
+            val error = fromJson<ApiError>(call.response)
+            assertEquals("Cheh dans ta tronche", error.message)
+            assertEquals(101, error.data.code)
+        }
+    }
     private fun TestApplicationRequest.setJsonBody(json: String) {
         addHeader("Content-Type", "application/json")
         setBody(json)
