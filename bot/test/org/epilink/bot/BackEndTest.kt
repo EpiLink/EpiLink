@@ -5,13 +5,15 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.*
-import io.ktor.sessions.SessionStorage
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.sessions.get
+import io.ktor.sessions.sessions
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import org.epilink.bot.config.LinkConfiguration
+import org.epilink.bot.db.Allowed
+import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.http.*
+import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
@@ -31,19 +33,12 @@ data class ApiSuccess(
 }
 
 class BackEndTest : KoinTest {
-
-    private val env = LinkServerEnvironment(
-        minimalConfig.copy(
-            name = "EpiLink Test Instance"
-        ), mockk()
-    )
-
     @BeforeTest
     fun setupKoin() {
         startKoin {
             modules(module {
                 single<LinkBackEnd> { LinkBackEndImpl() }
-                single<SessionStorageProvider> { DummySessionStorageProvider }
+                single<SessionStorageProvider> { MemoryStorageProvider() }
             })
         }
     }
@@ -75,7 +70,37 @@ class BackEndTest : KoinTest {
         }
     }
 
-    private fun <R> withTestEpiLink(block: TestApplicationEngine.() -> R): R =
+    @Test
+    fun `Test Microsoft account authcode registration`() {
+        mockHere<LinkMicrosoftBackEnd> {
+            coEvery { getMicrosoftToken("fake mac", "fake mur")} returns "fake mtk"
+            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { isAllowedToCreateAccount(any(), any()) } returns Allowed
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+                setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
+            }
+            call.assertStatus(HttpStatusCode.OK)
+            val data = fromJson<ApiSuccess>(call.response).data
+            assertEquals("continue", data.getString("next"))
+            val regInfo = data.getMap("attachment")
+            assertEquals("fakemail", regInfo.getString("email"))
+            assertEquals(null, regInfo.getValue("discordUsername"))
+            assertEquals(null, regInfo.getValue("discordAvatarUrl"))
+            val session = call.sessions.get<RegisterSession>()
+            assertEquals(RegisterSession(microsoftUid = "fakeguid", email = "fakemail"), session)
+        }
+    }
+
+    private fun TestApplicationRequest.setJsonBody(json: String) {
+        addHeader("Content-Type", "application/json")
+        setBody(json)
+    }
+
+    private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             with(get<LinkBackEnd>()) {
                 epilinkApiModule()
@@ -90,30 +115,12 @@ private fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
     assertEquals(status, this.response.status())
 }
 
-object DummySessionStorageProvider : SessionStorageProvider, SessionStorage {
-    override fun createStorage(prefix: String): SessionStorage {
-        return this
-    }
-
-    override suspend fun start() {
-        throw NotImplementedError()
-    }
-
-    override suspend fun invalidate(id: String) {
-        throw NotImplementedError()
-    }
-
-    override suspend fun <R> read(id: String, consumer: suspend (ByteReadChannel) -> R): R {
-        throw NotImplementedError()
-    }
-
-    override suspend fun write(id: String, provider: suspend (ByteWriteChannel) -> Unit) {
-        throw NotImplementedError()
-    }
-}
-
-private fun <K, V : Any?> Map<K, V>.getString(key: K): String =
+private fun Map<String, Any?>.getString(key: String): String =
     this.getValue(key) as String
+
+@Suppress("UNCHECKED_CAST")
+private fun Map<String, Any?>.getMap(key: String): Map<String, Any?> =
+    this.getValue(key) as Map<String, Any?>
 
 inline fun <reified T> fromJson(response: TestApplicationResponse): T {
     return jacksonObjectMapper().readValue(response.content!!)
