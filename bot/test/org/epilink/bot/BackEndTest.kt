@@ -208,6 +208,22 @@ class BackEndTest : KoinTest {
     }
 
     @Test
+    fun `Test registration session deletion`() {
+        withTestEpiLink {
+            val header = handleRequest(HttpMethod.Get, "/api/v1/register/info").run {
+                assertStatus(HttpStatusCode.OK)
+                assertNotNull(sessions.get<RegisterSession>())
+                response.headers["RegistrationSessionId"]!!
+            }
+            handleRequest(HttpMethod.Delete, "/api/v1/register") {
+                addHeader("RegistrationSessionId", header)
+            }.apply {
+                assertNull(sessions.get<RegisterSession>())
+            }
+        }
+    }
+
+    @Test
     fun `Test full registration sequence, discord then msft`() {
         mockHere<LinkDiscordBackEnd> {
             coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
