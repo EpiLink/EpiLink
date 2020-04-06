@@ -168,7 +168,7 @@ class BackEndTest : KoinTest {
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
         }
         mockHere<LinkServerDatabase> {
-            coEvery { getUser("yes") } returns mockk() { every { discordId } returns "yes"}
+            coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes"}
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
@@ -185,6 +185,28 @@ class BackEndTest : KoinTest {
             )
         }
     }
+
+    @Test
+    fun `Test Discord account authcode registration when disallowed`() {
+        mockHere<LinkDiscordBackEnd> {
+            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
+            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { getUser("yes") } returns null
+            coEvery { isAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tête")
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
+                setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
+            }
+            call.assertStatus(HttpStatusCode.BadRequest)
+            val error = fromJson<ApiError>(call.response)
+            assertEquals("Cheh dans ta tête", error.message)
+            assertEquals(101, error.data.code)
+        }
+    }
+
     private fun TestApplicationRequest.setJsonBody(json: String) {
         addHeader("Content-Type", "application/json")
         setBody(json)
@@ -197,7 +219,7 @@ class BackEndTest : KoinTest {
             }
         }, block)
 
-    private inline fun <reified T : Any> mockHere(crossinline body: T.() -> Unit) : T =
+    private inline fun <reified T : Any> mockHere(crossinline body: T.() -> Unit): T =
         declare { mockk(block = body) }
 }
 

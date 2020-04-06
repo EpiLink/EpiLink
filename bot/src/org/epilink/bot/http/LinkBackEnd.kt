@@ -241,6 +241,14 @@ class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             call.loginAs(user)
             call.respond(ApiSuccessResponse("Logged in", RegistrationContinuation("login", null)))
         } else {
+            val adv = db.isAllowedToCreateAccount(id, null)
+            if (adv is Disallowed) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiErrorResponse(adv.reason, AccountCreationNotAllowed.toErrorData())
+                )
+                return
+            }
             val newSession = session.copy(discordUsername = username, discordId = id, discordAvatarUrl = avatarUrl)
             call.sessions.set(newSession)
             call.respond(
