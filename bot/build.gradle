@@ -12,6 +12,7 @@ repositories {
 sourceSets {
     main.kotlin.srcDirs = ["src"]
     main.resources.srcDirs = ["resources"]
+    test.kotlin.srcDirs = ["test"]
 }
 
 compileKotlin {
@@ -58,8 +59,17 @@ dependencies {
     implementation "org.koin:koin-logger-slf4j:2.1.5"
 
     implementation "io.lettuce:lettuce-core:5.2.2.RELEASE"
+
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.1'
+    testImplementation "io.mockk:mockk:1.9.3"
+    testImplementation "org.koin:koin-test:2.1.5"
 }
 
+test {
+    useJUnitPlatform()
+}
 
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
