@@ -65,6 +65,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.6.1'
     testImplementation "io.mockk:mockk:1.9.3"
     testImplementation "org.koin:koin-test:2.1.5"
+    testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
 }
 
 test {

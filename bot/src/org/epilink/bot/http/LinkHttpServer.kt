@@ -37,11 +37,12 @@ class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
      * True if the server should also serve the front-end, false if it should
      * attempt to redirect to the front-end.
      */
-    private val serveFrontEnd =
+    private val serveFrontEnd by lazy {
         // Detect the presence of the frontend
         LinkHttpServer::class.java.getResource("/.hasFrontend") != null &&
                 // Check that no URL is set
                 wsCfg.frontendUrl == null
+    }
 
     private val backend: LinkBackEnd by inject()
 
