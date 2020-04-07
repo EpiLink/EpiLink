@@ -18,6 +18,9 @@ import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
+/**
+ * The back-end, specifically for interacting with the Discord API
+ */
 class LinkDiscordBackEnd(
     private val clientId: String,
     private val secret: String
@@ -111,5 +114,8 @@ class LinkDiscordBackEnd(
         return DiscordUserInfo(userid, displayableUsername, avatar)
     }
 
+    /**
+     * Returns the stub of the authorization OAuth2 URL, without the redirect_uri
+     */
     fun getAuthorizeStub(): String = authStubDiscord
 }

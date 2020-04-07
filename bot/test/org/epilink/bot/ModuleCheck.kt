@@ -12,8 +12,8 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 
 class ModuleCheck : KoinTest {
-    val cfgMock = minimalConfig
-    val rulebookMock = mockk<Rulebook>(relaxed = true)
+    private val cfgMock = minimalConfig
+    private val rulebookMock = mockk<Rulebook>(relaxed = true)
 
     @Test
     fun checkEpilinkModules() {

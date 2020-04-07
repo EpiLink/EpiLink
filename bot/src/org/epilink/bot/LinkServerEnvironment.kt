@@ -26,6 +26,9 @@ class LinkServerEnvironment(
     private val cfg: LinkConfiguration,
     rulebook: Rulebook
 ) {
+    /**
+     * Base module, which contains the environment and the database
+     */
     val epilinkBaseModule = module {
         // Environment
         single { this@LinkServerEnvironment }
@@ -33,6 +36,9 @@ class LinkServerEnvironment(
         single<LinkServerDatabase> { LinkServerDatabaseImpl(cfg.db) }
     }
 
+    /**
+     * Discord module, for everything related to Discord
+     */
     val epilinkDiscordModule = module {
         // Rulebook
         single { rulebook }
@@ -51,6 +57,9 @@ class LinkServerEnvironment(
         single<LinkRoleManager> { LinkRoleManagerImpl() }
     }
 
+    /**
+     * Web module, for everything related to the web server, the front-end and Ktor
+     */
     val epilinkWebModule = module {
         // HTTP (Ktor) server
         single<LinkHttpServer> { LinkHttpServerImpl() }
