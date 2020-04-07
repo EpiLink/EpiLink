@@ -38,7 +38,7 @@ class DiscordBackEndTest : KoinTest {
             assertTrue(contains("client_id=DiscordClientId"), "Expected a client ID")
             assertTrue(contains("scope=identify"), "Expected the scope to be set to identify")
             assertTrue(contains("response_type=code"), "Expected the response type to be code")
-            assertTrue(contains(Regex("scope=identify[&$]")), "Expected identify to be the only scope")
+            assertTrue(contains(Regex("scope=identify(&|$)")), "Expected identify to be the only scope")
             assertTrue(contains("prompt=consent"), "Expected prompt to be set to consent")
             assertFalse(contains("redirect_uri"), "Expected redirect_uri to be absent")
         }
@@ -132,24 +132,4 @@ class DiscordBackEndTest : KoinTest {
             )
         }
     }
-
-    private fun declareClientHandler(onlyMatchUrl: String? = null, handler: MockRequestHandler): HttpClient =
-        declare {
-            HttpClient(MockEngine) {
-                engine {
-                    addHandler(onlyMatchUrl?.let<String, MockRequestHandler> {
-                        { request ->
-                            when (request.url.fullUrl) {
-                                onlyMatchUrl -> handler(request)
-                                else -> error("Url ${request.url.fullUrl} does not match expected URL $onlyMatchUrl")
-                            }
-                        }
-                    } ?: handler)
-                }
-            }
-        }
 }
-
-// From https://ktor.io/clients/http-client/testing.html
-private val Url.hostWithPortIfRequired: String get() = if (port == protocol.defaultPort) host else hostWithPort
-private val Url.fullUrl: String get() = "${protocol.name}://$hostWithPortIfRequired$fullPath"

@@ -297,22 +297,3 @@ class BackEndTest : KoinTest {
             }
         }, block)
 }
-
-fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
-    assertEquals(status, this.response.status())
-}
-
-
-inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T =
-    declare { mockk(block = body) }
-
-fun Map<String, Any?>.getString(key: String): String =
-    this.getValue(key) as String
-
-@Suppress("UNCHECKED_CAST")
-fun Map<String, Any?>.getMap(key: String): Map<String, Any?> =
-    this.getValue(key) as Map<String, Any?>
-
-inline fun <reified T> fromJson(response: TestApplicationResponse): T {
-    return jacksonObjectMapper().readValue(response.content!!)
-}
