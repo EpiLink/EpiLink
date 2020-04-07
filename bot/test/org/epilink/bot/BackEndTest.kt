@@ -298,7 +298,7 @@ class BackEndTest : KoinTest {
         }, block)
 }
 
-private fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
+fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
     assertEquals(status, this.response.status())
 }
 

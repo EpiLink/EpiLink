@@ -57,6 +57,8 @@ class LinkServerEnvironment(
 
         single<LinkBackEnd> { LinkBackEndImpl() }
 
+        single<LinkFrontEndHandler> { LinkFrontEndHandlerImpl() }
+
         single { cfg.server }
 
         single { HttpClient(Apache) }
