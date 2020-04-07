@@ -3,7 +3,7 @@ name: Back-end tests
 on: [push, pull_request]
 
 jobs:
-  build:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -12,6 +12,6 @@ jobs:
         with:
           java-version: 11
       - name: Build with Gradle
-        run: chmod +x gradlew && ./gradlew build
+        run: chmod +x gradlew && ./gradlew jar
       - name: Test with gradle
         run: ./gradlew check
