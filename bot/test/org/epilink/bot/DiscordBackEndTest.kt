@@ -1,10 +1,7 @@
 package org.epilink.bot
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.MockRequestHandler
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.runBlocking
@@ -67,6 +64,40 @@ class DiscordBackEndTest : KoinTest {
         val dbe = get<LinkDiscordBackEnd>()
         runBlocking {
             assertEquals("DiscordAccessToken", dbe.getDiscordToken("DiscordAuthCode", "redir"))
+        }
+    }
+
+    @Test
+    fun `Test Discord token retrieval fails on wrong authcode`() {
+        declareClientHandler(onlyMatchUrl = "https://discordapp.com/api/v6/oauth2/token") {
+            respondError(
+                HttpStatusCode.BadRequest,
+                """{"error":"invalid_grant"}""",
+                headers = headersOf("Content-Type", "application/json")
+            )
+        }
+
+        runBlocking {
+            val dbe = get<LinkDiscordBackEnd>()
+            val exc = assertFailsWith<LinkEndpointException> {
+                dbe.getDiscordToken("Authcode", "Redir")
+            }
+            assertEquals(StandardErrorCodes.InvalidAuthCode, exc.errorCode)
+        }
+    }
+
+    @Test
+    fun `Test Discord token retrieval fails on other error`() {
+        declareClientHandler(onlyMatchUrl = "https://discordapp.com/api/v6/oauth2/token") {
+            respondError(HttpStatusCode.BadRequest, """{"error":"¯\\_(ツ)_/¯"}""")
+        }
+
+        runBlocking {
+            val dbe = get<LinkDiscordBackEnd>()
+            val exc = assertFailsWith<LinkEndpointException> {
+                dbe.getDiscordToken("Auth", "Re")
+            }
+            assertEquals(StandardErrorCodes.DiscordApiFailure, exc.errorCode)
         }
     }
 
