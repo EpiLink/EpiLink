@@ -1,13 +1,14 @@
 package org.epilink.bot
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.*
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
 import org.epilink.bot.db.Allowed
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
@@ -18,10 +19,8 @@ import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
-import org.koin.ext.scope
 import org.koin.test.KoinTest
 import org.koin.test.get
-import org.koin.test.mock.declare
 import kotlin.test.*
 
 data class ApiSuccess(
@@ -282,6 +281,27 @@ class BackEndTest : KoinTest {
                 assertTrue { this.response.content!!.contains("yes") }
             }
             coVerify { bot.launchInScope(any()) }
+        }
+    }
+
+    @Test
+    fun `Test user without session id fails`() {
+        withTestEpiLink {
+            handleRequest(HttpMethod.Get, "/api/v1/user").run {
+                assertStatus(HttpStatusCode.Unauthorized)
+            }
+        }
+    }
+
+    @Test
+    fun `Test user with incorrect session id fails`() {
+        withTestEpiLink {
+            handleRequest(HttpMethod.Get, "/api/v1/user") {
+                addHeader("SessionId", "eeebaaa")
+            }.run {
+                assertStatus(HttpStatusCode.Unauthorized)
+            }
+
         }
     }
 
