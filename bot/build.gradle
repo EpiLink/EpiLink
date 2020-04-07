@@ -9,13 +9,6 @@ repositories {
     jcenter()
 }
 
-sourceSets {
-    main.kotlin.srcDirs = ["src"]
-    main.resources.srcDirs = ["resources"]
-    test.kotlin.srcDirs = ["test"]
-    test.resources.srcDirs = ["testresources"]
-}
-
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
     kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-XXLanguage:+NewInference"]
