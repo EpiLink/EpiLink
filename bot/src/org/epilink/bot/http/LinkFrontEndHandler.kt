@@ -41,11 +41,12 @@ class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
 
     private val wsCfg: LinkWebServerConfiguration by inject()
 
-    override val serveIntegratedFrontEnd: Boolean =
+    override val serveIntegratedFrontEnd: Boolean by lazy {
         // Detect the presence of the frontend
         LinkHttpServer::class.java.getResource("/.hasFrontend") != null &&
                 // Check that no URL is set
                 wsCfg.frontendUrl == null
+    }
 
     override fun Application.install() {
         routing {
