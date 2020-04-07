@@ -90,7 +90,7 @@ class MsftBackEndTest : KoinTest {
 
     @Test
     fun `Test Microsoft token retrieval fails on other error`() {
-        declareClientHandler(onlyMatchUrl = "https://discordapp.com/api/v6/oauth2/token") {
+        declareClientHandler(onlyMatchUrl = "https://login.microsoftonline.com/MsftTenant/oauth2/v2.0/token") {
             respondError(HttpStatusCode.BadRequest, """{"error":"¯\\_(ツ)_/¯"}""")
         }
 
@@ -100,6 +100,7 @@ class MsftBackEndTest : KoinTest {
                 mbe.getMicrosoftToken("Auth", "Re")
             }
             assertEquals(StandardErrorCodes.MicrosoftApiFailure, exc.errorCode)
+            assertTrue(exc.message!!.contains("¯\\_(ツ)_/¯"), "Message ${exc.message!!} does not contain error name")
         }
     }
 
