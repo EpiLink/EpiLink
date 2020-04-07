@@ -85,6 +85,7 @@ class FrontEndHandlingTest : KoinTest {
             mapOf(
                 "/index.html" to "Default index.html",
                 "/" to "Default index.html",
+                "/does/not/exist.html" to "Default index.html",
                 "/one.txt" to "Text file one.txt",
                 "/dir/indir.md" to "In directory indir.md"
             ).forEach { (k, v) ->
