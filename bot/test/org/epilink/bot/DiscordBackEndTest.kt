@@ -1,10 +1,12 @@
 package org.epilink.bot
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.runBlocking
+import org.epilink.bot.http.DiscordUserInfo
 import org.epilink.bot.http.LinkDiscordBackEnd
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -98,6 +100,36 @@ class DiscordBackEndTest : KoinTest {
                 dbe.getDiscordToken("Auth", "Re")
             }
             assertEquals(StandardErrorCodes.DiscordApiFailure, exc.errorCode)
+        }
+    }
+
+    @Test
+    fun `Test Discord info retrieval`() {
+        declareClientHandler(onlyMatchUrl = "https://discordapp.com/api/v6/users/@me") { req ->
+            assertEquals("Bearer veryserioustoken", req.headers["Authorization"])
+            val data = mapOf(
+                "id" to "myVeryId",
+                "username" to "usseeer",
+                "discriminator" to "9876",
+                "avatar" to "haaash"
+            )
+            @Suppress("BlockingMethodInNonBlockingContext")
+            respond(
+                jacksonObjectMapper().writeValueAsString(data),
+                headers = headersOf("Content-Type", "application/json")
+            )
+        }
+
+        runBlocking {
+            val dbe = get<LinkDiscordBackEnd>()
+            assertEquals(
+                DiscordUserInfo(
+                    id = "myVeryId",
+                    username = "usseeer#9876",
+                    avatarUrl = "https://cdn.discordapp.com/avatars/myVeryId/haaash.png?size=256"
+                ),
+                dbe.getDiscordInfo("veryserioustoken")
+            )
         }
     }
 
