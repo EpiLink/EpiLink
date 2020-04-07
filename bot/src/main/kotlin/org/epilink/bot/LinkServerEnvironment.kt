@@ -6,8 +6,11 @@ import kotlinx.coroutines.*
 import org.epilink.bot.config.LinkConfiguration
 import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkServerDatabaseImpl
 import org.epilink.bot.discord.LinkDiscordBot
+import org.epilink.bot.discord.LinkDiscordBotImpl
 import org.epilink.bot.discord.LinkRoleManager
+import org.epilink.bot.discord.LinkRoleManagerImpl
 import org.epilink.bot.http.*
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
@@ -23,14 +26,20 @@ class LinkServerEnvironment(
     private val cfg: LinkConfiguration,
     rulebook: Rulebook
 ) {
-    private val epilinkBaseModule = module {
+    /**
+     * Base module, which contains the environment and the database
+     */
+    val epilinkBaseModule = module {
         // Environment
         single { this@LinkServerEnvironment }
         // Database
-        single { LinkServerDatabase(cfg.db) }
+        single<LinkServerDatabase> { LinkServerDatabaseImpl(cfg.db) }
     }
 
-    private val epilinkDiscordModule = module {
+    /**
+     * Discord module, for everything related to Discord
+     */
+    val epilinkDiscordModule = module {
         // Rulebook
         single { rulebook }
         // Discord configuration
@@ -38,21 +47,26 @@ class LinkServerEnvironment(
         // Privacy configuration
         single { cfg.privacy }
         // Discord bot
-        single {
-            LinkDiscordBot(
+        single<LinkDiscordBot> {
+            LinkDiscordBotImpl(
                 cfg.tokens.discordToken ?: error("Discord token cannot be null "),
                 cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null")
             )
         }
         // Role manager
-        single { LinkRoleManager() }
+        single<LinkRoleManager> { LinkRoleManagerImpl() }
     }
 
-    private val epilinkWebModule = module {
+    /**
+     * Web module, for everything related to the web server, the front-end and Ktor
+     */
+    val epilinkWebModule = module {
         // HTTP (Ktor) server
-        single { LinkHttpServer() }
+        single<LinkHttpServer> { LinkHttpServerImpl() }
 
-        single { LinkBackEnd() }
+        single<LinkBackEnd> { LinkBackEndImpl() }
+
+        single<LinkFrontEndHandler> { LinkFrontEndHandlerImpl() }
 
         single { cfg.server }
 

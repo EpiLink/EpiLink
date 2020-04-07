@@ -2,16 +2,16 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.call
+import io.ktor.application.*
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.features.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.ParametersBuilder
+import io.ktor.jackson.jackson
 import io.ktor.request.ContentTransformationException
 import io.ktor.request.receive
 import io.ktor.response.respond
@@ -32,9 +32,19 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 
 /**
+ * Interface for the back-end
+ */
+interface LinkBackEnd {
+    /**
+     * Ktor module for the back-end API
+     */
+    fun Application.epilinkApiModule()
+}
+
+/**
  * The back-end, defining API endpoints and more
  */
-class LinkBackEnd : KoinComponent {
+internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     /**
      * The environment the back end lives in
      */
@@ -48,12 +58,44 @@ class LinkBackEnd : KoinComponent {
 
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
 
+    private val storageProvider: SessionStorageProvider by inject()
+
+    override fun Application.epilinkApiModule() {
+        /*
+         * Used for automatically converting stuff to JSON when calling
+         * "respond" with generic objects.
+         */
+        install(ContentNegotiation) {
+            jackson {}
+        }
+
+        /*
+         * Used for sessions
+         */
+        install(Sessions) {
+            header<RegisterSession>(
+                "RegistrationSessionId",
+                storageProvider.createStorage("el_reg_")
+            )
+            header<ConnectedSession>(
+                "SessionId",
+                storageProvider.createStorage("el_ses_")
+            )
+        }
+
+        routing {
+            route("/api/v1") {
+                epilinkApiV1()
+            }
+        }
+    }
+
     /**
      * Defines the API endpoints. Served under /api/v1
      *
      * Anything responded in here SHOULD use [ApiResponse] in JSON form.
      */
-    fun Route.epilinkApiV1() {
+    private fun Route.epilinkApiV1() {
 
         // Make sure that exceptions are not left for Ktor to try and figure out.
         // Ktor would figure it out, but we a) need to log them b) respond with an ApiResponse
@@ -145,7 +187,7 @@ class LinkBackEnd : KoinComponent {
                             discord.updateRoles(u, true)
                         }
                         call.loginAs(u)
-                        call.respond(apiSuccess("Account created, logged in."))
+                        call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
                     }
                 }
             }
@@ -199,6 +241,14 @@ class LinkBackEnd : KoinComponent {
             call.loginAs(user)
             call.respond(ApiSuccessResponse("Logged in", RegistrationContinuation("login", null)))
         } else {
+            val adv = db.isAllowedToCreateAccount(id, null)
+            if (adv is Disallowed) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiErrorResponse(adv.reason, AccountCreationNotAllowed.toErrorData())
+                )
+                return
+            }
             val newSession = session.copy(discordUsername = username, discordId = id, discordAvatarUrl = avatarUrl)
             call.sessions.set(newSession)
             call.respond(
@@ -222,7 +272,10 @@ class LinkBackEnd : KoinComponent {
         val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
         val adv = db.isAllowedToCreateAccount(null, id)
         if (adv is Disallowed) {
-            call.respond(ApiErrorResponse(adv.reason, AccountCreationNotAllowed.toErrorData()))
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiErrorResponse(adv.reason, AccountCreationNotAllowed.toErrorData())
+            )
             return
         }
         val newSession = session.copy(email = email, microsoftUid = id)

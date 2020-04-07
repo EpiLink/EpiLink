@@ -15,12 +15,6 @@ import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromT
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
 
 /**
- * Execute the Rulebook script located at the given path, and return the rulebook that was created from it.
- */
-suspend fun loadRules(path: Path): Rulebook =
-    loadRules(path.toFile().toScriptSource())
-
-/**
  * Execute the string as a Rulebook script, and return the rulebook that was created form it.
  */
 suspend fun loadRules(string: String): Rulebook =

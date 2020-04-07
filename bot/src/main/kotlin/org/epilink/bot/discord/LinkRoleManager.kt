@@ -21,14 +21,9 @@ import org.koin.core.inject
 import discord4j.core.`object`.entity.User as DUser
 
 /**
- * This class is responsible for managing and updating the roles of Discord users.
+ * The role manager interface
  */
-class LinkRoleManager : KoinComponent {
-    private val database: LinkServerDatabase by inject()
-    private val bot: LinkDiscordBot by inject()
-    private val config: LinkDiscordConfig by inject()
-    private val rulebook: Rulebook by inject()
-
+interface LinkRoleManager {
     /**
      * Updates all the roles of a Discord user on a given collection of guilds. The user does not have to be present on
      * the given guilds -- this function handles the case where the member is absent well. If tellUserIfFailed is true,
@@ -37,6 +32,28 @@ class LinkRoleManager : KoinComponent {
      * @throws LinkEndpointException If something fails during the member retrieval from each guild.
      */
     suspend fun updateRolesOnGuilds(
+        dbUser: User,
+        guilds: Collection<Guild>,
+        discordUser: DUser,
+        tellUserIfFailed: Boolean
+    )
+
+    /**
+     * Handles the event where a user joins a monitored server. This assumes that the guild is monitored.
+     */
+    suspend fun handleNewUser(ev: MemberJoinEvent)
+}
+
+/**
+ * This class is responsible for managing and updating the roles of Discord users.
+ */
+internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
+    private val database: LinkServerDatabase by inject()
+    private val bot: LinkDiscordBot by inject()
+    private val config: LinkDiscordConfig by inject()
+    private val rulebook: Rulebook by inject()
+
+    override suspend fun updateRolesOnGuilds(
         dbUser: User,
         guilds: Collection<Guild>,
         discordUser: DUser,
@@ -80,10 +97,7 @@ class LinkRoleManager : KoinComponent {
         }
     }
 
-    /**
-     * Handles the event where a user joins a monitored server. This assumes that the guild is monitored.
-     */
-    suspend fun handleNewUser(ev: MemberJoinEvent) {
+    override suspend fun handleNewUser(ev: MemberJoinEvent) {
         val guild = ev.guild.awaitSingle()
         val dbUser = database.getUser(ev.member.id.asString())
         if (dbUser != null) {

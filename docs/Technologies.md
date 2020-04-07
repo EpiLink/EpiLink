@@ -18,6 +18,7 @@ The back-end is coded in Kotlin, with:
   Kotlin.
 * SQLite as the SQL database with the
   [SQL JDBC driver from xerial](https://github.com/xerial/sqlite-jdbc)
+* Redis as a session storage solution with [Lettuce](https://lettuce.io) as the Redis client
 
 The back-end is managed by @utybo
 

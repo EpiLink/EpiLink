@@ -16,12 +16,64 @@ import java.sql.Connection
 import java.time.LocalDateTime
 
 /**
+ * Interface for using the server database
+ */
+interface LinkServerDatabase {
+    /**
+     * Returns the server user that has the given Discord account ID associated, or null if no such user exists.
+     */
+    suspend fun getUser(discordId: String): User?
+
+    /**
+     * Create a user in the database using the given registration session's information.
+     *
+     * @param session The session to get the information from
+     * @param keepIdentity If true, a [TrueIdentity] object will be associated to the user and recorded in the
+     * database
+     * @throws LinkEndpointException If the session's data is invalid, the user is banned, or another erroneous scenario
+     */
+    suspend fun createUser(session: RegisterSession, keepIdentity: Boolean): User
+
+    /**
+     * Checks whether an account with the given Discord user ID and Microsoft user ID could be created.
+     *
+     * If a parameter is null, the checks for this parameter are ignored.
+     */
+    suspend fun isAllowedToCreateAccount(discordId: String?, microsoftId: String?): DatabaseAdvisory
+
+    /**
+     * Checks whether a user should be able to join a server (i.e. not banned, no irregularities)
+     *
+     * @return a database advisory with a end-user friendly reason.
+     */
+    suspend fun canUserJoinServers(dbUser: User): DatabaseAdvisory
+
+    /**
+     * Checks whether the user has his true identity recorded within the system.
+     */
+    @UsesTrueIdentity
+    suspend fun isUserIdentifiable(dbUser: User): Boolean
+
+    /**
+     * Retrieve the identity of a user. This access is logged within the system and the user is notified.
+     */
+    @UsesTrueIdentity
+    suspend fun accessIdentity(
+        dbUser: User,
+        automated: Boolean,
+        author: String,
+        reason: String,
+        discord: LinkDiscordBot
+    ): String
+}
+
+/**
  * The class that manages the database and handles all business logic.
  *
  * Most of the functions declared here are suspending functions intended to be used
  * from within Ktor responses.
  */
-class LinkServerDatabase(db: String) {
+internal class LinkServerDatabaseImpl(db: String) : LinkServerDatabase {
     /**
      * The Database instance managed by JetBrains Exposed used for transactions.
      */
@@ -55,24 +107,13 @@ class LinkServerDatabase(db: String) {
      *         }
      */
 
-    /**
-     * Returns the server user that has the given Discord account ID associated, or null if no such user exists.
-     */
-    suspend fun getUser(discordId: String): User? =
+    override suspend fun getUser(discordId: String): User? =
         newSuspendedTransaction(db = db) {
             User.find { Users.discordId eq discordId }.firstOrNull()
         }
 
-    /**
-     * Create a user in the database using the given registration session's information.
-     *
-     * @param session The session to get the information from
-     * @param keepIdentity If true, a [TrueIdentity] object will be associated to the user and recorded in the
-     * database
-     * @throws LinkEndpointException If the session's data is invalid, the user is banned, or another erroneous scenario
-     */
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
-    suspend fun createUser(session: RegisterSession, keepIdentity: Boolean): User {
+    override suspend fun createUser(session: RegisterSession, keepIdentity: Boolean): User {
         // true in the exception because the end-user is at fault for trying to register with bad information.
         val safeDiscId = session.discordId ?: throw LinkEndpointException(
             StandardErrorCodes.IncompleteRegistrationRequest,
@@ -120,12 +161,7 @@ class LinkServerDatabase(db: String) {
         return /* Ban does not expire */ expiry == null || /* Ban has not expired */ expiry.isBefore(LocalDateTime.now())
     }
 
-    /**
-     * Checks whether an account with the given Discord user ID and Microsoft user ID could be created.
-     *
-     * If a parameter is null, the checks for this parameter are ignored.
-     */
-    suspend fun isAllowedToCreateAccount(discordId: String?, microsoftId: String?): DatabaseAdvisory {
+    override suspend fun isAllowedToCreateAccount(discordId: String?, microsoftId: String?): DatabaseAdvisory {
         // Check Microsoft account if provided
         if (microsoftId != null) {
             val hash = microsoftId.hashSha256()
@@ -158,31 +194,20 @@ class LinkServerDatabase(db: String) {
     private suspend fun getBansFor(hash: ByteArray): List<Ban> =
         newSuspendedTransaction(db = db) { Ban.find { Bans.msftIdHash eq hash }.toList() }
 
-    /**
-     * Checks whether a user should be able to join a server (i.e. not banned, no irregularities)
-     *
-     * @return a database advisory with a end-user friendly reason.
-     */
-    suspend fun canUserJoinServers(dbUser: User): DatabaseAdvisory {
+    override suspend fun canUserJoinServers(dbUser: User): DatabaseAdvisory {
         if (getBansFor(dbUser.msftIdHash).any { it.isActive() }) {
             return Disallowed("You are banned from joining any server at the moment.")
         }
         return Allowed
     }
 
-    /**
-     * Checks whether the user has his true identity recorded within the system.
-     */
     @UsesTrueIdentity
-    suspend fun isUserIdentifiable(dbUser: User): Boolean {
+    override suspend fun isUserIdentifiable(dbUser: User): Boolean {
         return newSuspendedTransaction(db = db) { dbUser.trueIdentity != null }
     }
 
-    /**
-     * Retrieve the identity of a user. This access is logged within the system and the user is notified.
-     */
     @UsesTrueIdentity
-    suspend fun accessIdentity(
+    override suspend fun accessIdentity(
         dbUser: User,
         automated: Boolean,
         author: String,

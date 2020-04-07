@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
  * @param eagerAuthentication If the authentication information should be sent directly or only after the server sends
  * back an unauthorized error
  */
+@Suppress("unused")
 suspend fun httpGetJson(
     url: String,
     basicAuth: Pair<String, String>? = null,
@@ -49,5 +50,5 @@ suspend fun httpGetJson(
         if (bearer != null)
             header(HttpHeaders.Authorization, "Bearer $bearer")
     }
-    return withContext(Dispatchers.Default) { ObjectMapper().readValue<Map<String, Any?>>(response) }
+    return withContext(Dispatchers.Default) { ObjectMapper().readValue(response) }
 }
