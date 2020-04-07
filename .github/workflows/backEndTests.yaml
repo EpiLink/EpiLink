@@ -12,6 +12,6 @@ jobs:
         with:
           java-version: 11
       - name: Build with Gradle
-        run: chmod +x gradlew && ./gradlew jar
+        run: ./gradlew jar
       - name: Test with gradle
         run: ./gradlew check
