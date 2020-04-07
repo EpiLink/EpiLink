@@ -75,9 +75,7 @@ class FrontEndHandlingTest : KoinTest {
 
     @Test
     fun `Test serving bundled front`() {
-        get<LinkFrontEndHandler>().apply {
-            every { serveIntegratedFrontEnd } returns true
-        }
+        // The .hasFrontend is present in the test resources
         mockHere<LinkWebServerConfiguration> {
             every { frontendUrl } returns null
         }
