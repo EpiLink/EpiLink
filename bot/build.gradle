@@ -9,13 +9,12 @@ repositories {
     jcenter()
 }
 
-sourceSets {
-    main.kotlin.srcDirs = ["src"]
-    main.resources.srcDirs = ["resources"]
-}
-
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-XXLanguage:+NewInference"]
+}
+
+compileTestKotlin {
     kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
 }
 
@@ -56,8 +55,21 @@ dependencies {
 
     implementation "org.koin:koin-core:2.1.5"
     implementation "org.koin:koin-logger-slf4j:2.1.5"
+
+    implementation "io.lettuce:lettuce-core:5.2.2.RELEASE"
+
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.1'
+    testImplementation "io.mockk:mockk:1.9.3"
+    testImplementation "org.koin:koin-test:2.1.5"
+    testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
+    testImplementation "io.ktor:ktor-client-mock-jvm:$ktorVersion"
 }
 
+test {
+    useJUnitPlatform()
+}
 
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files

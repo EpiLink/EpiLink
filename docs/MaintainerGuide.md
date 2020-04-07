@@ -8,10 +8,12 @@ This page will guide you through the configuration of a working EpiLink instance
 
 There are (or, rather, will be) several ways of deploying EpiLink:
 
-- All-in-one package (includes back-end, front-end and JRE)
-- Separate packages (one for back-end, one for front-end, requires a JRE to be installed) 
+- All-in-one package (includes back-end, front-end and JRE, optionally a Redis server)
+- Separate packages (one for back-end, one for front-end, requires a JRE and Redis server to be installed) 
 
 All-in-one is recommended for most use cases, although it is not necessarily the most secure or fastest one.
+
+You will also need a Redis server. A ready-to-use Redis server may be included in all-in-one packages.
 
 ## Running
 
@@ -33,11 +35,14 @@ use any name you like.
 ```yaml
 name: My EpiLink Instance
 db: epilink.db
+redis: "redis://localhost:6379"
 ```
 
 * `name`: This is the name of your instance. This name is public and should describe your instance. For example "MyAmazingOrg Account Checker".
 
 * `db`: This is the location of the SQLite database. Use a full, absolute path instead of a relative path just to be on the safe side.
+
+* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion) and `el_reg_` (EpiLink REGistration) prefixes for all of its keys. This value can also be `~` to use an in-memory storage, but this is not recommended and should only be used for development purposes. Values are never cleared from the memory, resulting in leaks everywhere.
 
 ### HTTP Server Settings
 
