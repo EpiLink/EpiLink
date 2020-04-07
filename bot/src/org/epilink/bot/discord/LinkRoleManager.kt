@@ -47,7 +47,7 @@ interface LinkRoleManager {
 /**
  * This class is responsible for managing and updating the roles of Discord users.
  */
-class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
+internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val database: LinkServerDatabase by inject()
     private val bot: LinkDiscordBot by inject()
     private val config: LinkDiscordConfig by inject()

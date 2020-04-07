@@ -23,7 +23,7 @@ interface LinkHttpServer {
 /**
  * This class represents the Ktor server.
  */
-class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
+internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
     private val wsCfg: LinkWebServerConfiguration by inject()
 
     private val frontEndHandler: LinkFrontEndHandler by inject()

@@ -44,7 +44,7 @@ interface LinkBackEnd {
 /**
  * The back-end, defining API endpoints and more
  */
-class LinkBackEndImpl : LinkBackEnd, KoinComponent {
+internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     /**
      * The environment the back end lives in
      */

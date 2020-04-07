@@ -37,7 +37,7 @@ interface LinkFrontEndHandler {
 /**
  * Front-end handling implementation
  */
-class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
+internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
 
     private val wsCfg: LinkWebServerConfiguration by inject()
 

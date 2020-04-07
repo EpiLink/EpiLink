@@ -85,7 +85,7 @@ interface LinkDiscordBot {
  * - Guilds in which the bot is connected but does *not* have configurations for is **unmonitored**.
  * - Guilds in which the bot is not but has configurations for is **orphaned**. Not currently checked.
  */
-class LinkDiscordBotImpl(
+internal class LinkDiscordBotImpl(
     /**
      * The token to be used for logging in the bot
      */
