@@ -7,10 +7,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.features.ContentNegotiation
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.ParametersBuilder
+import io.ktor.features.CORS
+import io.ktor.http.*
 import io.ktor.jackson.jackson
 import io.ktor.request.ContentTransformationException
 import io.ktor.request.receive
@@ -83,7 +81,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
               exposeHeader("RegistrationSessionId")
               exposeHeader("SessionId")
 
-              host(wsCfg.frontendUrl!!.dropLast(1).replace(Regex("https?://"), ""))
+              host(env.cfg.server.frontendUrl!!.dropLast(1).replace(Regex("https?://"), ""))
         }
 
         /*

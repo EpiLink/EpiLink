@@ -23,7 +23,7 @@ import org.koin.logger.slf4jLogger
  * server, etc.
  */
 class LinkServerEnvironment(
-    private val cfg: LinkConfiguration,
+    val cfg: LinkConfiguration,
     rulebook: Rulebook
 ) {
     /**
