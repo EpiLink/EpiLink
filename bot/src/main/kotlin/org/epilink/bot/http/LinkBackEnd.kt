@@ -68,23 +68,6 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         }
 
         /*
-         * Allows the frontend to call the API along with the required headers
-         * and methods
-         */
-        install(CORS) {
-              method(HttpMethod.Options)
-              method(HttpMethod.Delete)
-
-              header("Content-Type")
-              header("RegistrationSessionId")
-              header("SessionId")
-              exposeHeader("RegistrationSessionId")
-              exposeHeader("SessionId")
-
-              host(env.cfg.server.frontendUrl!!.dropLast(1).replace(Regex("https?://"), ""))
-        }
-
-        /*
          * Used for sessions
          */
         install(Sessions) {

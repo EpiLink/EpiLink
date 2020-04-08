@@ -3,7 +3,10 @@ package org.epilink.bot.http
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.features.CORS
 import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.resolveResource
 import io.ktor.http.defaultForFileExtension
@@ -14,6 +17,7 @@ import io.ktor.response.respondRedirect
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.logger
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
@@ -49,18 +53,44 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
     }
 
     override fun Application.install() {
-        routing {
-            val frontUrl = wsCfg.frontendUrl
-            when {
-                serveIntegratedFrontEnd ->
+        val frontUrl = wsCfg.frontendUrl
+        when {
+            serveIntegratedFrontEnd -> {
+                logger.debug("CORS is disabled because the integrated front end is being served.")
+                routing {
                     get("/{...}") {
                         call.respondBootstrapped()
                     }
-                frontUrl == null ->
+                }
+            }
+            frontUrl == null -> {
+                logger.warn("CORS is disabled. Web browsers may deny calls to the back-end. Specify the front-end URL in the configuration files to fix this.")
+                routing {
                     get("/{...}") {
                         call.respond(HttpStatusCode.NotFound)
                     }
-                else ->
+                }
+            }
+
+            else -> {
+                logger.debug("CORS is enabled.")
+                /*
+                 * Allows the frontend to call the API along with the required headers
+                 * and methods
+                 */
+                install(CORS) {
+                    method(HttpMethod.Options)
+                    method(HttpMethod.Delete)
+
+                    header("Content-Type")
+                    header("RegistrationSessionId")
+                    header("SessionId")
+                    exposeHeader("RegistrationSessionId")
+                    exposeHeader("SessionId")
+
+                    host(frontUrl.dropLast(1).replace(Regex("https?://"), ""))
+                }
+                routing {
                     get("/{...}") {
                         call.respondRedirect(
                             frontUrl.dropLast(1) +
@@ -69,6 +99,7 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                             permanent = true
                         )
                     }
+                }
             }
         }
     }
