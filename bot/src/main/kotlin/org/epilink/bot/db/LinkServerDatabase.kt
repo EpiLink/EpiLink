@@ -98,7 +98,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
      */
     private fun LinkBan.isActive(): Boolean {
         val expiry = expiresOn
-        return /* Ban does not expire */ expiry == null || /* Ban has not expired */ expiry.isBefore(LocalDateTime.now())
+        return /* Ban does not expire */ expiry == null || /* Ban has not expired */ expiry.isAfter(LocalDateTime.now())
     }
 
     override suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory {
@@ -110,12 +110,12 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
 
     override suspend fun isMicrosoftUserAllowedToCreateAccount(microsoftId: String): DatabaseAdvisory {
         val hash = microsoftId.hashSha256()
+        if (facade.isMicrosoftAccountAlreadyLinked(hash))
+            return Disallowed("This Microsoft account is already linked to another account")
         val b = facade.getBansFor(hash)
         if (b.any { it.isActive() }) {
             return Disallowed("This Microsoft account is banned")
         }
-        if (facade.isMicrosoftAccountAlreadyLinked(hash))
-            return Disallowed("This Microsoft account is already linked to another account")
         return Allowed
     }
 
