@@ -224,12 +224,6 @@ fun loadConfigFromFile(path: Path): LinkConfiguration =
     }
 
 /**
- * Load a [LinkConfiguration] object from the given YAML string.
- */
-fun loadConfigFromString(config: String): LinkConfiguration =
-    yamlKotlinMapper.readValue(config, LinkConfiguration::class.java)
-
-/**
  * Checks the sanity of configuration options and coherence with the rulebook, logging information and guidance
  * for resolving issues.
  */

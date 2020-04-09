@@ -2,7 +2,6 @@ package org.epilink.bot.config.rulebook
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.nio.file.Path
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.defaultImports
 import kotlin.script.experimental.api.implicitReceivers
@@ -46,11 +45,4 @@ suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.De
         error("Failed to load rulebook")
     }
     builder.buildRulebook()
-}
-
-/**
- * Create a rulebook by using the Rulebook DSL directly.
- */
-suspend fun loadRules(block: RulebookBuilder.() -> Unit): Rulebook = withContext(Dispatchers.Default) {
-    RulebookBuilder().apply(block).buildRulebook()
 }

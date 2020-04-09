@@ -12,8 +12,8 @@ import org.epilink.bot.logger
 import java.util.*
 
 /**
- * A SessionStorageProvider is responsible for creating session storages. Each environment has one provider. This can be
- * used to produce session storages backed by a database or Redis server.
+ * A SessionStorageProvider is responsible for creating session storage objects. Each environment has one provider. This
+ * can be used to produce session storage objects backed by a database or Redis server.
  */
 interface SessionStorageProvider {
     /**
