@@ -32,7 +32,7 @@ interface LinkRoleManager {
      * @throws LinkEndpointException If something fails during the member retrieval from each guild.
      */
     suspend fun updateRolesOnGuilds(
-        dbUser: User,
+        dbUser: LinkUser,
         guilds: Collection<Guild>,
         discordUser: DUser,
         tellUserIfFailed: Boolean
@@ -54,7 +54,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val rulebook: Rulebook by inject()
 
     override suspend fun updateRolesOnGuilds(
-        dbUser: User,
+        dbUser: LinkUser,
         guilds: Collection<Guild>,
         discordUser: DUser,
         tellUserIfFailed: Boolean
@@ -193,25 +193,23 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
      */
     @OptIn(UsesTrueIdentity::class)
     private suspend fun getRolesForAuthorizedUser(
-        dbUser: User,
-        discordUser: discord4j.core.`object`.entity.User,
+        dbUser: LinkUser,
+        discordUser: DUser,
         rules: Collection<Rule>,
         strongIdGuildNames: Collection<String>
     ): Set<String> = withContext(Dispatchers.IO) {
         val did = discordUser.id.asString()
-        val dname = discordUser.username
-        val ddisc = discordUser.discriminator
+        val discordName = discordUser.username
+        val discordDiscriminator = discordUser.discriminator
         val identity =
-            if (database.isUserIdentifiable(dbUser) && rules.any { it is StrongIdentityRule }) {
-                database.accessIdentity(
-                    dbUser,
-                    automated = true,
-                    author = "EpiLink Discord Bot",
-                    reason =
-                    "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: "
-                            + strongIdGuildNames.joinToString(", "),
-                    discord = bot
-                )
+            if (database.isUserIdentifiable(dbUser.discordId) && rules.any { it is StrongIdentityRule }) {
+                val author = "EpiLink Discord Bot"
+                val reason =
+                    "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
+                            strongIdGuildNames.joinToString(", ")
+                val id = database.accessIdentity(dbUser, true, author, reason)
+                bot.sendIdentityAccessNotification(dbUser.discordId, true, author, reason)
+                id
             } else null
         val baseSet =
             if (identity != null) setOf(StandardRoles.Identified.roleName, StandardRoles.Known.roleName)
@@ -220,11 +218,11 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             async {
                 runCatching {
                     when (rule) {
-                        is WeakIdentityRule -> rule.determineRoles(did, dname, ddisc)
+                        is WeakIdentityRule -> rule.determineRoles(did, discordName, discordDiscriminator)
                         is StrongIdentityRule ->
                             if (identity == null)
                                 listOf()
-                            else rule.determineRoles(did, dname, ddisc, identity)
+                            else rule.determineRoles(did, discordName, discordDiscriminator, identity)
                     }
                 }.getOrElse { ex ->
                     logger.error("Failed to apply rule ${rule.name} due to an unexpected exception.", ex)

@@ -23,7 +23,7 @@ import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.db.User
+import org.epilink.bot.db.LinkUser
 import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -119,7 +119,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 )
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    ApiErrorResponse("An unknown error occured. Please report this.", UnknownError.toErrorData())
+                    ApiErrorResponse("An unknown error occurred. Please report this.", UnknownError.toErrorData())
                 )
             }
         }
@@ -182,7 +182,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     } else {
                         val options: AdditionalRegistrationOptions =
                             call.receiveCatching() ?: return@post
-                        val u = db.createUser(this, options.keepIdentity)
+                        val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
                         discord.launchInScope {
                             discord.updateRoles(u, true)
                         }
@@ -241,7 +241,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             call.loginAs(user)
             call.respond(ApiSuccessResponse("Logged in", RegistrationContinuation("login", null)))
         } else {
-            val adv = db.isAllowedToCreateAccount(id, null)
+            val adv = db.isDiscordUserAllowedToCreateAccount(id)
             if (adv is Disallowed) {
                 call.respond(
                     HttpStatusCode.BadRequest,
@@ -270,7 +270,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         val token = microsoftBackEnd.getMicrosoftToken(authcode.code, authcode.redirectUri)
         // Get information
         val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
-        val adv = db.isAllowedToCreateAccount(null, id)
+        val adv = db.isMicrosoftUserAllowedToCreateAccount(id)
         if (adv is Disallowed) {
             call.respond(
                 HttpStatusCode.BadRequest,
@@ -291,7 +291,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     /**
      * Setup the sessions to log in the passed user object
      */
-    private fun ApplicationCall.loginAs(user: User) {
+    private fun ApplicationCall.loginAs(user: LinkUser) {
         sessions.clear<RegisterSession>()
         sessions.set(ConnectedSession(user.discordId))
     }
