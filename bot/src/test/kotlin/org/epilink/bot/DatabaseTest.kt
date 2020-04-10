@@ -160,6 +160,59 @@ class DatabaseTest : KoinTest {
         }
     }
 
+    @Test
+    fun `Test indefinitely banned user cannot join servers`() {
+        val hey = "tested".sha256()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getBansFor(hey) } returns listOf(mockk {
+                every { expiresOn } returns null
+            })
+        }
+        test {
+            val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
+            assertTrue(adv is Disallowed, "Expected disallowed")
+        }
+    }
+
+    @Test
+    fun `Test actively banned user cannot join servers`() {
+        val hey = "tested".sha256()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getBansFor(hey) } returns listOf(mockk {
+                every { expiresOn } returns LocalDateTime.now().plusDays(1)
+            })
+        }
+        test {
+            val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
+            assertTrue(adv is Disallowed, "Expected disallowed")
+        }
+    }
+
+    @Test
+    fun `Test expired ban on user can join servers`() {
+        val hey = "tested".sha256()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getBansFor(hey) } returns listOf(mockk {
+                every { expiresOn } returns LocalDateTime.now().minusSeconds(1)
+            })
+        }
+        test {
+            val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
+            assertEquals(Allowed, adv, "Expected allowed")
+        }
+    }
+
+    @Test
+    fun `Test normal user can join servers`() {
+        val hey = "tested".sha256()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getBansFor(hey) } returns listOf()
+        }
+        test {
+            val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
+            assertEquals(Allowed, adv, "Expected allowed")
+        }
+    }
 
     private fun <R> test(block: suspend LinkServerDatabase.() -> R) =
         runBlocking {
