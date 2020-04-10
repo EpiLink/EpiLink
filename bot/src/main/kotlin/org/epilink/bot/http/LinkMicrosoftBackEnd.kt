@@ -58,7 +58,7 @@ class LinkMicrosoftBackEnd(
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
                 val data = ObjectMapper().readValue<Map<String, Any?>>(ex.response.call.receive<String>())
-                when (val errt = data["error"] as? String) {
+                when (val error = data["error"] as? String) {
                     "invalid_grant" -> throw LinkEndpointException(
                         InvalidAuthCode,
                         "Invalid authorization code",
@@ -67,7 +67,7 @@ class LinkMicrosoftBackEnd(
                     )
                     else -> throw LinkEndpointException(
                         MicrosoftApiFailure,
-                        "Microsoft OAuth failed: $errt (" + (data["error_description"] ?: "no description") + ")",
+                        "Microsoft OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
                         false,
                         ex
                     )

@@ -23,7 +23,7 @@ import org.epilink.bot.LinkException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
-import org.epilink.bot.db.User
+import org.epilink.bot.db.LinkUser
 import org.epilink.bot.logger
 import org.koin.core.KoinComponent
 import org.koin.core.inject
@@ -67,7 +67,7 @@ interface LinkDiscordBot {
     /**
      * Trigger a full role update for the given user.
      */
-    suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean)
+    suspend fun updateRoles(dbUser: LinkUser, tellUserIfFailed: Boolean)
 
     /**
      * Launches a coroutine inside the Discord bot's scope.
@@ -266,19 +266,12 @@ internal class LinkDiscordBotImpl(
     private suspend fun sendDirectMessage(discordId: String, embed: EmbedCreateSpec.() -> Unit) =
         sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), embed)
 
-    private suspend fun sendDirectMessage(discordId: String, message: String) =
-        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), message)
-
-    private suspend fun sendDirectMessage(discordUser: DUser, message: String) =
-        discordUser.getCheckedPrivateChannel()
-            .createMessage(message).awaitSingle()
-
     private suspend fun sendDirectMessage(discordUser: DUser, embed: EmbedCreateSpec.() -> Unit) =
         discordUser.getCheckedPrivateChannel()
             .createEmbed(embed).awaitSingle()
 
     // TODO move to RoleManager ?
-    override suspend fun updateRoles(dbUser: User, tellUserIfFailed: Boolean) {
+    override suspend fun updateRoles(dbUser: LinkUser, tellUserIfFailed: Boolean) {
         val discordId = dbUser.discordId
         val guilds = getMonitoredGuilds()
         val userSnowflake = Snowflake.of(discordId)

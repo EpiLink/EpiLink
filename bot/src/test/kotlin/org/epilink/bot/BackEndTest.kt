@@ -93,7 +93,7 @@ class BackEndTest : KoinTest {
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkServerDatabase> {
-            coEvery { isAllowedToCreateAccount(any(), any()) } returns Allowed
+            coEvery { isMicrosoftUserAllowedToCreateAccount(any()) } returns Allowed
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
@@ -118,7 +118,7 @@ class BackEndTest : KoinTest {
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkServerDatabase> {
-            coEvery { isAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche")
+            coEvery { isMicrosoftUserAllowedToCreateAccount(any()) } returns Disallowed("Cheh dans ta tronche")
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
@@ -138,7 +138,7 @@ class BackEndTest : KoinTest {
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
         }
         mockHere<LinkServerDatabase> {
-            coEvery { isAllowedToCreateAccount(any(), any()) } returns Allowed
+            coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
             coEvery { getUser("yes") } returns null
         }
         withTestEpiLink {
@@ -193,7 +193,7 @@ class BackEndTest : KoinTest {
         }
         mockHere<LinkServerDatabase> {
             coEvery { getUser("yes") } returns null
-            coEvery { isAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tête")
+            coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Disallowed("Cheh dans ta tête")
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
@@ -234,8 +234,9 @@ class BackEndTest : KoinTest {
         }
         val db = mockHere<LinkServerDatabase> {
             coEvery { getUser("yes") } returns null
-            coEvery { isAllowedToCreateAccount(any(), any()) } returns Allowed
-            coEvery { createUser(any(), any()) } returns mockk { every { discordId } returns "yes" }
+            coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
+            coEvery { isMicrosoftUserAllowedToCreateAccount(any()) } returns Allowed
+            coEvery { createUser(any(), any(), any(), any()) } returns mockk { every { discordId } returns "yes" }
         }
         val bot = mockHere<LinkDiscordBot> {
             coEvery { launchInScope(any()) } returns mockk()
@@ -269,7 +270,7 @@ class BackEndTest : KoinTest {
                 assertEquals(ConnectedSession("yes"), sessions.get<ConnectedSession>())
                 response.headers["SessionId"]!!
             }
-            coVerify { db.createUser(any(), true) }
+            coVerify { db.createUser("yes", "fakeguid", "fakemail", true) }
             // Simulate the DB knowing about the new user
             mockHere<LinkServerDatabase> {
                 coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }

@@ -108,7 +108,7 @@ class StrongIdentityRule(
 typealias RuleDeterminer = suspend RuleContext.() -> Unit
 
 /**
- * Type signature fo rthe strong identity rules' lambdas
+ * Type signature fo the strong identity rules' lambdas
  */
 @RulebookDsl
 typealias RuleDeterminerWithIdentity = suspend RuleContext.(String) -> Unit
