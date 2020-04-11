@@ -48,22 +48,12 @@ data class ApiErrorDetails(
     val description: String
 )
 
-class BackEndTest : KoinTest {
-    @BeforeTest
-    fun setupKoin() {
-        startKoin {
-            modules(module {
-                single<LinkBackEnd> { LinkBackEndImpl() }
-                single<SessionStorageProvider> { MemoryStorageProvider() }
-            })
-        }
+class BackEndTest : KoinBaseTest(
+    module {
+        single<LinkBackEnd> { LinkBackEndImpl() }
+        single<SessionStorageProvider> { MemoryStorageProvider() }
     }
-
-    @AfterTest
-    fun tearDownKoin() {
-        stopKoin()
-    }
-
+) {
     @Test
     fun `Test meta information gathering`() {
         mockHere<LinkServerEnvironment> {

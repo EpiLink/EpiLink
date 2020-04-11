@@ -13,21 +13,11 @@ import java.security.MessageDigest
 import java.time.LocalDateTime
 import kotlin.test.*
 
-class DatabaseTest : KoinTest {
-    @BeforeTest
-    fun setupKoin() {
-        startKoin {
-            modules(module {
-                single<LinkServerDatabase> { spyk(LinkServerDatabaseImpl()) }
-            })
-        }
+class DatabaseTest : KoinBaseTest(
+    module {
+        single<LinkServerDatabase> { spyk(LinkServerDatabaseImpl()) }
     }
-
-    @AfterTest
-    fun tearDownKoin() {
-        stopKoin()
-    }
-
+) {
     @Test
     fun `Test Discord user who already exists cannot create account`() {
         mockHere<LinkDatabaseFacade> {
