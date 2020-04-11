@@ -15,3 +15,9 @@ jobs:
         run: ./gradlew jar
       - name: Test with gradle
         run: ./gradlew check
+      - name: Upload tests failure report to artifacts
+        uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: test-failure-report
+          path: bot/build/reports/tests/test
