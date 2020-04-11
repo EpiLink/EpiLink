@@ -14,13 +14,13 @@ interface LinkDiscordMessages {
     /**
      * Get the embed to send to a user about why connecting failed
      */
-    suspend fun getCouldNotJoinEmbed(guildName: String, reason: String): DiscordEmbed
+    fun getCouldNotJoinEmbed(guildName: String, reason: String): DiscordEmbed
 
     /**
      * Get the initial server message sent upon connection with the server not knowing who the person is, or null if no
      * message should be sent.
      */
-    suspend fun getGreetingsEmbed(guildId: String, guildName: String): DiscordEmbed?
+    fun getGreetingsEmbed(guildId: String, guildName: String): DiscordEmbed?
 
     /**
      * Send an identity access notification to the given Discord ID with the given information, or null if no message
@@ -31,7 +31,7 @@ interface LinkDiscordMessages {
      * @param author The author of the request (bot name or human name)
      * @param reason The reason behind this identity access
      */
-    suspend fun getIdentityAccessEmbed(automated: Boolean, author: String, reason: String): DiscordEmbed?
+    fun getIdentityAccessEmbed(automated: Boolean, author: String, reason: String): DiscordEmbed?
 }
 
 internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
@@ -39,7 +39,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
 
     private val privacyConfig: LinkPrivacy by inject()
 
-    override suspend fun getCouldNotJoinEmbed(guildName: String, reason: String) =
+    override fun getCouldNotJoinEmbed(guildName: String, reason: String) =
         DiscordEmbed(
             title = ":x: Could not authenticate on $guildName",
             description = "Failed to authenticate you on $guildName. Please contact an administrator if you think that should not be happening.",
@@ -51,7 +51,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
             color = "red"
         )
 
-    override suspend fun getGreetingsEmbed(guildId: String, guildName: String): DiscordEmbed? {
+    override fun getGreetingsEmbed(guildId: String, guildName: String): DiscordEmbed? {
         val guildConfig = config.getConfigForGuild(guildId)
         if (!guildConfig.enableWelcomeMessage)
             return null
@@ -82,7 +82,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
         )
     }
 
-    override suspend fun getIdentityAccessEmbed(
+    override fun getIdentityAccessEmbed(
         automated: Boolean,
         author: String,
         reason: String
