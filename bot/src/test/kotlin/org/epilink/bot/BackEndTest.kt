@@ -12,7 +12,7 @@ import io.mockk.mockk
 import org.epilink.bot.db.Allowed
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.discord.LinkDiscordBot
+import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
@@ -238,8 +238,8 @@ class BackEndTest : KoinTest {
             coEvery { isMicrosoftUserAllowedToCreateAccount(any()) } returns Allowed
             coEvery { createUser(any(), any(), any(), any()) } returns mockk { every { discordId } returns "yes" }
         }
-        val bot = mockHere<LinkDiscordBot> {
-            coEvery { launchInScope(any()) } returns mockk()
+        val bot = mockHere<LinkRoleManager> {
+            coEvery { updateRolesOnAllGuildsLater(any()) } returns mockk()
         }
         withTestEpiLink {
             val regHeader = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
@@ -281,7 +281,7 @@ class BackEndTest : KoinTest {
                 assertStatus(HttpStatusCode.OK)
                 assertTrue { this.response.content!!.contains("yes") }
             }
-            coVerify { bot.launchInScope(any()) }
+            coVerify { bot.updateRolesOnAllGuildsLater(any()) }
         }
     }
 
