@@ -5,8 +5,10 @@ import io.ktor.client.engine.apache.Apache
 import kotlinx.coroutines.*
 import org.epilink.bot.config.LinkConfiguration
 import org.epilink.bot.config.rulebook.Rulebook
+import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkServerDatabaseImpl
+import org.epilink.bot.db.exposed.SQLiteExposedFacadeImpl
 import org.epilink.bot.discord.LinkDiscordBot
 import org.epilink.bot.discord.LinkDiscordBotImpl
 import org.epilink.bot.discord.LinkRoleManager
@@ -32,8 +34,10 @@ class LinkServerEnvironment(
     val epilinkBaseModule = module {
         // Environment
         single { this@LinkServerEnvironment }
-        // Database
-        single<LinkServerDatabase> { LinkServerDatabaseImpl(cfg.db) }
+        // Facade between EpiLink and the actual database
+        single<LinkDatabaseFacade> { SQLiteExposedFacadeImpl(cfg.db) }
+        // Higher level database functionality
+        single<LinkServerDatabase> { LinkServerDatabaseImpl() }
     }
 
     /**
@@ -110,7 +114,8 @@ class LinkServerEnvironment(
                 coroutineScope {
                     listOf(
                         async { app.koin.get<LinkDiscordBot>().start() },
-                        async { app.koin.get<SessionStorageProvider>().start() }
+                        async { app.koin.get<SessionStorageProvider>().start() },
+                        async { app.koin.get<LinkDatabaseFacade>().start() }
                     ).awaitAll()
                 }
             }

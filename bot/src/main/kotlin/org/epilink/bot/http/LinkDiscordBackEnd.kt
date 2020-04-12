@@ -59,7 +59,7 @@ class LinkDiscordBackEnd(
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
                 val data = ObjectMapper().readValue<Map<String, Any?>>(ex.response.call.receive<String>())
-                when (val errt = data["error"] as? String) {
+                when (val error = data["error"] as? String) {
                     "invalid_grant" -> throw LinkEndpointException(
                         InvalidAuthCode,
                         "Invalid authorization code",
@@ -68,7 +68,7 @@ class LinkDiscordBackEnd(
                     )
                     else -> throw LinkEndpointException(
                         DiscordApiFailure,
-                        "Discord OAuth failed: $errt (" + (data["error_description"] ?: "no description") + ")",
+                        "Discord OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
                         false,
                         ex
                     )
@@ -101,7 +101,7 @@ class LinkDiscordBackEnd(
                 it
             )
         }
-        val userid = data["id"] as String?
+        val userId = data["id"] as String?
             ?: throw LinkEndpointException(DiscordApiFailure, "Missing Discord ID in Discord API response")
         val username = data["username"] as String?
             ?: throw LinkEndpointException(DiscordApiFailure, "Missing Discord username in Discord API response")
@@ -110,8 +110,8 @@ class LinkDiscordBackEnd(
         val displayableUsername = "$username#$discriminator"
         val avatarHash = data["avatar"] as String?
         val avatar =
-            if (avatarHash != null) "https://cdn.discordapp.com/avatars/$userid/$avatarHash.png?size=256" else null
-        return DiscordUserInfo(userid, displayableUsername, avatar)
+            if (avatarHash != null) "https://cdn.discordapp.com/avatars/$userId/$avatarHash.png?size=256" else null
+        return DiscordUserInfo(userId, displayableUsername, avatar)
     }
 
     /**
