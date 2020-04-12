@@ -12,6 +12,7 @@ import org.epilink.bot.db.*
 import org.epilink.bot.discord.*
 import org.koin.dsl.module
 import org.koin.test.get
+import org.koin.test.mock.declare
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -40,6 +41,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             dcf.sendDirectMessage("userid", any())
             dm.getCouldNotJoinEmbed(any(), "This is my reason")
         }
+        confirmVerified(sd, dcf, dm)
     }
 
     @OptIn(UsesTrueIdentity::class)
@@ -161,5 +163,112 @@ class DiscordRoleManagerTest : KoinBaseTest(
             dm.getIdentityAccessEmbed(true, any(), any())
         }
         confirmVerified(r, dc, dcf, db, dm, dbUser)
+    }
+
+    @Test
+    fun `Test on join, unmonitored guild`() {
+        val cfg = mockHere<LinkDiscordConfig> {
+            every { servers } returns listOf(mockk { every { id } returns "otherid" })
+        }
+        runBlocking {
+            val rm = get<LinkRoleManager>()
+            rm.handleNewUser("guildid", "My Awesome Guild", "userid")
+        }
+        coVerifyAll {
+            cfg.servers
+        }
+        confirmVerified(cfg)
+    }
+
+    @Test
+    fun `Test on join, unknown user, send greeting`() {
+        val cfg = mockHere<LinkDiscordConfig> {
+            every { servers } returns listOf(
+                LinkDiscordServerSpec(
+                    id = "guildid",
+                    enableWelcomeMessage = true,
+                    roles = mockk()
+                )
+            )
+        }
+        val mockem = mockk<DiscordEmbed>()
+        val db = mockHere<LinkServerDatabase> {
+            coEvery { getUser("jacques") } returns null
+        }
+        val dm = mockHere<LinkDiscordMessages> {
+            every { getGreetingsEmbed("guildid", "My Awesome Guild") } returns mockem
+        }
+        val dcf = mockHere<LinkDiscordClientFacade> {
+            coEvery { sendDirectMessage("jacques", mockem) } just runs
+        }
+        runBlocking {
+            val rm = get<LinkRoleManager>()
+            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+        }
+        coVerifyAll {
+            cfg.servers
+            dm.getGreetingsEmbed("guildid", "My Awesome Guild")
+            dcf.sendDirectMessage("jacques", mockem)
+            db.getUser("jacques")
+        }
+        confirmVerified(cfg, dm, dcf, db)
+    }
+
+    @Test
+    fun `Test on join, unknown user, no greeting`() {
+        val cfg = mockHere<LinkDiscordConfig> {
+            every { servers } returns listOf(
+                LinkDiscordServerSpec(
+                    id = "guildid",
+                    enableWelcomeMessage = false,
+                    roles = mockk()
+                )
+            )
+        }
+        val db = mockHere<LinkServerDatabase> {
+            coEvery { getUser("jacques") } returns null
+        }
+        val dm = mockHere<LinkDiscordMessages> {
+            every { getGreetingsEmbed("guildid", "My Awesome Guild") } returns null
+        }
+        runBlocking {
+            val rm = get<LinkRoleManager>()
+            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+        }
+        coVerifyAll {
+            cfg.servers
+            dm.getGreetingsEmbed("guildid", "My Awesome Guild")
+            db.getUser("jacques")
+        }
+        confirmVerified(cfg, dm, db)
+    }
+
+    @Test
+    fun `Test on join, known`() {
+        val cfg = mockHere<LinkDiscordConfig> {
+            every { servers } returns listOf(
+                LinkDiscordServerSpec(
+                    id = "guildid",
+                    enableWelcomeMessage = false,
+                    roles = mockk()
+                )
+            )
+        }
+        val usermock: LinkUser = mockk()
+        val db = mockHere<LinkServerDatabase> {
+            coEvery { getUser("jacques") } returns usermock
+        }
+        val rm = declare { spyk(LinkRoleManagerImpl()) }
+        coEvery { rm.updateRolesOnGuilds(usermock, listOf("guildid"), true) } just runs
+        runBlocking {
+            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+        }
+        coVerifyAll {
+            cfg.servers
+            db.getUser("jacques")
+            rm.updateRolesOnGuilds(usermock, listOf("guildid"), true)
+            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+        }
+        confirmVerified(cfg, rm, db)
     }
 }

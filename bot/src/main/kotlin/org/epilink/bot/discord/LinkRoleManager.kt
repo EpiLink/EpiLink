@@ -91,26 +91,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         }
         val dbUser = database.getUser(memberId)
         if (dbUser != null) {
-            when (val canJoin = database.canUserJoinServers(dbUser)) {
-                is Allowed -> updateAuthorizedUserRoles(
-                    memberId,
-                    guildId,
-                    getRolesForAuthorizedUser(
-                        dbUser,
-                        getRulesRelevantForGuilds(guildId).map { it.first },
-                        // We can put the guild name here even if the guild does not require strong rules
-                        // because this argument is ignored if no such rule is used.
-                        // So, either a strong rule is used and the only guild it can be used on is [guild], or
-                        // there is no strong rule at all and this is ignored. So we can just pass the guild in
-                        // either way.
-                        listOf(guildName)
-                    )
-                )
-                is Disallowed -> facade.sendDirectMessage(
-                    memberId,
-                    messages.getCouldNotJoinEmbed(guildName, canJoin.reason)
-                )
-            }
+            updateRolesOnGuilds(dbUser, listOf(guildId), true)
         } else {
             messages.getGreetingsEmbed(guildId, guildName)?.let { facade.sendDirectMessage(memberId, it) }
         }
