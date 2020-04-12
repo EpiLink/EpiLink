@@ -16,21 +16,11 @@ import org.koin.test.KoinTest
 import org.koin.test.get
 import kotlin.test.*
 
-class DiscordBackEndTest : KoinTest {
-    @BeforeTest
-    fun setupKoin() {
-        startKoin {
-            modules(module {
-                single { LinkDiscordBackEnd("DiscordClientId", "DiscordSecret") }
-            })
-        }
+class DiscordBackEndTest : KoinBaseTest(
+    module {
+        single { LinkDiscordBackEnd("DiscordClientId", "DiscordSecret") }
     }
-
-    @AfterTest
-    fun tearDownKoin() {
-        stopKoin()
-    }
-
+) {
     @Test
     fun `Test Discord auth stub`() {
         val dbe = get<LinkDiscordBackEnd>()

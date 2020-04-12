@@ -9,9 +9,8 @@ import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkServerDatabaseImpl
 import org.epilink.bot.db.exposed.SQLiteExposedFacadeImpl
-import org.epilink.bot.discord.LinkDiscordBot
-import org.epilink.bot.discord.LinkDiscordBotImpl
-import org.epilink.bot.discord.LinkRoleManager
+import org.epilink.bot.discord.*
+import org.epilink.bot.discord.LinkDiscordMessagesImpl
 import org.epilink.bot.discord.LinkRoleManagerImpl
 import org.epilink.bot.http.*
 import org.koin.core.context.startKoin
@@ -51,14 +50,16 @@ class LinkServerEnvironment(
         // Privacy configuration
         single { cfg.privacy }
         // Discord bot
-        single<LinkDiscordBot> {
-            LinkDiscordBotImpl(
-                cfg.tokens.discordToken ?: error("Discord token cannot be null "),
-                cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null")
-            )
-        }
+        single<LinkDiscordMessages> { LinkDiscordMessagesImpl() }
         // Role manager
         single<LinkRoleManager> { LinkRoleManagerImpl() }
+        // Facade
+        single<LinkDiscordClientFacade> {
+            LinkDiscord4JFacadeImpl(
+                cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null"),
+                cfg.tokens.discordToken ?: error("Discord token cannot be null ")
+            )
+        }
     }
 
     /**
@@ -113,7 +114,7 @@ class LinkServerEnvironment(
             runBlocking {
                 coroutineScope {
                     listOf(
-                        async { app.koin.get<LinkDiscordBot>().start() },
+                        async { app.koin.get<LinkDiscordClientFacade>().start() },
                         async { app.koin.get<SessionStorageProvider>().start() },
                         async { app.koin.get<LinkDatabaseFacade>().start() }
                     ).awaitAll()
