@@ -86,8 +86,8 @@ internal class LinkDiscord4JFacadeImpl(
     override suspend fun manageRoles(
         discordId: String,
         guildId: String,
-        toAdd: Collection<String>,
-        toRemove: Collection<String>
+        toAdd: Set<String>,
+        toRemove: Set<String>
     ) {
         val member = client.getMemberById(
             Snowflake.of(guildId),

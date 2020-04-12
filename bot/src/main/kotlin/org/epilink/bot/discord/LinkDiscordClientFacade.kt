@@ -85,7 +85,7 @@ interface LinkDiscordClientFacade {
      * @param toAdd Collection of role IDs that should be added to the user. May contain roles the user already has.
      * @param toRemove Collection of role IDs that should be removed from the user. May contain roles the user does not have.
      */
-    suspend fun manageRoles(discordId: String, guildId: String, toAdd: Collection<String>, toRemove: Collection<String>)
+    suspend fun manageRoles(discordId: String, guildId: String, toAdd: Set<String>, toRemove: Set<String>)
 
     /**
      * Get a [DiscordUserInfo] object for the given user ID

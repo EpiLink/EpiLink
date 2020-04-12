@@ -173,8 +173,8 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
      */
     private suspend fun updateAuthorizedUserRoles(discordId: String, guildId: String, roles: Collection<String>) {
         val serverConfig = config.getConfigForGuild(guildId)
-        val toObtain = roles.mapNotNull { serverConfig.roles[it] }
-        val toRemove = serverConfig.roles.values.minus(toObtain)
+        val toObtain = roles.mapNotNull { serverConfig.roles[it] }.toSet()
+        val toRemove = serverConfig.roles.values.toSet().minus(toObtain)
         facade.manageRoles(discordId, guildId, toObtain, toRemove)
     }
 
