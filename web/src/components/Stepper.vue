@@ -32,6 +32,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/fonts';
+    @import '../styles/vars';
 
     .step {
         display: flex;
@@ -61,12 +62,12 @@
         }
 
         .name {
-            font-size: 20px;
+            font-size: 21px;
         }
 
         &.done {
             .number {
-                background-color: #37C837;
+                background-color: $primary-color;
             }
         }
 

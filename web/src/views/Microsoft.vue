@@ -1,11 +1,6 @@
 <template>
     <div id="microsoft" v-if="profile">
-        <img id="avatar" :src="profile.avatar" />
-        <div id="username">
-            <span>{{ profile.username | nick }}</span>
-            <span id="tag">{{ profile.username | tag }}</span>
-        </div>
-
+        <link-user />
         <link-stepper id="stepper" step="2" />
 
         <button id="login" @click="login()">
@@ -17,11 +12,13 @@
 
 <script>
     import { openPopup } from '../api';
-    import LinkStepper   from '../components/Stepper';
+
+    import LinkStepper from '../components/Stepper';
+    import LinkUser    from '../components/User';
 
     export default {
         name: 'link-microsoft',
-        components: { LinkStepper },
+        components: { LinkUser, LinkStepper },
 
         beforeMount() {
             if (!this.$store.state.user) {
@@ -42,19 +39,6 @@
                     this.$store.commit('openPopup', popup);
                 }, 300);
             }
-        },
-        computed: {
-            profile() {
-                return this.$store.state.user;
-            }
-        },
-        filters: {
-            nick(username) {
-                return username.substring(0, username.indexOf('#'));
-            },
-            tag(username) {
-                return username.substring(username.indexOf('#'));
-            }
         }
     }
 </script>
@@ -67,26 +51,6 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-    }
-
-    #avatar {
-        border-radius: 50%;
-
-        width: 128px;
-        height: 128px;
-    }
-
-    #username {
-        display: flex;
-        margin-top: 15px;
-
-        @include lato(bold);
-        font-size: 30px;
-
-        #tag {
-            font-style: italic;
-            font-weight: normal;
-        }
     }
 
     #stepper {

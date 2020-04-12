@@ -52,6 +52,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/fonts';
+    @import '../styles/vars';
 
     #redirect {
         display: flex;
@@ -70,7 +71,7 @@
 
         border-radius: 50%;
 
-        background-color: #44c22a;
+        background-color: lighten(#37C837, 4.5%);
 
         #check {
             width: 100px;
