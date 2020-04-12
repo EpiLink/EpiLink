@@ -22,7 +22,7 @@ import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser
-import org.epilink.bot.discord.LinkDiscordBot
+import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
@@ -50,7 +50,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
 
     private val db: LinkServerDatabase by inject()
 
-    private val discord: LinkDiscordBot by inject()
+    private val roleManager: LinkRoleManager by inject()
 
     private val discordBackEnd: LinkDiscordBackEnd by inject()
 
@@ -181,9 +181,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                         val options: AdditionalRegistrationOptions =
                             call.receiveCatching() ?: return@post
                         val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
-                        discord.launchInScope {
-                            discord.updateRoles(u, true)
-                        }
+                        roleManager.updateRolesOnAllGuildsLater(u)
                         call.loginAs(u)
                         call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
                     }

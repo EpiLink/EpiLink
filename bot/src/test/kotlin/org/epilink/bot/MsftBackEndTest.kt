@@ -15,21 +15,11 @@ import org.koin.test.KoinTest
 import org.koin.test.get
 import kotlin.test.*
 
-class MsftBackEndTest : KoinTest {
-    @BeforeTest
-    fun setupKoin() {
-        startKoin {
-            modules(module {
-                single { LinkMicrosoftBackEnd("MsftClientId", "MsftSecret", "MsftTenant") }
-            })
-        }
+class MsftBackEndTest : KoinBaseTest(
+    module {
+        single { LinkMicrosoftBackEnd("MsftClientId", "MsftSecret", "MsftTenant") }
     }
-
-    @AfterTest
-    fun tearDownKoin() {
-        stopKoin()
-    }
-
+) {
     @Test
     fun `Test Microsoft auth stub`() {
         val mbe = get<LinkMicrosoftBackEnd>()

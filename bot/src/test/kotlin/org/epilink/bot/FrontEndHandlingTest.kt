@@ -16,21 +16,11 @@ import org.koin.test.KoinTest
 import org.koin.test.get
 import kotlin.test.*
 
-class FrontEndHandlingTest : KoinTest {
-    @BeforeTest
-    fun setupKoin() {
-        startKoin {
-            modules(module {
-                single<LinkFrontEndHandler> { spyk(LinkFrontEndHandlerImpl()) }
-            })
-        }
+class FrontEndHandlingTest : KoinBaseTest(
+    module {
+        single<LinkFrontEndHandler> { spyk(LinkFrontEndHandlerImpl()) }
     }
-
-    @AfterTest
-    fun tearDownKoin() {
-        stopKoin()
-    }
-
+) {
     @Test
     fun `Test front 404 error`() {
         get<LinkFrontEndHandler>().apply {

@@ -132,6 +132,12 @@ data class LinkDiscordConfig(
     val servers: List<LinkDiscordServerSpec> = listOf()
 )
 
+
+/**
+ * Check if a guild is monitored: that is, EpiLink knows how to handle it and is expected to do so.
+ */
+fun LinkDiscordConfig.isMonitored(guildId: String): Boolean = servers.any { it.id == guildId }
+
 /**
  * A Discord EpiLink custom role
  *
