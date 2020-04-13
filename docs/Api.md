@@ -111,7 +111,7 @@ These endpoints can be used to retrieve information from the back-end that is us
 
 `authorizeStub` are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
 
-`idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox.
+`idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. Inline HTML that is meant to be embedded within a web page.
 
 ### GET /meta/info
 
