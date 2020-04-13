@@ -14,10 +14,11 @@ import kotlin.test.Test
 class ModuleCheck : KoinTest {
     private val cfgMock = minimalConfig
     private val rulebookMock = mockk<Rulebook>(relaxed = true)
+    private val legalTextsMock = mockk<LinkLegalTexts>()
 
     @Test
     fun checkEpilinkModules() {
-        with(LinkServerEnvironment(cfgMock, rulebookMock)) {
+        with(LinkServerEnvironment(cfgMock, legalTextsMock, rulebookMock)) {
             startKoin {
                 modules(epilinkBaseModule, epilinkWebModule, epilinkDiscordModule)
             }.logger(PrintLogger(Level.INFO)).checkModules()

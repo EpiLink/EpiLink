@@ -1,5 +1,6 @@
 package org.epilink.bot
 
+import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.*
@@ -16,10 +17,7 @@ import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import org.koin.dsl.module
-import org.koin.test.KoinTest
 import org.koin.test.get
 import kotlin.test.*
 
@@ -73,6 +71,36 @@ class BackEndTest : KoinBaseTest(
             assertEquals(null, data.getValue("logo"))
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
             assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
+        }
+    }
+
+    @Test
+    fun `Test ToS retrieval`() {
+        val tos = "<p>ABCDEFG</p>"
+        mockHere<LinkLegalTexts> {
+            every { tosText } returns tos
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/tos")
+            call.assertStatus(HttpStatusCode.OK)
+            assertEquals(ContentType.Text.Html, call.response.contentType())
+            val data = call.response.content
+            assertEquals(tos, data)
+        }
+    }
+
+    @Test
+    fun `Test PP retrieval`() {
+        val pp = "<p>Privacy policyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</p>"
+        mockHere<LinkLegalTexts> {
+            every { policyText } returns pp
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/privacy")
+            call.assertStatus(HttpStatusCode.OK)
+            assertEquals(ContentType.Text.Html, call.response.contentType())
+            val data = call.response.content
+            assertEquals(pp, data)
         }
     }
 
