@@ -43,7 +43,11 @@ data class LinkConfiguration(
      *
      * [Format](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details)
      */
-    val redis: String?
+    val redis: String?,
+    /**
+     * Legal configuration, with ToS and privacy policy configs
+     */
+    val legal: LinkLegalConfiguration = LinkLegalConfiguration()
 )
 
 /**
@@ -217,6 +221,28 @@ data class LinkPrivacy(
         if (automated) true else discloseHumanRequesterIdentity
 }
 
+/**
+ * The legal configuration
+ */
+data class LinkLegalConfiguration(
+    /**
+     * Terms of services, directly as a string
+     */
+    val tos: String? = null,
+    /**
+     * Terms of services as a path relative to the configuration file's location
+     */
+    val tosFile: String? = null,
+    /**
+     * Privacy policy, directly as a string
+     */
+    val policy: String? = null,
+    /**
+     * Privacy policy, as a path relative to the configuration file's location
+     */
+    val policyFile: String? = null
+)
+
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
     registerModule(KotlinModule())
 }
@@ -238,26 +264,74 @@ fun LinkConfiguration.isConfigurationSane(
     rulebook: Rulebook
 ): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
-
-    if (server.sessionDuration != null) {
-        report += ConfigWarning("The sessionDuration configuration field is deprecated and will be removed.")
-    }
-
-    if (tokens.jwtSecret != null) {
-        report += ConfigWarning("The jwtSecret configuration field is deprecated and will be removed.")
-    }
-
-    if(redis == null) {
+    if (redis == null) {
         report += ConfigWarning("No Redis URI provided: Redis is disabled, using in-memory instead. ONLY LEAVE REDIS DISABLED FOR DEVELOPMENT PURPOSES!")
     }
+    report += server.check()
+    report += tokens.check()
+    report += legal.check()
+    report += discord.check()
+    report += discord.checkCoherenceWithRulebook(rulebook)
+    return report
+}
 
-    discord.roles.map { it.name }.filter { it.startsWith("_") }.forEach {
+/**
+ * Check the general Discord configuration
+ */
+fun LinkDiscordConfig.check(): List<ConfigReportElement> {
+    val report = mutableListOf<ConfigReportElement>()
+    roles.map { it.name }.filter { it.startsWith("_") }.forEach {
         report +=
             ConfigWarning("A role was registered with the name ${it}, which starts with an underscore. Underscores are reserved for standard EpiLink roles like _known.")
     }
-
-    report += discord.checkCoherenceWithRulebook(rulebook)
     return report
+}
+
+/**
+ * Check the tokens' configuration
+ */
+fun LinkTokens.check(): List<ConfigReportElement> {
+    val report = mutableListOf<ConfigReportElement>()
+    if (jwtSecret != null) {
+        report += ConfigWarning("The jwtSecret configuration field is deprecated and will be removed.")
+    }
+    return report
+}
+
+/**
+ * Check the web server's configuration
+ */
+fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
+    val report = mutableListOf<ConfigReportElement>()
+    if (sessionDuration != null) {
+        report += ConfigWarning("The sessionDuration configuration field is deprecated and will be removed.")
+    }
+    return report
+}
+
+/**
+ * Check the coherence of the legal configuration
+ */
+fun LinkLegalConfiguration.check(): List<ConfigReportElement> {
+    val rep = mutableListOf<ConfigReportElement>()
+    if (this.tos == null && this.tosFile == null) {
+        rep += ConfigWarning("No ToS provided. Please provide one using in the 'legal' part of the configuration, either as a file (tosFile) or directly as a string (tos)")
+    } else if (this.tos != null && this.tosFile != null) {
+        rep += ConfigError(
+            true,
+            "Your configuration file defines both a tos and a tosFile. Please only specify one of them, either only a file (tosFile) or a string (tos)"
+        )
+    }
+    if (this.policy == null && this.policyFile == null) {
+        rep += ConfigWarning("No privacy policy provided. Please provide one using the 'legal' part of the configuration, either as a file (policyFile) or directly as a string (policy)")
+    } else if (this.policy != null && this.policyFile != null) {
+        rep += ConfigError(
+            true,
+            "Your configuration file defines both a policy and a policyFile. Please only specify one of them, either only a file (policyFile) or a string (policy)"
+        )
+    }
+
+    return rep
 }
 
 /**
