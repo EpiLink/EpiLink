@@ -59,4 +59,18 @@ class ConfigTestCheck {
         val reports = config.check()
         assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("a policy and a policyFile") })
     }
+
+    @Test
+    fun `Test no identity prompt text triggers warning`() {
+        val config = mockk<LinkLegalConfiguration> {
+            every { identityPromptText } returns null
+            // Normal configs for everything else
+            every { tos } returns ""
+            every { tosFile } returns null
+            every { policy } returns ""
+            every { policyFile } returns null
+        }
+        val reports = config.check()
+        assertTrue(reports.any { it is ConfigWarning && it.message.contains("identityPromptText") })
+    }
 }
