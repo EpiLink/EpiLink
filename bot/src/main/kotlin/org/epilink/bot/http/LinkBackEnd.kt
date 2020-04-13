@@ -11,6 +11,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.ParametersBuilder
+import io.ktor.http.content.TextContent
 import io.ktor.jackson.jackson
 import io.ktor.request.ContentTransformationException
 import io.ktor.request.receive
@@ -59,6 +60,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
 
     private val storageProvider: SessionStorageProvider by inject()
+
+    private val legal: LinkLegalTexts by inject()
 
     override fun Application.epilinkApiModule() {
         /*
@@ -128,6 +131,16 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             @ApiEndpoint("GET /api/v1/meta/info")
             get("info") {
                 call.respond(ApiSuccessResponse(data = getInstanceInformation()))
+            }
+
+            @ApiEndpoint("GET /api/v1/meta/tos")
+            get("tos") {
+                call.respond(HttpStatusCode.OK, TextContent(legal.tosText, ContentType.Text.Html))
+            }
+
+            @ApiEndpoint("GET /api/v1/meta/privacy")
+            get("privacy") {
+                call.respond(HttpStatusCode.OK, TextContent(legal.policyText, ContentType.Text.Html))
             }
         }
 
@@ -221,7 +234,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             title = env.name,
             logo = null, // TODO add a cfg entry for the logo
             authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
-            authorizeStub_discord = discordBackEnd.getAuthorizeStub()
+            authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
+            idPrompt = legal.idPrompt
         )
 
     /**
