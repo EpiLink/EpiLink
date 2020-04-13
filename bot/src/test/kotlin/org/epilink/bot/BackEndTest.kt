@@ -63,6 +63,9 @@ class BackEndTest : KoinBaseTest(
         mockHere<LinkMicrosoftBackEnd> {
             every { getAuthorizeStub() } returns "I am a Microsoft authorize stub"
         }
+        mockHere<LinkLegalTexts> {
+            every { idPrompt } returns "My id prompt text is the best"
+        }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/info")
             call.assertStatus(HttpStatusCode.OK)
@@ -71,6 +74,7 @@ class BackEndTest : KoinBaseTest(
             assertEquals(null, data.getValue("logo"))
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
             assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
+            assertEquals("My id prompt text is the best", data.getString("idPrompt"))
         }
     }
 

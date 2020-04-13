@@ -234,7 +234,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             title = env.name,
             logo = null, // TODO add a cfg entry for the logo
             authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
-            authorizeStub_discord = discordBackEnd.getAuthorizeStub()
+            authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
+            idPrompt = legal.idPrompt
         )
 
     /**
