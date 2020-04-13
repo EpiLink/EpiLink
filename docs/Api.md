@@ -104,11 +104,14 @@ These endpoints can be used to retrieve information from the back-end that is us
   "title": "Title of the EpiLink instance",
   "logo": "https://url.to/instance/logo", // nullable
   "authorizeStub_msft": "...",
-  "authorizeStub_discord": "..."
+  "authorizeStub_discord": "...",
+  "idPrompt": "..."
 }
 ```
 
 `authorizeStub` are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
+
+`idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox.
 
 ### GET /meta/info
 
@@ -120,6 +123,40 @@ GET /api/v1/meta/info
 
 Returns information about this instance, as a [InstanceInformation](#instanceinformation) JSON object.
  
+### GET /meta/tos
+
+**Get the terms of services.**
+
+```http request
+GET /api/v1/meta/tos
+```
+
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly. `Content-Type: text/html`
+
+Returns the terms of services of this instance, as inline HTML.
+
+Example:
+```html
+<p>My terms of services are the best terms of services!</p>
+```
+
+### GET /meta/privacy
+
+**Get the privacy policy.**
+
+```http request
+GET /api/v1/meta/privacy
+```
+
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly. `Content-Type: text/html`
+
+Returns the privacy policy of this instance, as inline HTML.
+
+Example:
+```html
+<p>My privacy policy is very private!</p>
+```
+
 ## Registration (/register)
 
 Registration state is maintained with a `RegisterSessionId` header, which you SHOULD include in all calls.
@@ -128,7 +165,7 @@ If you do not have any, (e.g. this is your first API request), you can call any 
 
 The OAuth2 design is like so:
 
-* The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get the initial 
+* The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get a stub of the authorization URL using [`/meta/info`](#get-metainfo). You only need to add a `redirect_uri` there.
 * The consumer then sends this access code with the [`POST /register/authcode/<service>`](#post-registerauthcodeservice)
   endpoints.
 
