@@ -4,7 +4,9 @@ import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.config.LinkLegalConfiguration
 import java.nio.file.Files
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 class LegalTextsTest {
     private val pfolder = Files.createTempDirectory("epilink-tests-legal")
@@ -18,6 +20,7 @@ class LegalTextsTest {
             // Default behavior for other things
             every { policyFile } returns null
             every { policy } returns null
+            every { identityPromptText } returns null
         }
         val loaded = cfg.load(fakeCfg)
         assertSame(str, loaded.tosText)
@@ -35,6 +38,7 @@ class LegalTextsTest {
             // Default behavior for other things
             every { policyFile } returns null
             every { policy } returns null
+            every { identityPromptText } returns null
         }
         val loaded = cfg.load(fakeCfg)
         assertEquals(str, loaded.tosText)
@@ -47,6 +51,7 @@ class LegalTextsTest {
             every { tosFile } returns null
             every { policyFile } returns null
             every { policy } returns null
+            every { identityPromptText } returns null
         }
         val loaded = cfg.load(fakeCfg)
         assertEquals(
@@ -56,6 +61,10 @@ class LegalTextsTest {
         assertEquals(
             "<strong>No Privacy Policy found.</strong> Please contact your administrator for more information.",
             loaded.policyText
+        )
+        assertEquals(
+            "For more information, contact your administrator or consult the privacy policy.",
+            loaded.idPrompt
         )
     }
 
@@ -67,6 +76,7 @@ class LegalTextsTest {
             // Default behavior for other things
             every { tos } returns null
             every { tosFile } returns null
+            every { identityPromptText } returns null
         }
         val loaded = cfg.load(fakeCfg)
         assertSame(str, loaded.policyText)
@@ -84,8 +94,23 @@ class LegalTextsTest {
             // Default behavior for other things
             every { tos } returns null
             every { tosFile } returns null
+            every { identityPromptText } returns null
         }
         val loaded = cfg.load(fakeCfg)
         assertEquals(str, loaded.policyText)
+    }
+
+    @Test
+    fun `Test ID prompt is passed as is`() {
+        val hello = "helloooooooooo"
+        val cfg = mockk<LinkLegalConfiguration> {
+            every { identityPromptText } returns hello
+            every { tos } returns null
+            every { tosFile } returns null
+            every { policyFile } returns null
+            every { policy } returns null
+        }
+        val loaded = cfg.load(fakeCfg)
+        assertSame(hello, loaded.idPrompt)
     }
 }

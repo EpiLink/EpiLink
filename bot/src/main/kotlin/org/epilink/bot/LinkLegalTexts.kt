@@ -15,7 +15,11 @@ data class LinkLegalTexts(
     /**
      * The privacy policy's text
      */
-    val policyText: String
+    val policyText: String,
+    /**
+     * The text shown in the ID prompt ("Remember who I am").
+     */
+    val idPrompt: String
 )
 
 /**
@@ -28,6 +32,8 @@ fun LinkLegalConfiguration.load(cfg: Path): LinkLegalTexts {
             """.trimIndent(),
         policyText = policy ?: policyFile?.let { Files.readString(cfg.resolveSibling(it)) } ?: """
             <strong>No Privacy Policy found.</strong> Please contact your administrator for more information.
-            """.trimIndent()
+            """.trimIndent(),
+        idPrompt = identityPromptText
+            ?: "For more information, contact your administrator or consult the privacy policy."
     )
 }

@@ -17,6 +17,7 @@ class ConfigTestCheck {
             // Valid config for policies
             every { policy } returns ""
             every { policyFile } returns null
+            every { identityPromptText } returns null
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigWarning && it.message.contains("no tos", ignoreCase = true) })
@@ -30,6 +31,7 @@ class ConfigTestCheck {
             // Valid config for policies
             every { policy } returns ""
             every { policyFile } returns null
+            every { identityPromptText } returns null
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("a tos and a tosFile") })
@@ -42,6 +44,7 @@ class ConfigTestCheck {
             every { tosFile } returns null
             every { policy } returns null
             every { policyFile } returns null
+            every { identityPromptText } returns null
         }
 
         val reports = config.check()
@@ -55,6 +58,7 @@ class ConfigTestCheck {
             every { tosFile } returns null
             every { policy } returns ""
             every { policyFile } returns ""
+            every { identityPromptText } returns null
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("a policy and a policyFile") })
@@ -69,6 +73,7 @@ class ConfigTestCheck {
             every { tosFile } returns null
             every { policy } returns ""
             every { policyFile } returns null
+            every { identityPromptText } returns null
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigWarning && it.message.contains("identityPromptText") })
