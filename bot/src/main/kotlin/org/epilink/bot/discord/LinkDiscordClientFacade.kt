@@ -1,18 +1,5 @@
 package org.epilink.bot.discord
 
-import discord4j.core.DiscordClient
-import discord4j.core.`object`.entity.PrivateChannel
-import discord4j.core.`object`.entity.User
-import discord4j.core.event.domain.lifecycle.ReadyEvent
-import discord4j.rest.http.client.ClientException
-import kotlinx.coroutines.reactive.awaitFirstOrNull
-import kotlinx.coroutines.reactive.awaitSingle
-import org.epilink.bot.LinkException
-import org.epilink.bot.logger
-import org.reactivestreams.Publisher
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
-
 /**
  * This interface should be implemented by facades that abstract away an actual Discord client for the EpiLink Discord
  * bot.

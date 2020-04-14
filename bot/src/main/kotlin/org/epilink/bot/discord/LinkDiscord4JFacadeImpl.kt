@@ -185,7 +185,7 @@ internal class LinkDiscord4JFacadeImpl(
     /**
      * Awaits the completion of a Publisher<Void>
      */
-    suspend fun Publisher<Void>.await() {
+    private suspend fun Publisher<Void>.await() {
         if (awaitFirstOrNull() != null) error("Did not expect a return value here")
     }
 
