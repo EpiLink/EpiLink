@@ -8,12 +8,15 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.CORS
-import io.ktor.http.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.ParametersBuilder
+import io.ktor.http.content.TextContent
 import io.ktor.jackson.jackson
 import io.ktor.request.ContentTransformationException
 import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.response.respondText
 import io.ktor.routing.*
 import io.ktor.sessions.*
 import kotlinx.coroutines.coroutineScope
@@ -57,6 +60,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
 
     private val storageProvider: SessionStorageProvider by inject()
+
+    private val legal: LinkLegalTexts by inject()
 
     override fun Application.epilinkApiModule() {
         /*
@@ -127,6 +132,16 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             get("info") {
                 call.respond(ApiSuccessResponse(data = getInstanceInformation()))
             }
+
+            @ApiEndpoint("GET /api/v1/meta/tos")
+            get("tos") {
+                call.respond(HttpStatusCode.OK, TextContent(legal.tosText, ContentType.Text.Html))
+            }
+
+            @ApiEndpoint("GET /api/v1/meta/privacy")
+            get("privacy") {
+                call.respond(HttpStatusCode.OK, TextContent(legal.policyText, ContentType.Text.Html))
+            }
         }
 
         route("user") {
@@ -144,7 +159,13 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             @ApiEndpoint("GET /api/v1/user")
             get {
                 val session = call.sessions.get<ConnectedSession>()!!
-                call.respondText("Connected as " + session.discordId, ContentType.Text.Plain)
+                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation()))
+            }
+
+            @ApiEndpoint("GET /api/v1/user/idaccesslogs")
+            get("idaccesslogs") {
+                val session = call.sessions.get<ConnectedSession>()!!
+                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
             }
         }
 
@@ -169,7 +190,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                             HttpStatusCode.BadRequest,
                             ApiErrorResponse("Missing session header", IncompleteRegistrationRequest.toErrorData())
                         )
-                    else if (discordId == null || email == null || microsoftUid == null) {
+                    else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
                         call.respond(
                             HttpStatusCode.BadRequest,
                             ApiErrorResponse(
@@ -182,7 +203,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                             call.receiveCatching() ?: return@post
                         val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
                         roleManager.updateRolesOnAllGuildsLater(u)
-                        call.loginAs(u)
+                        call.loginAs(u, discordUsername, discordAvatarUrl)
                         call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
                     }
                 }
@@ -219,7 +240,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             title = env.name,
             logo = null, // TODO add a cfg entry for the logo
             authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
-            authorizeStub_discord = discordBackEnd.getAuthorizeStub()
+            authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
+            idPrompt = legal.idPrompt
         )
 
     /**
@@ -234,7 +256,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         val (id, username, avatarUrl) = discordBackEnd.getDiscordInfo(token)
         val user = db.getUser(id)
         if (user != null) {
-            call.loginAs(user)
+            call.loginAs(user, username, avatarUrl)
             call.respond(ApiSuccessResponse("Logged in", RegistrationContinuation("login", null)))
         } else {
             val adv = db.isDiscordUserAllowedToCreateAccount(id)
@@ -287,9 +309,9 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     /**
      * Setup the sessions to log in the passed user object
      */
-    private fun ApplicationCall.loginAs(user: LinkUser) {
+    private fun ApplicationCall.loginAs(user: LinkUser, username: String, avatar: String?) {
         sessions.clear<RegisterSession>()
-        sessions.set(ConnectedSession(user.discordId))
+        sessions.set(ConnectedSession(user.discordId, username, avatar))
     }
 
     private suspend fun ApplicationCall.respondRegistrationStatus(session: RegisterSession) {
@@ -327,3 +349,6 @@ suspend fun HttpClient.getJson(url: String, bearer: String): Map<String, Any?> {
     }
     return ObjectMapper().readValue(result)
 }
+
+private fun ConnectedSession.toUserInformation() =
+    UserInformation(discordId, discordUsername, discordAvatar)

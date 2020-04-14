@@ -45,6 +45,23 @@ tokens:
   # This can be "common" (allow everyone) or an ID specific to a company/school.
   msftTenant: common
 
+# Terms of services, etc. See the maintainer guide for more details.
+legal:
+  # Terms of services
+  # tos: |
+  #     <p> My terms of services...</p>
+  # OR
+  # tosFile: myTermsOfServices.html
+
+  # Privacy policy
+  # policy: |
+  #     <p>My privacy policy...</p>
+  # OR
+  # policyFile: myPrivacyPolicy.html
+
+  # ID Prompt text disclaimer
+  # identityPromptText: <p>My text...</p>
+
 # Configuration for everything related to handling Discord servers
 # When something is optional, you can omit it entirely.
 # When something is nullable, you can replace its value by ~ to indicate that the value is unknown.

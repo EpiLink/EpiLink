@@ -1,5 +1,6 @@
 package org.epilink.bot
 
+import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.*
@@ -14,13 +15,14 @@ import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
+import org.epilink.bot.http.data.IdAccess
+import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import org.koin.dsl.module
-import org.koin.test.KoinTest
 import org.koin.test.get
+import java.time.Duration
+import java.time.Instant
 import kotlin.test.*
 
 data class ApiSuccess(
@@ -65,6 +67,9 @@ class BackEndTest : KoinBaseTest(
         mockHere<LinkMicrosoftBackEnd> {
             every { getAuthorizeStub() } returns "I am a Microsoft authorize stub"
         }
+        mockHere<LinkLegalTexts> {
+            every { idPrompt } returns "My id prompt text is the best"
+        }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/info")
             call.assertStatus(HttpStatusCode.OK)
@@ -73,6 +78,37 @@ class BackEndTest : KoinBaseTest(
             assertEquals(null, data.getValue("logo"))
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
             assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
+            assertEquals("My id prompt text is the best", data.getString("idPrompt"))
+        }
+    }
+
+    @Test
+    fun `Test ToS retrieval`() {
+        val tos = "<p>ABCDEFG</p>"
+        mockHere<LinkLegalTexts> {
+            every { tosText } returns tos
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/tos")
+            call.assertStatus(HttpStatusCode.OK)
+            assertEquals(ContentType.Text.Html, call.response.contentType())
+            val data = call.response.content
+            assertEquals(tos, data)
+        }
+    }
+
+    @Test
+    fun `Test PP retrieval`() {
+        val pp = "<p>Privacy policyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</p>"
+        mockHere<LinkLegalTexts> {
+            every { policyText } returns pp
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/privacy")
+            call.assertStatus(HttpStatusCode.OK)
+            assertEquals(ContentType.Text.Html, call.response.contentType())
+            val data = call.response.content
+            assertEquals(pp, data)
         }
     }
 
@@ -169,7 +205,7 @@ class BackEndTest : KoinBaseTest(
             assertEquals(null, data.getValue("attachment"))
             val session = call.sessions.get<ConnectedSession>()
             assertEquals(
-                ConnectedSession(discordId = "yes"),
+                ConnectedSession(discordId = "yes", discordUsername = "no", discordAvatar = "maybe"),
                 session
             )
         }
@@ -257,7 +293,7 @@ class BackEndTest : KoinBaseTest(
             }.run {
                 assertStatus(HttpStatusCode.Created)
                 assertNull(sessions.get<RegisterSession>())
-                assertEquals(ConnectedSession("yes"), sessions.get<ConnectedSession>())
+                assertEquals(ConnectedSession("yes", "no", "maybe"), sessions.get<ConnectedSession>())
                 response.headers["SessionId"]!!
             }
             coVerify { db.createUser("yes", "fakeguid", "fakemail", true) }
@@ -269,6 +305,7 @@ class BackEndTest : KoinBaseTest(
                 addHeader("SessionId", loginHeader)
             }.apply {
                 assertStatus(HttpStatusCode.OK)
+                // Only checks that it was logged in properly. The results of /api/v1/user are tested elsewhere
                 assertTrue { this.response.content!!.contains("yes") }
             }
             coVerify { bot.updateRolesOnAllGuildsLater(any()) }
@@ -292,8 +329,100 @@ class BackEndTest : KoinBaseTest(
             }.run {
                 assertStatus(HttpStatusCode.Unauthorized)
             }
-
         }
+    }
+
+    @Test
+    fun `Test user endpoint`() {
+        withTestEpiLink {
+            val sid = setupSession(
+                discId = "myDiscordId",
+                discUsername = "Discordian#1234",
+                discAvatarUrl = "https://veryavatar"
+            )
+            handleRequest(HttpMethod.Get, "/api/v1/user") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val data = fromJson<ApiSuccess>(response)
+                assertEquals("myDiscordId", data.data["discordId"])
+                assertEquals("Discordian#1234", data.data["username"])
+                assertEquals("https://veryavatar", data.data["avatarUrl"])
+            }
+        }
+    }
+
+    @Test
+    fun `Test user access logs retrieval`() {
+        val inst1 = Instant.now() - Duration.ofHours(1)
+        val inst2 = Instant.now() - Duration.ofHours(10)
+        mockHere<LinkServerDatabase> {
+            coEvery { getIdAccessLogs("discordid") } returns IdAccessLogs(
+                manualAuthorsDisclosed = false,
+                accesses = listOf(
+                    IdAccess(true, "Robot Robot Robot", "Yes", inst1.toString()),
+                    IdAccess(false, null, "No", inst2.toString())
+                )
+            )
+        }
+        withTestEpiLink {
+            val sid = setupSession(
+                discId = "discordid"
+            )
+            handleRequest(HttpMethod.Get, "/api/v1/user/idaccesslogs") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                fromJson<ApiSuccess>(response).apply {
+                    assertEquals(false, data["manualAuthorsDisclosed"])
+                    val list = data["accesses"] as? List<*> ?: error("Unexpected format on accesses")
+                    assertEquals(2, list.size)
+                    val first = list[0] as? Map<*, *> ?: error("Unexpected format")
+                    assertEquals(true, first["automated"])
+                    assertEquals("Robot Robot Robot", first["author"])
+                    assertEquals("Yes", first["reason"])
+                    assertEquals(inst1.toString(), first["timestamp"])
+                    val second = list[1] as? Map<*, *> ?: error("Unexpected format")
+                    assertEquals(false, second["automated"])
+                    assertEquals(null, second.getOrDefault("author", "WRONG"))
+                    assertEquals("No", second["reason"])
+                    assertEquals(inst2.toString(), second["timestamp"])
+                }
+            }
+        }
+    }
+
+    private fun TestApplicationEngine.setupSession(
+        discId: String = "discordid",
+        discUsername: String = "discorduser#1234",
+        discAvatarUrl: String? = "https://avatar/url",
+        msIdHash: ByteArray = byteArrayOf(1, 2, 3, 4, 5),
+        created: Instant = Instant.now() - Duration.ofDays(1)
+    ): String {
+        softMockHere<LinkServerDatabase> {
+            coEvery { getUser(discId) } returns mockk {
+                every { discordId } returns discId
+                every { msftIdHash } returns msIdHash
+                every { creationDate } returns created
+            }
+        }
+        softMockHere<LinkDiscordBackEnd> {
+            coEvery { getDiscordToken("auth", "redir") } returns "tok"
+            coEvery { getDiscordInfo("tok") } returns DiscordUserInfo(discId, discUsername, discAvatarUrl)
+        }
+        val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
+            setJsonBody("""{"code":"auth","redirectUri":"redir"}""")
+        }
+        return call.response.headers["SessionId"] ?: error("Did not return a SessionId")
+    }
+
+    /**
+     * Similar to mockHere, but if an instance of T is already injected, apply the initializer to it instead of
+     * replacing it
+     */
+    private inline fun <reified T : Any> softMockHere(crossinline initializer: T.() -> Unit): T {
+        val injected = getKoin().getOrNull<T>()
+        return injected?.apply(initializer) ?: mockHere(initializer)
     }
 
     private fun TestApplicationRequest.setJsonBody(json: String) {

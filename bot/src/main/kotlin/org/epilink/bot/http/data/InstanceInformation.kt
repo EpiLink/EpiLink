@@ -6,5 +6,6 @@ data class InstanceInformation(
     val title: String,
     val logo: String?,
     val authorizeStub_msft: String,
-    val authorizeStub_discord: String
+    val authorizeStub_discord: String,
+    val idPrompt: String
 )

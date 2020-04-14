@@ -267,3 +267,35 @@ This entire section is optional. If omitted, all of its parameters take the defa
 * `notifyAutomatedAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed automatically (e.g. to refresh rules). The identity of the requester is always disclosed (e.g. "EpiLink Discord bot"), and the message clarifies that this access was done automatically.
 * `notifyHumanAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed by a human (manual identity request). The identity of the requester may or may not be disclosed depending on the value of `discloseHumanRequesterIdentity`.
 * `discloseHumanRequesterIdentity` *(optional, false by default)*: If true, the private message sent when a human manual identity request occurs also indicates *who* initiated the request. If false, the private message does not contain that information. This value is unused when `notifyHumanAccess` is false.
+
+### Legal configuration
+
+```yaml
+legal:
+  tos: |
+      <h1>My terms of services</h1>
+      <p>These are my amazing terms of services.</p>
+  # OR
+  tosFile: my-terms-of-services.html
+  
+  policy: |
+      <h1>My privacy policy</h1>
+      <p>These are my amizing privacy policies</p>
+  # OR
+  policyFile: my-privacy-policy-file.html
+
+  identityPromptText: |
+      <p>This is the text that is shown below the "Remember who I am" checkbox in the registration page</p>
+```
+
+This section provides the legal documents EpiLink will show to the users. More specifically, this section contains the terms of services, the privacy policy (both either as a string or as a path to the file) and the identity prompt text.
+
+All three options **are HTML**. Use them to format your text with lists and other things. They are not full HTML documents, rather just HTML fragments that will be thrown in the front-end.
+
+* `tos`/`tosFile`: The terms of services, either directly written in the config file (`tos`), or as a path relative to the configuration file's location (`tosFile`)
+* `policy`/`policyFile`: The privacy policy, either directly written in the config file (`policy`), or as a path relative to the configuration file's location (`policyFile`)
+* `identityPromptText`: The text that is shown below the "Remember who I am" checkbox in the registration page. This should describe in a few words what the user should expect to happen if they check (or uncheck) the box. You can also put "See the privacy policy for more details". This is also HTML.
+
+All options are optional, but you SHOULD fill them in regardless. Not filling them in results in a warning. Filling both a in-config option *and* its file-based counterpart will result in an error, similar to `rulebook`/`rulebookFile`.
+
+Seek legal advice if you do not know what to put in the terms of services or the privacy policy. These may not even be required if you are using EpiLink as part of an intranet infrastructure.

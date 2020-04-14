@@ -24,7 +24,8 @@ import org.koin.logger.slf4jLogger
  * server, etc.
  */
 class LinkServerEnvironment(
-    val cfg: LinkConfiguration,
+    private val cfg: LinkConfiguration,
+    private val legal: LinkLegalTexts,
     rulebook: Rulebook
 ) {
     /**
@@ -93,6 +94,8 @@ class LinkServerEnvironment(
         }
 
         single { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryStorageProvider() }
+
+        single { legal }
     }
 
     /**
