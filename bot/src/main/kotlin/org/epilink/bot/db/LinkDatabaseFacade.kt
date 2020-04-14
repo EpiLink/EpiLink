@@ -69,4 +69,11 @@ interface LinkDatabaseFacade {
      */
     @UsesTrueIdentity
     suspend fun getUserEmailWithAccessLog(discordId: String, automated: Boolean, author: String, reason: String): String
+
+    /**
+     * Retrieve all of the identity accesses where the target has the given Discord ID
+     *
+     * @throws LinkException Thrown if no user exists with the given Discord ID
+     */
+    suspend fun getIdentityAccessesFor(discordId: String): Collection<LinkIdentityAccess>
 }

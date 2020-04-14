@@ -127,6 +127,13 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         }
     }
 
+    override suspend fun getIdentityAccessesFor(discordId: String): Collection<LinkIdentityAccess> {
+        val user = getUser(discordId) as? ExposedUser ?: throw LinkException("Unknown user $discordId")
+        return newSuspendedTransaction {
+            ExposedIdentityAccess.find(ExposedIdentityAccesses.target eq user.id).toList()
+        }
+    }
+
 }
 
 /**

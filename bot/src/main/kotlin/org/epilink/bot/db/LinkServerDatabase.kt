@@ -3,6 +3,9 @@ package org.epilink.bot.db
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkException
 import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.config.LinkPrivacy
+import org.epilink.bot.http.data.IdAccess
+import org.epilink.bot.http.data.IdAccessLogs
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import java.nio.charset.StandardCharsets
@@ -59,6 +62,11 @@ interface LinkServerDatabase {
      * Get the user with the given Discord ID, or null if said user does not exist
      */
     suspend fun getUser(discordId: String): LinkUser?
+
+    /**
+     * Get the identity access logs as an [IdAccessLogs] object, ready to be sent.
+     */
+    suspend fun getIdAccessLogs(discordId: String): IdAccessLogs
 }
 
 /**
@@ -68,8 +76,9 @@ interface LinkServerDatabase {
  * from within Ktor responses.
  */
 internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
-
     private val facade: LinkDatabaseFacade by inject()
+
+    private val privacy: LinkPrivacy by inject()
 
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     override suspend fun createUser(
@@ -151,6 +160,20 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
             author = author,
             reason = reason
         )
+
+    override suspend fun getIdAccessLogs(discordId: String): IdAccessLogs =
+        IdAccessLogs(
+            manualAuthorsDisclosed = privacy.shouldDiscloseIdentity(false),
+            accesses = facade.getIdentityAccessesFor(discordId).map { a ->
+                IdAccess(
+                    a.automated,
+                    a.authorName.takeIf { privacy.shouldDiscloseIdentity(a.automated) },
+                    a.reason,
+                    a.timestamp.toString()
+                )
+            }
+        )
+
 }
 
 /**

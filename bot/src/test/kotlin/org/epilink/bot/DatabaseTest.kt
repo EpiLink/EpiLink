@@ -2,17 +2,17 @@ package org.epilink.bot
 
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.db.*
+import org.epilink.bot.http.data.IdAccess
 import org.koin.dsl.module
 import org.koin.test.get
+import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.Instant
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class DatabaseTest : KoinBaseTest(
     module {
@@ -202,6 +202,78 @@ class DatabaseTest : KoinBaseTest(
         test {
             val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
             assertEquals(Allowed, adv, "Expected allowed")
+        }
+    }
+
+    @Test
+    fun `Test export access logs`() {
+        val inst = Instant.now() - Duration.ofHours(5)
+        val inst2 = Instant.now() - Duration.ofDays(10)
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getIdentityAccessesFor("userid") } returns listOf(
+                mockk {
+                    every { authorName } returns "The Admin Of Things"
+                    every { automated } returns false
+                    every { reason } returns "The reason"
+                    every { timestamp } returns inst
+                },
+                mockk {
+                    every { authorName } returns "EpiLink Bot"
+                    every { automated } returns true
+                    every { reason } returns "Another reason"
+                    every { timestamp } returns inst2
+                }
+            )
+        }
+
+        val sd = get<LinkServerDatabase>()
+
+        // Test with human identity disclosed
+        mockHere<LinkPrivacy> {
+            every { shouldDiscloseIdentity(any()) } returns true
+        }
+        runBlocking {
+            val al = sd.getIdAccessLogs("userid")
+            assertTrue(al.manualAuthorsDisclosed)
+            assertEquals(2, al.accesses.size)
+            assertTrue(IdAccess(false, "The Admin Of Things", "The reason", inst.toString()) in al.accesses)
+            assertTrue(IdAccess(true, "EpiLink Bot", "Another reason", inst2.toString()) in al.accesses)
+        }
+    }
+
+    @Test
+    fun `Test export access logs with concealed human identity requester`() {
+        val inst = Instant.now() - Duration.ofHours(5)
+        val inst2 = Instant.now() - Duration.ofDays(10)
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getIdentityAccessesFor("userid") } returns listOf(
+                mockk {
+                    every { authorName } returns "The Admin Of Things"
+                    every { automated } returns false
+                    every { reason } returns "The reason"
+                    every { timestamp } returns inst
+                },
+                mockk {
+                    every { authorName } returns "EpiLink Bot"
+                    every { automated } returns true
+                    every { reason } returns "Another reason"
+                    every { timestamp } returns inst2
+                }
+            )
+        }
+
+        val sd = get<LinkServerDatabase>()
+        // Test without human identity disclosed
+        mockHere<LinkPrivacy> {
+            every { shouldDiscloseIdentity(false) } returns false
+            every { shouldDiscloseIdentity(true) } returns true
+        }
+        runBlocking {
+            val al = sd.getIdAccessLogs("userid")
+            assertFalse(al.manualAuthorsDisclosed)
+            assertEquals(2, al.accesses.size)
+            assertTrue(IdAccess(false, null, "The reason", inst.toString()) in al.accesses)
+            assertTrue(IdAccess(true, "EpiLink Bot", "Another reason", inst2.toString()) in al.accesses)
         }
     }
 
