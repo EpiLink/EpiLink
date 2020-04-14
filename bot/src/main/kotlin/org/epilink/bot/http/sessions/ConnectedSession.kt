@@ -5,4 +5,4 @@ package org.epilink.bot.http.sessions
  *
  * @property discordId The ID of the connected user
  */
-data class ConnectedSession(val discordId: String)
+data class ConnectedSession(val discordId: String, val discordUsername: String, val discordAvatar: String?)

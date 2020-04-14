@@ -13,7 +13,7 @@ This document reflects the API as it is implemented in the back-end, although it
  
 ### ApiResponse
 
-ALL API endpoints either return something of this form, or return no response at all.
+**ALL** API endpoints either return something of this form, or return no response at all. Some meta endpoints return raw HTML directly. All exceptions to this rule are noted.
 
 ```json5
 {
@@ -23,8 +23,7 @@ ALL API endpoints either return something of this form, or return no response at
 }
 ```
 
-* If `success` is false, then `data` is guaranteed to be a non-null [ErrorData](#errordata) object, and `message` is not
-  null.
+* If `success` is false, then `data` is guaranteed to be a non-null [ErrorData](#errordata) object, and `message` is not null.
 * If `success` is true, then `message` may be null and `data` may be null.
 
 ### ErrorData
@@ -299,6 +298,33 @@ Response: No data attachment in the usual ApiResponse.
 
 All endpoints under `/user` expect the `SessionId` header to be set.
 
+### Objects
+
+#### UserInformation
+
+Contains information about the currently logged in user.
+
+```json5
+{
+    "discordId": "...",
+    "username": "...",
+    "avatarUrl": "..." // nullable
+}
+```
+
+Where:
+
+* `discordId` is the Discord ID of the user
+* `username` is the Discord username of the user (should be displayed as the normal username in the interface). For example `My awesome name#1234`
+* `avatarUrl` (may be null) is a URL to the Discord avatar of the user, or null if Discord did not reply with any URL. 
+
 ### GET /user
 
-(Temporary) Returns some text on the logged in user.
+**Get information on the currently logged in user.**
+
+```http request
+GET /api/v1/user
+SessionId: abcdef123456 # mandatory
+```
+
+Returns a [UserInformation](#userinformation) object about the currently logged in user.
