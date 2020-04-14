@@ -15,6 +15,8 @@ import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
+import org.epilink.bot.http.data.IdAccess
+import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.dsl.module
@@ -346,6 +348,46 @@ class BackEndTest : KoinBaseTest(
                 assertEquals("myDiscordId", data.data["discordId"])
                 assertEquals("Discordian#1234", data.data["username"])
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
+            }
+        }
+    }
+
+    @Test
+    fun `Test user access logs retrieval`() {
+        val inst1 = Instant.now() - Duration.ofHours(1)
+        val inst2 = Instant.now() - Duration.ofHours(10)
+        mockHere<LinkServerDatabase> {
+            coEvery { getIdAccessLogs("discordid") } returns IdAccessLogs(
+                manualAuthorsDisclosed = false,
+                accesses = listOf(
+                    IdAccess(true, "Robot Robot Robot", "Yes", inst1.toString()),
+                    IdAccess(false, null, "No", inst2.toString())
+                )
+            )
+        }
+        withTestEpiLink {
+            val sid = setupSession(
+                discId = "discordid"
+            )
+            handleRequest(HttpMethod.Get, "/api/v1/user/idaccesslogs") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                fromJson<ApiSuccess>(response).apply {
+                    assertEquals(false, data["manualAuthorsDisclosed"])
+                    val list = data["accesses"] as? List<*> ?: error("Unexpected format on accesses")
+                    assertEquals(2, list.size)
+                    val first = list[0] as? Map<*, *> ?: error("Unexpected format")
+                    assertEquals(true, first["automated"])
+                    assertEquals("Robot Robot Robot", first["author"])
+                    assertEquals("Yes", first["reason"])
+                    assertEquals(inst1.toString(), first["timestamp"])
+                    val second = list[1] as? Map<*, *> ?: error("Unexpected format")
+                    assertEquals(false, second["automated"])
+                    assertEquals(null, second.getOrDefault("author", "WRONG"))
+                    assertEquals("No", second["reason"])
+                    assertEquals(inst2.toString(), second["timestamp"])
+                }
             }
         }
     }

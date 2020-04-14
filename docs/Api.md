@@ -318,6 +318,40 @@ Where:
 * `username` is the Discord username of the user (should be displayed as the normal username in the interface). For example `My awesome name#1234`
 * `avatarUrl` (may be null) is a URL to the Discord avatar of the user, or null if Discord did not reply with any URL. 
 
+#### IdAccessLogs
+
+Contains information about all of the ID Accesses of a user.
+
+```json5
+{
+    "manualAuthorsDisclosed": true, // or false
+    "accesses": [
+        // IdAccess objects    
+    ]
+}
+```
+
+* `manualAuthorsDisclosed`: This value is only intended for displaying a message to the user telling him that it is normal that they don't see the name of the author when the request is manual. True if such a message should be displayed, false otherwise. This does NOT determine whether the author will actually be available or not.
+* `accesses`: List of [IdAccess](#idaccess) objects
+
+#### IdAccess
+
+Represents a single ID access.
+
+```json5
+{
+    "automated": true, // or false
+    "author": "...", // nullable
+    "reason": "...",
+    "timestamp": "...", // ISO-8601 Instant format, e.g. 2011-12-03T10:15:30Z, this is in UTC
+}
+```
+
+* `automated`: True if the request was conducted by a bot, false otherwise
+* `author`: The name of the author. No particular format is guaranteed, but this name should be enough for a human to distinguish who conducted the request. Null if the author is not available to the user.
+* `reason`: The human-readable reason for the access.
+* `timestamp`: A ISO-8601 Instant of when the request happened, always in UTC (the `Z` at the end).
+
 ### GET /user
 
 **Get information on the currently logged in user.**
@@ -328,3 +362,13 @@ SessionId: abcdef123456 # mandatory
 ```
 
 Returns a [UserInformation](#userinformation) object about the currently logged in user.
+
+### GET /user/idaccesslogs
+
+**Get all identity accesses for the currently logged in user.**
+
+```http request
+GET /api/v1/user/idaccesslogs
+```
+
+Returns an [IdAccessLogs](#idaccesslogs) object about the currently logged in user. 

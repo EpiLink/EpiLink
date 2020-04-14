@@ -16,7 +16,6 @@ import io.ktor.jackson.jackson
 import io.ktor.request.ContentTransformationException
 import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.response.respondText
 import io.ktor.routing.*
 import io.ktor.sessions.*
 import kotlinx.coroutines.coroutineScope
@@ -160,6 +159,12 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             get {
                 val session = call.sessions.get<ConnectedSession>()!!
                 call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation()))
+            }
+
+            @ApiEndpoint("GET /api/v1/user/idaccesslogs")
+            get("idaccesslogs") {
+                val session = call.sessions.get<ConnectedSession>()!!
+                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
             }
         }
 
