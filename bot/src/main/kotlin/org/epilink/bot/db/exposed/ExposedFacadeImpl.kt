@@ -9,9 +9,9 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.`java-time`.datetime
+import org.jetbrains.exposed.sql.`java-time`.timestamp
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import java.time.LocalDateTime
+import java.time.Instant
 
 // This file is rather long because all of the DAO classes are private in order to make sure that only the facade
 // has access to them
@@ -79,7 +79,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         newMsftIdHash: ByteArray,
         newEmail: String,
         keepIdentity: Boolean,
-        timestamp: LocalDateTime
+        timestamp: Instant
     ): LinkUser =
         newSuspendedTransaction(db = db) {
             val u = ExposedUser.new {
@@ -121,7 +121,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
                 authorName = author
                 this.automated = automated
                 this.reason = reason
-                timestamp = LocalDateTime.now()
+                timestamp = Instant.now()
             }
             identity
         }
@@ -203,7 +203,7 @@ private object ExposedBans : IntIdTable() {
      * Null if this is a definitive ban, the expiration date if this is a
      * temporary ban.
      */
-    var expiresOn = datetime("expiresOn").nullable()
+    var expiresOn = timestamp("expiresOn").nullable()
 }
 
 /**
@@ -251,7 +251,7 @@ private object ExposedUsers : IntIdTable() {
     /**
      * The creation date of the user's account
      */
-    val creationDate = datetime("creationDate")
+    val creationDate = timestamp("creationDate")
 }
 
 /**
@@ -323,7 +323,7 @@ private object ExposedIdentityAccesses : IntIdTable() {
     /**
      * The time at which the identity access was conducted.
      */
-    val timestamp = datetime("timestamp")
+    val timestamp = timestamp("timestamp")
 }
 
 /**

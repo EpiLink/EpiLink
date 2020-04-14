@@ -2,7 +2,7 @@ package org.epilink.bot.db
 
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkException
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * The database facade is the interface that is used to communicate with the database.
@@ -50,7 +50,7 @@ interface LinkDatabaseFacade {
         newMsftIdHash: ByteArray,
         newEmail: String,
         keepIdentity: Boolean,
-        timestamp: LocalDateTime
+        timestamp: Instant
     ): LinkUser
 
     /**

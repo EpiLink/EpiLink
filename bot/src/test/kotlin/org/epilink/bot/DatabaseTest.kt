@@ -3,15 +3,16 @@ package org.epilink.bot
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.*
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import org.koin.dsl.module
-import org.koin.test.KoinTest
 import org.koin.test.get
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
-import java.time.LocalDateTime
-import kotlin.test.*
+import java.time.Duration
+import java.time.Instant
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class DatabaseTest : KoinBaseTest(
     module {
@@ -79,7 +80,7 @@ class DatabaseTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
             coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns LocalDateTime.now().plusDays(1)
+                every { expiresOn } returns Instant.now().plus(Duration.ofDays(1))
             })
         }
         test {
@@ -95,7 +96,7 @@ class DatabaseTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
             coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns LocalDateTime.now().minusSeconds(1)
+                every { expiresOn } returns Instant.now().minusSeconds(1)
             })
         }
         test {
@@ -169,7 +170,7 @@ class DatabaseTest : KoinBaseTest(
         val hey = "tested".sha256()
         mockHere<LinkDatabaseFacade> {
             coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns LocalDateTime.now().plusDays(1)
+                every { expiresOn } returns Instant.now().plus(Duration.ofDays(1))
             })
         }
         test {
@@ -183,7 +184,7 @@ class DatabaseTest : KoinBaseTest(
         val hey = "tested".sha256()
         mockHere<LinkDatabaseFacade> {
             coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns LocalDateTime.now().minusSeconds(1)
+                every { expiresOn } returns Instant.now().minusSeconds(1)
             })
         }
         test {

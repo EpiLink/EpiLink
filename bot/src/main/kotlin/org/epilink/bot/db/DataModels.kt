@@ -1,6 +1,6 @@
 package org.epilink.bot.db
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * Represents a user of EpiLink
@@ -19,7 +19,7 @@ interface LinkUser {
     /**
      * The time at which the user's account was created
      */
-    val creationDate: LocalDateTime
+    val creationDate: Instant
 }
 
 /**
@@ -34,7 +34,7 @@ interface LinkBan {
     /**
      * The time at which the ban expires, or null if the ban does not expire
      */
-    val expiresOn: LocalDateTime?
+    val expiresOn: Instant?
 }
 
 /**
@@ -54,7 +54,7 @@ interface LinkIdentityAccess {
     /**
      * The time at which the identity access happened
      */
-    val timestamp: LocalDateTime
+    val timestamp: Instant
 
     /**
      * True if the identity access was conducted by a bot, false otherwise

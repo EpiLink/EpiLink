@@ -1,11 +1,9 @@
 package org.epilink.bot
 
-import io.ktor.application.feature
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.*
-import io.ktor.sessions.Sessions
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.mockk.coEvery
@@ -22,7 +20,7 @@ import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.dsl.module
 import org.koin.test.get
 import java.time.Duration
-import java.time.LocalDateTime
+import java.time.Instant
 import kotlin.test.*
 
 data class ApiSuccess(
@@ -329,7 +327,6 @@ class BackEndTest : KoinBaseTest(
             }.run {
                 assertStatus(HttpStatusCode.Unauthorized)
             }
-
         }
     }
 
@@ -358,7 +355,7 @@ class BackEndTest : KoinBaseTest(
         discUsername: String = "discorduser#1234",
         discAvatarUrl: String? = "https://avatar/url",
         msIdHash: ByteArray = byteArrayOf(1, 2, 3, 4, 5),
-        created: LocalDateTime = LocalDateTime.now() - Duration.ofDays(1)
+        created: Instant = Instant.now() - Duration.ofDays(1)
     ): String {
         softMockHere<LinkServerDatabase> {
             coEvery { getUser(discId) } returns mockk {

@@ -7,7 +7,7 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * Interface for using the server database
@@ -85,7 +85,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
                 true
             )
             is Allowed -> {
-                facade.recordNewUser(discordId, microsoftUid.hashSha256(), email, keepIdentity, LocalDateTime.now())
+                facade.recordNewUser(discordId, microsoftUid.hashSha256(), email, keepIdentity, Instant.now())
             }
         }
     }
@@ -98,7 +98,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
      */
     private fun LinkBan.isActive(): Boolean {
         val expiry = expiresOn
-        return /* Ban does not expire */ expiry == null || /* Ban has not expired */ expiry.isAfter(LocalDateTime.now())
+        return /* Ban does not expire */ expiry == null || /* Ban has not expired */ expiry.isAfter(Instant.now())
     }
 
     override suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory {
