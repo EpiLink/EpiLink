@@ -2,7 +2,7 @@ package org.epilink.bot.db
 
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkException
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * The database facade is the interface that is used to communicate with the database.
@@ -50,7 +50,7 @@ interface LinkDatabaseFacade {
         newMsftIdHash: ByteArray,
         newEmail: String,
         keepIdentity: Boolean,
-        timestamp: LocalDateTime
+        timestamp: Instant
     ): LinkUser
 
     /**
@@ -69,4 +69,11 @@ interface LinkDatabaseFacade {
      */
     @UsesTrueIdentity
     suspend fun getUserEmailWithAccessLog(discordId: String, automated: Boolean, author: String, reason: String): String
+
+    /**
+     * Retrieve all of the identity accesses where the target has the given Discord ID
+     *
+     * @throws LinkException Thrown if no user exists with the given Discord ID
+     */
+    suspend fun getIdentityAccessesFor(discordId: String): Collection<LinkIdentityAccess>
 }
