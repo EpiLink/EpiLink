@@ -27,7 +27,8 @@
             </div>
             <ul id="navigation">
                 <li class="navigation-item" v-for="route of routes">
-                    <router-link :to="route.path" v-html="route.title" />
+                    <router-link v-if="route.route" :to="{ name: route.path }" v-html="route.title" />
+                    <a v-if="route.url" :href="route.url" target="_blank" v-html="route.title" />
                 </li>
             </ul>
         </div>
@@ -39,10 +40,10 @@
     import LinkLoading  from './components/Loading';
 
     const ROUTES = [
-        { title: 'Instance', path: '/instance' },
-        { title: 'Confidentialité', path: '/privacy' },
-        { title: 'Sources', path: 'https://github.com/Litarvan/EpiLink' }, // TODO: Dynamic
-        { title: 'À Propos', path: '/about' }
+        { title: 'Instance', route: 'instance' },
+        { title: 'Confidentialité', route: 'privacy' },
+        { title: 'Sources', url: 'https://github.com/Litarvan/EpiLink' }, // TODO: Dynamic
+        { title: 'À Propos', route: 'about' }
     ];
 
     export default {
