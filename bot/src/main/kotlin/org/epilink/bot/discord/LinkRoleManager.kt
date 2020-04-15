@@ -173,8 +173,9 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         strongIdGuildNames: Collection<String>
     ): Set<String> = withContext(Dispatchers.IO) {
         val (did, discordName, discordDiscriminator) = facade.getDiscordUserInfo(dbUser.discordId)
+        val identifiable = database.isUserIdentifiable(dbUser.discordId)
         val identity =
-            if (database.isUserIdentifiable(dbUser.discordId) && rules.any { it is StrongIdentityRule }) {
+            if (identifiable && rules.any { it is StrongIdentityRule }) {
                 val author = "EpiLink Discord Bot"
                 val reason =
                     "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
@@ -186,7 +187,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
                 id
             } else null
         val baseSet =
-            if (identity != null) setOf(StandardRoles.Identified.roleName, StandardRoles.Known.roleName)
+            if (identifiable) setOf(StandardRoles.Identified.roleName, StandardRoles.Known.roleName)
             else setOf(StandardRoles.Known.roleName)
         rules.map { rule ->
             async {

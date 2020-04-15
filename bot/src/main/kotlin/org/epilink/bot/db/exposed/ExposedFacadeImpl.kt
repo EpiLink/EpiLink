@@ -150,7 +150,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
  * @see ExposedTrueIdentity
  */
 @UsesTrueIdentity
-private object ExposedTrueIdentities : IntIdTable() {
+private object ExposedTrueIdentities : IntIdTable("TrueIdentities") {
     /**
      * A reference (by ID) to the user this true identity belongs to
      */
@@ -196,7 +196,7 @@ class ExposedTrueIdentity(id: EntityID<Int>) : IntEntity(id) {
  *
  * @see ExposedBan
  */
-private object ExposedBans : IntIdTable() {
+private object ExposedBans : IntIdTable("Bans") {
     /**
      * The hashed (SHA256) Microsoft ID of the banned user.
      *
@@ -244,7 +244,7 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
  *
  * @see ExposedUser
  */
-private object ExposedUsers : IntIdTable() {
+private object ExposedUsers : IntIdTable("Users") {
     /**
      * The Discord ID of the user
      */
@@ -306,7 +306,7 @@ class ExposedUser(id: EntityID<Int>) : IntEntity(id), LinkUser {
 /**
  * Database table for identity accesses
  */
-private object ExposedIdentityAccesses : IntIdTable() {
+private object ExposedIdentityAccesses : IntIdTable("IdentityAccesses") {
     /**
      * The "target" of the identity access (i.e. the person whose identity was access)
      */

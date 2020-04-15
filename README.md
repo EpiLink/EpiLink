@@ -34,16 +34,14 @@ Launch the development server:
 
 ```
 $ ./gradlew npmInstall
-$ ./gradlew serveWeb
+$ ./gradlew serveWeb --no-daemon
 ```
 
 (Note that `npmInstall` is mostly silent)
 
 App will be served on http://localhost:8080/, but might be served at another port if `8080` is already taken.
 
-Also note that using Ctrl+C may not work to terminate the development server when launched through Gradle. You may have
-to kill the process entirely. 
-[See this StackOverflow question](https://stackoverflow.com/questions/36921612/how-can-i-stop-webpack-dev-server-from-windows-console).
+The `--no-daemon` is necessary, otherwise the underlying server would not be terminated when Ctrl+C-ing out of the server. Or maybe not. See [this issue](https://github.com/node-gradle/gradle-node-plugin/issues/65).
 
 ### Bot/Backend
 
