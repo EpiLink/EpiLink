@@ -171,7 +171,7 @@ private object ExposedTrueIdentities : IntIdTable() {
  * @see [ExposedTrueIdentities]
  */
 @UsesTrueIdentity
-private class ExposedTrueIdentity(id: EntityID<Int>) : IntEntity(id) {
+class ExposedTrueIdentity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<ExposedTrueIdentity>(
         ExposedTrueIdentities
     )
@@ -218,7 +218,7 @@ private object ExposedBans : IntIdTable() {
  *
  * @see ExposedBans
  */
-private class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
+class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
     companion object : IntEntityClass<ExposedBan>(
         ExposedBans
     )
@@ -268,7 +268,7 @@ private object ExposedUsers : IntIdTable() {
  *
  * @see ExposedUsers
  */
-private class ExposedUser(id: EntityID<Int>) : IntEntity(id), LinkUser {
+class ExposedUser(id: EntityID<Int>) : IntEntity(id), LinkUser {
     companion object : IntEntityClass<ExposedUser>(
         ExposedUsers
     )
@@ -336,7 +336,7 @@ private object ExposedIdentityAccesses : IntIdTable() {
 /**
  * The DAO class for a single IdentityAccess
  */
-private class ExposedIdentityAccess(id: EntityID<Int>) : IntEntity(id), LinkIdentityAccess {
+class ExposedIdentityAccess(id: EntityID<Int>) : IntEntity(id), LinkIdentityAccess {
     companion object : IntEntityClass<ExposedIdentityAccess>(ExposedIdentityAccesses)
 
     /**
