@@ -52,6 +52,7 @@
         mounted() {
             if (!this.redirected) {
                 this.$store.dispatch('load').then(() => {
+                    // TODO: Use Vue.JS animations instead of this crap
                     setTimeout(() => this.loadedWithAnimation = true, 200);
                     setTimeout(() => this.contentSeen = true, 250);
                 });
@@ -77,8 +78,9 @@
         },
         methods: {
             logout() {
-                this.$store.commit('logout');
-                this.$router.push({ name: 'home' });
+                this.$store.dispatch('logout').then(() => {
+                    this.$router.push({ name: 'home' });
+                }); // TODO: Catch error
             }
         }
     }
@@ -147,10 +149,6 @@
 
                 &.seen {
                     opacity: 1;
-                }
-
-                .loading {
-                    margin-bottom: 60px;
                 }
             }
         }

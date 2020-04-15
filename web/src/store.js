@@ -1,7 +1,7 @@
 import Vue  from 'vue';
 import Vuex from 'vuex';
 
-import request, { deleteSession } from './api';
+import request, { deleteSession, isPermanentSession } from './api';
 
 Vue.use(Vuex);
 
@@ -19,6 +19,7 @@ export default new Vuex.Store({
         setMeta(state, meta) {
             if (!state.meta) {
                 state.meta = meta;
+                window.document.title = meta.title;
             }
         },
         openPopup(state, popup) {
@@ -36,14 +37,28 @@ export default new Vuex.Store({
             state.popup.close();
             state.popup = null;
         },
-        setProfile(state, { discordUsername, discordAvatarUrl, email, temp }) {
-            console.log(`Logged in as '${discordUsername}'`);
+        setTempProfile(state, { discordUsername, discordAvatarUrl, email }) {
+            console.log(`Logged in as '${discordUsername}' (temporary session)`);
+
             state.user = {
+                temp: true,
+
                 username: discordUsername,
                 avatar: discordAvatarUrl,
-                email,
-                temp
+                email
             };
+        },
+        setProfile(state, { username, avatar }) {
+            console.log(`Logged in as '${username}' (permanent session)`);
+
+            state.user = { temp: false, username, avatar };
+        },
+        setRegistered(state) {
+            if (!state.user.temp) {
+                return;
+            }
+
+            state.user.temp = false;
         },
         logout(state) {
             state.user = null;
@@ -57,10 +72,22 @@ export default new Vuex.Store({
             }
 
             commit('setMeta', await request('/meta/info'));
-            const user = await request('/register/info');
-            if (user.discordUsername) {
-                commit('setProfile', { temp: true, ...user });
+
+            if (isPermanentSession()) {
+                const user = await request('/user');
+
+                if (user.username) {
+                    commit('setProfile', user);
+                }
+            } else {
+                const user = await request('/register/info');
+
+                if (user.discordUsername) {
+                    commit('setTempProfile', user);
+                }
             }
+
+            // TODO: Refresh permanent session
         },
         async postCode({ state, commit }, { service, code, uri }) {
             const { next, attachment } = await request('POST', '/register/authcode/' + service, {
@@ -69,12 +96,32 @@ export default new Vuex.Store({
             });
 
             if (next === 'continue') {
-                commit('setProfile', { temp: true, ...attachment });
+                commit('setTempProfile', attachment);
             } else if (next === 'login') {
-                // TODO: This
+                commit('setProfile', await request('/user'));
             } else {
                 console.log(`Unknown next step ${next}`);
             }
+        },
+        async logout({ state, commit }) {
+            if (!state.user) {
+                return;
+            }
+
+            if (state.user.temp) {
+                await request('DELETE', '/register');
+            }
+
+            commit('logout');
+        },
+        async register({ state, commit }, saveEmail) {
+            if (!state.user || !state.user.temp) {
+                return;
+            }
+
+            await request('POST', '/register', { keepIdentity: saveEmail });
+
+            commit('setRegistered');
         }
     }
 });

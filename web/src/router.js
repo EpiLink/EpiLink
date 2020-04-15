@@ -4,6 +4,7 @@ import VueRouter from 'vue-router';
 import Home      from './views/Home';
 import Microsoft from './views/Microsoft';
 import NotFound  from './views/NotFound';
+import Profile   from './views/Profile';
 import Redirect  from './views/Redirect';
 import Auth      from './views/Auth';
 import Settings  from './views/Settings';
@@ -35,6 +36,11 @@ const routes = [
         path: '/settings',
         name: 'settings',
         component: Settings
+    },
+    {
+        path: '/profile',
+        name: 'profile',
+        component: Profile
     },
     {
         path: '*',

@@ -11,7 +11,7 @@
 </template>
 
 <script>
-    import { getRedirectURI, openPopup } from '../api';
+    import { openPopup } from '../api';
 
     export default {
         name: 'link-home',
@@ -19,8 +19,9 @@
         mounted() {
             // TODO: Is user logged for REAL
 
-            if (this.$store.state.user) {
-                this.$router.push({ name: this.$store.state.user.email ? 'settings' : 'microsoft' });
+            const user = this.$store.state.user;
+            if (user) {
+                this.$router.push({ name: user.temp ? (user.email ? 'settings' : 'microsoft') : 'profile' });
             }
         },
         methods: {

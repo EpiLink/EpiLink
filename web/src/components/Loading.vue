@@ -17,8 +17,6 @@
 
         width: 70px;
         height: 70px;
-
-        margin-top: 65px;
     }
 
     .loading-tick {

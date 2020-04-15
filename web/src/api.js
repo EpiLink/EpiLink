@@ -31,6 +31,10 @@ export function deleteSession() {
     localStorage.setItem('session',  null);
 }
 
+export function isPermanentSession() {
+    return session && session.type === 'logged';
+}
+
 /**
  * Performs an asynchrone HTTP request to the backend API.
  * The only required arguments is the 'path', any optional argument can be given
@@ -54,7 +58,9 @@ export default async function(method, path, body) {
 
     const params = {
         method,
-        headers: {}
+        headers: {
+            'Accept': 'application/json'
+        }
     };
 
     if (body) {
@@ -67,7 +73,13 @@ export default async function(method, path, body) {
     }
 
     const result = await fetch(API_URL + path, params);
-    const json = await result.json();
+    const text = await result.text();
+    if (!text) {
+        console.warn(`API returned an empty response during request '${method} ${path}'`);
+        return null;
+    }
+
+    const json = JSON.parse(text);
 
     if (!json.success) {
         console.error(`API returned an error during request '${method} ${path}' : '${json.message}'`);
@@ -81,8 +93,10 @@ export default async function(method, path, body) {
                 return;
             }
 
-            localStorage.setItem('session', JSON.stringify({ type, token }));
-            console.log(`Session retrieved, token is '${token}'`);
+            session = { type, token };
+            localStorage.setItem('session', JSON.stringify(session));
+
+            console.log(`Session of type '${type}' retrieved, token is '${token}'`);
         }
     };
 

@@ -1,5 +1,5 @@
 <template>
-    <div id="microsoft" v-if="profile">
+    <div id="microsoft" v-if="user">
         <link-user />
         <link-stepper id="stepper" step="2" />
 
@@ -11,6 +11,8 @@
 </template>
 
 <script>
+    import { mapState } from 'vuex';
+
     import { openPopup } from '../api';
 
     import LinkStepper from '../components/Stepper';
@@ -27,8 +29,20 @@
                 this.$router.push({ name: 'settings' });
             }
         },
+        data() {
+            return {
+                submitting: false
+            };
+        },
+        computed: mapState(['user']),
         methods: {
             login() {
+                if (this.submitting) {
+                    return;
+                }
+
+                this.submitting = true;
+
                 this.$router.push({
                     name: 'auth',
                     params: { service: 'microsoft' }

@@ -68,9 +68,16 @@
                         service: service === 'microsoft' ? 'msft' : 'discord',
                         code: msg.data.code,
                         uri: getRedirectURI(service)
-                    }).then(() => setTimeout(() => {
-                        this.$router.push({ name: service === 'discord' ? 'microsoft' : 'settings' });
-                    }, 250));
+                    }).then(() => {
+                        let route = 'profile';
+                        if (this.$store.state.user.temp) {
+                            route = service === 'discord' ? 'microsoft' : 'settings';
+                        }
+
+                        setTimeout(() => {
+                            this.$router.push({ name: route });
+                        }, 250);
+                    });
                 }
             },
             onDestroy() {
@@ -108,5 +115,9 @@
     #subtitle {
         margin-top: 35px;
         font-size: 17px;
+    }
+
+    .loading {
+        margin-top: 65px;
     }
 </style>

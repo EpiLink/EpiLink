@@ -7,36 +7,42 @@
             </div>
 
             <div id="right">
-                <div id="options">
-                    <div class="option">
-                        <div><link-checkbox v-model="shareIdentity" /></div>
-                        <div class="text">
-                            <p class="title">Autoriser le système à conserver et utiliser mon identité (facultatif)</p>
-                            <p class="description">
-                                - Permet d'accéder à des ressources protégées et de recevoir des rôles (e.g. promotion)
-                                automatiquement<br/>
-                                - Vous servez averti de tout accès à votre identité<br/>
-                                - Nous ne récupèrerons que ce qui se trouve sur le CRI, que nous ne partagerons à personne<br/>
-                                - Ce paramètre peut être changé à tout moment<br/>
-                            </p>
-                            <p class="warning">
-                                Attention : Sans cette option, les serveurs de promotion seront fortement restreints
-                            </p>
+                <transition name="fade" mode="out-in">
+                    <div id="settings-form" v-if="!submitting" :key="0">
+                        <div id="options">
+                            <div class="option">
+                                <div><link-checkbox v-model="saveEmail" /></div>
+                                <div class="text">
+                                    <p class="title">Se souvenir de mon E-Mail (facultatif)</p>
+                                    <p class="description">
+                                        - Vous obtiendrez des rôles automatiquement (e.g. rôle de promotion) et vous aurez accès
+                                        à des ressources restreintes<br/>
+                                        - Ce paramètre peut être changé à tout moment
+                                    </p>
+                                    <p class="warning">
+                                        Attention : Sans cette option, les serveurs de promotion seront majoritairement restreints,
+                                        car nous ne pourrons pas valider votre promotion
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="option">
+                                <div><link-checkbox v-model="acceptConditions" /></div>
+                                <div class="text">
+                                    <p class="title">
+                                        J'accepte les <a href="#">conditions générales d'utilisation</a> et la
+                                        <a href="#">politique de confidentialité</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="button-container">
+                            <button id="link" :class="{ 'enabled': acceptConditions }" @click="submit">Lier mon compte</button>
                         </div>
                     </div>
-                    <div class="option">
-                        <div><link-checkbox v-model="acceptConditions" /></div>
-                        <div class="text">
-                            <p class="title">
-                                J'accepte les <a href="#">conditions générales d'utilisation</a> et la
-                                <a href="#">politique de confidentialité</a>
-                            </p>
-                        </div>
+                    <div id="submitting" v-if="submitting" :key="1">
+                        <link-loading />
                     </div>
-                </div>
-                <div id="button-container">
-                    <button id="link">Lier mon compte</button>
-                </div>
+                </transition>
             </div>
         </div>
     </div>
@@ -44,12 +50,13 @@
 
 <script>
     import LinkCheckbox from '../components/Checkbox';
+    import LinkLoading  from '../components/Loading';
     import LinkStepper  from '../components/Stepper';
     import LinkUser     from '../components/User';
 
     export default {
         name: 'link-settings',
-        components: { LinkCheckbox, LinkUser, LinkStepper },
+        components: { LinkLoading, LinkCheckbox, LinkUser, LinkStepper },
 
         mounted() {
             setTimeout(() => this.$store.commit('setExpanded', true), 300);
@@ -62,8 +69,21 @@
         data() {
             return {
                 seen: false,
-                shareIdentity: false,
-                acceptConditions: false
+                saveEmail: false,
+                acceptConditions: false,
+                submitting: false
+            }
+        },
+        methods: {
+            submit() {
+                if (!this.acceptConditions || this.submitting) {
+                    return;
+                }
+
+                this.submitting = true;
+
+                this.$store.dispatch('register', this.saveEmail) // TODO: Handle errors
+                    .then(() => this.$router.push({ name: 'profile' }));
             }
         }
     }
@@ -91,13 +111,23 @@
     }
 
     #left, #right {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-evenly;
-
         flex: 0.5;
 
         padding: 5px 35px;
+    }
+
+    #right {
+        display: flex;
+    }
+
+    #left, #settings-form {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+
+    #settings-form, #submitting {
+        flex: 1;
     }
 
     #options {
@@ -150,20 +180,29 @@
             border-radius: 4px;
 
             color: #FEFEFE;
-            background-color: $primary-color;
+            background-color: #c1c4cd;
 
             padding: 8px 50px;
 
             @include lato(500);
             font-size: 22px;
 
-            cursor: pointer;
+            transition: background-color .15s ease-in-out;
 
-            transition: background-color .175s;
+            &.enabled {
+                cursor: pointer;
+                background-color: $primary-color;
 
-            &:hover {
-                background-color: darken($primary-color, 3.5%);
+                &:hover {
+                    background-color: darken($primary-color, 3.5%);
+                }
             }
         }
+    }
+
+    #submitting {
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 </style>
