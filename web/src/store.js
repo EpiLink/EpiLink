@@ -74,7 +74,18 @@ export default new Vuex.Store({
             commit('setMeta', await request('/meta/info'));
 
             if (isPermanentSession()) {
-                const user = await request('/user');
+                let user;
+                try {
+                    user = await request('/user');
+                } catch(e) {
+                    console.warn('Could not retrieve logged user, session probably expired');
+                    console.warn(e);
+
+                    commit('logout');
+
+                    return;
+                }
+
 
                 if (user.username) {
                     commit('setProfile', user);
