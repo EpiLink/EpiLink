@@ -109,7 +109,7 @@ task bootstrapFrontEnd {
 task bundleFrontEndIntoResources(type: Copy) {
     dependsOn ':web:bundleWeb'
     mustRunAfter 'processResources'
-    from '../web/build/web'
+    from '../build/web'
     into 'build/resources/main/frontend'
     duplicatesStrategy DuplicatesStrategy.INCLUDE // overwrite
 }
