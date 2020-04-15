@@ -17,8 +17,6 @@
         name: 'link-home',
 
         mounted() {
-            // TODO: Is user logged for REAL
-
             const user = this.$store.state.user;
             if (user) {
                 this.$router.push({ name: user.temp ? (user.email ? 'settings' : 'microsoft') : 'profile' });

@@ -86,8 +86,6 @@ export default new Vuex.Store({
                     commit('setTempProfile', user);
                 }
             }
-
-            // TODO: Refresh permanent session
         },
         async postCode({ state, commit }, { service, code, uri }) {
             const { next, attachment } = await request('POST', '/register/authcode/' + service, {
