@@ -43,7 +43,7 @@ internal class LinkDiscord4JFacadeImpl(
     /**
      * The actual Discord client
      */
-    private val client = DiscordClientBuilder(token).build().apply {
+    private val client = DiscordClientBuilder.create(token).build().apply {
         eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
     }
 
