@@ -1,4 +1,6 @@
-# EpiLink
+# EpiLink 🔗
+
+![Back-end tests](https://github.com/Litarvan/EpiLink/workflows/Back-end%20tests/badge.svg)
 
 README | [Documentation](/docs/README.md)
 
@@ -9,7 +11,7 @@ Currently in development.
 
 ## Requirements
 
-- Java JDK >= 8. Do NOT use Oracle's JRE/JDK (licensing concerns), consider using AdoptOpenJDK instead.
+- Java JDK >= 11, both for building and running. Do NOT use Oracle's JRE/JDK (licensing concerns), consider using AdoptOpenJDK instead.
 
 (NPM and Gradle are downloaded automatically if you don't have them installed on your system)
 

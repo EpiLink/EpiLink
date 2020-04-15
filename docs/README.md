@@ -2,12 +2,12 @@
 
 [README](/README.md) | Documentation
 
-| Links |
-|:---- |
-| 📖 [**Instance Maintainer Guide**](/docs/MaintainerGuide.md) |
-| 🎯 [**Rulebooks**](/docs/Rulebooks.md) |
-| ❔ [**Learn about the technologies we use**](/docs/Technologies.md) |
-| ⚙ [**API Documentation**\*](/docs/Api.md) |
+|    | **Links** |
+|:--:|:---- |
+| [📖](/docs/MaintainerGuide.md) | [**Instance Maintainer Guide**](/docs/MaintainerGuide.md) |
+| [🎯](/docs/Rulebooks.md) | [**Rulebooks**](/docs/Rulebooks.md) |
+| [❔](/docs/Technologies.md) | [**Learn about the technologies we use**](/docs/Technologies.md) |
+| [⚙](/docs/Api.md) | [**API Documentation**\*](/docs/Api.md) |
 
 
 These documentation pages describe how to configure, develop on and use EpiLink.
