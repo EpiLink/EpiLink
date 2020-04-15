@@ -26,14 +26,6 @@ class CliArgs(parser: ArgParser) {
      * Path to the configuration file, w.r.t. the current working directory
      */
     val config by parser.positional("path to the configuration file")
-
-    /**
-     * Unused and deprecated
-     */
-    val allowUnsecureJwtSecret by parser.flagging(
-        "-u", "--unsecure-jwt-secret",
-        help = "(deprecated) has no effect"
-    )
 }
 
 /**
@@ -56,10 +48,6 @@ fun main(args: Array<String>) = mainBody("epilink") {
             """.trimIndent()
         )
     ).parseInto(::CliArgs)
-
-    if(cliArgs.allowUnsecureJwtSecret) {
-        logger.warn("Using -u / --unsecure-jwt-secret is deprecated. This flag will be removed soon.")
-    }
 
     logger.debug("Loading configuration")
 

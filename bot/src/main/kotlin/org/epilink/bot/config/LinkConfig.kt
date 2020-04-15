@@ -63,12 +63,7 @@ data class LinkWebServerConfiguration(
     /**
      * The URL to the front-end, with a trailing slash, or null if the front-end is bundled
      */
-    val frontendUrl: String?,
-    /**
-     * The duration of a session. Unused and deprecated.
-     */
-    // TODO Remove
-    val sessionDuration: Long? = null
+    val frontendUrl: String?
 )
 
 /**
@@ -77,11 +72,6 @@ data class LinkWebServerConfiguration(
  * @see LinkConfiguration.tokens
  */
 data class LinkTokens(
-    /**
-     * JWT secret. Unused and deprecated.
-     */
-    // TODO Remove
-    val jwtSecret: String? = null,
     /**
      * Discord bot token
      */
@@ -294,23 +284,17 @@ fun LinkDiscordConfig.check(): List<ConfigReportElement> {
 /**
  * Check the tokens' configuration
  */
+@Suppress("unused")
 fun LinkTokens.check(): List<ConfigReportElement> {
-    val report = mutableListOf<ConfigReportElement>()
-    if (jwtSecret != null) {
-        report += ConfigWarning("The jwtSecret configuration field is deprecated and will be removed.")
-    }
-    return report
+    return listOf()
 }
 
 /**
  * Check the web server's configuration
  */
+@Suppress("unused")
 fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
-    val report = mutableListOf<ConfigReportElement>()
-    if (sessionDuration != null) {
-        report += ConfigWarning("The sessionDuration configuration field is deprecated and will be removed.")
-    }
-    return report
+    return listOf()
 }
 
 /**
