@@ -12,10 +12,13 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 
 /*
  * Utility functions for use within a Rulebook
  */
+
+private val logger = LoggerFactory.getLogger("epilink.rulebooks.helpers")
 
 /**
  * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply as a Map from String
@@ -45,10 +48,16 @@ suspend fun httpGetJson(
             }
         }
     }
-    val response = client.get<String>(url) {
-        header(HttpHeaders.Accept, ContentType.Application.Json)
-        if (bearer != null)
-            header(HttpHeaders.Authorization, "Bearer $bearer")
+    val response = runCatching {
+        client.get<String>(url) {
+            header(HttpHeaders.Accept, ContentType.Application.Json)
+            if (bearer != null)
+                header(HttpHeaders.Authorization, "Bearer $bearer")
+        }
+    }.getOrElse {
+        logger.error("Encountered error on httpGetJson call", it)
+        throw RuleException("Encountered an error on httpGetJson call", it)
     }
+
     return withContext(Dispatchers.Default) { ObjectMapper().readValue(response) }
 }

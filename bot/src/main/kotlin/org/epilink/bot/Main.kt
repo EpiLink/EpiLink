@@ -16,7 +16,7 @@ import java.nio.file.LinkOption
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
-internal val logger = LoggerFactory.getLogger("epilink")
+private val logger = LoggerFactory.getLogger("epilink.main")
 
 /**
  * CLI Arguments class for EpiLink

@@ -15,8 +15,10 @@ import io.ktor.http.formUrlEncode
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
+import org.epilink.bot.debug
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
 
 /**
  * The back-end, specifically for interacting with the Discord API
@@ -25,6 +27,8 @@ class LinkDiscordBackEnd(
     private val clientId: String,
     private val secret: String
 ) : KoinComponent {
+    private val logger = LoggerFactory.getLogger("epilink.discordapi")
+
     private val client: HttpClient by inject()
 
     private val authStubDiscord = "https://discordapp.com/api/oauth2/authorize?" +
@@ -45,6 +49,7 @@ class LinkDiscordBackEnd(
      * @throws LinkEndpointException If something wrong happens while contacting the Discord APIs.
      */
     suspend fun getDiscordToken(authcode: String, redirectUri: String): String {
+        logger.debug { "Contacting Discord API for retrieving OAuth2 token..." }
         val res = runCatching {
             client.post<String>("https://discordapp.com/api/v6/oauth2/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
@@ -58,7 +63,9 @@ class LinkDiscordBackEnd(
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val data = ObjectMapper().readValue<Map<String, Any?>>(ex.response.call.receive<String>())
+                val received = ex.response.call.receive<String>()
+                logger.debug { "Failed: received $received" }
+                val data = ObjectMapper().readValue<Map<String, Any?>>(received)
                 when (val error = data["error"] as? String) {
                     "invalid_grant" -> throw LinkEndpointException(
                         InvalidAuthCode,
@@ -92,9 +99,11 @@ class LinkDiscordBackEnd(
      * @throws LinkEndpointException If something wrong happens while contacting the Discord APIs
      */
     suspend fun getDiscordInfo(token: String): DiscordUserInfo {
+        logger.debug { "Attempting to retrieve Discord information from token $token" }
         val data = runCatching {
             client.getJson("https://discordapp.com/api/v6/users/@me", bearer = token)
         }.getOrElse {
+            logger.debug(it) { "Failed (token $token)" }
             throw LinkEndpointException(
                 DiscordApiFailure, "Failed to contact Discord servers for user information retrieval.",
                 false,
@@ -111,7 +120,7 @@ class LinkDiscordBackEnd(
         val avatarHash = data["avatar"] as String?
         val avatar =
             if (avatarHash != null) "https://cdn.discordapp.com/avatars/$userId/$avatarHash.png?size=256" else null
-        return DiscordUserInfo(userId, displayableUsername, avatar)
+        return DiscordUserInfo(userId, displayableUsername, avatar).also { logger.debug { "Retrieved info $it" } }
     }
 
     /**

@@ -1,13 +1,12 @@
 package org.epilink.bot.db
 
-import org.epilink.bot.LinkEndpointException
-import org.epilink.bot.LinkException
-import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.*
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.Instant
@@ -76,6 +75,8 @@ interface LinkServerDatabase {
  * from within Ktor responses.
  */
 internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
+    private val logger = LoggerFactory.getLogger("epilink.db")
+
     private val facade: LinkDatabaseFacade by inject()
 
     private val privacy: LinkPrivacy by inject()
@@ -92,8 +93,17 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
                 StandardErrorCodes.AccountCreationNotAllowed,
                 adv.reason,
                 true
-            )
+            ).also { logger.debug { "Account creation disallowed for Discord $discordId / MS $microsoftUid: " + adv.reason } }
             is Allowed -> {
+                logger.infoOrDebug("Creating a new user") {
+                    """
+                    Creating a new user with:
+                        Discord ID      $discordId
+                        Microsoft ID    $microsoftUid
+                        E-Mail          $email
+                        Keep identity   $keepIdentity
+                    """.trimIndent()
+                }
                 facade.recordNewUser(discordId, microsoftUid.hashSha256(), email, keepIdentity, Instant.now())
             }
         }
@@ -138,6 +148,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
 
     override suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory {
         if (facade.getBansFor(dbUser.msftIdHash).any { it.isActive() }) {
+            logger.debug { "Active bans found for user ${dbUser.discordId}" }
             return Disallowed("You are banned from joining any server at the moment.")
         }
         return Allowed
@@ -171,7 +182,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
                     a.reason,
                     a.timestamp.toString()
                 )
-            }
+            }.also { logger.debug { "Acquired access logs for $discordId" }}
         )
 
 }
