@@ -17,6 +17,7 @@ import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.dsl.module
 import org.koin.logger.slf4jLogger
+import org.slf4j.LoggerFactory
 
 /**
  * This class is responsible for holding configuration information and
@@ -28,6 +29,8 @@ class LinkServerEnvironment(
     private val legal: LinkLegalTexts,
     rulebook: Rulebook
 ) {
+    private val logger = LoggerFactory.getLogger("epilink.environment")
+
     /**
      * Base module, which contains the environment and the database
      */
@@ -108,21 +111,33 @@ class LinkServerEnvironment(
      * Start Koin, the Discord bot + session storage provider and then the HTTP server, in that order.
      */
     fun start() {
+        logger.debug { "Starting Koin" }
         val app = startKoin {
             slf4jLogger(Level.ERROR)
             modules(epilinkBaseModule, epilinkDiscordModule, epilinkWebModule)
         }
 
+        logger.debug { "Starting components" }
         try {
             runBlocking {
                 coroutineScope {
                     listOf(
-                        async { app.koin.get<LinkDiscordClientFacade>().start() },
-                        async { app.koin.get<SessionStorageProvider>().start() },
-                        async { app.koin.get<LinkDatabaseFacade>().start() }
+                        async {
+                            logger.debug { "Staring Discord bot facade" }
+                            app.koin.get<LinkDiscordClientFacade>().start()
+                        },
+                        async {
+                            logger.debug { "Starting storage provider" }
+                            app.koin.get<SessionStorageProvider>().start()
+                        },
+                        async {
+                            logger.debug { "Starting database facade" }
+                            app.koin.get<LinkDatabaseFacade>().start()
+                        }
                     ).awaitAll()
                 }
             }
+            logger.debug { "Starting server" }
             app.koin.get<LinkHttpServer>().startServer(wait = true)
         } catch (ex: Exception) {
             logger.error("Encountered an exception on initialization", ex)

@@ -1,10 +1,14 @@
 package org.epilink.bot.config.rulebook
 
+import org.epilink.bot.debug
+import org.slf4j.LoggerFactory
 import kotlin.script.experimental.annotations.KotlinScript
 
 /*
  * Implementation of the Rulebook Kotlin DSL + script system
  */
+
+private val logger = LoggerFactory.getLogger("epilink.rules")
 
 /**
  * The script class for the Kotlin script template
@@ -73,9 +77,17 @@ class WeakIdentityRule(
         discordName: String,
         discordDiscriminator: String
     ): List<String> {
-        val ctx = RuleContext(discordId, discordName, discordDiscriminator, mutableListOf())
-        ctx.roles()
-        return ctx.roles
+        try {
+            val ctx = RuleContext(discordId, discordName, discordDiscriminator, mutableListOf())
+            logger.debug { "Running rule $name with context $ctx" }
+            ctx.roles()
+            return ctx.roles
+        } catch (ex: Exception) {
+            if (ex is RuleException)
+                throw ex
+            else
+                throw RuleException("Encountered an exception inside a rule", ex)
+        }
     }
 }
 
@@ -95,9 +107,17 @@ class StrongIdentityRule(
         discordDiscriminator: String,
         email: String
     ): List<String> {
-        val ctx = RuleContext(discordId, discordName, discordDiscriminator, mutableListOf())
-        ctx.roles(email)
-        return ctx.roles
+        try {
+            val ctx = RuleContext(discordId, discordName, discordDiscriminator, mutableListOf())
+            logger.debug { "Running rule $name with context $ctx and email $email" }
+            ctx.roles(email)
+            return ctx.roles
+        } catch (ex: Exception) {
+            if (ex is RuleException)
+                throw ex
+            else
+                throw RuleException("Encountered an exception inside a rule", ex)
+        }
     }
 }
 
@@ -160,3 +180,8 @@ class RulebookBuilder {
         return Rulebook(builtRules)
     }
 }
+
+/**
+ * Class for exceptions that happen inside a rule
+ */
+class RuleException(message: String, cause: Throwable) : Exception(message, cause)

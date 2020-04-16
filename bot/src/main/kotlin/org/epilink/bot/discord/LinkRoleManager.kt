@@ -8,10 +8,14 @@ import org.epilink.bot.config.rulebook.Rule
 import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.config.rulebook.StrongIdentityRule
 import org.epilink.bot.config.rulebook.WeakIdentityRule
-import org.epilink.bot.db.*
-import org.epilink.bot.logger
+import org.epilink.bot.db.Disallowed
+import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkUser
+import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.debug
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
 
 /**
  * The role manager interface
@@ -47,6 +51,7 @@ interface LinkRoleManager {
  * This class is responsible for managing and updating the roles of Discord users.
  */
 internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
+    private val logger = LoggerFactory.getLogger("epilink.bot.roles")
     private val database: LinkServerDatabase by inject()
     private val messages: LinkDiscordMessages by inject()
     private val config: LinkDiscordConfig by inject()
@@ -59,8 +64,11 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         guilds: Collection<String>,
         tellUserIfFailed: Boolean
     ) {
+        logger.debug { "Updating ${dbUser.discordId}'s roles on ${guilds.joinToString(", ")}" }
         val adv = database.canUserJoinServers(dbUser)
         if (adv is Disallowed) {
+            logger.debug { "Cannot join a server: aborting role update" }
+            // TODO Remove all the EpiLink roles the user has?
             if (tellUserIfFailed)
                 facade.sendDirectMessage(
                     dbUser.discordId,
@@ -71,14 +79,19 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         coroutineScope {
             val whereConnected =
                 guilds.filter { config.isMonitored(it) && facade.isUserInGuild(dbUser.discordId, it) }
+            logger.debug { "Only updating ${dbUser.discordId}'s roles on ${whereConnected.joinToString(", ")}" }
             val rules = getRulesRelevantForGuilds(*whereConnected.toTypedArray())
+            logger.debug { "Updating ${dbUser.discordId}'s roles requires calling the rules ${rules.joinToString(", ") { it.first.name }}" }
             val roles = getRolesForAuthorizedUser(
                 dbUser,
                 rules.map { it.first },
                 rules.filter { it.first is StrongIdentityRule }
                     .flatMap { it.second }.distinct().map { facade.getGuildName(it) }
             )
-
+            logger.debug {
+                "Computed EpiLink roles for ${dbUser.discordId} for guilds ${whereConnected.joinToString(", ")}:" +
+                        roles.joinToString(", ")
+            }
             whereConnected.forEach { guildId ->
                 updateAuthorizedUserRoles(dbUser.discordId, guildId, roles)
             }
@@ -153,9 +166,13 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
      * Update the roles of a member on a given guild, based on the given EpiLink roles from the role list.
      */
     private suspend fun updateAuthorizedUserRoles(discordId: String, guildId: String, roles: Collection<String>) {
+        logger.debug { "Updating roles for $discordId in $guildId: they should have ${roles.joinToString(", ")}" }
         val serverConfig = config.getConfigForGuild(guildId)
         val toObtain = roles.mapNotNull { serverConfig.roles[it] }.toSet()
         val toRemove = serverConfig.roles.values.toSet().minus(toObtain)
+        logger.debug {
+            "For $discordId in $guildId: remove ${toRemove.joinToString(", ")} and add ${toObtain.joinToString(", ")}"
+        }
         facade.manageRoles(discordId, guildId, toObtain, toRemove)
     }
 
@@ -172,10 +189,15 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         rules: Collection<Rule>,
         strongIdGuildNames: Collection<String>
     ): Set<String> = withContext(Dispatchers.IO) {
+        logger.debug { "Determining ${dbUser.discordId}'s roles..." }
         val (did, discordName, discordDiscriminator) = facade.getDiscordUserInfo(dbUser.discordId)
         val identifiable = database.isUserIdentifiable(dbUser.discordId)
         val identity =
             if (identifiable && rules.any { it is StrongIdentityRule }) {
+                logger.debug {
+                    "Identity required for strong rules (Discord user $did, rules " +
+                            rules.filterIsInstance<StrongIdentityRule>().joinToString(", ") { it.name } + ")"
+                }
                 val author = "EpiLink Discord Bot"
                 val reason =
                     "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +

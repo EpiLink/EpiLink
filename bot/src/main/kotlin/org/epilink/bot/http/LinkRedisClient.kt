@@ -8,7 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.withContext
 import org.epilink.bot.LinkException
+import org.epilink.bot.debug
 import org.epilink.bot.logger
+import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -32,6 +34,7 @@ interface SessionStorageProvider {
  * An implementation of a session storage provider for use with a Redis server.
  */
 class LinkRedisClient(uri: String) : SessionStorageProvider {
+    private val logger = LoggerFactory.getLogger("epilink.redis")
     private val client = RedisClient.create(uri)
     private var connection: StatefulRedisConnection<String, String>? = null
 
@@ -66,6 +69,7 @@ private class RedisSessionStorage(
     val prefix: String,
     val ttlSeconds: Long = 3600
 ) : SimplifiedSessionStorage() {
+    private val logger = LoggerFactory.getLogger("epilink.redis.$prefix")
     private val redis = connection.reactive()
     private fun buildKey(id: String) = "$prefix$id"
     private val b64enc = Base64.getEncoder()
@@ -89,7 +93,9 @@ private class RedisSessionStorage(
         if (data == null) {
             redis.del(buildKey(id)).awaitSingle()
         } else {
-            redis.set(key, data.encodeBase64()).awaitSingle().also {
+            val encoded = data.encodeBase64()
+            logger.debug { "Setting $key to $encoded" }
+            redis.set(key, encoded).awaitSingle().also {
                 if (it != "OK") {
                     logger.error("Received not OK reply from Redis when writing key $key: $it")
                 }
@@ -103,6 +109,7 @@ private class RedisSessionStorage(
     }
 
     override suspend fun invalidate(id: String) {
+        logger.debug { "Deleting key $id" }
         redis.del(buildKey(id)).awaitSingle()
     }
 }

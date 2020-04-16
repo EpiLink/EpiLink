@@ -16,10 +16,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import org.epilink.bot.LinkException
-import org.epilink.bot.logger
+import org.epilink.bot.debug
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.reactivestreams.Publisher
+import org.slf4j.LoggerFactory
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KClass
@@ -31,7 +32,7 @@ internal class LinkDiscord4JFacadeImpl(
     private val discordClientId: String,
     token: String
 ) : LinkDiscordClientFacade, KoinComponent {
-
+    private val logger = LoggerFactory.getLogger("epilink.bot.discord4j")
     private val roleManager: LinkRoleManager by inject()
 
     /**
@@ -66,15 +67,19 @@ internal class LinkDiscord4JFacadeImpl(
 
     override suspend fun isUserInGuild(userId: String, guildId: String): Boolean {
         return try {
+            logger.debug { "Checking if $userId is in guild $guildId" }
             client.getMemberById(
                 Snowflake.of(guildId),
                 Snowflake.of(userId)
             ).awaitSingle()
+            logger.debug { "$userId is in guild $guildId" }
             true
         } catch (ex: ClientException) {
             if (ex.errorCode == "10007") {
+                logger.debug { "$userId is NOT in guild $guildId" }
                 false
             } else {
+                logger.error("Unexpected reply on isUserInGuild($userId) (error code ${ex.errorCode})")
                 throw ex
             }
         }
@@ -89,6 +94,13 @@ internal class LinkDiscord4JFacadeImpl(
         toAdd: Set<String>,
         toRemove: Set<String>
     ) {
+        logger.debug {
+            """
+            Role transaction for user $discordId in guild $guildId 
+                +Added: ${toAdd.joinToString(", ")}
+                -Removed: ${toRemove.joinToString(", ")}
+            """.trimIndent()
+        }
         val member = client.getMemberById(
             Snowflake.of(guildId),
             Snowflake.of(discordId)
@@ -96,25 +108,27 @@ internal class LinkDiscord4JFacadeImpl(
         coroutineScope {
             val currentRoles = member.roles.collectList().awaitSingle().map { it.id }
             val adding =
-                toAdd.map { Snowflake.of(it) }.minus(currentRoles).map {
-                    async { member.addRole(it).await() }
-                }
+                toAdd.map { Snowflake.of(it) }
+                    .minus(currentRoles)
+                    .also { logger.debug { "Will only add " + it.joinToString(", ") { it.asString() } } }
+                    .map { async { member.addRole(it).await() } }
             val removing =
-                toAdd.map { Snowflake.of(it) }.intersect(currentRoles)
-                    .map {
-                        async { member.removeRole(it).await() }
-                    }
+                toAdd.map { Snowflake.of(it) }
+                    .intersect(currentRoles)
+                    .also { logger.debug { "Will only remove " + it.joinToString(", ") { it.asString() } } }
+                    .map { async { member.removeRole(it).await() } }
             (adding + removing).awaitAll()
         }
     }
 
     override suspend fun getDiscordUserInfo(discordId: String): DiscordUserInfo {
+        logger.debug { "Retrieving user info for $discordId" }
         val user = client.getUserById(Snowflake.of(discordId)).awaitSingle()
         return DiscordUserInfo(
             user.id.asString(),
             user.username,
             user.discriminator
-        )
+        ).also { logger.debug { "Received $it" } }
     }
 
     /**

@@ -14,8 +14,10 @@ import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes.*
+import org.epilink.bot.debug
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
 
 /**
  * This class is responsible for communicating with Microsoft APIs
@@ -25,6 +27,8 @@ class LinkMicrosoftBackEnd(
     private val secret: String,
     private val tenant: String
 ) : KoinComponent {
+    private val logger = LoggerFactory.getLogger("epilink.microsoftapi")
+
     private val authStubMsft = "https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?" +
             listOf(
                 "client_id=${clientId}",
@@ -44,6 +48,7 @@ class LinkMicrosoftBackEnd(
      * @throws LinkEndpointException If some error is thrown
      */
     suspend fun getMicrosoftToken(code: String, redirectUri: String): String {
+        logger.debug { "Contacting Microsoft API for retrieving OAuth2 token..." }
         val res = runCatching {
             client.post<String>("https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
@@ -57,7 +62,9 @@ class LinkMicrosoftBackEnd(
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val data = ObjectMapper().readValue<Map<String, Any?>>(ex.response.call.receive<String>())
+                val received = ex.response.call.receive<String>()
+                logger.debug { "Failed: received $received" }
+                val data = ObjectMapper().readValue<Map<String, Any?>>(received)
                 when (val error = data["error"] as? String) {
                     "invalid_grant" -> throw LinkEndpointException(
                         InvalidAuthCode,
@@ -88,10 +95,12 @@ class LinkMicrosoftBackEnd(
      * @throws LinkEndpointException if something goes wrong when calling the Microsoft Graph API
      */
     suspend fun getMicrosoftInfo(token: String): MicrosoftUserInfo {
+        logger.debug { "Attempting to retrieve Microsoft information from token $token" }
         try {
             val data = client.getJson("https://graph.microsoft.com/v1.0/me", bearer = token)
             val email = data["mail"] as String?
                 ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
+                    ?.also { logger.debug("Taking userPrincipalName $it instead of mail because mail was not found in response") }
                 ?: throw LinkEndpointException(
                     AccountHasNoEmailAddress,
                     "This account does not have an email address",
@@ -102,7 +111,7 @@ class LinkMicrosoftBackEnd(
                 "This user does not have an ID",
                 true
             )
-            return MicrosoftUserInfo(id, email)
+            return MicrosoftUserInfo(id, email).also { logger.debug { "Retrieved info $it" } }
         } catch (ex: ClientRequestException) {
             throw LinkEndpointException(
                 MicrosoftApiFailure,

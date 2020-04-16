@@ -4,9 +4,9 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import org.epilink.bot.config.LinkWebServerConfiguration
-import org.epilink.bot.logger
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
 
 /**
  * The HTTP server. Wraps the actual Ktor server and initializes it with injected dependencies, such as the back end
@@ -24,6 +24,7 @@ interface LinkHttpServer {
  * This class represents the Ktor server.
  */
 internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
+    private val logger = LoggerFactory.getLogger("epilink.http")
     private val wsCfg: LinkWebServerConfiguration by inject()
 
     private val frontEndHandler: LinkFrontEndHandler by inject()
@@ -34,7 +35,9 @@ internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
      * The actual Ktor application instance
      */
     private var server: ApplicationEngine = embeddedServer(Netty, wsCfg.port) {
+        logger.debug("Installing EpiLink API")
         with(backend) { epilinkApiModule() }
+        logger.debug("Installing EpiLink front-end handler")
         with(frontEndHandler) { install() }
     }
 

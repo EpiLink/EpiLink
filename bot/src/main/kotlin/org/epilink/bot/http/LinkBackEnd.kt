@@ -14,6 +14,7 @@ import io.ktor.http.ParametersBuilder
 import io.ktor.http.content.TextContent
 import io.ktor.jackson.jackson
 import io.ktor.request.ContentTransformationException
+import io.ktor.request.header
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
@@ -30,6 +31,7 @@ import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
 
 /**
  * Interface for the back-end
@@ -45,6 +47,9 @@ interface LinkBackEnd {
  * The back-end, defining API endpoints and more
  */
 internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
+
+    private val logger = LoggerFactory.getLogger("epilink.api")
+
     /**
      * The environment the back end lives in
      */
@@ -108,7 +113,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 }
             } catch (ex: LinkEndpointException) {
                 if (ex.isEndUserAtFault) {
-                    logger.debug("Encountered an endpoint exception (${ex.errorCode})", ex)
+                    logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
                     call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
                 } else {
                     logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}")
@@ -146,6 +151,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         route("user") {
             intercept(ApplicationCallPipeline.Features) {
                 if (call.sessions.get<ConnectedSession>() == null) {
+                    logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
                     call.respond(
                         HttpStatusCode.Unauthorized,
                         ApiErrorResponse("You are not authenticated.", MissingAuthentication.toErrorData())
@@ -158,12 +164,15 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             @ApiEndpoint("GET /api/v1/user")
             get {
                 val session = call.sessions.get<ConnectedSession>()!!
+                logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
                 call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation()))
             }
 
             @ApiEndpoint("GET /api/v1/user/idaccesslogs")
             get("idaccesslogs") {
                 val session = call.sessions.get<ConnectedSession>()!!
+                logger.info("Generating access logs for a user")
+                logger.debug { "Generating access logs for ${session.discordId} (${session.discordUsername})" }
                 call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
             }
         }
@@ -177,6 +186,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
 
             @ApiEndpoint("DELETE /api/v1/register")
             delete {
+                logger.debug { "Clearing registry session ${call.request.header("RegistrationSessionId")}" }
                 call.sessions.clear<RegisterSession>()
                 call.respond(HttpStatusCode.OK)
             }
@@ -184,12 +194,24 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             @ApiEndpoint("POST /api/v1/register")
             post {
                 with(call.sessions.get<RegisterSession>()) {
-                    if (this == null)
+                    if (this == null) {
+                        logger.debug {
+                            "Missing/unknown session header for call from reg. session ${call.request.header("RegistrationSessionId")}"
+                        }
                         call.respond(
                             HttpStatusCode.BadRequest,
                             ApiErrorResponse("Missing session header", IncompleteRegistrationRequest.toErrorData())
                         )
-                    else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
+                    } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
+                        logger.debug {
+                            """
+                            Incomplete registration process for session ${call.request.header("RegistrationSessionId")}
+                            discordId = $discordId
+                            discordUsername = $discordUsername
+                            email = $email
+                            microsoftUid = $microsoftUid
+                            """.trimIndent()
+                        }
                         call.respond(
                             HttpStatusCode.BadRequest,
                             ApiErrorResponse(
@@ -198,11 +220,14 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                             )
                         )
                     } else {
+                        val sesid = call.request.header("RegistrationSessionId")
+                        logger.debug { "Completing registration session for $sesid" }
                         val options: AdditionalRegistrationOptions =
                             call.receiveCatching() ?: return@post
                         val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
                         roleManager.updateRolesOnAllGuildsLater(u)
                         call.loginAs(u, discordUsername, discordAvatarUrl)
+                        logger.debug { "Completed registration session. $sesid logged in and reg session cleared." }
                         call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
                     }
                 }
@@ -215,10 +240,13 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     null -> error("Invalid service") // Should not happen
                     "discord" -> processDiscordAuthCode(call, call.receive())
                     "msft" -> processMicrosoftAuthCode(call, call.receive())
-                    else -> call.respond(
-                        HttpStatusCode.NotFound,
-                        ApiErrorResponse("Invalid service: $service", UnknownService.toErrorData())
-                    )
+                    else -> {
+                        logger.debug { "Attempted to register under unknown service $service" }
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiErrorResponse("Invalid service: $service", UnknownService.toErrorData())
+                        )
+                    }
                 }
             }
         }
@@ -250,22 +278,27 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     private suspend fun processDiscordAuthCode(call: ApplicationCall, authcode: RegistrationAuthCode) {
         val session = call.sessions.getOrSet { RegisterSession() }
         // Get token
+        logger.debug { "Get Discord token from authcode ${authcode.code}" }
         val token = discordBackEnd.getDiscordToken(authcode.code, authcode.redirectUri)
         // Get information
         val (id, username, avatarUrl) = discordBackEnd.getDiscordInfo(token)
+        logger.debug { "Processing Discord info for registration for $id ($username)" }
         val user = db.getUser(id)
         if (user != null) {
+            logger.debug { "User already exists: logging in" }
             call.loginAs(user, username, avatarUrl)
             call.respond(ApiSuccessResponse("Logged in", RegistrationContinuation("login", null)))
         } else {
             val adv = db.isDiscordUserAllowedToCreateAccount(id)
             if (adv is Disallowed) {
+                logger.debug { "Discord user $id cannot create account: " + adv.reason }
                 call.respond(
                     HttpStatusCode.BadRequest,
                     ApiErrorResponse(adv.reason, AccountCreationNotAllowed.toErrorData())
                 )
                 return
             }
+            logger.debug { "Discord registration information OK: continue " }
             val newSession = session.copy(discordUsername = username, discordId = id, discordAvatarUrl = avatarUrl)
             call.sessions.set(newSession)
             call.respond(
@@ -283,18 +316,22 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
      */
     private suspend fun processMicrosoftAuthCode(call: ApplicationCall, authcode: RegistrationAuthCode) {
         val session = call.sessions.getOrSet { RegisterSession() }
+        logger.debug { "Get Microsoft token from authcode ${authcode.code}" }
         // Get token
         val token = microsoftBackEnd.getMicrosoftToken(authcode.code, authcode.redirectUri)
         // Get information
         val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
+        logger.debug { "Processing Microsoft info for registration for $id ($email)" }
         val adv = db.isMicrosoftUserAllowedToCreateAccount(id)
         if (adv is Disallowed) {
+            logger.debug { "Microsoft user $id ($email) is not allowed to create an account: " + adv.reason }
             call.respond(
                 HttpStatusCode.BadRequest,
                 ApiErrorResponse(adv.reason, AccountCreationNotAllowed.toErrorData())
             )
             return
         }
+        logger.debug { "Microsoft registration information OK: continue " }
         val newSession = session.copy(email = email, microsoftUid = id)
         call.sessions.set(newSession)
         call.respond(
@@ -309,6 +346,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
      * Setup the sessions to log in the passed user object
      */
     private fun ApplicationCall.loginAs(user: LinkUser, username: String, avatar: String?) {
+        logger.debug { "Logging ${user.discordId} ($username) in" }
         sessions.clear<RegisterSession>()
         sessions.set(ConnectedSession(user.discordId, username, avatar))
     }
