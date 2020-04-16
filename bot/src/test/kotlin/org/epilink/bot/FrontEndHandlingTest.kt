@@ -56,7 +56,7 @@ class FrontEndHandlingTest : KoinBaseTest(
                 "/orthogonal?to=me"
             ).forEach { path ->
                 handleRequest(HttpMethod.Get, path).apply {
-                    assertStatus(HttpStatusCode.MovedPermanently)
+                    assertStatus(HttpStatusCode.Found)
                     assertEquals("https://frontend$path", response.headers["Location"])
                 }
             }
