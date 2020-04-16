@@ -308,7 +308,8 @@ Contains information about the currently logged in user.
 {
     "discordId": "...",
     "username": "...",
-    "avatarUrl": "..." // nullable
+    "avatarUrl": "...", // nullable
+    "identifiable": true // or false
 }
 ```
 
@@ -316,7 +317,8 @@ Where:
 
 * `discordId` is the Discord ID of the user
 * `username` is the Discord username of the user (should be displayed as the normal username in the interface). For example `My awesome name#1234`
-* `avatarUrl` (may be null) is a URL to the Discord avatar of the user, or null if Discord did not reply with any URL. 
+* `avatarUrl` (may be null) is a URL to the Discord avatar of the user, or null if Discord did not reply with any URL.
+* `identifiable` is a boolean. If true, the user has their identity recorded in the database. If false, the user does not have their identity in the database. 
 
 #### IdAccessLogs
 

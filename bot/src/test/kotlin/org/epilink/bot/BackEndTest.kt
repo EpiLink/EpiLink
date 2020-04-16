@@ -13,6 +13,7 @@ import io.mockk.mockk
 import org.epilink.bot.db.Allowed
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
 import org.epilink.bot.http.data.IdAccess
@@ -249,6 +250,7 @@ class BackEndTest : KoinBaseTest(
     }
 
     @Test
+    @OptIn(UsesTrueIdentity::class)
     fun `Test full registration sequence, discord then msft`() {
         mockHere<LinkDiscordBackEnd> {
             coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
@@ -263,6 +265,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
             coEvery { isMicrosoftUserAllowedToCreateAccount(any()) } returns Allowed
             coEvery { createUser(any(), any(), any(), any()) } returns mockk { every { discordId } returns "yes" }
+            coEvery { isUserIdentifiable("yes") } returns true
         }
         val bot = mockHere<LinkRoleManager> {
             coEvery { updateRolesOnAllGuildsLater(any()) } returns mockk()
@@ -332,9 +335,13 @@ class BackEndTest : KoinBaseTest(
         }
     }
 
+    @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user endpoint`() {
+    fun `Test user endpoint when identifiable`() {
         withTestEpiLink {
+            mockHere<LinkServerDatabase> {
+                coEvery { isUserIdentifiable("myDiscordId") } returns true
+            }
             val sid = setupSession(
                 discId = "myDiscordId",
                 discUsername = "Discordian#1234",
@@ -348,6 +355,32 @@ class BackEndTest : KoinBaseTest(
                 assertEquals("myDiscordId", data.data["discordId"])
                 assertEquals("Discordian#1234", data.data["username"])
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
+                assertEquals(true, data.data["identifiable"])
+            }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user endpoint when not identifiable`() {
+        withTestEpiLink {
+            mockHere<LinkServerDatabase> {
+                coEvery { isUserIdentifiable("myDiscordId") } returns false
+            }
+            val sid = setupSession(
+                discId = "myDiscordId",
+                discUsername = "Discordian#1234",
+                discAvatarUrl = "https://veryavatar"
+            )
+            handleRequest(HttpMethod.Get, "/api/v1/user") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val data = fromJson<ApiSuccess>(response)
+                assertEquals("myDiscordId", data.data["discordId"])
+                assertEquals("Discordian#1234", data.data["username"])
+                assertEquals("https://veryavatar", data.data["avatarUrl"])
+                assertEquals(false, data.data["identifiable"])
             }
         }
     }

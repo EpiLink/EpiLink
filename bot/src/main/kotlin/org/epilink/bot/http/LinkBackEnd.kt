@@ -25,6 +25,7 @@ import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -162,6 +163,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             }
 
             @ApiEndpoint("GET /api/v1/user")
+            @OptIn(UsesTrueIdentity::class) // returns whether user is identifiable or not
             get {
                 val session = call.sessions.get<ConnectedSession>()!!
                 logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
@@ -360,6 +362,10 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
      */
     private fun RegisterSession.toRegistrationInformation() =
         RegistrationInformation(email = email, discordAvatarUrl = discordAvatarUrl, discordUsername = discordUsername)
+
+    @UsesTrueIdentity
+    private suspend fun ConnectedSession.toUserInformation() =
+        UserInformation(discordId, discordUsername, discordAvatar, db.isUserIdentifiable(discordId))
 }
 
 /**
@@ -386,6 +392,3 @@ suspend fun HttpClient.getJson(url: String, bearer: String): Map<String, Any?> {
     }
     return ObjectMapper().readValue(result)
 }
-
-private fun ConnectedSession.toUserInformation() =
-    UserInformation(discordId, discordUsername, discordAvatar)
