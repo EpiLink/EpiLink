@@ -9,7 +9,6 @@ import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.withContext
 import org.epilink.bot.LinkException
 import org.epilink.bot.debug
-import org.epilink.bot.logger
 import org.slf4j.LoggerFactory
 import java.util.*
 

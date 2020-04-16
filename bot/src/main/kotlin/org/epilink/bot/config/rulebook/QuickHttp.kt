@@ -56,7 +56,7 @@ suspend fun httpGetJson(
         }
     }.getOrElse {
         logger.error("Encountered error on httpGetJson call", it)
-        throw RuleException()
+        throw RuleException("Encountered an error on httpGetJson call", it)
     }
 
     return withContext(Dispatchers.Default) { ObjectMapper().readValue(response) }
