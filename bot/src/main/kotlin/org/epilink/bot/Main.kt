@@ -10,7 +10,6 @@ import org.epilink.bot.config.*
 import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.config.rulebook.loadRules
 import org.slf4j.LoggerFactory
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Paths
