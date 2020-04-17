@@ -4,7 +4,9 @@
 
 ## What are rulebooks?
 
-Rulebooks are small Kotlin scripts that implement custom rules for custom roles. They are intended to be used to gather information about a user (possibly using their real identity) and give them roles automatically.
+Rulebooks are small Kotlin scripts that implement custom rules for custom roles as well as e-mail validation. They are intended to be used to gather information about a user (possibly using their real identity) and give them roles automatically.
+
+Rulebooks can also be used for additional checks on your end: for example, checking that someone's email matches some format you need. This is useful for making sure only users from a domain you trust can log in.
 
 An example is: I know that the user's email address is `ab@c.de`, and I want to automatically give them a "Manager" role depending on the reply of some web API that returns JSON. Using a rule, you can specify that the Manager role follows a "CheckStatus" rule, and implement the CheckStatus rule to send a HTTP GET request to your own API, check the JSON reply, and apply roles automatically based on this reply. 
 
@@ -23,6 +25,38 @@ You must make these points clear to your users.
 First, see [the rulebooks section of the Maintainer Guide](/docs/MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is.
 
 This section will cover the basics of rulebooks. This assumes some knowledge of Kotlin.
+
+### E-mail validation
+
+You can use your rulebook to validate e-mail addresses. This is particularly useful if you want to use EpiLink across multiple instances, but you still want to validate who can come in.
+
+The validation takes this form:
+
+```kotlin
+emailValidator { email ->
+    ...
+}
+```
+
+The validator must return a boolean value. By default, in Kotlin, the last expression of a block is the return value. So, if we wanted to only accept email addresses that end in `@mydomain.fi`, you could use:
+
+```kotlin
+emailValidator { email -> 
+    email.endsWith("@mydomain.fi") 
+}
+```
+
+Note that you can also get rid of the `email`. By default, in Kotlin, if you have only one lambda parameter, you can use `it` instead and omit the parameter entirely. So, a more compact version would be:
+
+```kotlin
+emailValidator { it.endsWith("@mydomain.fi") }
+```
+
+All usual boolean operators can be used, so this would also be valid to match both `@mydomain.fi` and `@otherdomain.org`
+
+```kotlin
+emailValidator { it.endsWith("@mydomain.fi") || it.endsWith("@otherdomain.org") }
+```
 
 ### Rule declaration
 

@@ -122,6 +122,8 @@ You will need to create a secret manually, as Azure AD does not create one for y
 * `organizations` to accept only business/school accounts
 * Your tenant's ID to accept only accounts from your tenant. You can get it by connecting to the Azure portal with your work account and going to `?` -> Show Diagnostics. In the JSON file, you will find a list of tenants, simply pick the ID of the one you want.v
 
+Note: If you need to use multiple tenants, and cannot guarantee identities by just having a tenant in place, you can validate e-mail addresses using rulebooks. [Read this for more information](Rulebooks.md#e-mail-validation).
+
 ### Discord configuration
 
 ```yaml
@@ -244,12 +246,14 @@ rulebook: |
 rulebookFile: myFile.rule.kts
 ```
 
-Custom roles can be determined using custom rules. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](/docs/Rulebooks.md)
+Custom roles can be determined using custom rules, and you can additionally validate e-mail addresses with rulebooks. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](/docs/Rulebooks.md).
 
 * You can use no rulebooks whatsoever: in this case, simply do not declare `rulebook` nor `rulebookFile`.
 * You can put the rulebook directly in the configuration file (using `rulebook`). In this case, do not declare `rulebookFile`
 * You can put the rulebook in a separate file (using `rulebookFile`). The value of `rulebookFile` is the path to the rulebook file **relative to the configuration file**. If the rulebook named `epilink.rule.kts` is located in the same folder as your config file, you can just use `rulebookFile: epilink.rule.kts`
 * Using *both* `rulebook` and `rulebookFile` at the same time will result in an error upon launching EpiLink.
+
+A note in case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, all addresses will be treated as valid.
 
 ### Privacy configuration
 
