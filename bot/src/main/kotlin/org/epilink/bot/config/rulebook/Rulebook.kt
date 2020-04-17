@@ -49,7 +49,11 @@ class Rulebook(
     /**
      * Contains the rules. Maps a rule name to the actual rule object.
      */
-    val rules: Map<String, Rule>
+    val rules: Map<String, Rule>,
+    /**
+     * Function used to validate email addresses
+     */
+    val validator: EmailValidator
 )
 
 /**
@@ -133,6 +137,11 @@ typealias RuleDeterminer = suspend RuleContext.() -> Unit
 @RulebookDsl
 typealias RuleDeterminerWithIdentity = suspend RuleContext.(String) -> Unit
 
+/**
+ * E-mail address validation type
+ */
+typealias EmailValidator = suspend (String) -> Boolean
+
 // ******************** DSL ******************** //
 
 /**
@@ -149,6 +158,7 @@ annotation class RulebookDsl
 @RulebookDsl
 class RulebookBuilder {
     private val builtRules = mutableMapOf<String, Rule>()
+    private var validator: EmailValidator? = null
 
     /**
      * Create a weak-identity rule. Throws an error in case of conflicting rule names.
@@ -174,10 +184,23 @@ class RulebookBuilder {
     }
 
     /**
+     * Define an e-mail validator. The lambda will be called for every e-mail address and, if it returns false, the
+     * Microsoft account will be rejected.
+     */
+    @RulebookDsl
+    @Suppress("unused")
+    fun emailValidator(v: EmailValidator) {
+        if (validator == null)
+            validator = v
+        else
+            error("The e-mail validator was already defined elsewhere")
+    }
+
+    /**
      * Actually build a rulebook from this builder and return it.
      */
     internal fun buildRulebook(): Rulebook {
-        return Rulebook(builtRules)
+        return Rulebook(builtRules, validator ?: { true })
     }
 }
 

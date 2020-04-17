@@ -3,11 +3,11 @@ package org.epilink.bot
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkPrivacy
+import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.db.*
 import org.epilink.bot.http.data.IdAccess
 import org.koin.dsl.module
 import org.koin.test.get
-import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.Duration
@@ -52,7 +52,7 @@ class DatabaseTest : KoinBaseTest(
             coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns true
         }
         test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey")
+            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "emailemail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("already"), "Reason should contain word already")
         }
@@ -67,8 +67,11 @@ class DatabaseTest : KoinBaseTest(
                 every { expiresOn } returns null
             })
         }
+        mockHere<Rulebook> {
+            every { validator } returns { true }
+        }
         test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey")
+            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("banned"), "Reason should contain word banned")
         }
@@ -83,8 +86,11 @@ class DatabaseTest : KoinBaseTest(
                 every { expiresOn } returns Instant.now().plus(Duration.ofDays(1))
             })
         }
+        mockHere<Rulebook> {
+            every { validator } returns { true }
+        }
         test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey")
+            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("banned"), "Reason should contain word banned")
         }
@@ -99,9 +105,28 @@ class DatabaseTest : KoinBaseTest(
                 every { expiresOn } returns Instant.now().minusSeconds(1)
             })
         }
+        mockHere<Rulebook> {
+            every { validator } returns { true }
+        }
         test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey")
+            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
             assertTrue(adv is Allowed)
+        }
+    }
+
+    @Test
+    fun `Test Microsoft user with email rejected cannot create account`() {
+        val hey = "hey".sha256()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
+        }
+        mockHere<Rulebook> {
+            every { validator } returns { it != "mailmail" }
+        }
+        test {
+            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
+            assertTrue(adv is Disallowed, "Creation should be disallowed")
+            assertTrue(adv.reason.contains("e-mail", ignoreCase = true), "Reason should contain word e-mail")
         }
     }
 
@@ -112,10 +137,10 @@ class DatabaseTest : KoinBaseTest(
             coEvery { recordNewUser("discordid", hash, "eeemail", true, any()) } returns mockk()
         }
         test {
-            coEvery { isMicrosoftUserAllowedToCreateAccount("tested") } returns Allowed
+            coEvery { isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
             createUser("discordid", "tested", "eeemail", true)
-            coVerify { isMicrosoftUserAllowedToCreateAccount("tested") }
+            coVerify { isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") }
             coVerify { isDiscordUserAllowedToCreateAccount("discordid") }
         }
         coVerify { fac.recordNewUser("discordid", hash, "eeemail", true, any()) }
@@ -124,12 +149,12 @@ class DatabaseTest : KoinBaseTest(
     @Test
     fun `Unsuccessful account creation on msft issue`() {
         test {
-            coEvery { isMicrosoftUserAllowedToCreateAccount("tested") } returns Disallowed("Hello")
+            coEvery { isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") } returns Disallowed("Hello")
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
             val exc = assertFailsWith<LinkEndpointException> {
                 createUser("discordid", "tested", "eeemail", true)
             }
-            coVerify { isMicrosoftUserAllowedToCreateAccount("tested") }
+            coVerify { isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") }
             assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)
             assertTrue(exc.isEndUserAtFault, "End user is expected to be at fault")
             assertTrue(exc.message!!.contains("Hello"))
@@ -139,7 +164,7 @@ class DatabaseTest : KoinBaseTest(
     @Test
     fun `Unsuccessful account creation on Discord issue`() {
         test {
-            coEvery { isMicrosoftUserAllowedToCreateAccount("tested") } returns Allowed
+            coEvery { isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Disallowed("Hiii")
             val exc = assertFailsWith<LinkEndpointException> {
                 createUser("discordid", "tested", "eeemail", true)
