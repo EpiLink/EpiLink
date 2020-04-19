@@ -1,11 +1,11 @@
 <template>
     <div id="home">
         <img id="logo" src="../../assets/logo.svg"/>
-        <h1 id="title">Bienvenue</h1>
+        <h1 id="title" v-html="$t('home.welcome')" />
 
         <button id="discord" @click="login">
             <img id="discord-logo" src="../../assets/discord.svg"/>
-            <span id="discord-text">Se connecter via Discord</span>
+            <span id="discord-text" v-html="$t('home.discord')" />
         </button>
     </div>
 </template>
@@ -24,13 +24,15 @@
         },
         methods: {
             login() {
+                const name = this.$t('popups.discord');
+
                 this.$router.push({
                     name: 'auth',
                     params: { service: 'discord' }
                 });
 
                 setTimeout(() => {
-                    const popup = openPopup('Connexion à Discord', 'discord', this.$store.state.meta.authorizeStub_discord);
+                    const popup = openPopup(name, 'discord', this.$store.state.meta.authorizeStub_discord);
                     this.$store.commit('openPopup', popup);
                 }, 300);
             }

@@ -7,9 +7,7 @@
             </div>
         </div>
 
-        <p id="text">
-            Connexion réussie
-        </p>
+        <p id="text" v-html="$t('redirect.success')" />
     </div>
 </template>
 

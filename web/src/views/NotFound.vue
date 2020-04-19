@@ -1,7 +1,7 @@
 <template>
     <div id="not-found">
         <h1 id="title">404</h1>
-        <span id="description">La page demandée n'existe pas</span>
+        <span id="description" v-html="$t('notFound.description')" />
     </div>
 </template>
 
