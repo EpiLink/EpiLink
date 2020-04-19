@@ -6,17 +6,13 @@
                 <img v-else src="../../assets/check.svg" />
             </div>
             <div class="separator"></div>
-            <div class="name" v-html="name" />
+            <div class="name" v-html="$t(`steps.${name}`)" />
         </div>
     </div>
 </template>
 
 <script>
-    const STEPS = [
-        'Connexion à Discord',
-        'Connexion à Microsoft',
-        'Validation des paramètres'
-    ];
+    const STEPS = ['discord', 'microsoft', 'settings'];
 
     export default {
         name: 'link-stepper',

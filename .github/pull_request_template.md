@@ -3,14 +3,15 @@
 ### Description
 
 
-<!-- Delete the following section if this PR does not address any issues -->
+<!-- Delete the following section if this PR does not address any issue -->
 #### Related issue(s)
 
-#x #y #z
+Fixes #x
 
 <!-- Replace the [ ] by [X] to tick boxes -->
-### Check-list
+<!-- Remove any item which does not apply to this PR -->
+### TODO
 
-* [ ] This PR makes GDPR-related changes
-* [ ] This PR requires docs changes
-
+* [ ] Notify the team of GDPR-related changes
+* [ ] Update the docs with the changes that have been made
+* [ ] Update `CHANGELOG.md`

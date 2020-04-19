@@ -117,7 +117,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
                     call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
                 } else {
-                    logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}")
+                    logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}", ex)
                     call.respond(HttpStatusCode.InternalServerError, ex.toApiResponse())
                 }
             } catch (ex: Exception) {
@@ -176,6 +176,42 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 logger.info("Generating access logs for a user")
                 logger.debug { "Generating access logs for ${session.discordId} (${session.discordUsername})" }
                 call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
+            }
+
+            @ApiEndpoint("POST /api/v1/user/identity")
+            @OptIn(UsesTrueIdentity::class)
+            post("identity") {
+                val session = call.sessions.get<ConnectedSession>()!!
+                val auth = call.receive<RegistrationAuthCode>()
+                logger.info("Relinking a user account")
+                logger.debug {
+                    "User ${session.discordId} (${session.discordUsername}) has asked for a relink with authcode ${auth.code}."
+                }
+                val microsoftToken = microsoftBackEnd.getMicrosoftToken(auth.code, auth.redirectUri)
+                if (db.isUserIdentifiable(session.discordId)) {
+                    throw LinkEndpointException(IdentityAlreadyKnown, isEndUserAtFault = true)
+                }
+                val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
+                db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
+                val u = db.getUser(session.discordId)
+                if (u == null)
+                    logger.error("User is null when it's not supposed to be after relink")
+                else
+                    roleManager.updateRolesOnAllGuildsLater(u)
+                call.respond(apiSuccess("Successfully relinked Microsoft account"))
+            }
+
+            @ApiEndpoint("DELETE /api/v1/user/identity")
+            @OptIn(UsesTrueIdentity::class)
+            delete("identity") {
+                val session = call.sessions.get<ConnectedSession>()!!
+                if (db.isUserIdentifiable(session.discordId)) {
+                    db.deleteUserIdentity(session.discordId)
+                    roleManager.updateRolesOnAllGuildsLater(db.getUser(session.discordId)!!)
+                    call.respond(apiSuccess("Successfully deleted identity"))
+                } else {
+                    throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+                }
             }
         }
 
@@ -324,7 +360,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         // Get information
         val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
         logger.debug { "Processing Microsoft info for registration for $id ($email)" }
-        val adv = db.isMicrosoftUserAllowedToCreateAccount(id)
+        val adv = db.isMicrosoftUserAllowedToCreateAccount(id, email)
         if (adv is Disallowed) {
             logger.debug { "Microsoft user $id ($email) is not allowed to create an account: " + adv.reason }
             call.respond(

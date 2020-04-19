@@ -62,15 +62,15 @@ fun main(args: Array<String>) = mainBody("epilink") {
     val rulebook = runBlocking {
         cfg.discord.rulebook?.let {
             logger.info("Loading rulebook from configuration, this may take some time...")
-            loadRules(it).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.")}
+            loadRules(it).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
         } ?: cfg.discord.rulebookFile?.let { file ->
             withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
                 val path = cfgPath.parent.resolve(file)
                 logger.info("Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this may take some time...")
                 val s = Files.readString(path)
-                loadRules(s).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.")}
+                loadRules(s).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
             }
-        } ?: Rulebook(mapOf())
+        } ?: Rulebook(mapOf()) { true }
     }
 
     logger.debug("Checking config...")
