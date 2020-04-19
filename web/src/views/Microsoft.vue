@@ -5,7 +5,7 @@
 
         <button id="login" @click="login()">
             <img id="icon" src="../../assets/ms_icon.svg" />
-            <span id="text">Se connecter via Microsoft</span>
+            <span id="text" v-html="$t('microsoft.connect')" />
         </button>
     </div>
 </template>
@@ -43,13 +43,15 @@
 
                 this.submitting = true;
 
+                const name = this.$t('popups.microsoft');
+
                 this.$router.push({
                     name: 'auth',
                     params: { service: 'microsoft' }
                 });
 
                 setTimeout(() => {
-                    const popup = openPopup('Connexion à Microsoft', 'microsoft', this.$store.state.meta.authorizeStub_msft);
+                    const popup = openPopup(name, 'microsoft', this.$store.state.meta.authorizeStub_msft);
                     this.$store.commit('openPopup', popup);
                 }, 300);
             }
