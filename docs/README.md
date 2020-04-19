@@ -6,6 +6,7 @@
 |:--:|:---- |
 | [📖](/docs/MaintainerGuide.md) | [**Instance Maintainer Guide**](/docs/MaintainerGuide.md) |
 | [🎯](/docs/Rulebooks.md) | [**Rulebooks**](/docs/Rulebooks.md) |
+| [‍⚖](/docs/GDPR.md) | [**GDPR information**](/docs/GDPR.md) |
 | [🛠](/docs/Developing.md) | [**Developing, compiling and running instructions**](/docs/Developing.md) |
 | [❔](/docs/Technologies.md) | [**Learn about the technologies we use**](/docs/Technologies.md) |
 | [⚙](/docs/Api.md) | [**API Documentation**\*](/docs/Api.md) |
