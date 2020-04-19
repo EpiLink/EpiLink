@@ -200,6 +200,19 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     roleManager.updateRolesOnAllGuildsLater(u)
                 call.respond(apiSuccess("Successfully relinked Microsoft account"))
             }
+
+            @ApiEndpoint("DELETE /api/v1/user/identity")
+            @OptIn(UsesTrueIdentity::class)
+            delete("identity") {
+                val session = call.sessions.get<ConnectedSession>()!!
+                if (db.isUserIdentifiable(session.discordId)) {
+                    db.deleteUserIdentity(session.discordId)
+                    roleManager.updateRolesOnAllGuildsLater(db.getUser(session.discordId)!!)
+                    call.respond(apiSuccess("Successfully deleted identity"))
+                } else {
+                    throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+                }
+            }
         }
 
         route("register") {

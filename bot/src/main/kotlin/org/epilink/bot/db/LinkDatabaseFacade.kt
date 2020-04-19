@@ -67,6 +67,13 @@ interface LinkDatabaseFacade {
     suspend fun recordNewIdentity(discordId: String, newEmail: String)
 
     /**
+     * Erase the identity of the given user. This function does not perform any checks on the given parameters.
+     *
+     * @param discordId The Discord ID of the user whose identity should be erased.
+     */
+    suspend fun eraseIdentity(discordId: String)
+
+    /**
      * Checks whether the given Discord ID has its identity linked to it.
      *
      * @throws LinkException Thrown if no user exists with the given Discord ID

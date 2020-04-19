@@ -432,7 +432,6 @@ class BackEndTest : KoinBaseTest(
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
         val email = "e.mail@mail.maiiiil"
-        val userMock: LinkUser = mockk { every { discordId } returns "userid" }
         mockHere<LinkMicrosoftBackEnd> {
             coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
             coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
@@ -443,7 +442,6 @@ class BackEndTest : KoinBaseTest(
         val sd = mockHere<LinkServerDatabase> {
             coEvery { isUserIdentifiable("userid") } returns false
             coEvery { relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") } just runs
-            coEvery { getUser("userid") } returns userMock
         }
         withTestEpiLink {
             val sid = setupSession("userid", msIdHash = hashMsftId)
@@ -518,6 +516,49 @@ class BackEndTest : KoinBaseTest(
                 assertEquals(98765, err.code)
             }
         }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user identity deletion when no identity exists`() {
+        mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("userid") } returns false
+        }
+        withTestEpiLink {
+            val sid = setupSession("userid")
+            handleRequest(HttpMethod.Delete, "/api/v1/user/identity") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.BadRequest)
+                val resp = fromJson<ApiError>(response)
+                val err = resp.data
+                assertEquals(111, err.code)
+            }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user identity deletion success`() {
+        val sd = mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { deleteUserIdentity("userid") } just runs
+        }
+        val rm = mockHere<LinkRoleManager> {
+            every { updateRolesOnAllGuildsLater(match { it.discordId == "userid" }) } returns mockk()
+        }
+        withTestEpiLink {
+            val sid = setupSession("userid")
+            handleRequest(HttpMethod.Delete, "/api/v1/user/identity") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val resp = fromJson<ApiSuccess>(response)
+                assertNull(resp.data)
+            }
+        }
+        coVerify { sd.deleteUserIdentity("userid") }
+        coVerify { rm.updateRolesOnAllGuildsLater(any()) }
     }
 
     private fun TestApplicationEngine.setupSession(

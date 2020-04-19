@@ -357,6 +357,36 @@ class DatabaseTest : KoinBaseTest(
         coVerify { df.recordNewIdentity("userid", "mynewemail@email.com") }
     }
 
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test identity removal with no identity in the first place`() {
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable("userid") } returns false
+        }
+        val sd = get<LinkServerDatabase>()
+        runBlocking {
+            val exc = assertFailsWith<LinkEndpointException> {
+                sd.deleteUserIdentity("userid")
+            }
+            assertEquals(111, exc.errorCode.code)
+            assertTrue(exc.isEndUserAtFault)
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test identity removal success`() {
+        val df = mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { eraseIdentity("userid") } just runs
+        }
+        val sd = get<LinkServerDatabase>()
+        runBlocking {
+            sd.deleteUserIdentity("userid")
+        }
+        coVerify { df.eraseIdentity("userid") }
+    }
+
     private fun <R> test(block: suspend LinkServerDatabase.() -> R) =
         runBlocking {
             block(get())

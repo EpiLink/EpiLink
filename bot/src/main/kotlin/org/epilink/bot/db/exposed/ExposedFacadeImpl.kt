@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.`java-time`.timestamp
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 
@@ -142,6 +143,16 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
                 user = u
                 email = newEmail
             }
+        }
+    }
+
+    @UsesTrueIdentity
+    override suspend fun eraseIdentity(discordId: String) {
+        newSuspendedTransaction {
+            ExposedUser.find(ExposedUsers.discordId eq discordId)
+                .single()
+                .trueIdentity!! // We don't care about error cases, callers are responsible for checks
+                .delete()
         }
     }
 }

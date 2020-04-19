@@ -90,6 +90,16 @@ interface LinkServerDatabase {
      */
     @UsesTrueIdentity
     suspend fun relinkMicrosoftIdentity(discordId: String, email: String, associatedMsftId: String)
+
+    /**
+     * Delete the identity of the user with the given Discord ID from the database, or throw a [LinkEndpointException]
+     * if no such identity exists.
+     *
+     * @param discordId The Discord ID of the user whose identity we should remove
+     * @throws LinkEndpointException If the user does not have any identity recorded in the first place.
+     */
+    @UsesTrueIdentity
+    suspend fun deleteUserIdentity(discordId: String)
 }
 
 /**
@@ -167,7 +177,11 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
         return Allowed
     }
 
-    private suspend fun isAllowedToCreateAccount(discordId: String, microsoftId: String, email: String): DatabaseAdvisory {
+    private suspend fun isAllowedToCreateAccount(
+        discordId: String,
+        microsoftId: String,
+        email: String
+    ): DatabaseAdvisory {
         val msAdv = isMicrosoftUserAllowedToCreateAccount(microsoftId, email)
         if (msAdv is Disallowed) {
             return msAdv
@@ -226,6 +240,13 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
             throw LinkEndpointException(NewIdentityDoesNotMatch, isEndUserAtFault = true)
         }
         facade.recordNewIdentity(discordId, email)
+    }
+
+    @UsesTrueIdentity
+    override suspend fun deleteUserIdentity(discordId: String) {
+        if (!isUserIdentifiable(discordId))
+            throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+        facade.eraseIdentity(discordId)
     }
 }
 

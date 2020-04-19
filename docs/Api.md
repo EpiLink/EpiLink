@@ -398,3 +398,20 @@ Error codes 102 (wrong authcode), 110 (identity already kept), and 112 (identity
 Note that the back-end will always consume the authorization code, although it will discard the retrieved token immediately in case of an error (e.g. already linked).
 
 Upon success, triggers a role update.
+
+### DELETE /user/identity
+
+**Removes a user's identity from the database**
+
+```http request
+DELETE /api/v1/user/identity
+SessionId: abcdef1234 # mandatory
+```
+
+This request has no body.
+
+Returns a classic success [API response](#apiresponse) if successful (with HTTP Code 200), or an API error otherwise.
+
+Error code 111 (identity already unknown) is relevant here. [See all error codes](#error-codes).
+
+Upon success, triggers a role update.
