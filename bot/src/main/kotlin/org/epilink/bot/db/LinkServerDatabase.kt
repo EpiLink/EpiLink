@@ -2,6 +2,7 @@ package org.epilink.bot.db
 
 import org.epilink.bot.*
 import org.epilink.bot.config.LinkPrivacy
+import org.epilink.bot.config.rulebook.Rulebook
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
@@ -24,9 +25,9 @@ interface LinkServerDatabase {
     suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory
 
     /**
-     * Checks whether an account with the given Microsoft ID would be allowed to create an account.
+     * Checks whether an account with the given Microsoft ID and e-mail address would be allowed to create an account.
      */
-    suspend fun isMicrosoftUserAllowedToCreateAccount(microsoftId: String): DatabaseAdvisory
+    suspend fun isMicrosoftUserAllowedToCreateAccount(microsoftId: String, email: String): DatabaseAdvisory
 
     /**
      * Checks whether a user should be able to join a server (i.e. not banned, no irregularities)
@@ -104,6 +105,8 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
 
     private val privacy: LinkPrivacy by inject()
 
+    private val rulebook: Rulebook by inject()
+
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     override suspend fun createUser(
         discordId: String,
@@ -111,7 +114,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
         email: String,
         keepIdentity: Boolean
     ): LinkUser {
-        return when (val adv = isAllowedToCreateAccount(discordId, microsoftUid)) {
+        return when (val adv = isAllowedToCreateAccount(discordId, microsoftUid, email)) {
             is Disallowed -> throw LinkEndpointException(
                 StandardErrorCodes.AccountCreationNotAllowed,
                 adv.reason,
@@ -150,10 +153,13 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
             Allowed
     }
 
-    override suspend fun isMicrosoftUserAllowedToCreateAccount(microsoftId: String): DatabaseAdvisory {
+    override suspend fun isMicrosoftUserAllowedToCreateAccount(microsoftId: String, email: String): DatabaseAdvisory {
         val hash = microsoftId.hashSha256()
         if (facade.isMicrosoftAccountAlreadyLinked(hash))
             return Disallowed("This Microsoft account is already linked to another account")
+        if (!rulebook.validator(email)) {
+            return Disallowed("This e-mail address was rejected. Are you sure you are using the correct Microsoft account?")
+        }
         val b = facade.getBansFor(hash)
         if (b.any { it.isActive() }) {
             return Disallowed("This Microsoft account is banned")
@@ -161,8 +167,8 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
         return Allowed
     }
 
-    private suspend fun isAllowedToCreateAccount(discordId: String, microsoftId: String): DatabaseAdvisory {
-        val msAdv = isMicrosoftUserAllowedToCreateAccount(microsoftId)
+    private suspend fun isAllowedToCreateAccount(discordId: String, microsoftId: String, email: String): DatabaseAdvisory {
+        val msAdv = isMicrosoftUserAllowedToCreateAccount(microsoftId, email)
         if (msAdv is Disallowed) {
             return msAdv
         }

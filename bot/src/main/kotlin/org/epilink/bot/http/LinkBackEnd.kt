@@ -347,7 +347,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         // Get information
         val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
         logger.debug { "Processing Microsoft info for registration for $id ($email)" }
-        val adv = db.isMicrosoftUserAllowedToCreateAccount(id)
+        val adv = db.isMicrosoftUserAllowedToCreateAccount(id, email)
         if (adv is Disallowed) {
             logger.debug { "Microsoft user $id ($email) is not allowed to create an account: " + adv.reason }
             call.respond(
