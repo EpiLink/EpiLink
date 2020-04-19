@@ -113,7 +113,7 @@ internal class LinkDiscord4JFacadeImpl(
                     .also { logger.debug { "Will only add " + it.joinToString(", ") { it.asString() } } }
                     .map { async { member.addRole(it).await() } }
             val removing =
-                toAdd.map { Snowflake.of(it) }
+                toRemove.map { Snowflake.of(it) }
                     .intersect(currentRoles)
                     .also { logger.debug { "Will only remove " + it.joinToString(", ") { it.asString() } } }
                     .map { async { member.removeRole(it).await() } }
