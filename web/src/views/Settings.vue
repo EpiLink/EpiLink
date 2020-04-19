@@ -13,7 +13,7 @@
                             <div class="option">
                                 <div><link-checkbox v-model="saveEmail" /></div>
                                 <div class="text">
-                                    <p class="title">Se souvenir de mon E-Mail (facultatif)</p>
+                                    <p class="title" v-html="$t('settings.remember')" />
                                     <p class="description">
                                         - Vous obtiendrez des rôles automatiquement (e.g. rôle de promotion) et vous aurez accès
                                         à des ressources restreintes<br/>
@@ -29,14 +29,14 @@
                                 <div><link-checkbox v-model="acceptConditions" /></div>
                                 <div class="text">
                                     <p class="title">
-                                        J'accepte les <a href="#">conditions générales d'utilisation</a> et la
-                                        <a href="#">politique de confidentialité</a>
+                                        {{ $t('settings.iAcceptThe') }} <a href="#" v-html="$t('settings.terms')" />
+                                        {{ $t('settings.andThe') }} <a href="#" v-html="$t('settings.policy')" />
                                     </p>
                                 </div>
                             </div>
                         </div>
                         <div id="button-container">
-                            <button id="link" :class="{ 'enabled': acceptConditions }" @click="submit">Lier mon compte</button>
+                            <button id="link" :class="{ 'enabled': acceptConditions }" @click="submit" v-html="$t('settings.link')" />
                         </div>
                     </div>
                     <div id="submitting" v-if="submitting" :key="1">
