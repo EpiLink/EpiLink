@@ -1,11 +1,66 @@
 import Vue from 'vue';
 import VueI18n from 'vue-i18n';
 
-Vue.use(VueI18n)
+Vue.use(VueI18n);
 
 const messages = {
     en: {
-        // ...
+        // Pages
+        home: {
+            welcome: 'Welcome',
+            discord: 'Log in with Discord'
+        },
+        auth: {
+            waiting: {
+                title: 'Waiting',
+                description: 'Waiting for confirmation in the separate window...'
+            },
+            fetching: {
+                title: 'Loading',
+                description: 'Retrieving information...'
+            }
+        },
+        microsoft: {
+            connect: 'Log in with Microsoft'
+        },
+        notFound: {
+            description: 'The requested page does not exist'
+        },
+        redirect: {
+            success: 'Successfully connected'
+        },
+        settings: {
+            remember: 'Remember who I am (optional)',
+
+            iAcceptThe: 'I accept the ',
+            terms: 'Terms of Services',
+            andThe: 'and the',
+            policy: 'Privacy Policy',
+
+            link: 'Link my account'
+        },
+
+        layout: {
+            cancel: 'Cancel the procedure',
+            logout: 'Log out',
+
+            navigation: {
+                instance: 'Instance',
+                privacy: 'Privacy',
+                sources: 'Sources',
+                about: 'About'
+            }
+        },
+
+        popups: {
+            discord: 'Connection to Discord',
+            microsoft: 'Connection to Microsoft'
+        },
+        steps: {
+            discord: 'Connection to Discord',
+            microsoft: 'Connection to Microsoft',
+            settings: 'Settings review'
+        }
     },
     fr: {
         // Pages
