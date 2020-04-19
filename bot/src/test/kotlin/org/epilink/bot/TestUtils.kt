@@ -18,6 +18,8 @@ import org.epilink.bot.config.LinkTokens
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.koin.test.KoinTest
 import org.koin.test.mock.declare
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import kotlin.test.assertEquals
 
 val minimalConfig = LinkConfiguration(
@@ -72,4 +74,8 @@ fun Map<String, Any?>.getMap(key: String): Map<String, Any?> =
 
 inline fun <reified T> fromJson(response: TestApplicationResponse): T {
     return jacksonObjectMapper().readValue(response.content!!)
+}
+
+fun String.sha256(): ByteArray {
+    return MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))
 }

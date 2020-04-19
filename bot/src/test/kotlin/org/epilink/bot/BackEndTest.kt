@@ -6,14 +6,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.*
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
-import org.epilink.bot.db.Allowed
-import org.epilink.bot.db.Disallowed
-import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.db.UsesTrueIdentity
+import io.mockk.*
+import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
 import org.epilink.bot.http.data.IdAccess
@@ -29,7 +23,7 @@ import kotlin.test.*
 data class ApiSuccess(
     val success: Boolean,
     val message: String?,
-    val data: Map<String, Any?>
+    val data: Map<String, Any?>?
 ) {
     init {
         assertTrue(success)
@@ -75,6 +69,7 @@ class BackEndTest : KoinBaseTest(
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/info")
             call.assertStatus(HttpStatusCode.OK)
             val data = fromJson<ApiSuccess>(call.response).data
+            assertNotNull(data)
             assertEquals("EpiLink Test Instance", data["title"])
             assertEquals(null, data.getValue("logo"))
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
@@ -120,7 +115,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkServerDatabase> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any()) } returns Allowed
+            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
@@ -128,6 +123,7 @@ class BackEndTest : KoinBaseTest(
             }
             call.assertStatus(HttpStatusCode.OK)
             val data = fromJson<ApiSuccess>(call.response).data
+            assertNotNull(data)
             assertEquals("continue", data.getString("next"))
             val regInfo = data.getMap("attachment")
             assertEquals("fakemail", regInfo.getString("email"))
@@ -145,7 +141,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkServerDatabase> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any()) } returns Disallowed("Cheh dans ta tronche")
+            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche")
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
@@ -174,7 +170,7 @@ class BackEndTest : KoinBaseTest(
             }
             call.assertStatus(HttpStatusCode.OK)
             val data = fromJson<ApiSuccess>(call.response).data
-            assertEquals("continue", data.getString("next"))
+            assertEquals("continue", data!!.getString("next"))
             val regInfo = data.getMap("attachment")
             assertEquals(null, regInfo.getValue("email"))
             assertEquals("no", regInfo.getString("discordUsername"))
@@ -202,7 +198,7 @@ class BackEndTest : KoinBaseTest(
             }
             call.assertStatus(HttpStatusCode.OK)
             val data = fromJson<ApiSuccess>(call.response).data
-            assertEquals("login", data.getString("next"))
+            assertEquals("login", data!!.getString("next"))
             assertEquals(null, data.getValue("attachment"))
             val session = call.sessions.get<ConnectedSession>()
             assertEquals(
@@ -263,7 +259,7 @@ class BackEndTest : KoinBaseTest(
         val db = mockHere<LinkServerDatabase> {
             coEvery { getUser("yes") } returns null
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any()) } returns Allowed
+            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
             coEvery { createUser(any(), any(), any(), any()) } returns mockk { every { discordId } returns "yes" }
             coEvery { isUserIdentifiable("yes") } returns true
         }
@@ -276,6 +272,7 @@ class BackEndTest : KoinBaseTest(
             }.run {
                 assertStatus(HttpStatusCode.OK)
                 val data = fromJson<ApiSuccess>(response).data
+                assertNotNull(data)
                 assertEquals("continue", data.getString("next"))
                 assertEquals("no", data.getMap("attachment").getString("discordUsername"))
                 response.headers["RegistrationSessionId"]!!
@@ -286,6 +283,7 @@ class BackEndTest : KoinBaseTest(
             }.apply {
                 assertStatus(HttpStatusCode.OK)
                 val data = fromJson<ApiSuccess>(response).data
+                assertNotNull(data)
                 assertEquals("continue", data.getString("next"))
                 assertEquals("fakemail", data.getMap("attachment").getString("email"))
                 assertEquals("no", data.getMap("attachment").getString("discordUsername"))
@@ -352,6 +350,7 @@ class BackEndTest : KoinBaseTest(
             }.apply {
                 assertStatus(HttpStatusCode.OK)
                 val data = fromJson<ApiSuccess>(response)
+                assertNotNull(data.data)
                 assertEquals("myDiscordId", data.data["discordId"])
                 assertEquals("Discordian#1234", data.data["username"])
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
@@ -377,6 +376,7 @@ class BackEndTest : KoinBaseTest(
             }.apply {
                 assertStatus(HttpStatusCode.OK)
                 val data = fromJson<ApiSuccess>(response)
+                assertNotNull(data.data)
                 assertEquals("myDiscordId", data.data["discordId"])
                 assertEquals("Discordian#1234", data.data["username"])
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
@@ -407,6 +407,7 @@ class BackEndTest : KoinBaseTest(
             }.apply {
                 assertStatus(HttpStatusCode.OK)
                 fromJson<ApiSuccess>(response).apply {
+                    assertNotNull(data)
                     assertEquals(false, data["manualAuthorsDisclosed"])
                     val list = data["accesses"] as? List<*> ?: error("Unexpected format on accesses")
                     assertEquals(2, list.size)
@@ -423,6 +424,141 @@ class BackEndTest : KoinBaseTest(
                 }
             }
         }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user identity relink with correct account`() {
+        val msftId = "MyMicrosoftId"
+        val hashMsftId = msftId.sha256()
+        val email = "e.mail@mail.maiiiil"
+        mockHere<LinkMicrosoftBackEnd> {
+            coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
+            coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
+        }
+        val rm = mockHere<LinkRoleManager> {
+            every { updateRolesOnAllGuildsLater(match { it.discordId == "userid" }) } returns mockk()
+        }
+        val sd = mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") } just runs
+        }
+        withTestEpiLink {
+            val sid = setupSession("userid", msIdHash = hashMsftId)
+            handleRequest(HttpMethod.Post, "/api/v1/user/identity") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"code":"msauth","redirectUri":"uriii"}""")
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val resp = fromJson<ApiSuccess>(response)
+                assertTrue(resp.success)
+                assertNull(resp.data)
+            }
+        }
+        coVerify { rm.updateRolesOnAllGuildsLater(any()) }
+        coVerify { sd.relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user identity relink with account already linked`() {
+        val msftId = "MyMicrosoftId"
+        val hashMsftId = msftId.sha256()
+        val mbe = mockHere<LinkMicrosoftBackEnd> {
+            coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("userid") } returns true
+        }
+        withTestEpiLink {
+            val sid = setupSession("userid", msIdHash = hashMsftId)
+            handleRequest(HttpMethod.Post, "/api/v1/user/identity") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"code":"msauth","redirectUri":"uriii"}""")
+            }.apply {
+                assertStatus(HttpStatusCode.BadRequest)
+                val resp = fromJson<ApiError>(response)
+                val err = resp.data
+                assertEquals(110, err.code)
+            }
+        }
+        coVerify { mbe.getMicrosoftToken("msauth", "uriii") } // Ensure the back-end has consumed the authcode
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user identity relink with relink error`() {
+        val msftId = "MyMicrosoftId"
+        val hashMsftId = msftId.sha256()
+        val email = "e.mail@mail.maiiiil"
+        mockHere<LinkMicrosoftBackEnd> {
+            coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
+            coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") } throws LinkEndpointException(
+                object : LinkErrorCode {
+                    override val code = 98765
+                    override val description = "Strange error WeirdChamp"
+                }, isEndUserAtFault = true
+            )
+        }
+        withTestEpiLink {
+            val sid = setupSession("userid", msIdHash = hashMsftId)
+            handleRequest(HttpMethod.Post, "/api/v1/user/identity") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"code":"msauth","redirectUri":"uriii"}""")
+            }.apply {
+                assertStatus(HttpStatusCode.BadRequest)
+                val resp = fromJson<ApiError>(response)
+                val err = resp.data
+                assertEquals(98765, err.code)
+            }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user identity deletion when no identity exists`() {
+        mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("userid") } returns false
+        }
+        withTestEpiLink {
+            val sid = setupSession("userid")
+            handleRequest(HttpMethod.Delete, "/api/v1/user/identity") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.BadRequest)
+                val resp = fromJson<ApiError>(response)
+                val err = resp.data
+                assertEquals(111, err.code)
+            }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user identity deletion success`() {
+        val sd = mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { deleteUserIdentity("userid") } just runs
+        }
+        val rm = mockHere<LinkRoleManager> {
+            every { updateRolesOnAllGuildsLater(match { it.discordId == "userid" }) } returns mockk()
+        }
+        withTestEpiLink {
+            val sid = setupSession("userid")
+            handleRequest(HttpMethod.Delete, "/api/v1/user/identity") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val resp = fromJson<ApiSuccess>(response)
+                assertNull(resp.data)
+            }
+        }
+        coVerify { sd.deleteUserIdentity("userid") }
+        coVerify { rm.updateRolesOnAllGuildsLater(any()) }
     }
 
     private fun TestApplicationEngine.setupSession(

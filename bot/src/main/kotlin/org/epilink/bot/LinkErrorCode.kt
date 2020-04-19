@@ -47,7 +47,7 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     AccountCreationNotAllowed(101, "Account creation is not allowed"),
 
     /**
-     * Sent when the authorization code is not valid (/register/authcode endpoints)
+     * Sent when the authorization code is not valid (/register/authcode and /user/identity endpoints)
      */
     InvalidAuthCode(102, "Invalid authorization code"),
 
@@ -65,6 +65,21 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
      * Sent when /register/authcode/service is used with an invalid service.
      */
     UnknownService(105, "This service is not known or does not exist"),
+
+    /**
+     * This account already has its identity recorded in the database (for the `/user/identity` endpoint)
+     */
+    IdentityAlreadyKnown(110, "The identity of this account is already registered in the database"),
+
+    /**
+     *  This account's identity cannot be removed, because it is not present in the database (for the `/user/identity` endpoint)
+     */
+    IdentityAlreadyUnknown(111, "The identity of this account already does not exist in the database"),
+
+    /**
+     * This account's identity does not match the one retrieved via the Microsoft authcode (different IDs).
+     */
+    NewIdentityDoesNotMatch(112, "This account's identity does not match the new one"),
 
     // ************ 2xx: External services errors ************
     /**

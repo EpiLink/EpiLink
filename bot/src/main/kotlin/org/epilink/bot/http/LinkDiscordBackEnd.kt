@@ -66,25 +66,23 @@ class LinkDiscordBackEnd(
                 val received = ex.response.call.receive<String>()
                 logger.debug { "Failed: received $received" }
                 val data = ObjectMapper().readValue<Map<String, Any?>>(received)
-                when (val error = data["error"] as? String) {
-                    "invalid_grant" -> throw LinkEndpointException(
-                        InvalidAuthCode,
-                        "Invalid authorization code",
-                        true,
-                        ex
-                    )
-                    else -> throw LinkEndpointException(
+                val error = data["error"] as? String
+                val isCodeError =
+                    error == "invalid_grant" ||
+                            (data["error_description"] as? String)?.contains("Invalid \"code\"") ?: false
+                if (isCodeError)
+                    throw LinkEndpointException(InvalidAuthCode, "Invalid authorization code", true, ex)
+                else
+                    throw LinkEndpointException(
                         DiscordApiFailure,
                         "Discord OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
                         false,
                         ex
                     )
-                }
+
             } else {
                 throw LinkEndpointException(
-                    DiscordApiFailure,
-                    "Failed to contact Discord API for obtaining token.",
-                    ex is ClientRequestException && ex.response.status.value == 400, ex
+                    DiscordApiFailure, "Failed to contact Discord API for obtaining token.", false, ex
                 )
             }
         }

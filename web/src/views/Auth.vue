@@ -1,7 +1,7 @@
 <template>
     <div id="auth" :class="{ 'seen': contentSeen }">
-        <h1 id="title">{{ doneWithAnimation ? 'Chargement' : 'En attente' }}</h1>
-        <span id="subtitle">{{ doneWithAnimation ? 'Récupération des informations...' : 'En attente de confirmation dans la fenêtre extérieure' }}</span>
+        <h1 id="title">{{ doneWithAnimation ? $t('auth.fetching.title') : $t('auth.waiting.title') }}</h1>
+        <span id="subtitle">{{ doneWithAnimation ?  $t('auth.fetching.description') : $t('auth.waiting.description') }}</span>
 
         <link-loading />
     </div>
