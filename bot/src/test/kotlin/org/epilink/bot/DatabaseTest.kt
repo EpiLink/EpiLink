@@ -8,8 +8,8 @@ import org.epilink.bot.db.*
 import org.epilink.bot.http.data.IdAccess
 import org.koin.dsl.module
 import org.koin.test.get
-import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
@@ -302,12 +302,93 @@ class DatabaseTest : KoinBaseTest(
         }
     }
 
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test relink fails on user already identifiable`() {
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable("userid") } returns true
+        }
+        val sd = get<LinkServerDatabase>()
+        runBlocking {
+            val exc = assertFailsWith<LinkEndpointException> {
+                sd.relinkMicrosoftIdentity("userid", "this doesn't matter", "this doesn't matter either")
+            }
+            assertEquals(110, exc.errorCode.code)
+            assertTrue(exc.isEndUserAtFault)
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test relink fails on ID mismatch`() {
+        val originalHash = "That doesn't look right".sha256()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { getUser("userid") } returns mockk {
+                every { msftIdHash } returns originalHash
+            }
+        }
+        val sd = get<LinkServerDatabase>()
+        runBlocking {
+            val exc = assertFailsWith<LinkEndpointException> {
+                sd.relinkMicrosoftIdentity("userid", "this doesn't matter", "That is definitely not okay")
+            }
+            assertEquals(112, exc.errorCode.code)
+            assertTrue(exc.isEndUserAtFault)
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test relink success`() {
+        val id = "This looks quite alright"
+        val hash = id.sha256()
+        val df = mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { getUser("userid") } returns mockk {
+                every { msftIdHash } returns hash
+            }
+            coEvery { recordNewIdentity("userid", "mynewemail@email.com") } just runs
+        }
+        val sd = get<LinkServerDatabase>()
+        runBlocking {
+            sd.relinkMicrosoftIdentity("userid", "mynewemail@email.com", id)
+        }
+        coVerify { df.recordNewIdentity("userid", "mynewemail@email.com") }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test identity removal with no identity in the first place`() {
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable("userid") } returns false
+        }
+        val sd = get<LinkServerDatabase>()
+        runBlocking {
+            val exc = assertFailsWith<LinkEndpointException> {
+                sd.deleteUserIdentity("userid")
+            }
+            assertEquals(111, exc.errorCode.code)
+            assertTrue(exc.isEndUserAtFault)
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test identity removal success`() {
+        val df = mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { eraseIdentity("userid") } just runs
+        }
+        val sd = get<LinkServerDatabase>()
+        runBlocking {
+            sd.deleteUserIdentity("userid")
+        }
+        coVerify { df.eraseIdentity("userid") }
+    }
+
     private fun <R> test(block: suspend LinkServerDatabase.() -> R) =
         runBlocking {
             block(get())
         }
-}
-
-private fun String.sha256(): ByteArray {
-    return MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))
 }
