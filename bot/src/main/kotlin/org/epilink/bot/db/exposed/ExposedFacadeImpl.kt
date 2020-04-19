@@ -134,6 +134,16 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         }
     }
 
+    @UsesTrueIdentity
+    override suspend fun recordNewIdentity(discordId: String, newEmail: String) {
+        val u = getUser(discordId) as? ExposedUser ?: throw LinkException("Unknown user $discordId")
+        newSuspendedTransaction {
+            ExposedTrueIdentity.new {
+                user = u
+                email = newEmail
+            }
+        }
+    }
 }
 
 /**

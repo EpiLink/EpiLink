@@ -54,6 +54,19 @@ interface LinkDatabaseFacade {
     ): LinkUser
 
     /**
+     * Record the new identity for the given user. This function does not perform any checks on the given parameters,
+     * it is the caller's job to check that the parameters are correct.
+     *
+     * Do not call this after calling [recordNewUser] if you are only creating a new account, [recordNewUser] also
+     * records the identity of its `keepIdentity` is true. This function should only be used in cases where the user
+     * already exists but does not have his identity recorded in the database
+     *
+     * @param discordId The Discord ID the new e-mail address should be associated to
+     * @param newEmail The e-mail address to associate with the Discord ID
+     */
+    suspend fun recordNewIdentity(discordId: String, newEmail: String)
+
+    /**
      * Checks whether the given Discord ID has its identity linked to it.
      *
      * @throws LinkException Thrown if no user exists with the given Discord ID

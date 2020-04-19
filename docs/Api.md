@@ -49,17 +49,19 @@ More information can usually be found in the [ApiResponse](#apiresponse)'s messa
 
 ##### 1xx codes
 
-These codes are specific for the registration process.
+These codes are specific for the registration and identity modification processes.
 
 | Code | Description |
 |:----:| ----------- |
 | 100 | The registration request is missing some elements |
 | 101 | Account creation is not allowed |
-| 102 | Invalid authorization code (for `/register/authcode` endpoints) |
+| 102 | Invalid authorization code (for `/register/authcode` and `/user/identity` endpoints) |
 | 103 | This account does not have any attached email address |
 | 104 | This account does not have any ID |
 | 105 | This service is not known or does not exist (for `/register/authcode` endpoints) |
-
+| 110 | This account already has its identity recorded in the database (for the `/user/identity` endpoint) |
+| 111 | This account's identity cannot be removed, because it is not present in the database (for the `/user/identity` endpoint) |
+| 112 | This account's identity does not match the one retrieved via the authcode (different IDs). |
 
 ##### 2xx codes
 
@@ -373,4 +375,26 @@ Returns a [UserInformation](#userinformation) object about the currently logged 
 GET /api/v1/user/idaccesslogs
 ```
 
-Returns an [IdAccessLogs](#idaccesslogs) object about the currently logged in user. 
+Returns an [IdAccessLogs](#idaccesslogs) object about the currently logged in user.
+
+### POST /user/identity
+
+**Add a Microsoft ID to the account if the identity was previously not registered**
+
+```http request
+POST /api/v1/user/identity
+SessionId: abcdef1234 # mandatory
+Content-Type: application/json # mandatory
+```
+
+The request content is a JSON [RegistrationAuthCode](#registrationauthcode).
+
+This endpoint uses the provided Microsoft authorization code to record the e-mail address of the account in the database. Note that the Microsoft account retrieved via the authorization code must be the one that was used for creating the account in the first place -- otherwise, the operation fails with [a 112 error code](#error-codes).
+
+Returns a classic success [API response](#apiresponse) if successful (with HTTP Code 200), or an API error otherwise.
+
+Error codes 102 (wrong authcode), 110 (identity already kept), and 112 (identity does not match) are particularly relevant here. [See all error codes](#error-codes).
+
+Note that the back-end will always consume the authorization code, although it will discard the retrieved token immediately in case of an error (e.g. already linked).
+
+Upon success, triggers a role update.
