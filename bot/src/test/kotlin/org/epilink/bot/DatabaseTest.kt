@@ -185,7 +185,10 @@ class DatabaseTest : KoinBaseTest(
             })
         }
         test {
-            val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
+            val adv = canUserJoinServers(mockk {
+                every { msftIdHash } returns hey
+                every { discordId } returns "banneduid"
+            })
             assertTrue(adv is Disallowed, "Expected disallowed")
         }
     }
@@ -199,7 +202,10 @@ class DatabaseTest : KoinBaseTest(
             })
         }
         test {
-            val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
+            val adv = canUserJoinServers(mockk {
+                every { msftIdHash } returns hey
+                every { discordId } returns "banneduid"
+            })
             assertTrue(adv is Disallowed, "Expected disallowed")
         }
     }

@@ -437,7 +437,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
         }
         val rm = mockHere<LinkRoleManager> {
-            every { updateRolesOnAllGuildsLater(match { it.discordId == "userid" }) } returns mockk()
+            every { updateRolesOnAllGuildsLater("userid") } returns mockk()
         }
         val sd = mockHere<LinkServerDatabase> {
             coEvery { isUserIdentifiable("userid") } returns false
@@ -545,7 +545,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { deleteUserIdentity("userid") } just runs
         }
         val rm = mockHere<LinkRoleManager> {
-            every { updateRolesOnAllGuildsLater(match { it.discordId == "userid" }) } returns mockk()
+            every { updateRolesOnAllGuildsLater("userid") } returns mockk()
         }
         withTestEpiLink {
             val sid = setupSession("userid")
