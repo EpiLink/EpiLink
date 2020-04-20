@@ -35,6 +35,11 @@ interface LinkBan {
      * The time at which the ban expires, or null if the ban does not expire
      */
     val expiresOn: Instant?
+
+    /**
+     * The time at which the ban was created
+     */
+    val issued: Instant
 }
 
 /**

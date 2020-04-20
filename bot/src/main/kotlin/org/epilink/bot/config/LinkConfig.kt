@@ -63,7 +63,25 @@ data class LinkWebServerConfiguration(
     /**
      * The URL to the front-end, with a trailing slash, or null if the front-end is bundled
      */
-    val frontendUrl: String?
+    val frontendUrl: String?,
+    /**
+     * A list of footers that should be displayed in the front-end
+     */
+    val footers: List<LinkFooterUrl> = listOf()
+)
+
+/**
+ * A footer that should be displayed in the front-end
+ */
+data class LinkFooterUrl(
+    /**
+     * The name (title) of the link, displayed in the front-end
+     */
+    val name: String,
+    /**
+     * The actual URL
+     */
+    val url: String
 )
 
 /**

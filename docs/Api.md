@@ -106,13 +106,25 @@ These endpoints can be used to retrieve information from the back-end that is us
   "logo": "https://url.to/instance/logo", // nullable
   "authorizeStub_msft": "...",
   "authorizeStub_discord": "...",
-  "idPrompt": "..."
+  "idPrompt": "...",
+  "footerUrls": [ /* ... */ ] 
 }
 ```
 
 The `authorizeStub` values are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
 
 `idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. It is inline HTML that is meant to be embedded within a web page.
+
+`footerUrls` is a list of [FooterUrl](#footerurl) objects, each describing a link that should be displayed in the footer. These links are customized by the back-end.
+
+#### FooterUrl
+
+```json5
+{
+  "name": "URL Title",
+  "url": "https://..."
+}
+```
 
 ### GET /meta/info
 
@@ -378,6 +390,17 @@ SessionId: abcdef123456 # mandatory
 ```
 
 Returns a [UserInformation](#userinformation) object about the currently logged in user.
+
+### POST /user/logout
+
+**Logs the user out and deletes session information on the back-end.**
+
+```http request
+POST /api/v1/user/logout
+SessionId: abcdef123456 # mandatory
+```
+
+Replies with a regular, no data successful [ApiResponse](#apiresponse).
 
 ### GET /user/idaccesslogs
 
