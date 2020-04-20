@@ -10,7 +10,6 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.`java-time`.timestamp
-import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 
@@ -232,6 +231,11 @@ private object ExposedBans : IntIdTable("Bans") {
      * temporary ban.
      */
     var expiresOn = timestamp("expiresOn").nullable()
+
+    /**
+     * The time at which the ban was issued
+     */
+    var issued = timestamp("issued")
 }
 
 /**
@@ -257,6 +261,11 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
      * @see ExposedBans.expiresOn
      */
     override var expiresOn by ExposedBans.expiresOn
+
+    /**
+     * The time at which the ban was created
+     */
+    override var issued by ExposedBans.issued
 }
 
 /**

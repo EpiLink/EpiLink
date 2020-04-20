@@ -51,12 +51,17 @@ server:
   port: 9090
   sessionDuration: 2592000000
   frontendUrl: ~
+  footers: # optional
+    - name: My Footer Url
+      url: "https://myawesome.com"
+    - name: Hello
+      url: "https://example.com"
 ```
 
 * `port`: The port on which the back-end will be served
 * `sessionDuration`: Unused at the moment.
 * `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
-
+* `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 
 ### Credentials
 

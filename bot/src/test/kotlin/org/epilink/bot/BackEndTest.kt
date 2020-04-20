@@ -7,6 +7,8 @@ import io.ktor.server.testing.*
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.mockk.*
+import org.epilink.bot.config.LinkFooterUrl
+import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
@@ -65,6 +67,12 @@ class BackEndTest : KoinBaseTest(
         mockHere<LinkLegalTexts> {
             every { idPrompt } returns "My id prompt text is the best"
         }
+        mockHere<LinkWebServerConfiguration> {
+            every { footers } returns listOf(
+                LinkFooterUrl("Hello", "https://hello"),
+                LinkFooterUrl("Heeeey", "/macarena")
+            )
+        }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/info")
             call.assertStatus(HttpStatusCode.OK)
@@ -75,6 +83,10 @@ class BackEndTest : KoinBaseTest(
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
             assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
             assertEquals("My id prompt text is the best", data.getString("idPrompt"))
+            val footers = data.getListOfMaps("footerUrls")
+            assertEquals(2, footers.size)
+            assertTrue(footers.any { it["name"] == "Hello" && it["url"] == "https://hello" })
+            assertTrue(footers.any { it["name"] == "Heeeey" && it["url"] == "/macarena"})
         }
     }
 
@@ -559,6 +571,20 @@ class BackEndTest : KoinBaseTest(
         }
         coVerify { sd.deleteUserIdentity("userid") }
         coVerify { rm.updateRolesOnAllGuildsLater(any()) }
+    }
+
+    @Test
+    fun `Test user log out`() {
+        withTestEpiLink {
+            val sid = setupSession()
+            handleRequest(HttpMethod.Post, "/api/v1/user/logout") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                assertNull(fromJson<ApiSuccess>(response).data)
+                assertNull(sessions.get<ConnectedSession>())
+            }
+        }
     }
 
     private fun TestApplicationEngine.setupSession(

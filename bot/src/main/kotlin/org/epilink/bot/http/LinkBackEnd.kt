@@ -22,6 +22,7 @@ import io.ktor.sessions.*
 import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.*
+import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser
@@ -67,6 +68,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     private val storageProvider: SessionStorageProvider by inject()
 
     private val legal: LinkLegalTexts by inject()
+
+    private val wsCfg: LinkWebServerConfiguration by inject()
 
     override fun Application.epilinkApiModule() {
         /*
@@ -176,6 +179,12 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 logger.info("Generating access logs for a user")
                 logger.debug { "Generating access logs for ${session.discordId} (${session.discordUsername})" }
                 call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
+            }
+
+            @ApiEndpoint("POST /api/v1/user/logout")
+            post("logout") {
+                call.sessions.clear<ConnectedSession>()
+                call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out"))
             }
 
             @ApiEndpoint("POST /api/v1/user/identity")
@@ -302,7 +311,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             logo = null, // TODO add a cfg entry for the logo
             authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
             authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
-            idPrompt = legal.idPrompt
+            idPrompt = legal.idPrompt,
+            footerUrls = wsCfg.footers
         )
 
     /**

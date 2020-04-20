@@ -1,5 +1,7 @@
 package org.epilink.bot
 
+import com.fasterxml.jackson.core.JsonParseException
+import com.fasterxml.jackson.databind.JsonMappingException
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.mainBody
@@ -51,7 +53,16 @@ fun main(args: Array<String>) = mainBody("epilink") {
     logger.debug("Loading configuration")
 
     val cfgPath = Paths.get(cliArgs.config)
-    val cfg = loadConfigFromFile(cfgPath)
+    val cfg = runCatching { loadConfigFromFile(cfgPath) }.getOrElse { exc ->
+        logger.debug(exc) { "Encountered exception on config load" }
+        when (exc) {
+            is java.nio.file.NoSuchFileException -> logger.error("Failed to load config, could not find config file $cfgPath")
+            is JsonParseException -> logger.error("Failed to parse YAML file, wrong syntax: ${exc.message}")
+            is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
+            else -> logger.error("Encountered an unexpected exception on config load", exc)
+        }
+        exitProcess(123)
+    }
 
     if (cfg.discord.rulebook != null && cfg.discord.rulebookFile != null) {
         logger.error("Your configuration defines both a rulebook and a rulebookFile: please only use one of those.")
