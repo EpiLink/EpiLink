@@ -193,11 +193,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 }
                 val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
                 db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
-                val u = db.getUser(session.discordId)
-                if (u == null)
-                    logger.error("User is null when it's not supposed to be after relink")
-                else
-                    roleManager.updateRolesOnAllGuildsLater(u)
+                roleManager.updateRolesOnAllGuildsLater(session.discordId)
                 call.respond(apiSuccess("Successfully relinked Microsoft account"))
             }
 
@@ -207,10 +203,10 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 val session = call.sessions.get<ConnectedSession>()!!
                 if (db.isUserIdentifiable(session.discordId)) {
                     db.deleteUserIdentity(session.discordId)
-                    roleManager.updateRolesOnAllGuildsLater(db.getUser(session.discordId)!!)
+                    roleManager.updateRolesOnAllGuildsLater(session.discordId)
                     call.respond(apiSuccess("Successfully deleted identity"))
                 } else {
-                    throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+                    throw LinkEndpointException(IdentityAlreadyUnknown, isEndUserAtFault = true)
                 }
             }
         }
@@ -258,14 +254,14 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                             )
                         )
                     } else {
-                        val sesid = call.request.header("RegistrationSessionId")
-                        logger.debug { "Completing registration session for $sesid" }
+                        val regSessionId = call.request.header("RegistrationSessionId")
+                        logger.debug { "Completing registration session for $regSessionId" }
                         val options: AdditionalRegistrationOptions =
                             call.receiveCatching() ?: return@post
                         val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
-                        roleManager.updateRolesOnAllGuildsLater(u)
+                        roleManager.updateRolesOnAllGuildsLater(u.discordId)
                         call.loginAs(u, discordUsername, discordAvatarUrl)
-                        logger.debug { "Completed registration session. $sesid logged in and reg session cleared." }
+                        logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
                         call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
                     }
                 }
