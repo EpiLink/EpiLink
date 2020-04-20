@@ -110,9 +110,9 @@ These endpoints can be used to retrieve information from the back-end that is us
 }
 ```
 
-`authorizeStub` are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
+The `authorizeStub` values are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
 
-`idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. Inline HTML that is meant to be embedded within a web page.
+`idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. It is inline HTML that is meant to be embedded within a web page.
 
 ### GET /meta/info
 
@@ -169,13 +169,25 @@ The OAuth2 design is like so:
 * The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get a stub of the authorization URL using [`/meta/info`](#get-metainfo). You only need to add a `redirect_uri` there.
 * The consumer then sends this access code with the [`POST /register/authcode/<service>`](#post-registerauthcodeservice)
   endpoints.
+  
+### Registration + Log in flow
+
+The registration process roughly looks like this:
+
+* Get a `SessionRegisterId`, which you can get from any endpoint. We recommend using [the `/register/info`](#get-information---get-registerinfo) endpoint
+* Provide a Microsoft or Discord authorization code using [the `/register/authcode/service`](#post-registerauthcodeservice) endpoints
+* Provide the other authorization code using the other authorization code endpoint. (e.g. if you started with Discord, provide the Microsoft code next)
+* Complete the registration by calling [the `/register` endpoint](#post-register) with whether or not the user wants to have their identity kept in the system. The account has been created, congrats!
+
+At any point, a registration session can be cancelled using the [DELETE `/register`](#delete-register) endpoint.
+
+EpiLink has **no dedicated log in flow.** We recommend that you simply use the registration flow for everything and first start with the Discord authorization code. Once that code has been obtained, you can just check whether the back-end asks you to continue with the registration procedure or has logged the user in.
 
 ### Objects
 
 #### RegistrationInformation
 
-This object provides information on the current registration's process status and information. It can be obtained by
-calling [`GET /register/info`](#get-information---get-registerinfo) or in the responses of most endpoints.
+This object provides information on the current registration process' status and information. It can be obtained by calling [`GET /register/info`](#get-information---get-registerinfo) and can be found in the responses of most registration endpoints.
 
 ```json5
 {
@@ -275,7 +287,7 @@ Response: a [RegistrationContinuation](#registrationcontinuation).
 * HTTP error, no body: There was an error processing the request, usually internal 
 * HTTP error with API response body (success set to false and message non-null): You can display the message to the user safely. It may, for example, tell the user that he is banned. The [error code](#error-codes) in the [attached data](#errordata) will tell you more about which error happened. [Error code 101](#1xx-codes) (Account creation is not allowed) is very relevant here.
 * The continuation's `next` is set to `continue`: You can go on with the registration requests.
-* The continuation's `next` is set to `login`: The registration is no longer valid, and the user has been logged in. The response has SessionId header that you can use right away. 
+* The continuation's `next` is set to `login`: The registration is no longer valid, and the user has been logged in. The response has a SessionId header that you can use right away. 
 
 ### POST /register
 
@@ -352,8 +364,8 @@ Represents a single ID access.
 ```
 
 * `automated`: True if the request was conducted by a bot, false otherwise
-* `author`: The name of the author. No particular format is guaranteed, but this name should be enough for a human to distinguish who conducted the request. Null if the author is not available to the user.
-* `reason`: The human-readable reason for the access.
+* `author`: The name of the author. No particular format is guaranteed, but this name should be enough for a human to distinguish who conducted the request. Null if the author is not available to the user -- while the author is always logged on the back-end, a policy can be set to prevent users from accessing the identity of the requester in specific cases.
+* `reason`: The human-readable reason for the access. Again, no particular format is guaranteed.
 * `timestamp`: A ISO-8601 Instant of when the request happened, always in UTC (the `Z` at the end).
 
 ### GET /user

@@ -11,7 +11,7 @@ There are (or, rather, will be) several ways of deploying EpiLink:
 - All-in-one package (includes back-end, front-end and JRE, optionally a Redis server)
 - Separate packages (one for back-end, one for front-end, requires a JRE and Redis server to be installed) 
 
-All-in-one is recommended for most use cases, although it is not necessarily the most secure or fastest one.
+All-in-one is recommended for most use cases, although it is not necessarily the fastest option.
 
 You will also need a Redis server. A ready-to-use Redis server may be included in all-in-one packages.
 
@@ -25,7 +25,7 @@ EpiLink should typically be ran like so: `path/to/epilink path/to/config/file/ep
 
 The most important part of EpiLink is the configuration file.
 
-The reference configuration has all the information you need. This page has more details.
+The reference configuration has all the information you need. This page has more details on what to fill in, when and where.
 
 The standard name for the configuration file is `epilink_config.yaml`, although this is just a convention and you can
 use any name you like.
@@ -42,19 +42,17 @@ redis: "redis://localhost:6379"
 
 * `db`: This is the location of the SQLite database. Use a full, absolute path instead of a relative path just to be on the safe side.
 
-* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion) and `el_reg_` (EpiLink REGistration) prefixes for all of its keys. This value can also be `~` to use an in-memory storage, but this is not recommended and should only be used for development purposes. Values are never cleared from the memory, resulting in leaks everywhere.
+* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion) and `el_reg_` (EpiLink REGistration) prefixes for all of its keys. This value can also be `~` to use an in-memory storage, but this is **not recommended** and should only be used for development purposes. Values are never cleared from the memory when using in-memory storage, resulting in leaks everywhere. Keys are not timed out either, nor are they saved in-between runs, so really only use that when you want to test or develop on EpiLink.
 
 ### HTTP Server Settings
 
 ```yaml
 server:
   port: 9090
-  sessionDuration: 2592000000
   frontendUrl: ~
 ```
 
 * `port`: The port on which the back-end will be served
-* `sessionDuration`: Unused at the moment.
 * `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
 
 
@@ -90,9 +88,11 @@ The Bot section on Discord's developer portal will determine what the applicatio
 
 ##### Choosing an account and tenants
 
-Before starting, you must question *where* your app will live. If your app will live inside a company or school, you should do this entire procedure from your company or school account, and, if there is only one Azure tenant, choose the "account in my organization" option. EpiLink will work fine with just your regular Microsoft account, but this is not recommended.
+Before starting, you must determine *where* your app will live. If your app will live inside a company or school, you should do this entire procedure from your company or school account, and, if there is only one Azure tenant, choose the "account in my organization" option. EpiLink will work fine with just your regular Microsoft account, but this is not recommended.
 
 EpiLink allows you to define a tenant in the configuration file directly, so just choose what makes sense for your use case. 
+
+If you need to support multiple tenants and have to resort to tenants like `common`, which allow using any Microsoft account, you can tell EpiLink to validate only some e-mail addresses based on rules you define in the rulebook. See [this section](Rulebooks.md#e-mail-validation) for more information.
 
 ##### Registering EpiLink
 
@@ -111,7 +111,7 @@ You will need to create a secret manually, as Azure AD does not create one for y
 | Overview -> Application (client) ID      | `msftOAuthClientId`     |
 | Certificates & Secrets -> Client secrets | `msftOAuthSecret`       |
 
-{TODO Add redirect_uri information}
+You must also set redirection URIs. Use your front-end domain name and protocol (e.g. "https://myfrontend.com") followed by `/redirect/microsoft`.
 
 ##### Tenant
 
@@ -136,7 +136,7 @@ discord:
     - ...
 ```
 
-* `welcomeUrl`: The URL the bot will send. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can customize the message with `welcomeEmbed` in each server. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
+* `welcomeUrl`: The URL the bot will send in the default welcome message. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can use a custom embed instead of the default one with `welcomeEmbed` in each server -- the `welcomeUrl` value is ignored for servers which use a custom welcome embed. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
 * `roles` *(optional, empty list `[]` by default)*: A list of [custom roles specifications](#discord-custom-roles-configuration). You can omit it if you do not use custom roles.
 * `servers`: A list of [server configurations](#discord-server-configuration).
 
@@ -154,7 +154,7 @@ Depending on the situation, a server may or may not be *monitored*. A *monitored
   rule: MyRule
 ```
 
-This section is used to define roles that are defined by [rules](/docs/Rulebooks.md): more specifically, which rules determine which role.
+This section is used to define roles that are defined by [rules](/docs/Rulebooks.md): more specifically, what roles determined by what rules.
 
 Each element is made of:
 
@@ -191,12 +191,12 @@ EpiLink needs to know how to convert roles it determines should be added to the 
 
 The specification simply consists in the EpiLink role name on the left, a colon, and the Discord ID of the role that should be bound to that EpiLink role on the right.
 
-The EpiLink role name begins with a `_` to indicate that it is a role EpiLink determines automatically:
+The EpiLink role names that begin with a `_` are roles that EpiLink determines automatically:
 
 * `_known`: The user has an account at EpiLink, is not banned and is authenticated. Use this role when you need to know that the user is part of the organization.
 * `_identified`: The user is `_known` and also has his true identity kept in the system. That is, you could potentially get their e-mail address. Use this role when you need to also be able to determine who the user is at any time.
 
-Role names that do not begin with a `_` are custom roles you define through rules. This feature is not implemented yet.
+Role names that do not begin with a `_` are custom roles you define through [rules in rulebooks](Rulebooks.md).
 
 You do not have to specify all possible roles in the server role specification. EpiLink will ignore any role that does not match, is not recognized, or is not defined.
 
@@ -253,7 +253,7 @@ Custom roles can be determined using custom rules, and you can additionally vali
 * You can put the rulebook in a separate file (using `rulebookFile`). The value of `rulebookFile` is the path to the rulebook file **relative to the configuration file**. If the rulebook named `epilink.rule.kts` is located in the same folder as your config file, you can just use `rulebookFile: epilink.rule.kts`
 * Using *both* `rulebook` and `rulebookFile` at the same time will result in an error upon launching EpiLink.
 
-A note in case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, all addresses will be treated as valid.
+A note in case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, all e-mail addresses will be treated as valid.
 
 ### Privacy configuration
 

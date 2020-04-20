@@ -27,7 +27,7 @@ The build tools can mostly download themselves and download all of the dependenc
 
 ## Front-end
 
-Note that most of these internally call NPM with specific arguments. NPM is automatically detected, or downloaded if you do not have it on your system.
+Note that most of these internally call NPM with specific arguments. NPM is automatically detected and it is downloaded if you do not have it on your system.
 
 ### Running (dev)
 
@@ -74,7 +74,7 @@ The back-end requires a config file (check the [maintainer guide](MaintainerGuid
 
 You can copy-paste it and rename it to `epilink_config_real.yaml` and launch the back-end with `./gradlew run --args="config/epilink_config_real.yaml"`. The `epilink_config_real.yaml` file is ignored by Git in our `.gitignore` for this purpose.
 
-The back-end is served under whicherver port [you specified in the configuration file](MaintainerGuide.md#http-server-settings).
+The back-end is served under whichever port [you specified in the configuration file](MaintainerGuide.md#http-server-settings).
 
 ### Building (prod)
 
