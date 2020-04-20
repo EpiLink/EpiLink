@@ -367,6 +367,17 @@ SessionId: abcdef123456 # mandatory
 
 Returns a [UserInformation](#userinformation) object about the currently logged in user.
 
+### POST /user/logout
+
+**Logs the user out and deletes session information on the back-end.**
+
+```http request
+POST /api/v1/user/logout
+SessionId: abcdef123456 # mandatory
+```
+
+Replies with a regular, no data successful [ApiResponse](#apiresponse).
+
 ### GET /user/idaccesslogs
 
 **Get all identity accesses for the currently logged in user.**

@@ -561,6 +561,20 @@ class BackEndTest : KoinBaseTest(
         coVerify { rm.updateRolesOnAllGuildsLater(any()) }
     }
 
+    @Test
+    fun `Test user log out`() {
+        withTestEpiLink {
+            val sid = setupSession()
+            handleRequest(HttpMethod.Post, "/api/v1/user/logout") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                assertNull(fromJson<ApiSuccess>(response).data)
+                assertNull(sessions.get<ConnectedSession>())
+            }
+        }
+    }
+
     private fun TestApplicationEngine.setupSession(
         discId: String = "discordid",
         discUsername: String = "discorduser#1234",

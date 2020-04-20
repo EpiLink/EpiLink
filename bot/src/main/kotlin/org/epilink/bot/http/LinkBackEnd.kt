@@ -178,6 +178,12 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
             }
 
+            @ApiEndpoint("POST /api/v1/user/logout")
+            post("logout") {
+                call.sessions.clear<ConnectedSession>()
+                call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out"))
+            }
+
             @ApiEndpoint("POST /api/v1/user/identity")
             @OptIn(UsesTrueIdentity::class)
             post("identity") {
