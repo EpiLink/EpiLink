@@ -193,11 +193,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 }
                 val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
                 db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
-                val u = db.getUser(session.discordId)
-                if (u == null)
-                    logger.error("User is null when it's not supposed to be after relink")
-                else
-                    roleManager.updateRolesOnAllGuildsLater(u)
+                roleManager.updateRolesOnAllGuildsLater(session.discordId)
                 call.respond(apiSuccess("Successfully relinked Microsoft account"))
             }
 
@@ -207,10 +203,10 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 val session = call.sessions.get<ConnectedSession>()!!
                 if (db.isUserIdentifiable(session.discordId)) {
                     db.deleteUserIdentity(session.discordId)
-                    roleManager.updateRolesOnAllGuildsLater(db.getUser(session.discordId)!!)
+                    roleManager.updateRolesOnAllGuildsLater(session.discordId)
                     call.respond(apiSuccess("Successfully deleted identity"))
                 } else {
-                    throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+                    throw LinkEndpointException(IdentityAlreadyUnknown, isEndUserAtFault = true)
                 }
             }
         }
