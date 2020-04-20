@@ -11,6 +11,10 @@ server:
   # The URL of the front-end, WITH a trailing slash /, or null if the URL is unknown
   # Leave as ~ if the front-end is bootstrapped (i.e. the front-end is served on the same server as the back-end)
   frontendUrl: ~
+  # An optional list of custom footers that should be shown on the front-end
+  footers: # optional
+    - name: My Footer URL
+      url: "https://example.com"
 
 # Name and location of the EpiLink SQLite database
 db: epilink.db

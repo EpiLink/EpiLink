@@ -72,6 +72,10 @@ fun Map<String, Any?>.getString(key: String): String =
 fun Map<String, Any?>.getMap(key: String): Map<String, Any?> =
     this.getValue(key) as Map<String, Any?>
 
+@Suppress("UNCHECKED_CAST")
+fun Map<String, Any?>.getListOfMaps(key: String): List<Map<String, Any?>> =
+    this.getValue(key) as List<Map<String, Any?>>
+
 inline fun <reified T> fromJson(response: TestApplicationResponse): T {
     return jacksonObjectMapper().readValue(response.content!!)
 }
