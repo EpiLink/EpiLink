@@ -1,9 +1,20 @@
 <template>
-    <div id="auth" :class="{ 'seen': contentSeen }">
-        <h1 id="title">{{ doneWithAnimation ? $t('auth.fetching.title') : $t('auth.waiting.title') }}</h1>
-        <span id="subtitle">{{ doneWithAnimation ?  $t('auth.fetching.description') : $t('auth.waiting.description') }}</span>
+    <div id="auth">
+        <transition name="fade" mode="out-in">
+            <div id="waiting" class="auth-dialog" v-if="!fetching" :key="0">
+                <h1 class="title" v-html="$t('auth.waiting.title')" />
+                <span class="subtitle" v-html="$t('auth.waiting.description')" />
 
-        <link-loading />
+                <link-loading />
+            </div>
+
+            <div id="fetching" class="auth-dialog" v-if="fetching" :key="1">
+                <h1 class="title" v-html="$t('auth.fetching.title')" />
+                <span class="subtitle" v-html="$t('auth.fetching.description')" />
+
+                <link-loading />
+            </div>
+        </transition>
     </div>
 </template>
 
@@ -39,9 +50,7 @@
         data() {
             return {
                 closeListener: null,
-                done: false,
-                doneWithAnimation: false,
-                contentSeen: true
+                fetching: false
             }
         },
         methods: {
@@ -51,15 +60,8 @@
                 }
 
                 if (msg.data.code) {
-                    this.done = true;
+                    this.fetching = true;
                     this.onDestroy();
-
-                    this.contentSeen = false;
-
-                    setTimeout(() => {
-                        this.contentSeen = true;
-                        this.doneWithAnimation = true;
-                    }, 200);
 
                     const service = this.$route.params.service;
                     console.log(`Received code for service ${service}`);
@@ -89,30 +91,24 @@
 </script>
 
 <style lang="scss" scoped>
-    #auth {
+    #auth, .auth-dialog {
         display: flex;
-        flex-direction: column;
         justify-content: center;
-        align-items: center;
-
-        & * { // We do this here to keep the router transition working correctly
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        &.seen * {
-            opacity: 1;
-        }
     }
 
-    #title {
+    .auth-dialog {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .title {
         margin: 0;
         padding: 0;
 
         font-size: 48px;
     }
 
-    #subtitle {
+    .subtitle {
         margin-top: 35px;
         font-size: 17px;
     }
