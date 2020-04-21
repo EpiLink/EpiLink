@@ -28,7 +28,7 @@ const messages = {
         },
         redirect: {
             success: 'Successfully connected',
-            failure: 'Connection refused'
+            failure: 'Connection denied'
         },
         settings: {
             remember: 'Remember who I am (optional)',
