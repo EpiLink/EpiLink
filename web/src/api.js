@@ -1,7 +1,3 @@
-const API_URL = 'http://localhost:9090/api/v1'; // TODO: Env
-
-// Handle down backend ?
-
 const UNLOGGED_TOKEN_HEADER = 'RegistrationSessionId';
 const LOGGED_TOKEN_HEADER = 'SessionId';
 
@@ -72,7 +68,7 @@ export default async function(method, path, body) {
         params.headers[session.type === 'unlogged' ? UNLOGGED_TOKEN_HEADER : LOGGED_TOKEN_HEADER] = session.token;
     }
 
-    const result = await fetch(API_URL + path, params);
+    const result = await fetch(BACKEND_URL + path, params);
     const text = await result.text();
     if (!text) {
         console.warn(`API returned an empty response during request '${method} ${path}'`);

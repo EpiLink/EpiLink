@@ -7,7 +7,7 @@
     "url": "git+https://github.com/Litarvan/EpiLink.git"
   },
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "cross-env BACKEND_URL=http://localhost:9090/api/v1 \"vue-cli-service serve\"",
     "prod": "vue-cli-service build"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "@vue/cli-service": "~4.2.0",
     "vue-template-compiler": "^2.6.11",
     "sass-loader": "^8.0.2",
-    "sass": "^1.26.3"
+    "sass": "^1.26.3",
+    "cross-env": "^7.0.2"
   }
 }
