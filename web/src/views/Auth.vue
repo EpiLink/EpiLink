@@ -55,6 +55,7 @@
                     this.onDestroy();
 
                     this.contentSeen = false;
+
                     setTimeout(() => {
                         this.contentSeen = true;
                         this.doneWithAnimation = true;

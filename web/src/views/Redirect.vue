@@ -33,6 +33,8 @@
 
             if (!query || !query.startsWith('?code=')) {
                 this.status = false;
+                setTimeout(() => window.close(), 1250);
+
                 return;
             }
 
@@ -46,7 +48,7 @@
             this.status = true;
 
             setTimeout(() => {
-                window.opener.postMessage({ code, status: this.status });
+                window.opener.postMessage({ code });
                 window.close();
             }, 1250);
         },
