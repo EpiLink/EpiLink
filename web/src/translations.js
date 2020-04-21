@@ -18,6 +18,11 @@ const messages = {
             fetching: {
                 title: 'Loading',
                 description: 'Retrieving information...'
+            },
+            error: {
+                title: 'Error',
+                description: 'An error was encountered',
+                back: 'Go back'
             }
         },
         microsoft: {
@@ -77,6 +82,11 @@ const messages = {
             fetching: {
                 title: 'Chargement',
                 description: 'Récupération des informations...'
+            },
+            error: {
+                title: 'Erreur',
+                description: 'Une erreur a été rencontrée',
+                back: 'Retour'
             }
         },
         microsoft: {
