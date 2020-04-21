@@ -39,8 +39,14 @@
                             <button id="link" :class="{ 'enabled': acceptConditions }" @click="submit" v-html="$t('settings.link')" />
                         </div>
                     </div>
-                    <div id="submitting" v-if="submitting" :key="1">
+                    <div id="submitting" v-if="submitting && !error" :key="1">
                         <link-loading />
+                    </div>
+                    <div id="error" v-if="error" :key="2">
+                        <h1 class="title" v-html="$t('settings.error')" />
+                        <span class="message" v-html="error" />
+
+                        <a class="retry" v-html="$t('settings.retry')" @click="retry" />
                     </div>
                 </transition>
             </div>
@@ -71,7 +77,8 @@
                 seen: false,
                 saveEmail: false,
                 acceptConditions: false,
-                submitting: false
+                submitting: false,
+                error: null
             }
         },
         methods: {
@@ -83,7 +90,12 @@
                 this.submitting = true;
 
                 this.$store.dispatch('register', this.saveEmail) // TODO: Handle errors
-                    .then(() => this.$router.push({ name: 'profile' }));
+                    .then(() => this.$router.push({ name: 'profile' }))
+                    .catch(err => this.error = err);
+            },
+            retry() {
+                this.submitting = false;
+                this.error = false;
             }
         }
     }
@@ -204,5 +216,27 @@
         display: flex;
         justify-content: center;
         align-items: center;
+    }
+
+    #error {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        .message {
+            text-align: center;
+
+            font-style: italic;
+            color: #C01616;
+        }
+
+        .retry {
+            margin-top: 25px;
+
+            cursor: pointer;
+
+            font-size: 22px;
+        }
     }
 </style>

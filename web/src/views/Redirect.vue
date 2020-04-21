@@ -118,17 +118,21 @@
 
             border-radius: 4px;
 
-            animation: fade 0.5s 0.5s ease 1 both;
+            animation: fade 0.3s ease 1 both;
         }
 
         #cross-left {
             transform: rotate(45deg) translateY(-22px);
             border-right: solid 15px white;
+
+            animation-delay: 0.75s;
         }
 
         #cross-right {
             transform: rotate(-45deg) translateY(-22px);
             border-left: solid 15px white;
+
+            animation-delay: 0.4s;
         }
     }
 

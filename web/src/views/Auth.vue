@@ -127,12 +127,15 @@
     }
 
     .error {
+        text-align: center;
+
         font-style: italic;
         color: #C01616;
     }
 
     .return {
         margin-top: 35px;
+
         cursor: pointer;
 
         font-size: 22px;

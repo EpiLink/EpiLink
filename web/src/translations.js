@@ -43,7 +43,10 @@ const messages = {
             andThe: 'and the',
             policy: 'Privacy Policy',
 
-            link: 'Link my account'
+            link: 'Link my account',
+
+            error: 'Error',
+            retry: 'Retry'
         },
 
         layout: {
@@ -107,7 +110,10 @@ const messages = {
             andThe: 'et la',
             policy: 'politique de confidentialité',
 
-            link: 'Lier mon compte'
+            link: 'Lier mon compte',
+
+            error: 'Erreur',
+            retry: 'Rééssayer'
         },
 
         layout: {
