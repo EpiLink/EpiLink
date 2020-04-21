@@ -15,12 +15,11 @@
                 <link-loading />
             </div>
 
-            <div class="auth-dialog" v-if="error" :key="2">
-                <h1 class="title" v-html="$t('auth.error.title')" />
-                <span class="subtitle" v-html="$t('auth.error.description')" />
-                <span class="error" v-html="error" />
+            <div class="error" v-if="error" :key="2">
+                <h1 class="title" v-html="$t('error.title')" />
+                <span class="message" v-html="error" />
 
-                <a class="return" v-html="$t('auth.error.back')" @click="$router.back()" />
+                <a class="action" v-html="$t('error.back')" @click="$router.back()" />
             </div>
         </transition>
     </div>
@@ -108,36 +107,21 @@
         align-items: center;
 
         padding: 0 25px;
-    }
 
-    .title {
-        margin: 0;
-        padding: 0;
+        .title {
+            margin: 0;
+            padding: 0;
 
-        font-size: 48px;
-    }
+            font-size: 48px;
+        }
 
-    .subtitle {
-        margin-top: 35px;
-        font-size: 17px;
+        .subtitle {
+            margin-top: 35px;
+            font-size: 17px;
+        }
     }
 
     .loading {
         margin-top: 65px;
-    }
-
-    .error {
-        text-align: center;
-
-        font-style: italic;
-        color: #C01616;
-    }
-
-    .return {
-        margin-top: 35px;
-
-        cursor: pointer;
-
-        font-size: 22px;
     }
 </style>

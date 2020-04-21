@@ -42,11 +42,11 @@
                     <div id="submitting" v-if="submitting && !error" :key="1">
                         <link-loading />
                     </div>
-                    <div id="error" v-if="error" :key="2">
-                        <h1 class="title" v-html="$t('settings.error')" />
+                    <div class="error" v-if="error" :key="2">
+                        <h1 class="title" v-html="$t('error.title')" />
                         <span class="message" v-html="error" />
 
-                        <a class="retry" v-html="$t('settings.retry')" @click="retry" />
+                        <a class="action" v-html="$t('error.retry')" @click="retry" />
                     </div>
                 </transition>
             </div>
@@ -216,27 +216,5 @@
         display: flex;
         justify-content: center;
         align-items: center;
-    }
-
-    #error {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-
-        .message {
-            text-align: center;
-
-            font-style: italic;
-            color: #C01616;
-        }
-
-        .retry {
-            margin-top: 25px;
-
-            cursor: pointer;
-
-            font-size: 22px;
-        }
     }
 </style>

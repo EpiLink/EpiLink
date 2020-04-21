@@ -18,11 +18,6 @@ const messages = {
             fetching: {
                 title: 'Loading',
                 description: 'Retrieving information...'
-            },
-            error: {
-                title: 'Error',
-                description: 'An error was encountered',
-                back: 'Go back'
             }
         },
         microsoft: {
@@ -43,10 +38,7 @@ const messages = {
             andThe: 'and the',
             policy: 'Privacy Policy',
 
-            link: 'Link my account',
-
-            error: 'Error',
-            retry: 'Retry'
+            link: 'Link my account'
         },
 
         layout: {
@@ -59,6 +51,12 @@ const messages = {
                 sources: 'Sources',
                 about: 'About'
             }
+        },
+
+        error: {
+            title: 'Error',
+            back: 'Back',
+            retry: 'Retry'
         },
 
         popups: {
@@ -85,11 +83,6 @@ const messages = {
             fetching: {
                 title: 'Chargement',
                 description: 'Récupération des informations...'
-            },
-            error: {
-                title: 'Erreur',
-                description: 'Une erreur a été rencontrée',
-                back: 'Retour'
             }
         },
         microsoft: {
@@ -110,10 +103,7 @@ const messages = {
             andThe: 'et la',
             policy: 'politique de confidentialité',
 
-            link: 'Lier mon compte',
-
-            error: 'Erreur',
-            retry: 'Rééssayer'
+            link: 'Lier mon compte'
         },
 
         layout: {
@@ -126,6 +116,12 @@ const messages = {
                 sources: 'Sources',
                 about: 'À Propos'
             }
+        },
+
+        error: {
+            title: 'Erreur',
+            back: 'Retour',
+            retry: 'Rééssayer'
         },
 
         popups: {
