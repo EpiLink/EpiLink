@@ -27,7 +27,8 @@ const messages = {
             description: 'The requested page does not exist'
         },
         redirect: {
-            success: 'Successfully connected'
+            success: 'Successfully connected',
+            failure: 'Connection refused'
         },
         settings: {
             remember: 'Remember who I am (optional)',
@@ -85,7 +86,8 @@ const messages = {
             description: 'La page demandée n\'existe pas'
         },
         redirect: {
-            success: 'Connexion réussie'
+            success: 'Connexion réussie',
+            failure: 'Connexion refusée'
         },
         settings: {
             remember: 'Se souvenir de qui je suis (facultatif)',
