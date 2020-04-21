@@ -1,6 +1,8 @@
 import Vue       from 'vue';
 import VueRouter from 'vue-router';
 
+import store from './store';
+
 import Home      from './views/Home';
 import Microsoft from './views/Microsoft';
 import NotFound  from './views/NotFound';
@@ -53,6 +55,37 @@ const router = new VueRouter({
     mode: 'history',
     base: process.env.BASE_URL,
     routes
+});
+
+router.beforeEach((to, from, next) => {
+    const path = to.fullPath;
+    const state = store.state;
+
+    const go = p => next(path !== p ? p : undefined);
+
+    if (path === '/' || path === '/microsoft' || path === '/settings' || (path.startsWith('/auth/') && !from.name)) {
+        if (!state.user || !state.user.username) {
+            return go('/');
+        }
+
+        if (!state.user.temp) {
+            return go('/profile');
+        }
+
+        if (state.user.email) {
+            return go('/settings');
+        }
+
+        if (state.user.username) {
+            return go('/microsoft');
+        }
+    }
+
+    if (path === '/profile' && (!state.user || state.user.temp)) {
+        return go('/');
+    }
+
+    next();
 });
 
 export default router
