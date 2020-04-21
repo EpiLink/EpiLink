@@ -16,7 +16,6 @@
         components: { LinkLoading },
 
         mounted() {
-            // TODO: Check state
             // TODO: Handle refusal
 
             window.addEventListener('message', this.onMessage);

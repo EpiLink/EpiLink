@@ -16,12 +16,17 @@
         name: 'link-redirect',
 
         mounted() {
+            if (!window.opener) {
+                this.$router.push({ name: 'home' });
+                return;
+            }
+
             const service = this.$route.params.service;
             const query = window.location.search;
 
             console.log(`Redirected from service ${service}`);
 
-            if (!window.opener || !query || query.length <= 6) {
+            if (!query || query.length <= 6) {
                 this.status = false;
                 return;
             }

@@ -62,19 +62,22 @@
         data() {
             return {
                 routes: ROUTES,
-                redirected: this.$route.name === 'redirect',
                 loadedWithAnimation: false,
                 contentSeen: false
             };
         },
         computed: {
             ...mapState(['expanded']),
+
             loaded() {
                 return !!this.$store.state.meta;
             },
             canLogout() {
                 const user = this.$store.state.user;
                 return user && (user.temp ? 'link' : 'real');
+            },
+            redirected() {
+                return this.$route.name === 'redirect';
             }
         },
         methods: {
