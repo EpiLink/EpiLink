@@ -2,12 +2,17 @@
     <!-- TODO: Gérer l'erreur -->
 
     <div id="redirect">
-        <div id="check-container">
+        <div id="check-container" v-if="status">
             <div id="check">
             </div>
         </div>
 
-        <p id="text" v-html="$t('redirect.success')" />
+        <div id="refusal-container" v-if="!status">
+            <div id="cross-left"></div>
+            <div id="cross-right"></div>
+        </div>
+
+        <p id="text" v-html="$t(`redirect.${status ? 'success' : 'failure'}`)" />
     </div>
 </template>
 
@@ -26,8 +31,10 @@
 
             console.log(`Redirected from service ${service}`);
 
-            if (!query || query.length <= 6) {
+            if (!query || !query.startsWith('?code=')) {
                 this.status = false;
+                setTimeout(() => window.close(), 1250);
+
                 return;
             }
 
@@ -68,12 +75,14 @@
         animation: fade 0.75s 0.25s ease 1 both;
     }
 
-    #check-container {
+    #check-container, #refusal-container {
         width: 200px;
         height: 200px;
 
         border-radius: 50%;
+    }
 
+    #check-container {
         background-color: lighten(#37C837, 4.5%);
 
         #check {
@@ -92,6 +101,38 @@
             transform-origin: top left;
 
             animation: check 0.5s 0.5s ease 1 both;
+        }
+    }
+
+    #refusal-container {
+        display: inline-flex;
+        box-sizing: border-box;
+
+        padding: 32px 35px 38px;
+
+        background-color: #e21f0c;
+
+        #cross-left, #cross-right {
+            width: 50px;
+            height: 135px;
+
+            border-radius: 4px;
+
+            animation: fade 0.3s ease 1 both;
+        }
+
+        #cross-left {
+            transform: rotate(45deg) translateY(-22px);
+            border-right: solid 15px white;
+
+            animation-delay: 0.75s;
+        }
+
+        #cross-right {
+            transform: rotate(-45deg) translateY(-22px);
+            border-left: solid 15px white;
+
+            animation-delay: 0.4s;
         }
     }
 

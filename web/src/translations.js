@@ -27,7 +27,8 @@ const messages = {
             description: 'The requested page does not exist'
         },
         redirect: {
-            success: 'Successfully connected'
+            success: 'Successfully connected',
+            failure: 'Connection denied'
         },
         settings: {
             remember: 'Remember who I am (optional)',
@@ -50,6 +51,12 @@ const messages = {
                 sources: 'Sources',
                 about: 'About'
             }
+        },
+
+        error: {
+            title: 'Error',
+            back: 'Back',
+            retry: 'Retry'
         },
 
         popups: {
@@ -85,7 +92,8 @@ const messages = {
             description: 'La page demandée n\'existe pas'
         },
         redirect: {
-            success: 'Connexion réussie'
+            success: 'Connexion réussie',
+            failure: 'Connexion refusée'
         },
         settings: {
             remember: 'Se souvenir de qui je suis (facultatif)',
@@ -108,6 +116,12 @@ const messages = {
                 sources: 'Sources',
                 about: 'À Propos'
             }
+        },
+
+        error: {
+            title: 'Erreur',
+            back: 'Retour',
+            retry: 'Rééssayer'
         },
 
         popups: {

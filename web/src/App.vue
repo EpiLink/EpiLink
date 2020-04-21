@@ -2,15 +2,24 @@
     <div id="app">
         <div id="main-view">
             <div id="content" :class="{ 'expanded': expanded }">
-                <div v-if="redirected || loadedWithAnimation" id="content-wrapper" :class="{ 'seen': contentSeen || redirected }">
-                    <transition name="fade">
-                        <router-view></router-view>
-                    </transition>
-                </div>
+                <transition name="fade" mode="out-in">
+                    <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
+                        <transition name="fade">
+                            <router-view></router-view>
+                        </transition>
+                    </div>
 
-                <div id="loading" v-if="!redirected" :class="{ 'seen': !loaded }">
-                    <link-loading />
-                </div>
+                    <div id="loading" v-if="!redirected && !loaded && !error" :key="1">
+                        <link-loading />
+                    </div>
+
+                    <div class="error" v-if="error" :key="2">
+                        <h1 class="title" v-html="$t('error.title')" />
+                        <p class="message" v-html="error" />
+
+                        <a class="action" @click="retry" v-html="$t('error.retry')" />
+                    </div>
+                </transition>
             </div>
         </div>
 
@@ -51,19 +60,13 @@
         components: { LinkLoading },
 
         mounted() {
-            if (!this.redirected) {
-                this.$store.dispatch('load').then(() => {
-                    // TODO: Use Vue.JS animations instead of this crap
-                    setTimeout(() => this.loadedWithAnimation = true, 200);
-                    setTimeout(() => this.contentSeen = true, 250);
-                });
-            }
+            this.load();
         },
         data() {
             return {
                 routes: ROUTES,
-                loadedWithAnimation: false,
-                contentSeen: false
+                loaded: false,
+                error: null
             };
         },
         computed: {
@@ -81,10 +84,21 @@
             }
         },
         methods: {
+            load() {
+                if (!this.redirected) {
+                    this.$store.dispatch('load')
+                        .then(() => this.loaded = true)
+                        .catch(err => this.error = err);
+                }
+            },
             logout() {
                 this.$store.dispatch('logout').then(() => {
                     this.$router.push({ name: 'home' });
-                }); // TODO: Catch error
+                });
+            },
+            retry() {
+                this.error = null;
+                this.load();
             }
         }
     }
@@ -134,26 +148,10 @@
                 width: 1000px;
             }
 
-            #content-wrapper {
-                opacity: 0;
-                transition: opacity 0.2s;
-
-                &.seen {
-                    opacity: 1;
-                }
-            }
-
             #loading {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-
-                opacity: 0;
-                transition: opacity 0.2s;
-
-                &.seen {
-                    opacity: 1;
-                }
             }
         }
     }
@@ -232,6 +230,39 @@
             .navigation-item {
                 margin-right: 20px;
             }
+        }
+    }
+
+    .error {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        padding: 0 25px;
+        box-sizing: border-box;
+
+        height: $content-height;
+
+        .title {
+            margin-top: 0;
+
+            font-size: 38px;
+        }
+
+        .message {
+            text-align: center;
+
+            font-style: italic;
+            color: #C01616;
+        }
+
+        .action {
+            margin-top: 25px;
+
+            cursor: pointer;
+
+            font-size: 22px;
         }
     }
 

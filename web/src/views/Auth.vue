@@ -1,18 +1,25 @@
 <template>
     <div id="auth">
         <transition name="fade" mode="out-in">
-            <div id="waiting" class="auth-dialog" v-if="!fetching" :key="0">
+            <div class="auth-dialog" v-if="!fetching" :key="0">
                 <h1 class="title" v-html="$t('auth.waiting.title')" />
                 <span class="subtitle" v-html="$t('auth.waiting.description')" />
 
                 <link-loading />
             </div>
 
-            <div id="fetching" class="auth-dialog" v-if="fetching" :key="1">
+            <div class="auth-dialog" v-if="fetching && !error" :key="1">
                 <h1 class="title" v-html="$t('auth.fetching.title')" />
                 <span class="subtitle" v-html="$t('auth.fetching.description')" />
 
                 <link-loading />
+            </div>
+
+            <div class="error" v-if="error" :key="2">
+                <h1 class="title" v-html="$t('error.title')" />
+                <span class="message" v-html="error" />
+
+                <a class="action" v-html="$t('error.back')" @click="$router.back()" />
             </div>
         </transition>
     </div>
@@ -27,8 +34,6 @@
         components: { LinkLoading },
 
         mounted() {
-            // TODO: Handle refusal
-
             window.addEventListener('message', this.onMessage);
             this.closeListener = setInterval(() => {
                 const popup = this.$store.state.popup;
@@ -50,37 +55,38 @@
         data() {
             return {
                 closeListener: null,
-                fetching: false
+                fetching: false,
+                error: null
             }
         },
         methods: {
             onMessage(msg) {
-                if (msg.origin !== window.origin || this.done) {
+                if (msg.origin !== window.origin || this.done || !msg.data.code) {
                     return;
                 }
 
-                if (msg.data.code) {
-                    this.fetching = true;
-                    this.onDestroy();
+                this.fetching = true;
+                this.onDestroy();
 
-                    const service = this.$route.params.service;
-                    console.log(`Received code for service ${service}`);
+                const service = this.$route.params.service;
+                console.log(`Received code for service ${service}`);
 
-                    this.$store.dispatch('postCode', {
-                        service: service === 'microsoft' ? 'msft' : 'discord',
-                        code: msg.data.code,
-                        uri: getRedirectURI(service)
-                    }).then(() => {
-                        let route = 'profile';
-                        if (this.$store.state.user.temp) {
-                            route = service === 'discord' ? 'microsoft' : 'settings';
-                        }
+                this.$store.dispatch('postCode', {
+                    service: service === 'microsoft' ? 'msft' : 'discord',
+                    code: msg.data.code,
+                    uri: getRedirectURI(service)
+                }).then(() => {
+                    let route = 'profile';
+                    if (this.$store.state.user.temp) {
+                        route = service === 'discord' ? 'microsoft' : 'settings';
+                    }
 
-                        setTimeout(() => {
-                            this.$router.push({ name: route });
-                        }, 250);
-                    });
-                }
+                    setTimeout(() => {
+                        this.$router.push({ name: route });
+                    }, 250);
+                }).catch(err => {
+                    this.error = err;
+                });
             },
             onDestroy() {
                 window.removeEventListener('message', this.onMessage);
@@ -99,18 +105,20 @@
     .auth-dialog {
         flex-direction: column;
         align-items: center;
-    }
 
-    .title {
-        margin: 0;
-        padding: 0;
+        padding: 0 25px;
 
-        font-size: 48px;
-    }
+        .title {
+            margin: 0;
+            padding: 0;
 
-    .subtitle {
-        margin-top: 35px;
-        font-size: 17px;
+            font-size: 48px;
+        }
+
+        .subtitle {
+            margin-top: 35px;
+            font-size: 17px;
+        }
     }
 
     .loading {
