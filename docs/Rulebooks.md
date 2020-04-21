@@ -4,7 +4,7 @@
 
 ## What are rulebooks?
 
-Rulebooks are small Kotlin scripts that implement custom rules for custom roles as well as e-mail validation. They are intended to be used to gather information about a user (possibly using their real identity) and give them roles automatically.
+Rulebooks are small Kotlin scripts that implement custom rules for custom roles. They are intended to be used to gather information about a user (possibly using their real identity) and give them roles automatically.
 
 Rulebooks can also be used for additional checks on your end: for example, checking that someone's email matches some format you need. This is useful for making sure only users from a domain you trust can log in.
 
@@ -16,7 +16,7 @@ You can either put your rulebook directly in the configuration file, or in a sep
 
 ## Privacy
 
-**Rules can potentially leak users' identity, and constitute a use of real identities that you should probably indicate in your privacy policy.** Retrieving roles automatically may also hinder the anonymity of your users with regards to other users (e.g. someone may be able to determine who someone is using their roles).
+**Rules can potentially leak users' identity, and constitute a use of real identities that you should probably indicate in your privacy policy.** Retrieving roles automatically may also hinder the anonymity of your users with regards to other users (e.g. someone may be able to determine who someone is using their roles). This, of course, is not an issue if you do not care about the anonymity of your users.
 
 You must make these points clear to your users.
 
@@ -28,7 +28,7 @@ This section will cover the basics of rulebooks. This assumes some knowledge of 
 
 ### E-mail validation
 
-You can use your rulebook to validate e-mail addresses. This is particularly useful if you want to use EpiLink across multiple instances, but you still want to validate who can come in.
+You can use your rulebook to validate e-mail addresses. This is particularly useful if you want to use EpiLink across multiple domains (e.g. multiple Azure tenants, multiple schools, ...), but you still want to validate who can come in.
 
 The validation takes this form:
 
@@ -38,7 +38,7 @@ emailValidator { email ->
 }
 ```
 
-The validator must return a boolean value. By default, in Kotlin, the last expression of a block is the return value. So, if we wanted to only accept email addresses that end in `@mydomain.fi`, you could use:
+The validator must return a boolean value. By default, in Kotlin, the last expression of a lambda block is the return value. So, if we wanted to only accept email addresses that end in `@mydomain.fi`, you could use:
 
 ```kotlin
 emailValidator { email -> 
@@ -57,6 +57,8 @@ All usual boolean operators can be used, so this would also be valid to match bo
 ```kotlin
 emailValidator { it.endsWith("@mydomain.fi") || it.endsWith("@otherdomain.org") }
 ```
+
+The e-mail validator is ran during the registration process only, and does not generate any identity access notification, as it is part of the registration process.
 
 ### Rule declaration
 
@@ -86,11 +88,11 @@ In the example above, two rules are defined, `StartsWithZ` as a weak identity ru
 
 Strong identity rules are skipped for users who chose not to have their identity kept by EpiLink.
 
-**Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](/docs/MaintainerGuide.md#privacy-configuration)
+**Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](/docs/MaintainerGuide.md#privacy-configuration).
 
 ### Accessing information
 
-The following information can be used as-is and are readily available in each lambda:
+The following information can be used as-is and is readily available in each lambda:
 
 * `userDiscordName`: The username of the Discord user the rule is applied to, without the discriminator.
 * `userDiscordDiscriminator`: The discriminator of the Discord user the rule is applied to.
@@ -102,7 +104,8 @@ The following information can be used as-is from the lambda parameter and is onl
 
 ### Declaring the roles
 
-You can declare a role simply by adding it to the `roles` list provided by the context. 
+You can declare a role simply by adding it to the `roles` list provided by the context. This list receives all of the 
+roles your rule determines.
 
 In other words, just do `roles += "roleName"`. You can also add multiple roles at once, `roles += listOf("roleOne", "roleTwo", "roleThree")` or with using `roles += "roleOne"` at one place, then `roles += "roleTwo"` at another, etc.
 
@@ -112,10 +115,10 @@ A rule can determine more than one role at the same time.
 
 Rules are only executed when the following conditions are met:
 
-* The user needs to have his roles refreshed in some discord servers X (e.g. he just joined the server, he was in the server but just got authentified...)
+* The user needs to have his roles refreshed in some discord servers X (e.g. he just joined the server, he was in the server but just got authenticated...)
 * In the EpiLink configuration, some of the servers X have roles bindings defined by rules, i.e. some custom roles are defined for the server.
 
-For example, if we refresh the roles for a user Jake in the server Abcde with the following configuration:
+For example, if we refresh the roles for a user Jake in the server "Abcde" with the following configuration:
 
 ```yaml
 rulebook: |
@@ -155,5 +158,5 @@ discord:
 ```
 
 * EpiLink detects that `myRole` is in the server (from the server's config), and that that role is determined by the custom rule `MyRule` in the rulebook (from the roles config). **This rule gets executed as part of the role refresh process, regardless of whether Jake chose to keep his identity in the system or not.**
-* EpiLink detects that `otherRole` is in the server (from the server's config), and that that role is determined by the custom *strong-identity* rule `OtherRule`. **This rule gets executed as part of the role refresh process ONLY IF Jake chose to keep his identity in the system.** Otherwise, the rule is simply ignored and the role is not applied.
+* EpiLink detects that `otherRole` is in the server (from the server's config), and that that role is determined by the custom *strong-identity* rule `OtherRule`. **This rule gets executed as part of the role refresh process ONLY IF Jake chose to keep his identity in the system.** This also generates an identity access, and the user may get notified depending on the [privacy configuration](MaintainerGuide.md#privacy-configuration). Otherwise, the rule is simply ignored and the role is not applied.
 * The role `third` is NOT in the server. Its rule is therefore not executed.
