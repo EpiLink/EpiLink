@@ -31,9 +31,12 @@ import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
+import org.epilink.bot.ratelimiting.RateLimiting
+import org.epilink.bot.ratelimiting.rateLimited
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
+import java.time.Duration
 
 /**
  * Interface for the back-end
@@ -94,6 +97,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             )
         }
 
+        install(RateLimiting)
+
         routing {
             route("/api/v1") {
                 epilinkApiV1()
@@ -136,159 +141,165 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         }
 
         route("meta") {
-            @ApiEndpoint("GET /api/v1/meta/info")
-            get("info") {
-                call.respond(ApiSuccessResponse(data = getInstanceInformation()))
-            }
+            rateLimited(limit = 50, timeBeforeReset = Duration.ofMinutes(1)) {
+                @ApiEndpoint("GET /api/v1/meta/info")
+                get("info") {
+                    call.respond(ApiSuccessResponse(data = getInstanceInformation()))
+                }
 
-            @ApiEndpoint("GET /api/v1/meta/tos")
-            get("tos") {
-                call.respond(HttpStatusCode.OK, TextContent(legal.tosText, ContentType.Text.Html))
-            }
+                @ApiEndpoint("GET /api/v1/meta/tos")
+                get("tos") {
+                    call.respond(HttpStatusCode.OK, TextContent(legal.tosText, ContentType.Text.Html))
+                }
 
-            @ApiEndpoint("GET /api/v1/meta/privacy")
-            get("privacy") {
-                call.respond(HttpStatusCode.OK, TextContent(legal.policyText, ContentType.Text.Html))
+                @ApiEndpoint("GET /api/v1/meta/privacy")
+                get("privacy") {
+                    call.respond(HttpStatusCode.OK, TextContent(legal.policyText, ContentType.Text.Html))
+                }
             }
         }
 
         route("user") {
-            intercept(ApplicationCallPipeline.Features) {
-                if (call.sessions.get<ConnectedSession>() == null) {
-                    logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
-                    call.respond(
-                        HttpStatusCode.Unauthorized,
-                        ApiErrorResponse("You are not authenticated.", MissingAuthentication.toErrorData())
-                    )
-                    return@intercept finish()
+            rateLimited(limit = 20, timeBeforeReset = Duration.ofMinutes(1)) {
+                intercept(ApplicationCallPipeline.Features) {
+                    if (call.sessions.get<ConnectedSession>() == null) {
+                        logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
+                        call.respond(
+                            HttpStatusCode.Unauthorized,
+                            ApiErrorResponse("You are not authenticated.", MissingAuthentication.toErrorData())
+                        )
+                        return@intercept finish()
+                    }
+                    proceed()
                 }
-                proceed()
-            }
 
-            @ApiEndpoint("GET /api/v1/user")
-            @OptIn(UsesTrueIdentity::class) // returns whether user is identifiable or not
-            get {
-                val session = call.sessions.get<ConnectedSession>()!!
-                logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
-                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation()))
-            }
-
-            @ApiEndpoint("GET /api/v1/user/idaccesslogs")
-            get("idaccesslogs") {
-                val session = call.sessions.get<ConnectedSession>()!!
-                logger.info("Generating access logs for a user")
-                logger.debug { "Generating access logs for ${session.discordId} (${session.discordUsername})" }
-                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
-            }
-
-            @ApiEndpoint("POST /api/v1/user/logout")
-            post("logout") {
-                call.sessions.clear<ConnectedSession>()
-                call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out"))
-            }
-
-            @ApiEndpoint("POST /api/v1/user/identity")
-            @OptIn(UsesTrueIdentity::class)
-            post("identity") {
-                val session = call.sessions.get<ConnectedSession>()!!
-                val auth = call.receive<RegistrationAuthCode>()
-                logger.info("Relinking a user account")
-                logger.debug {
-                    "User ${session.discordId} (${session.discordUsername}) has asked for a relink with authcode ${auth.code}."
+                @ApiEndpoint("GET /api/v1/user")
+                @OptIn(UsesTrueIdentity::class) // returns whether user is identifiable or not
+                get {
+                    val session = call.sessions.get<ConnectedSession>()!!
+                    logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
+                    call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation()))
                 }
-                val microsoftToken = microsoftBackEnd.getMicrosoftToken(auth.code, auth.redirectUri)
-                if (db.isUserIdentifiable(session.discordId)) {
-                    throw LinkEndpointException(IdentityAlreadyKnown, isEndUserAtFault = true)
-                }
-                val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
-                db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
-                roleManager.updateRolesOnAllGuildsLater(session.discordId)
-                call.respond(apiSuccess("Successfully relinked Microsoft account"))
-            }
 
-            @ApiEndpoint("DELETE /api/v1/user/identity")
-            @OptIn(UsesTrueIdentity::class)
-            delete("identity") {
-                val session = call.sessions.get<ConnectedSession>()!!
-                if (db.isUserIdentifiable(session.discordId)) {
-                    db.deleteUserIdentity(session.discordId)
+                @ApiEndpoint("GET /api/v1/user/idaccesslogs")
+                get("idaccesslogs") {
+                    val session = call.sessions.get<ConnectedSession>()!!
+                    logger.info("Generating access logs for a user")
+                    logger.debug { "Generating access logs for ${session.discordId} (${session.discordUsername})" }
+                    call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
+                }
+
+                @ApiEndpoint("POST /api/v1/user/logout")
+                post("logout") {
+                    call.sessions.clear<ConnectedSession>()
+                    call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out"))
+                }
+
+                @ApiEndpoint("POST /api/v1/user/identity")
+                @OptIn(UsesTrueIdentity::class)
+                post("identity") {
+                    val session = call.sessions.get<ConnectedSession>()!!
+                    val auth = call.receive<RegistrationAuthCode>()
+                    logger.info("Relinking a user account")
+                    logger.debug {
+                        "User ${session.discordId} (${session.discordUsername}) has asked for a relink with authcode ${auth.code}."
+                    }
+                    val microsoftToken = microsoftBackEnd.getMicrosoftToken(auth.code, auth.redirectUri)
+                    if (db.isUserIdentifiable(session.discordId)) {
+                        throw LinkEndpointException(IdentityAlreadyKnown, isEndUserAtFault = true)
+                    }
+                    val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
+                    db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
                     roleManager.updateRolesOnAllGuildsLater(session.discordId)
-                    call.respond(apiSuccess("Successfully deleted identity"))
-                } else {
-                    throw LinkEndpointException(IdentityAlreadyUnknown, isEndUserAtFault = true)
+                    call.respond(apiSuccess("Successfully relinked Microsoft account"))
+                }
+
+                @ApiEndpoint("DELETE /api/v1/user/identity")
+                @OptIn(UsesTrueIdentity::class)
+                delete("identity") {
+                    val session = call.sessions.get<ConnectedSession>()!!
+                    if (db.isUserIdentifiable(session.discordId)) {
+                        db.deleteUserIdentity(session.discordId)
+                        roleManager.updateRolesOnAllGuildsLater(session.discordId)
+                        call.respond(apiSuccess("Successfully deleted identity"))
+                    } else {
+                        throw LinkEndpointException(IdentityAlreadyUnknown, isEndUserAtFault = true)
+                    }
                 }
             }
         }
 
         route("register") {
-            @ApiEndpoint("GET /api/v1/register/info")
-            get("info") {
-                val session = call.sessions.getOrSet { RegisterSession() }
-                call.respondRegistrationStatus(session)
-            }
+            rateLimited(limit = 10, timeBeforeReset = Duration.ofMinutes(1)) {
+                @ApiEndpoint("GET /api/v1/register/info")
+                get("info") {
+                    val session = call.sessions.getOrSet { RegisterSession() }
+                    call.respondRegistrationStatus(session)
+                }
 
-            @ApiEndpoint("DELETE /api/v1/register")
-            delete {
-                logger.debug { "Clearing registry session ${call.request.header("RegistrationSessionId")}" }
-                call.sessions.clear<RegisterSession>()
-                call.respond(HttpStatusCode.OK)
-            }
+                @ApiEndpoint("DELETE /api/v1/register")
+                delete {
+                    logger.debug { "Clearing registry session ${call.request.header("RegistrationSessionId")}" }
+                    call.sessions.clear<RegisterSession>()
+                    call.respond(HttpStatusCode.OK)
+                }
 
-            @ApiEndpoint("POST /api/v1/register")
-            post {
-                with(call.sessions.get<RegisterSession>()) {
-                    if (this == null) {
-                        logger.debug {
-                            "Missing/unknown session header for call from reg. session ${call.request.header("RegistrationSessionId")}"
-                        }
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ApiErrorResponse("Missing session header", IncompleteRegistrationRequest.toErrorData())
-                        )
-                    } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
-                        logger.debug {
-                            """
+                @ApiEndpoint("POST /api/v1/register")
+                post {
+                    with(call.sessions.get<RegisterSession>()) {
+                        if (this == null) {
+                            logger.debug {
+                                "Missing/unknown session header for call from reg. session ${call.request.header("RegistrationSessionId")}"
+                            }
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiErrorResponse("Missing session header", IncompleteRegistrationRequest.toErrorData())
+                            )
+                        } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
+                            logger.debug {
+                                """
                             Incomplete registration process for session ${call.request.header("RegistrationSessionId")}
                             discordId = $discordId
                             discordUsername = $discordUsername
                             email = $email
                             microsoftUid = $microsoftUid
                             """.trimIndent()
-                        }
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ApiErrorResponse(
-                                "Incomplete registration process",
-                                IncompleteRegistrationRequest.toErrorData()
+                            }
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ApiErrorResponse(
+                                    "Incomplete registration process",
+                                    IncompleteRegistrationRequest.toErrorData()
+                                )
                             )
-                        )
-                    } else {
-                        val regSessionId = call.request.header("RegistrationSessionId")
-                        logger.debug { "Completing registration session for $regSessionId" }
-                        val options: AdditionalRegistrationOptions =
-                            call.receiveCatching() ?: return@post
-                        val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
-                        roleManager.updateRolesOnAllGuildsLater(u.discordId)
-                        call.loginAs(u, discordUsername, discordAvatarUrl)
-                        logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
-                        call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
+                        } else {
+                            val regSessionId = call.request.header("RegistrationSessionId")
+                            logger.debug { "Completing registration session for $regSessionId" }
+                            val options: AdditionalRegistrationOptions =
+                                call.receiveCatching() ?: return@post
+                            val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
+                            roleManager.updateRolesOnAllGuildsLater(u.discordId)
+                            call.loginAs(u, discordUsername, discordAvatarUrl)
+                            logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
+                            call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
+                        }
                     }
                 }
-            }
 
-            @ApiEndpoint("POST /register/authcode/discord")
-            @ApiEndpoint("POST /register/authcode/msft")
-            post("authcode/{service}") {
-                when (val service = call.parameters["service"]) {
-                    null -> error("Invalid service") // Should not happen
-                    "discord" -> processDiscordAuthCode(call, call.receive())
-                    "msft" -> processMicrosoftAuthCode(call, call.receive())
-                    else -> {
-                        logger.debug { "Attempted to register under unknown service $service" }
-                        call.respond(
-                            HttpStatusCode.NotFound,
-                            ApiErrorResponse("Invalid service: $service", UnknownService.toErrorData())
-                        )
+                @ApiEndpoint("POST /register/authcode/discord")
+                @ApiEndpoint("POST /register/authcode/msft")
+                post("authcode/{service}") {
+                    when (val service = call.parameters["service"]) {
+                        null -> error("Invalid service") // Should not happen
+                        "discord" -> processDiscordAuthCode(call, call.receive())
+                        "msft" -> processMicrosoftAuthCode(call, call.receive())
+                        else -> {
+                            logger.debug { "Attempted to register under unknown service $service" }
+                            call.respond(
+                                HttpStatusCode.NotFound,
+                                ApiErrorResponse("Invalid service: $service", UnknownService.toErrorData())
+                            )
+                        }
                     }
                 }
             }

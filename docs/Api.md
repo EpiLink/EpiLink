@@ -6,6 +6,18 @@ This is documentation of the backend API of EpiLink.
 
 This document reflects the API as it is implemented in the back-end, although it may not be fully accurate.
 
+## Rate limiting
+
+EpiLink follows [Discord's way of rate limiting](https://discordapp.com/developers/docs/topics/rate-limits), except that the `Retry-After` header and `retry_after` JSON values are *always* an integer number of seconds. All endpoints are rate-limited, the exact rates depending on the endpoint.
+
+The rate limiting is based on three factors (keys):
+
+* The Remote IP address (caller key)
+* The route (route key)
+* Major parameter (additional key)
+
+Note that 429 errors *never* return API responses, they always return a JSON object with three values, `message`, `retry_after` (in seconds, not milliseconds like Discord) and `global`.
+
 ## Details
 
 * All endpoints begin with `/api/v1`.
