@@ -6,7 +6,7 @@ import store from './store';
 import Home          from './views/Home';
 import Microsoft     from './views/Microsoft';
 import NotFound      from './views/NotFound';
-import PrivacyPolicy from './views/PrivacyPolicy';
+import MetaText from './views/MetaText';
 import Profile       from './views/Profile';
 import Redirect      from './views/Redirect';
 import Auth          from './views/Auth';
@@ -49,7 +49,12 @@ const routes = [
     {
         path: '/privacy',
         name: 'privacy',
-        component: PrivacyPolicy
+        component: MetaText
+    },
+    {
+        path: '/tos',
+        name: 'tos',
+        component: MetaText
     },
     {
         path: '/about',

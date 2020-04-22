@@ -29,8 +29,8 @@
                                 <div><link-checkbox v-model="acceptConditions" /></div>
                                 <div class="text">
                                     <p class="title">
-                                        {{ $t('settings.iAcceptThe') }} <a href="#" v-html="$t('settings.terms')" />
-                                        {{ $t('settings.andThe') }} <a href="#" v-html="$t('settings.policy')" />
+                                        {{ $t('settings.iAcceptThe') }} <router-link :to="{ name: 'tos' }" v-html="$t('settings.terms')" />
+                                        {{ $t('settings.andThe') }} <router-link :to="{ name: 'privacy' }" v-html="$t('settings.policy')" />
                                     </p>
                                 </div>
                             </div>

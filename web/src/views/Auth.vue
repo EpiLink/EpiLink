@@ -19,7 +19,7 @@
                 <h1 class="title" v-html="$t('error.title')" />
                 <span class="message" v-html="error" />
 
-                <a class="action" v-html="$t('error.back')" @click="$router.back()" />
+                <a class="action" v-html="$t('back')" @click="$router.back()" />
             </div>
         </transition>
     </div>

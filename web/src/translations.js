@@ -5,6 +5,8 @@ Vue.use(VueI18n);
 
 const messages = {
     en: {
+        back: 'Back',
+
         // Pages
         home: {
             welcome: 'Welcome',
@@ -57,7 +59,6 @@ const messages = {
 
         error: {
             title: 'Error',
-            back: 'Back',
             retry: 'Retry'
         },
 
@@ -72,6 +73,8 @@ const messages = {
         }
     },
     fr: {
+        back: 'Retour',
+
         // Pages
         home: {
             welcome: 'Bienvenue',
@@ -124,7 +127,6 @@ const messages = {
 
         error: {
             title: 'Erreur',
-            back: 'Retour',
             retry: 'Rééssayer'
         },
 

@@ -11,7 +11,8 @@ export default new Vuex.Store({
         meta: null,
         popup: null,
         user: null,
-        privacyPolicy: null
+        privacyPolicy: null,
+        termsOfService: null
     },
     mutations: {
         setExpanded(state, expanded) {
@@ -68,6 +69,11 @@ export default new Vuex.Store({
         setPrivacyPolicy(state, policy) {
             if (!state.privacyPolicy) {
                 state.privacyPolicy = policy;
+            }
+        },
+        setTermsOfService(state, terms) {
+            if (!state.termsOfService) {
+                state.termsOfService = terms;
             }
         }
     },
@@ -144,6 +150,13 @@ export default new Vuex.Store({
             }
 
             commit('setPrivacyPolicy', await request('/meta/privacy'));
+        },
+        async fetchTermsOfService({ state, commit }) {
+            if (state.termsOfService) {
+                return;
+            }
+
+            commit('setTermsOfService', await request('/meta/tos'));
         }
     }
 });
