@@ -75,7 +75,13 @@ export default async function(method, path, body) {
         return null;
     }
 
-    const json = JSON.parse(text);
+    let json;
+    try {
+        json = JSON.parse(text);
+    } catch (err) {
+        console.warn(`API didn't return JSON text during request '${method} ${path}', returning raw text`);
+        return text;
+    }
 
     if (!json.success) {
         console.error(`API returned an error during request '${method} ${path}' : '${json.message}'`);

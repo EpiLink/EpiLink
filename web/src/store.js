@@ -10,7 +10,8 @@ export default new Vuex.Store({
         expanded: false,
         meta: null,
         popup: null,
-        user: null
+        user: null,
+        privacyPolicy: null
     },
     mutations: {
         setExpanded(state, expanded) {
@@ -63,6 +64,11 @@ export default new Vuex.Store({
         logout(state) {
             state.user = null;
             deleteSession();
+        },
+        setPrivacyPolicy(state, policy) {
+            if (!state.privacyPolicy) {
+                state.privacyPolicy = policy;
+            }
         }
     },
     actions: {
@@ -131,6 +137,13 @@ export default new Vuex.Store({
             await request('POST', '/register', { keepIdentity: saveEmail });
 
             commit('setRegistered');
+        },
+        async fetchPrivacyPolicy({ state, commit }) {
+            if (state.privacyPolicy) {
+                return;
+            }
+
+            commit('setPrivacyPolicy', await request('/meta/privacy'));
         }
     }
 });

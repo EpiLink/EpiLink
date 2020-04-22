@@ -36,8 +36,7 @@
             </div>
             <ul id="navigation">
                 <li class="navigation-item" v-for="route of routes">
-                    <router-link v-if="route.route" :to="{ name: route.path }" v-html="$t(`layout.navigation.${route.title}`)" />
-                    <a v-if="route.url" :href="route.url" target="_blank" v-html="$t(`layout.navigation.${route.title}`)" />
+                    <router-link :to="{ name: route.name }" v-html="$t(`layout.navigation.${route.title}`)" />
                 </li>
             </ul>
         </div>
@@ -49,10 +48,8 @@
     import LinkLoading  from './components/Loading';
 
     const ROUTES = [
-        { title: 'instance', route: 'instance' },
-        { title: 'privacy', route: 'privacy' },
-        { title: 'sources', url: 'https://github.com/Litarvan/EpiLink' }, // TODO: Dynamic
-        { title: 'about', route: 'about' }
+        { title: 'privacy', name: 'privacy' },
+        { title: 'about', name: 'about' }
     ];
 
     export default {
@@ -65,7 +62,6 @@
         data() {
             return {
                 routes: ROUTES,
-                loaded: false,
                 error: null
             };
         },
@@ -86,9 +82,7 @@
         methods: {
             load() {
                 if (!this.redirected) {
-                    this.$store.dispatch('load')
-                        .then(() => this.loaded = true)
-                        .catch(err => this.error = err);
+                    this.$store.dispatch('load').catch(err => this.error = err);
                 }
             },
             logout() {

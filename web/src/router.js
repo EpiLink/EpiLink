@@ -3,13 +3,15 @@ import VueRouter from 'vue-router';
 
 import store from './store';
 
-import Home      from './views/Home';
-import Microsoft from './views/Microsoft';
-import NotFound  from './views/NotFound';
-import Profile   from './views/Profile';
-import Redirect  from './views/Redirect';
-import Auth      from './views/Auth';
-import Settings  from './views/Settings';
+import Home          from './views/Home';
+import Microsoft     from './views/Microsoft';
+import NotFound      from './views/NotFound';
+import PrivacyPolicy from './views/PrivacyPolicy';
+import Profile       from './views/Profile';
+import Redirect      from './views/Redirect';
+import Auth          from './views/Auth';
+import Settings      from './views/Settings';
+import About         from './views/About';
 
 Vue.use(VueRouter);
 
@@ -43,6 +45,16 @@ const routes = [
         path: '/profile',
         name: 'profile',
         component: Profile
+    },
+    {
+        path: '/privacy',
+        name: 'privacy',
+        component: PrivacyPolicy
+    },
+    {
+        path: '/about',
+        name: 'about',
+        component: About
     },
     {
         path: '*',

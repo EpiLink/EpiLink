@@ -40,15 +40,17 @@ const messages = {
 
             link: 'Link my account'
         },
+        about: {
+            sources: 'Original sources',
+            authors: 'Authors'
+        },
 
         layout: {
             cancel: 'Cancel the procedure',
             logout: 'Log out',
 
             navigation: {
-                instance: 'Instance',
                 privacy: 'Privacy',
-                sources: 'Sources',
                 about: 'About'
             }
         },
@@ -105,15 +107,17 @@ const messages = {
 
             link: 'Lier mon compte'
         },
+        about: {
+            sources: 'Sources originales',
+            authors: 'Auteurs'
+        },
 
         layout: {
             cancel: 'Annuler la procédure',
             logout: 'Se déconnecter',
 
             navigation: {
-                instance: 'Instance',
                 privacy: 'Confidentialité',
-                sources: 'Sources',
                 about: 'À Propos'
             }
         },
