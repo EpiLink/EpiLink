@@ -3,7 +3,11 @@ package org.epilink.bot.ratelimiting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.epilink.bot.debug
+import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -37,26 +41,40 @@ class InMemoryRateLimiter(
     private val mapPurgeWaitDuration: Duration
 ) : RateLimiter<String> {
     private val scope = CoroutineScope(Dispatchers.Default)
+    private val mutex = Mutex()
     private val isPurgeRunning = AtomicBoolean(false)
     private var lastPurgeTime = Instant.now()
     private val map = ConcurrentHashMap<String, Rate>()
+    private val logger = LoggerFactory.getLogger("epilink.ratelimiting.inmemory")
 
     override suspend fun handle(ctx: RateLimitingContext, key: String): Rate = withContext(Dispatchers.Default) {
         map.compute(key) { _, v ->
             when {
-                v == null || v.hasExpired() -> ctx.newRate()
+                v == null -> ctx.newRate()
+                v.hasExpired() -> ctx.newRate().also { logger.debug { "Bucket $key has expired, reset" } }
                 else -> v.consume()
             }
         }!!.also { launchPurgeIfNeeded() }
     }
 
     private fun launchPurgeIfNeeded() {
-        if (shouldPurge() && isPurgeRunning.compareAndExchange(false, true)) {
+        logger.debug { "Should purge: ${shouldPurge()}" }
+        if (shouldPurge() && mutex.tryLock()) {
+            logger.debug { "Launching purge in coroutine scope" }
             scope.launch {
-                val shouldRemove = map.filterValues { it.hasExpired() }.keys
-                shouldRemove.forEach { map.remove(it) }
-                lastPurgeTime = Instant.now()
-                isPurgeRunning.set(false)
+                try {
+                    logger.info("Purging rate limit information, current size = ${map.size}")
+                    val shouldRemove = map.filterValues { it.hasExpired() }.keys
+                    shouldRemove.forEach { k ->
+                        logger.debug { "Removing stale bucket $k" }
+                        map.remove(k)
+                    }
+                    lastPurgeTime = Instant.now()
+                    isPurgeRunning.set(false)
+                    logger.info("Purged rate limit information, new size = ${map.size}")
+                } finally {
+                    mutex.unlock()
+                }
             }
         }
     }

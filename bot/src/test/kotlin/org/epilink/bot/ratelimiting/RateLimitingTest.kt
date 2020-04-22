@@ -239,6 +239,42 @@ class RateLimitingTest {
             assertEquals("2", response.headers["X-RateLimit-Remaining"])
         }
     }
+
+    // The following test cannot be ran automatically. Uncomment it and run it. You should see in the DEBUG logs
+    // a lot of output from epilink.ratelimiting.inmemory like "Removing stale bucket abcdefg...=": that means the purge
+    // has ran.
+    /*
+    @Test
+    fun `Check purge has run`(): Unit = withTestApplication {
+        val resetDur = Duration.ofMillis(300)
+        with(application) {
+            install(RateLimiting) {
+                limit = 3
+                timeBeforeReset = resetDur
+                limiter = InMemoryRateLimiter(5, Duration.ofMillis(400))
+            }
+            routing {
+                rateLimited(additionalKeyExtractor = {
+                    parameters["id"]!!
+                }) {
+                    get("/{id}") {
+                        call.respond(HttpStatusCode.OK)
+                    }
+                }
+            }
+        }
+        repeat(100) {
+            handleRequest(HttpMethod.Get, "/$it").apply {
+                assertStatus(HttpStatusCode.OK)
+            }
+        }
+        Thread.sleep(400)
+        handleRequest(HttpMethod.Get, "/1").apply {
+            assertStatus(HttpStatusCode.OK)
+        }
+        Thread.sleep(1000) // Wait for the purge to happen, it runs in the background
+    }
+    */
 }
 
 /*

@@ -15,7 +15,9 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.epilink.bot.debug
 import org.epilink.bot.ratelimiting.RateLimiting.Configuration
+import org.slf4j.LoggerFactory
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.time.Duration
@@ -157,6 +159,7 @@ class RateLimiting(configuration: Configuration) {
     private val limit = configuration.limit
     private val timeBeforeReset = configuration.timeBeforeReset.toMillis()
     private val keyProducer = configuration.callerKeyProducer
+    private val logger = LoggerFactory.getLogger("epilink.ratelimiting")
 
     /**
      * Feature companion object for the rate limiting feature
@@ -194,6 +197,7 @@ class RateLimiting(configuration: Configuration) {
         response.appendRateLimitHeaders(rate, inMillis, remainingTimeBeforeReset, rateContext, bucket)
         // Interrupt call if we should limit it
         if (rate.shouldLimit()) {
+            logger.debug { "Bucket $bucket (remote host ${request.origin.remoteHost}) is being rate limited, resets at ${rate.resetAt}" }
             val retryAfter = toHeaderValueWithPrecision(false, remainingTimeBeforeReset.toMillis())
             // Always in seconds
             response.header(HttpHeaders.RetryAfter, retryAfter)
@@ -202,6 +206,9 @@ class RateLimiting(configuration: Configuration) {
             }
             context.finish()
         } else {
+            logger.debug {
+                "Bucket $bucket (remote host ${request.origin.remoteHost}) passes rate limit, remaining = ${rate.remainingRequests - 1}, resets at ${rate.resetAt}"
+            }
             context.proceed()
         }
     }
