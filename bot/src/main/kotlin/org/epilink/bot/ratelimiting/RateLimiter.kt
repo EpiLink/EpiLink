@@ -27,7 +27,7 @@ interface RateLimiter<K> {
 }
 
 /**
- * An implement of rate limiters that stores rate limits using a `ConcurrentHashMap`
+ * An implementation of rate limiters that stores rate limits using a `ConcurrentHashMap`
  *
  * @param mapPurgeSize The size the map needs to reach in order for it to be purged on the next call
  * @param mapPurgeWaitDuration The amount of time to wait before the next purging.

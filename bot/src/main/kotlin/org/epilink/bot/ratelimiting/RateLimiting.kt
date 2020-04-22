@@ -211,6 +211,16 @@ class RateLimiting(configuration: Configuration) {
  * Intercepts every call made inside the route block and adds rate-limiting to it.
  *
  * This function requires the [RateLimiting] feature to be installed.
+ *
+ * Optionally, you can override some parameters that will only apply to this route.
+ *
+ * @param limit Overrides the global limit set when configuring the feature. Maximum amount of requests that can be
+ * performed before being rate-limited and receiving HTTP 429 errors.
+ * @param timeBeforeReset Overrides the global time before reset set when configuring the feature. Time before a
+ * rate-limit expires.
+ * @param additionalKeyExtractor Function used for retrieving the additional key. See [RateLimiting] for more
+ * information.
+ * @param callback Block for configuring the rate-limited route
  */
 fun Route.rateLimited(
     limit: Long? = null,
@@ -269,11 +279,10 @@ private fun ApplicationResponse.appendRateLimitHeaders(
  * @param millis A value in milliseconds
  */
 private fun toHeaderValueWithPrecision(inMillis: Boolean, millis: Long): String {
-    val seconds = millis / 1000.0
     return if (inMillis)
-        seconds.toString()
+        (millis / 1000.0).toString()
     else
-        ceil(seconds).toString()
+        ceil(millis / 1000.0).toInt().toString()
 }
 
 /**
