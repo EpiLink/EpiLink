@@ -34,6 +34,6 @@ fun LinkLegalConfiguration.load(cfg: Path): LinkLegalTexts {
             <strong>No Privacy Policy found.</strong> Please contact your administrator for more information.
             """.trimIndent(),
         idPrompt = identityPromptText
-            ?: "For more information, contact your administrator or consult the privacy policy."
+            ?: "<p class=\"description\">For more information, contact your administrator or consult the privacy policy.</p>"
     )
 }

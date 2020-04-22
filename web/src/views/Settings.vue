@@ -14,15 +14,7 @@
                                 <div><link-checkbox v-model="saveEmail" /></div>
                                 <div class="text">
                                     <p class="title" v-html="$t('settings.remember')" />
-                                    <p class="description">
-                                        - Vous obtiendrez des rôles automatiquement (e.g. rôle de promotion) et vous aurez accès
-                                        à des ressources restreintes<br/>
-                                        - Ce paramètre peut être changé à tout moment
-                                    </p>
-                                    <p class="warning">
-                                        Attention : Sans cette option, les serveurs de promotion seront majoritairement restreints,
-                                        car nous ne pourrons pas valider votre promotion
-                                    </p>
+                                    <div class="id-prompt" v-html="idPrompt" />
                                 </div>
                             </div>
                             <div class="option">
@@ -55,6 +47,8 @@
 </template>
 
 <script>
+    import { mapState } from 'vuex';
+
     import LinkCheckbox from '../components/Checkbox';
     import LinkLoading  from '../components/Loading';
     import LinkStepper  from '../components/Stepper';
@@ -97,9 +91,28 @@
                 this.submitting = false;
                 this.error = false;
             }
-        }
+        },
+        computed: mapState({ idPrompt: state => state.meta && state.meta.idPrompt })
     }
 </script>
+
+<style lang="scss">
+    .option .text {
+        .description {
+            color: #70777F;
+
+            margin-left: 5px;
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+
+        .warning {
+            color: #C24343;
+
+            margin-top: 5px;
+        }
+    }
+</style>
 
 <style lang="scss" scoped>
     @import '../styles/vars';
@@ -160,25 +173,15 @@
                     text-decoration: underline;
                 }
 
+                .id-prompt {
+                    display: contents;
+                }
+
                 .title {
                     margin-top: 0;
                     margin-bottom: 0;
 
                     font-size: 20px;
-                }
-
-                .description {
-                    color: #70777F;
-
-                    margin-left: 5px;
-                    margin-top: 10px;
-                    margin-bottom: 0;
-                }
-
-                .warning {
-                    color: #C24343;
-
-                    margin-top: 5px;
                 }
             }
         }

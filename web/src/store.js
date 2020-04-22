@@ -83,8 +83,6 @@ export default new Vuex.Store({
                 return;
             }
 
-            commit('setMeta', await request('/meta/info'));
-
             if (isPermanentSession()) {
                 let user;
                 try {
@@ -109,6 +107,8 @@ export default new Vuex.Store({
                     commit('setTempProfile', user);
                 }
             }
+
+            commit('setMeta', await request('/meta/info'));
         },
         async postCode({ state, commit }, { service, code, uri }) {
             const { next, attachment } = await request('POST', '/register/authcode/' + service, {

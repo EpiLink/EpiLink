@@ -6,7 +6,7 @@ import store from './store';
 import Home          from './views/Home';
 import Microsoft     from './views/Microsoft';
 import NotFound      from './views/NotFound';
-import MetaText from './views/MetaText';
+import MetaText      from './views/MetaText';
 import Profile       from './views/Profile';
 import Redirect      from './views/Redirect';
 import Auth          from './views/Auth';
@@ -76,11 +76,14 @@ const router = new VueRouter({
 
 router.beforeEach((to, from, next) => {
     const path = to.fullPath;
+    const fromPath = from.fullPath;
+
     const state = store.state;
 
     const go = p => next(path !== p ? p : undefined);
+    const authAuthorized = (path === '/auth/discord' && fromPath === '/') || (path === '/auth/microsoft' && fromPath === '/microsoft');
 
-    if (path === '/' || path === '/microsoft' || path === '/settings' || (path.startsWith('/auth/') && !from.name)) {
+    if (path === '/' || path === '/microsoft' || path === '/settings' || (path.startsWith('/auth/') && !authAuthorized)) {
         if (!state.user || !state.user.username) {
             return go('/');
         }
