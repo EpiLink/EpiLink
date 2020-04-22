@@ -67,7 +67,7 @@ $ ./gradlew test
 ### Running (dev)
 
 ```
-$ ./gradlew run --args="path/to/config/file"
+$ ./gradlew run --args="path/to/config/file --dev"
 ```
 
 The back-end requires a config file (check the [maintainer guide](MaintainerGuide.md) for guidance on how to fill it in). A sample config file can be found [here](/bot/config/epilink_config.yaml).
@@ -75,6 +75,8 @@ The back-end requires a config file (check the [maintainer guide](MaintainerGuid
 You can copy-paste it and rename it to `epilink_config_real.yaml` and launch the back-end with `./gradlew run --args="config/epilink_config_real.yaml"`. The `epilink_config_real.yaml` file is ignored by Git in our `.gitignore` for this purpose.
 
 The back-end is served under whichever port [you specified in the configuration file](MaintainerGuide.md#http-server-settings).
+
+The `--dev` flag (that is passed to EpiLink) disables proxy support and HTTPS redirection, which would otherwise be enabled by default.
 
 ### Building (prod)
 

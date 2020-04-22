@@ -13,7 +13,13 @@ There are (or, rather, will be) several ways of deploying EpiLink:
 
 All-in-one is recommended for most use cases, although it is not necessarily the fastest option.
 
-You will also need a Redis server. A ready-to-use Redis server may be included in all-in-one packages.
+You will also need a Redis server. All-in-one packages may include a ready-to-use Redis server.
+
+**EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
+
+**If, somehow, you do not use a reverse proxy, launch EpiLink with the `-n` option.** Otherwise, attackers could fake their IP address by passing their own `X-Forwarded-*` headers.
+
+Please open an issue on GitHub if you need to use the standard `Forwarded` header instead of `X-Fowarded-*`.  
 
 ## Running
 
