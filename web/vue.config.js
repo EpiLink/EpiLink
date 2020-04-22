@@ -1,13 +1,14 @@
 const path = require('path');
 const webpack = require('webpack');
 
-const backendURL = process.env.BACKEND_URL || 'http://localhost:9090/api/v1';
+const backendUrl = process.env.BACKEND_URL || 'http://localhost:9090';
+const fullBackEndUrl = (backendUrl.endsWith("/") ? backendUrl : backendUrl + "/") + "api/v1";
 
 module.exports = {
     outputDir: path.resolve(__dirname, '../build/web'),
     configureWebpack: {
         plugins: [
-            new webpack.DefinePlugin({ BACKEND_URL: `"${backendURL}"` })
+            new webpack.DefinePlugin({ BACKEND_URL: `"${fullBackEndUrl}"` })
         ]
     }
 };

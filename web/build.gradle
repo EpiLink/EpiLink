@@ -2,18 +2,46 @@ plugins {
   id "com.github.node-gradle.node" version "2.2.3"
 }
 
+String backEndUrl() {
+  if (project.hasProperty("backendUrl")) {
+    return project.property("backendUrl")
+  } else if (project.hasProperty("withFrontend")) {
+    return "/"
+  } else {
+    return null
+  }
+}
+
 task bundleWeb(type: NpmTask) {
   inputs.files(fileTree('node_modules'))
   inputs.files(fileTree('src'))
   inputs.files(fileTree('assets'))
   inputs.file('package.json')
-
+  inputs.file('vue.config.js')
+  inputs.file('babel.config.js')
+  inputs.property("backendUrl", backEndUrl())
   outputs.dir('../build/web')
+  
   dependsOn npmInstall
   args = ['run', 'prod']
+
+  doFirst {
+    String backendUrl = backEndUrl()
+    if(backendUrl == null) {
+      // Enforce it here, because creating a bundle isn't meant to be done with the default dev URL
+      throw new InvalidUserDataException('Please provide a back-end URL with -PbackendUrl="https://..."')
+    }
+    environment = ['BACKEND_URL': backendUrl]
+  }
 }
 
 task serveWeb(type: NpmTask) {
   dependsOn npmInstall
   args = ['run', 'serve']
+
+  doFirst {
+    String backendUrl = backEndUrl()
+    if (backendUrl != null)
+      environment = ['BACKEND_URL': backendUrl]
+  }
 }
