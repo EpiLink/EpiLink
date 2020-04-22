@@ -1,5 +1,8 @@
 package org.epilink.bot.http
 
+import io.ktor.application.install
+import io.ktor.features.HttpsRedirect
+import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -23,7 +26,7 @@ interface LinkHttpServer {
 /**
  * This class represents the Ktor server.
  */
-internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
+internal class LinkHttpServerImpl(disableProxySupport: Boolean, disableHttps: Boolean) : LinkHttpServer, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.http")
     private val wsCfg: LinkWebServerConfiguration by inject()
 
@@ -35,6 +38,16 @@ internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
      * The actual Ktor application instance
      */
     private var server: ApplicationEngine = embeddedServer(Netty, wsCfg.port) {
+        if (disableProxySupport) {
+            logger.info("Reverse proxy support is DISABLED.")
+        } else {
+            install(XForwardedHeaderSupport)
+        }
+        if (disableHttps) {
+            logger.warn("HTTPS redirection is DISABLED.")
+        } else {
+            install(HttpsRedirect)
+        }
         logger.debug("Installing EpiLink API")
         with(backend) { epilinkApiModule() }
         logger.debug("Installing EpiLink front-end handler")

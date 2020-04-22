@@ -27,6 +27,21 @@ class CliArgs(parser: ArgParser) {
      * Path to the configuration file, w.r.t. the current working directory
      */
     val config by parser.positional("path to the configuration file")
+
+    val notBehindProxy by parser.flagging(
+        "-n", "--not-behind-proxy",
+        help = "If this flag is present, EpiLink will run without processing X-Forwarded-For headers. Use this if you are not running behind a proxy."
+    )
+
+    val disableHttps by parser.flagging(
+        "-d", "--disable-https",
+        help = "If this flag is present, EpiLink will not redirect HTTP requests to HTTPS"
+    )
+
+    val devMode by parser.flagging(
+        "--dev",
+        help = "This flag is shorthand for enabling both -d -n. Disables HTTPS and disables reverse proxy support. Should only be used for development purposes."
+    )
 }
 
 /**
@@ -91,7 +106,13 @@ fun main(args: Array<String>) = mainBody("epilink") {
     val legal = cfg.legal.load(cfgPath)
 
     logger.debug("Creating environment")
-    val env = LinkServerEnvironment(cfg, legal, rulebook)
+    val env = LinkServerEnvironment(
+        cfg = cfg,
+        legal = legal,
+        rulebook = rulebook,
+        disableProxySupport = cliArgs.notBehindProxy || cliArgs.devMode,
+        disableHttps = cliArgs.disableHttps || cliArgs.devMode
+    )
 
     logger.info("Environment created, starting ${env.name}")
     env.start()
