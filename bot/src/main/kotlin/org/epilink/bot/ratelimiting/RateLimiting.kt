@@ -140,9 +140,9 @@ class RateLimiting(configuration: Configuration) {
         /**
          * The default amount of time before a rate limit is reset. Can be overridden via the [rateLimited] function.
          *
-         * 1 hour by default
+         * 2 minutes by default
          */
-        var timeBeforeReset: Duration = Duration.ofHours(1)
+        var timeBeforeReset: Duration = Duration.ofMinutes(2)
 
         /**
          * This is the function that generates caller keys. The default uses the remote host as the caller key.
@@ -266,7 +266,7 @@ private fun ApplicationResponse.appendRateLimitHeaders(
     bucket: String
 ) {
     header(RateLimiting.Headers.Limit, context.limit)
-    header(RateLimiting.Headers.Remaining, rate.remainingRequests)
+    header(RateLimiting.Headers.Remaining, (rate.remainingRequests - 1).coerceAtLeast(0))
     header(RateLimiting.Headers.Reset, toHeaderValueWithPrecision(inMillis, rate.resetAt.toEpochMilli()))
     header(RateLimiting.Headers.ResetAfter, toHeaderValueWithPrecision(inMillis, remainingTimeBeforeReset.toMillis()))
     header(RateLimiting.Headers.Bucket, bucket)

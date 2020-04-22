@@ -21,7 +21,7 @@ interface RateLimiter<K> {
      * This function must also handle all rate-resetting activities.
      *
      * @param ctx The context to use to get more information about rates
-     * @return A [Rate] object representing the rate handled.
+     * @return A [Rate] object representing the rate handled and whether the limit should happen or not
      */
     suspend fun handle(ctx: RateLimitingContext, key: K): Rate
 }

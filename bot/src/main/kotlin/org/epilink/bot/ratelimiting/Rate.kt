@@ -7,7 +7,8 @@ import java.time.Instant
  */
 data class Rate(
     /**
-     * The number of remaining requests
+     * The number of remaining requests + 1. So, if this is 1, then this is the last allowed request and the next
+     * request will trigger a rate limit.
      */
     val remainingRequests: Long,
     /**
