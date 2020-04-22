@@ -63,7 +63,7 @@ class LegalTextsTest {
             loaded.policyText
         )
         assertEquals(
-            "For more information, contact your administrator or consult the privacy policy.",
+            "<p class=\"description\">For more information, contact your administrator or consult the privacy policy.</p>",
             loaded.idPrompt
         )
     }
