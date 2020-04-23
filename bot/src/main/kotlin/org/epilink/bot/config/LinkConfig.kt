@@ -51,6 +51,26 @@ data class LinkConfiguration(
 )
 
 /**
+ * Used in [LinkWebServerConfiguration.proxyType] to set the kind of proxy expected
+ */
+enum class ProxyType {
+    /**
+     * No proxy used: do not enable header support
+     */
+    None,
+
+    /**
+     * Proxy used with the de-facto standard X-Forwarded-* headers
+     */
+    XForwarded,
+
+    /**
+     * Proxy used with the standard Forwarded header
+     */
+    Forwarded
+}
+
+/**
  * HTTP/Web server options
  *
  * @see LinkConfiguration.server
@@ -60,6 +80,14 @@ data class LinkWebServerConfiguration(
      * The port to be used by the server
      */
     val port: Int,
+    /**
+     * True if HTTP requests should be redirected to HTTPS, false if HTTP requests should be allowed
+     */
+    val enableHttpsRedirect: Boolean,
+    /**
+     * Determine which (possibly de-facto) standard to follow for proxy headers support.
+     */
+    val proxyType: ProxyType,
     /**
      * The URL to the front-end, with a trailing slash, or null if the front-end is bundled
      */

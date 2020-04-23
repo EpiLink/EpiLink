@@ -1,5 +1,14 @@
 # This configuration file allows you to configure the back-end side of things
-# The configuration file's location should be passed as the first argument when launching EpiLink
+# The configuration file's location should be passed as the first argument when launching EpiLink manually
+
+#################################################################################################
+# TAKE THE TIME TO GO THROUGH THIS CONFIGURATION FILE ENTIRELY! It contains a lot of useful     #
+# information that will make your life much easier. It also includes security information which #
+# which you should really be careful about.                                                     #
+#################################################################################################
+
+# Misconfigurations are always reported in the logs as WARN or ERROR.
+# This configuration contains a *lot* of comments. You can remove all of them to get a much cleaner and compact file.
 
 # The name of the server. You can customize this if you want to.
 name: My EpiLink Instance
@@ -8,6 +17,16 @@ name: My EpiLink Instance
 server:
   # The port that should be used for the server.
   port: 9090
+  # True to enable HTTPS redirection for all HTTP connections, false to allow HTTP connections.
+  # !!SWITCH TO TRUE FOR PRODUCTION SYSTEMS!!
+  enableHttpsRedirect: false
+  # Either None, Forwarded or XForwarded depending on how you use your reverse proxy to transmit the remote host's
+  # information
+  # !!SWITCH TO THE CORRECT VALUE! FAILURE TO DO SO COULD LEAD TO SECURITY FLAWS!!
+  # - None: No reverse proxy used, use the host's information directly
+  # - XForwarded: Use the X-Forwarded-* headers to get information about the remote host
+  # - Forwarded: Use the Forwarded standard header to get information about the remote host
+  proxyType: None
   # The URL of the front-end, WITH a trailing slash /, or null if the URL is unknown
   # Leave as ~ if the front-end is bootstrapped (i.e. the front-end is served on the same server as the back-end)
   frontendUrl: ~

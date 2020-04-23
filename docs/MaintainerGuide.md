@@ -56,6 +56,8 @@ redis: "redis://localhost:6379"
 server:
   port: 9090
   frontendUrl: ~
+  enableHttpsRedirect: true # or false, but should be true for production systems. Only use false for testing!
+  proxyType: None # or XForwarded, or Forwarded
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -64,7 +66,12 @@ server:
 ```
 
 * `port`: The port on which the back-end will be served
-* `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
+* `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown, or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
+* `enableHttpsRedirect` ***SECURITY***: Enables HTTPS redirection for all HTTP requests when set to true. Setting it to false causes EpiLink to accept HTTP request -- which you should only do if you are testing things.
+* `proxyType` ***SECURITY***: Tells EpiLink how the reverse proxy it is behind passes down remote host information.
+    * `None`: For testing only, when EpiLink is not behind a reverse proxy at all.
+    * `XForwarded`: When remote host information is passed through the `X-Forwarded-*` headers.
+    * `Forwarded`: When remote host information is passed through the standard `Forwarded` header.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 
 ### Credentials
