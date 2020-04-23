@@ -12,10 +12,7 @@ import io.ktor.http.hostWithPort
 import io.ktor.server.testing.TestApplicationCall
 import io.ktor.server.testing.TestApplicationResponse
 import io.mockk.mockk
-import org.epilink.bot.config.LinkConfiguration
-import org.epilink.bot.config.LinkDiscordConfig
-import org.epilink.bot.config.LinkTokens
-import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.config.*
 import org.koin.test.KoinTest
 import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
@@ -24,7 +21,7 @@ import kotlin.test.assertEquals
 
 val minimalConfig = LinkConfiguration(
     "Test",
-    server = LinkWebServerConfiguration(0, null),
+    server = LinkWebServerConfiguration(0, false, ProxyType.None, null),
     db = "",
     tokens = LinkTokens(
         discordToken = "",

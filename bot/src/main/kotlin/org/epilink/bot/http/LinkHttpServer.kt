@@ -1,12 +1,15 @@
 package org.epilink.bot.http
 
 import io.ktor.application.install
+import io.ktor.features.ForwardedHeaderSupport
 import io.ktor.features.HttpsRedirect
 import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.config.ProxyType.*
+import org.epilink.bot.debug
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
@@ -26,7 +29,7 @@ interface LinkHttpServer {
 /**
  * This class represents the Ktor server.
  */
-internal class LinkHttpServerImpl(disableProxySupport: Boolean, disableHttps: Boolean) : LinkHttpServer, KoinComponent {
+internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.http")
     private val wsCfg: LinkWebServerConfiguration by inject()
 
@@ -38,15 +41,18 @@ internal class LinkHttpServerImpl(disableProxySupport: Boolean, disableHttps: Bo
      * The actual Ktor application instance
      */
     private var server: ApplicationEngine = embeddedServer(Netty, wsCfg.port) {
-        if (disableProxySupport) {
-            logger.info("Reverse proxy support is DISABLED.")
-        } else {
-            install(XForwardedHeaderSupport)
+        when (wsCfg.proxyType) {
+            None -> logger.info("Reverse proxy support is DISABLED.")
+            Forwarded -> install(ForwardedHeaderSupport)
+                .also { logger.debug { "'Forwarded' header support installed." } }
+            XForwarded -> install(XForwardedHeaderSupport)
+                .also { logger.debug { "'X-Forwarded-*' header support installed." } }
         }
-        if (disableHttps) {
-            logger.warn("HTTPS redirection is DISABLED.")
-        } else {
+        if (wsCfg.enableHttpsRedirect) {
             install(HttpsRedirect)
+            logger.debug { "HTTPS redirection installed." }
+        } else {
+            logger.warn("HTTPS redirection is DISABLED.")
         }
         logger.debug("Installing EpiLink API")
         with(backend) { epilinkApiModule() }

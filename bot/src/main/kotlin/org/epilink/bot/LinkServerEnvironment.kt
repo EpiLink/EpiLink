@@ -27,9 +27,7 @@ import org.slf4j.LoggerFactory
 class LinkServerEnvironment(
     private val cfg: LinkConfiguration,
     private val legal: LinkLegalTexts,
-    rulebook: Rulebook,
-    disableProxySupport: Boolean,
-    disableHttps: Boolean
+    rulebook: Rulebook
 ) {
     private val logger = LoggerFactory.getLogger("epilink.environment")
 
@@ -73,7 +71,7 @@ class LinkServerEnvironment(
      */
     val epilinkWebModule = module {
         // HTTP (Ktor) server
-        single<LinkHttpServer> { LinkHttpServerImpl(disableProxySupport, disableHttps) }
+        single<LinkHttpServer> { LinkHttpServerImpl() }
 
         single<LinkBackEnd> { LinkBackEndImpl() }
 

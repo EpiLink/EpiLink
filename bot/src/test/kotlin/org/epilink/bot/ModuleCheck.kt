@@ -19,11 +19,7 @@ class ModuleCheck : KoinTest {
     @Test
     fun checkEpilinkModules() {
         with(
-            LinkServerEnvironment(
-                cfgMock, legalTextsMock, rulebookMock,
-                disableProxySupport = true,
-                disableHttps = true
-            )
+            LinkServerEnvironment(cfgMock, legalTextsMock, rulebookMock)
         ) {
             startKoin {
                 modules(epilinkBaseModule, epilinkWebModule, epilinkDiscordModule)
