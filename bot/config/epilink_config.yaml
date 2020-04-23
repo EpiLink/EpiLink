@@ -69,7 +69,7 @@ tokens:
   msftTenant: common
 
 # Terms of services, etc. See the maintainer guide for more details.
-legal:
+#legal:
   # Terms of services
   # tos: |
   #     <p> My terms of services...</p>
