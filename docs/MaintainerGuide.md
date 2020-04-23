@@ -4,6 +4,19 @@
 
 This page will guide you through the configuration of a working EpiLink instance.
 
+## Getting started
+
+Go through all of these steps before going public:
+
+- Get EpiLink (and all of the [required stuff](#deployment-methods))
+- [Configure it](#configuration) using the [sample configuration](/bot/config/epilink_config.yaml) as a template
+- Make sure everything works
+- Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
+- Enable [HTTPS redirection and set the reverse proxy headers configuration](#http-server-settings)
+- Make sure everything still works
+
+After doing all that, you will be good to go! Read on to learn how to do all of these things!
+
 ## Deployment methods
 
 There are (or, rather, will be) several ways of deploying EpiLink:
@@ -100,7 +113,7 @@ The Bot section on Discord's developer portal will determine what the applicatio
 | General Information -> Client Secret  | `discordOAuthSecret`    |
 | Bot -> Token                          | `discordToken`          |
 
-{TODO Add redirect_uri information}
+You should also add redirection URIs based on where the front-end is served. The path is `/redirect/discord`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/discord`. 
 
 #### Microsoft
 
@@ -129,7 +142,7 @@ You will need to create a secret manually, as Azure AD does not create one for y
 | Overview -> Application (client) ID      | `msftOAuthClientId`     |
 | Certificates & Secrets -> Client secrets | `msftOAuthSecret`       |
 
-You must also set redirection URIs. Use your front-end domain name and protocol (e.g. "https://myfrontend.com") followed by `/redirect/microsoft`.
+You should also add redirection URIs based on where the front-end is served. The path is `/redirect/microsoft`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/microsoft`.
 
 ##### Tenant
 
