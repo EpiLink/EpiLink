@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+# Deploy default config files if they do not already exist (-n)
+cp -n $SNAP/defaults/* $SNAP_COMMON
+
+sed -i -e "s:dir ./:dir $SNAP_COMMON/redis/:g" $SNAP_COMMON/redis.conf
+
+REDIS_DIR=$SNAP_COMMON/redis
+
+if [ ! -d $REDIS_DIR ]; then
+    # Data folder does not exist, create it
+    mkdir $REDIS_DIR
+    # from https://snapcraft.io/docs/system-usernames section Ownership
+    chmod 770 "$REDIS_DIR"
+    chown snap_daemon "$REDIS_DIR"
+    chgrp root "$REDIS_DIR"
+fi

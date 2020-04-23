@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+
+cd $SNAP_COMMON
+exec $SNAP/epilink/bin/bot $SNAP_COMMON/epilink_config.yaml

@@ -1,0 +1,72 @@
+name: epilink
+version: git
+summary: Discord + Microsoft account linking server
+description: |
+  EpiLink is an open-source account linker that allows you to bind Discord and
+  Microsoft identities together and only allow specific people in your Discord
+  servers. You can also automatically attribute roles based on who is who.
+
+grade: devel
+
+confinement: strict
+base: core18
+
+parts:
+  # EpiLink
+  epilink:
+    source: '.'
+    plugin: gradle
+    gradle-openjdk-version: "11"
+    gradle-options: [installDist, -PwithFrontend]
+    gradle-output-dir: bot/build/libs
+    override-build: |
+      snapcraftctl build
+      mkdir -p $SNAPCRAFT_PART_INSTALL/epilink
+      mkdir -p $SNAPCRAFT_PART_INSTALL/defaults
+      cp -r bot/build/install/bot/* $SNAPCRAFT_PART_INSTALL/epilink
+      cp bot/config/epilink_config.yaml $SNAPCRAFT_PART_INSTALL/defaults
+      cp snap/local/epilink_start $SNAPCRAFT_PART_INSTALL/bin
+  # Redis
+  redis:
+    source: http://download.redis.io/releases/redis-5.0.8.tar.gz
+    plugin: make
+    artifacts:
+      - src/redis-sentinel
+      - src/redis-server
+      - src/redis-check-aof
+      - src/redis-check-rdb
+      - src/redis-cli
+    override-build: |
+      snapcraftctl build
+      mkdir -p $SNAPCRAFT_PART_INSTALL/defaults
+      cp redis.conf $SNAPCRAFT_PART_INSTALL/defaults
+    organize:
+      src/redis-server: bin/redis-server
+      src/redis-check-aof: bin/redis-check-aof
+      src/redis-check-rdb: bin/redis-check-rdb
+      src/redis-cli: bin/redis-cli
+    build-packages:
+      - build-essential
+
+
+apps:
+  epilink:
+    command: bin/epilink_start
+    plugs: [network, network-bind, removable-media]
+    daemon: simple
+  redis-check-rdb:
+    command: bin/redis-check-rdb
+    plugs: [network]
+  redis-check-aof:
+    command: bin/redis-check-aof
+    plugs: [network]
+  redis-cli:
+    command: bin/redis-cli
+    plugs: [network]
+  redis-server:
+    command: bin/redis-server $SNAP_COMMON/redis.conf
+    plugs: [network, network-bind, removable-media]
+    daemon: simple
+
+system-usernames:
+  snap_daemon: shared

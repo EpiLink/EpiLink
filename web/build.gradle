@@ -67,3 +67,8 @@ license {
 
 licenseFormat.dependsOn licenseFormatJs
 tasks["license"].dependsOn licenseCheckJs
+
+node {
+  version = '12.16.2'
+  download = true
+}
