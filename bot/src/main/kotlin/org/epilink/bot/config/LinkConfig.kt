@@ -121,23 +121,23 @@ data class LinkTokens(
     /**
      * Discord bot token
      */
-    val discordToken: String?,
+    val discordToken: String,
     /**
      * Discord OAuth Client ID
      */
-    val discordOAuthClientId: String?,
+    val discordOAuthClientId: String,
     /**
      * Discord OAuth Client Secret
      */
-    val discordOAuthSecret: String?,
+    val discordOAuthSecret: String,
     /**
      * Microsoft/Azure AD Client Id
      */
-    val msftOAuthClientId: String?,
+    val msftOAuthClientId: String,
     /**
      * Microsoft/Azure Ad Client Secret
      */
-    val msftOAuthSecret: String?,
+    val msftOAuthSecret: String,
     /**
      * Microsoft tenant. Check the maintainer guide for more information.
      */

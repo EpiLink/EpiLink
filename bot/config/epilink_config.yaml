@@ -55,15 +55,15 @@ redis: "redis://localhost:6379"
 # environment values.
 tokens:
   # The token for the Discord bot
-  discordToken: ~
+  discordToken: ...
   # The client ID for Discord's OAuth2
-  discordOAuthClientId: ~
+  discordOAuthClientId: ...
   # The secret for Discord's OAuth2
-  discordOAuthSecret: ~
+  discordOAuthSecret: ...
   # The client ID for Microsoft's OAuth2
-  msftOAuthClientId: ~
+  msftOAuthClientId: ...
   # The secret for Microsoft's OAuth2
-  msftOAuthSecret: ~
+  msftOAuthSecret: ...
   # The tenant for Microsoft OAuth requests.
   # This can be "common" (allow everyone) or an ID specific to a company/school.
   msftTenant: common

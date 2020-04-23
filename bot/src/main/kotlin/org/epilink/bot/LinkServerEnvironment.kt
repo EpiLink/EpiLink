@@ -59,10 +59,7 @@ class LinkServerEnvironment(
         single<LinkRoleManager> { LinkRoleManagerImpl() }
         // Facade
         single<LinkDiscordClientFacade> {
-            LinkDiscord4JFacadeImpl(
-                cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null"),
-                cfg.tokens.discordToken ?: error("Discord token cannot be null ")
-            )
+            LinkDiscord4JFacadeImpl(cfg.tokens.discordOAuthClientId, cfg.tokens.discordToken)
         }
     }
 
@@ -82,18 +79,11 @@ class LinkServerEnvironment(
         single { HttpClient(Apache) }
 
         single {
-            LinkDiscordBackEnd(
-                cfg.tokens.discordOAuthClientId ?: error("Discord client ID cannot be null"),
-                cfg.tokens.discordOAuthSecret ?: error("Discord OAuth secret cannot be null")
-            )
+            LinkDiscordBackEnd(cfg.tokens.discordOAuthClientId, cfg.tokens.discordOAuthSecret)
         }
 
         single {
-            LinkMicrosoftBackEnd(
-                cfg.tokens.msftOAuthClientId ?: error("Microsoft client ID cannot be null"),
-                cfg.tokens.msftOAuthSecret ?: error("Microsoft OAuth secret cannot be null"),
-                cfg.tokens.msftTenant
-            )
+            LinkMicrosoftBackEnd(cfg.tokens.msftOAuthClientId, cfg.tokens.msftOAuthSecret, cfg.tokens.msftTenant)
         }
 
         single { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryStorageProvider() }
