@@ -167,7 +167,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
         val hash = microsoftId.hashSha256()
         if (facade.isMicrosoftAccountAlreadyLinked(hash))
             return Disallowed("This Microsoft account is already linked to another account")
-        if (!rulebook.validator(email)) {
+        if (rulebook.validator?.invoke(email) == false) { // == false because the left side can be true or null
             return Disallowed("This e-mail address was rejected. Are you sure you are using the correct Microsoft account?")
         }
         val b = facade.getBansFor(hash)

@@ -312,6 +312,12 @@ fun LinkConfiguration.isConfigurationSane(
     report += legal.check()
     report += discord.check()
     report += discord.checkCoherenceWithRulebook(rulebook)
+
+    // Warn if the tenant is broad (common, consumers, organizations) and no e-mail validation is in place
+    if (tokens.msftTenant in setOf("common", "consumers", "organizations") && rulebook.validator == null) {
+        report += ConfigWarning("You are using a non-specific Microsoft tenant (that allows anyone to log in) without e-mail validation: people from domains you do not trust may be accepted by EpiLink!")
+    }
+
     return report
 }
 
@@ -332,7 +338,24 @@ fun LinkDiscordConfig.check(): List<ConfigReportElement> {
  */
 @Suppress("unused")
 fun LinkTokens.check(): List<ConfigReportElement> {
-    return listOf()
+    // Emit an error if using the default values from the sample config file
+    val report = mutableListOf<ConfigReportElement>()
+    if (discordOAuthClientId == "...") {
+        report += ConfigError(true, "discordOAuthClientId was left with its default value: please provide a client ID!")
+    }
+    if (discordOAuthSecret == "...") {
+        report += ConfigError(true, "discordOAuthSecret was left with its default value: please provide a secret!")
+    }
+    if (discordToken == "...") {
+        report += ConfigError(true, "discordToken was left with its default value: please provide a bot token!")
+    }
+    if (msftOAuthClientId == "...") {
+        report += ConfigError(true, "msftOauthCliientId was left with its default value: please provide a client ID!")
+    }
+    if (msftOAuthSecret == "...") {
+        report += ConfigError(true, "msftOAuthSecret was left with its default value: please provide a secret!")
+    }
+    return report
 }
 
 /**
