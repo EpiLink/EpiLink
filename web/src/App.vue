@@ -217,7 +217,6 @@
             }
 
             #instance {
-                font-style: italic;
                 font-size: 18px;
             }
 
