@@ -91,7 +91,11 @@ fun main(args: Array<String>) = mainBody("epilink") {
     val legal = cfg.legal.load(cfgPath)
 
     logger.debug("Creating environment")
-    val env = LinkServerEnvironment(cfg, legal, rulebook)
+    val env = LinkServerEnvironment(
+        cfg = cfg,
+        legal = legal,
+        rulebook = rulebook
+    )
 
     logger.info("Environment created, starting ${env.name}")
     env.start()

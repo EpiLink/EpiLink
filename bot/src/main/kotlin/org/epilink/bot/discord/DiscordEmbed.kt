@@ -65,7 +65,10 @@ data class DiscordEmbed(
             else -> {
                 // Try and parse a java.awt.Color static field
                 runCatching {
-                    Color::class.java.getField(this.color)?.get(null) as? Color
+                    // runCatching does not have a contract, so Kotlin does not know that this.color is still not null
+                    // here
+                    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+                    Color::class.java.getField(this.color).get(null) as? Color
                 }.getOrElse { throw LinkException("Unrecognized color: $color", it) }
             }
         }

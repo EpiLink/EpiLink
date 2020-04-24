@@ -51,6 +51,26 @@ data class LinkConfiguration(
 )
 
 /**
+ * Used in [LinkWebServerConfiguration.proxyType] to set the kind of proxy expected
+ */
+enum class ProxyType {
+    /**
+     * No proxy used: do not enable header support
+     */
+    None,
+
+    /**
+     * Proxy used with the de-facto standard X-Forwarded-* headers
+     */
+    XForwarded,
+
+    /**
+     * Proxy used with the standard Forwarded header
+     */
+    Forwarded
+}
+
+/**
  * HTTP/Web server options
  *
  * @see LinkConfiguration.server
@@ -60,6 +80,14 @@ data class LinkWebServerConfiguration(
      * The port to be used by the server
      */
     val port: Int,
+    /**
+     * True if HTTP requests should be redirected to HTTPS, false if HTTP requests should be allowed
+     */
+    val enableHttpsRedirect: Boolean,
+    /**
+     * Determine which (possibly de-facto) standard to follow for proxy headers support.
+     */
+    val proxyType: ProxyType,
     /**
      * The URL to the front-end, with a trailing slash, or null if the front-end is bundled
      */
@@ -93,23 +121,23 @@ data class LinkTokens(
     /**
      * Discord bot token
      */
-    val discordToken: String?,
+    val discordToken: String,
     /**
      * Discord OAuth Client ID
      */
-    val discordOAuthClientId: String?,
+    val discordOAuthClientId: String,
     /**
      * Discord OAuth Client Secret
      */
-    val discordOAuthSecret: String?,
+    val discordOAuthSecret: String,
     /**
      * Microsoft/Azure AD Client Id
      */
-    val msftOAuthClientId: String?,
+    val msftOAuthClientId: String,
     /**
      * Microsoft/Azure Ad Client Secret
      */
-    val msftOAuthSecret: String?,
+    val msftOAuthSecret: String,
     /**
      * Microsoft tenant. Check the maintainer guide for more information.
      */
@@ -284,6 +312,12 @@ fun LinkConfiguration.isConfigurationSane(
     report += legal.check()
     report += discord.check()
     report += discord.checkCoherenceWithRulebook(rulebook)
+
+    // Warn if the tenant is broad (common, consumers, organizations) and no e-mail validation is in place
+    if (tokens.msftTenant in setOf("common", "consumers", "organizations") && rulebook.validator == null) {
+        report += ConfigWarning("You are using a non-specific Microsoft tenant (that allows anyone to log in) without e-mail validation: people from domains you do not trust may be accepted by EpiLink!")
+    }
+
     return report
 }
 
@@ -304,7 +338,24 @@ fun LinkDiscordConfig.check(): List<ConfigReportElement> {
  */
 @Suppress("unused")
 fun LinkTokens.check(): List<ConfigReportElement> {
-    return listOf()
+    // Emit an error if using the default values from the sample config file
+    val report = mutableListOf<ConfigReportElement>()
+    if (discordOAuthClientId == "...") {
+        report += ConfigError(true, "discordOAuthClientId was left with its default value: please provide a client ID!")
+    }
+    if (discordOAuthSecret == "...") {
+        report += ConfigError(true, "discordOAuthSecret was left with its default value: please provide a secret!")
+    }
+    if (discordToken == "...") {
+        report += ConfigError(true, "discordToken was left with its default value: please provide a bot token!")
+    }
+    if (msftOAuthClientId == "...") {
+        report += ConfigError(true, "msftOauthCliientId was left with its default value: please provide a client ID!")
+    }
+    if (msftOAuthSecret == "...") {
+        report += ConfigError(true, "msftOAuthSecret was left with its default value: please provide a secret!")
+    }
+    return report
 }
 
 /**

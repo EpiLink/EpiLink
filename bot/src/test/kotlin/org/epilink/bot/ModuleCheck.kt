@@ -18,7 +18,9 @@ class ModuleCheck : KoinTest {
 
     @Test
     fun checkEpilinkModules() {
-        with(LinkServerEnvironment(cfgMock, legalTextsMock, rulebookMock)) {
+        with(
+            LinkServerEnvironment(cfgMock, legalTextsMock, rulebookMock)
+        ) {
             startKoin {
                 modules(epilinkBaseModule, epilinkWebModule, epilinkDiscordModule)
             }.logger(PrintLogger(Level.INFO)).checkModules()

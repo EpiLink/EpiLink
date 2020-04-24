@@ -76,7 +76,7 @@ $ ./gradlew run --args="path/to/config/file"
 
 The back-end requires a config file (check the [maintainer guide](MaintainerGuide.md) for guidance on how to fill it in). A sample config file can be found [here](/bot/config/epilink_config.yaml).
 
-You can copy-paste it and rename it to `epilink_config_real.yaml` and launch the back-end with `./gradlew run --args="config/epilink_config_real.yaml"`. The `epilink_config_real.yaml` file is ignored by Git in our `.gitignore` for this purpose.
+You can copy-paste it and rename the copy to `epilink_config_real.yaml` and launch the back-end with `./gradlew run --args="config/epilink_config_real.yaml"`. The `epilink_config_real.yaml` file is ignored by Git in our `.gitignore` for this purpose.
 
 The back-end is served under whichever port [you specified in the configuration file](MaintainerGuide.md#http-server-settings).
 

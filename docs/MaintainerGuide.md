@@ -4,6 +4,19 @@
 
 This page will guide you through the configuration of a working EpiLink instance.
 
+## Getting started
+
+Go through all of these steps before going public:
+
+- Get EpiLink (and all of the [required stuff](#deployment-methods))
+- [Configure it](#configuration) using the [sample configuration](/bot/config/epilink_config.yaml) as a template
+- Make sure everything works
+- Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
+- Enable [HTTPS redirection and set the reverse proxy headers configuration](#http-server-settings)
+- Make sure everything still works
+
+After doing all that, you will be good to go! Read on to learn how to do all of these things!
+
 ## Deployment methods
 
 There are (or, rather, will be) several ways of deploying EpiLink:
@@ -13,7 +26,13 @@ There are (or, rather, will be) several ways of deploying EpiLink:
 
 All-in-one is recommended for most use cases, although it is not necessarily the fastest option.
 
-You will also need a Redis server. A ready-to-use Redis server may be included in all-in-one packages.
+You will also need a Redis server. All-in-one packages may include a ready-to-use Redis server.
+
+**EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
+
+**If, somehow, you do not use a reverse proxy, launch EpiLink with the `-n` option.** Otherwise, attackers could fake their IP address by passing their own `X-Forwarded-*` headers.
+
+Please open an issue on GitHub if you need to use the standard `Forwarded` header instead of `X-Fowarded-*`.  
 
 ## Running
 
@@ -50,6 +69,8 @@ redis: "redis://localhost:6379"
 server:
   port: 9090
   frontendUrl: ~
+  enableHttpsRedirect: true # or false, but should be true for production systems. Only use false for testing!
+  proxyType: None # or XForwarded, or Forwarded
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -58,18 +79,23 @@ server:
 ```
 
 * `port`: The port on which the back-end will be served
-* `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
+* `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown, or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
+* `enableHttpsRedirect` ***SECURITY***: Enables HTTPS redirection for all HTTP requests when set to true. Setting it to false causes EpiLink to accept HTTP request -- which you should only do if you are testing things.
+* `proxyType` ***SECURITY***: Tells EpiLink how the reverse proxy it is behind passes down remote host information.
+    * `None`: For testing only, when EpiLink is not behind a reverse proxy at all.
+    * `XForwarded`: When remote host information is passed through the `X-Forwarded-*` headers.
+    * `Forwarded`: When remote host information is passed through the standard `Forwarded` header.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 
 ### Credentials
 
 ```yaml
 tokens:
-    discordToken: ~
-    discordOAuthClientId: ~
-    discordOAuthSecret: ~
-    msftOAuthClientId: ~
-    msftOAuthSecret: ~
+    discordToken: ...
+    discordOAuthClientId: ...
+    discordOAuthSecret: ...
+    msftOAuthClientId: ...
+    msftOAuthSecret: ...
     msftTenant: common
 ```
 
@@ -87,7 +113,7 @@ The Bot section on Discord's developer portal will determine what the applicatio
 | General Information -> Client Secret  | `discordOAuthSecret`    |
 | Bot -> Token                          | `discordToken`          |
 
-{TODO Add redirect_uri information}
+You should also add redirection URIs based on where the front-end is served. The path is `/redirect/discord`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/discord`. 
 
 #### Microsoft
 
@@ -116,7 +142,7 @@ You will need to create a secret manually, as Azure AD does not create one for y
 | Overview -> Application (client) ID      | `msftOAuthClientId`     |
 | Certificates & Secrets -> Client secrets | `msftOAuthSecret`       |
 
-You must also set redirection URIs. Use your front-end domain name and protocol (e.g. "https://myfrontend.com") followed by `/redirect/microsoft`.
+You should also add redirection URIs based on where the front-end is served. The path is `/redirect/microsoft`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/microsoft`.
 
 ##### Tenant
 
