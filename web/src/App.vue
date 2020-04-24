@@ -13,12 +13,7 @@
                         <link-loading />
                     </div>
 
-                    <div class="error" v-if="error" :key="2">
-                        <h1 class="title" v-html="$t('error.title')" />
-                        <p class="message" v-html="error" />
-
-                        <a class="action" @click="retry" v-html="$t('error.retry')" />
-                    </div>
+                    <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2" />
                 </transition>
             </div>
         </div>
@@ -41,7 +36,7 @@
             <ul id="navigation">
                 <li class="navigation-item" v-for="r of routes">
                     <router-link v-if="r.route" :to="{ name: r.name }" v-html="$t(`layout.navigation.${r.name}`)" />
-                    <a v-if="r.url" :href="r.url" v-html="r.name" />
+                    <a v-if="r.url" :href="r.url" v-html="r.name" target="_blank" />
                 </li>
             </ul>
         </div>
@@ -50,11 +45,13 @@
 
 <script>
     import { mapState } from 'vuex';
-    import LinkLoading  from './components/Loading';
+
+    import LinkError   from './components/Error';
+    import LinkLoading from './components/Loading';
 
     export default {
         name: 'link-app',
-        components: { LinkLoading },
+        components: { LinkError, LinkLoading },
 
         mounted() {
             this.load();
@@ -82,11 +79,11 @@
                 const urls = meta && meta.footerUrls;
 
                 return [
+                    ...(urls || []),
+
                     { name: 'tos', route: 'tos' },
                     { name: 'privacy', route: 'privacy' },
-                    { name: 'about', route: 'about' },
-
-                    ...(urls || [])
+                    { name: 'about', route: 'about' }
                 ];
             },
             instance() {
@@ -140,7 +137,7 @@
 
             border-radius: 4px;
 
-            animation: content-fade 0.25s 0.3s ease 1 both;
+            animation: fade 0.25s 0.3s ease 1 both;
 
             &, #loading, #content-wrapper > div {
                 width: $content-width;
@@ -241,7 +238,6 @@
 
                 &:hover {
                     text-decoration: underline;
-                    cursor: pointer;
                 }
             }
         }
@@ -253,61 +249,6 @@
             .navigation-item {
                 margin-right: 20px;
             }
-        }
-    }
-
-    .error {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-
-        padding: 0 25px;
-        box-sizing: border-box;
-
-        height: $content-height;
-
-        .title {
-            margin-top: 0;
-
-            font-size: 38px;
-        }
-
-        .message {
-            text-align: center;
-
-            font-style: italic;
-            color: #C01616;
-        }
-
-        .action {
-            margin-top: 25px;
-
-            cursor: pointer;
-
-            font-size: 22px;
-        }
-    }
-
-    .fade-enter-active, .fade-leave-active {
-        transition: opacity .2s;
-    }
-
-    .fade-enter-active {
-        transition-delay: .2s;
-    }
-
-    .fade-enter, .fade-leave-active {
-        opacity: 0;
-    }
-
-    @keyframes content-fade {
-        0% {
-            opacity: 0;
-        }
-
-        100% {
-            opacity: 1;
         }
     }
 

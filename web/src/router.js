@@ -3,15 +3,16 @@ import VueRouter from 'vue-router';
 
 import store from './store';
 
-import Home          from './views/Home';
-import Microsoft     from './views/Microsoft';
-import NotFound      from './views/NotFound';
-import MetaText      from './views/MetaText';
-import Profile       from './views/Profile';
-import Redirect      from './views/Redirect';
-import Auth          from './views/Auth';
-import Settings      from './views/Settings';
-import About         from './views/About';
+import Home      from './views/Home';
+import Microsoft from './views/Microsoft';
+import NotFound  from './views/NotFound';
+import MetaText  from './views/MetaText';
+import Profile   from './views/Profile';
+import Redirect  from './views/Redirect';
+import Auth      from './views/Auth';
+import Settings  from './views/Settings';
+import About     from './views/About';
+import Success   from './views/Success';
 
 Vue.use(VueRouter);
 
@@ -40,6 +41,11 @@ const routes = [
         path: '/settings',
         name: 'settings',
         component: Settings
+    },
+    {
+        path: '/success',
+        name: 'success',
+        component: Success
     },
     {
         path: '/profile',
@@ -81,9 +87,11 @@ router.beforeEach((to, from, next) => {
     const state = store.state;
 
     const go = p => next(path !== p ? p : undefined);
-    const authAuthorized = (path === '/auth/discord' && fromPath === '/') || (path === '/auth/microsoft' && fromPath === '/microsoft');
 
-    if (path === '/' || path === '/microsoft' || path === '/settings' || (path.startsWith('/auth/') && !authAuthorized)) {
+    const authAuthorized = (path === '/auth/discord' && fromPath === '/') || (path === '/auth/microsoft' && fromPath === '/microsoft');
+    const isAuthRoute = path === '/' || path === '/microsoft' || path === '/settings';
+
+    if (isAuthRoute || (path.startsWith('/auth/') && !authAuthorized) || (path === '/success' && fromPath !== '/settings')) {
         if (!state.user || !state.user.username) {
             return go('/');
         }

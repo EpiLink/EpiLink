@@ -15,23 +15,19 @@
                 <link-loading />
             </div>
 
-            <div class="error" v-if="error" :key="2">
-                <h1 class="title" v-html="$t('error.title')" />
-                <span class="message" v-html="error" />
-
-                <a class="action" v-html="$t('back')" @click="$router.back()" />
-            </div>
+            <link-error v-if="error" :error="error" message="back" @action="$router.back()" :key="2" />
         </transition>
     </div>
 </template>
 
 <script>
     import { getRedirectURI } from '../api';
+    import LinkError          from '../components/Error';
     import LinkLoading        from '../components/Loading';
 
     export default {
         name: 'link-auth',
-        components: { LinkLoading },
+        components: { LinkError, LinkLoading },
 
         mounted() {
             window.addEventListener('message', this.onMessage);

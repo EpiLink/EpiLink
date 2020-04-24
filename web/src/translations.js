@@ -42,6 +42,12 @@ const messages = {
 
             link: 'Link my account'
         },
+        success: {
+            created: 'Your account has been created',
+            access: 'You will get access to the Discord servers soon, please wait for a few minutes',
+            close: 'You can close this window',
+            profile: 'Go to my profile'
+        },
         about: {
             sources: 'Original sources',
             authors: 'Authors',
@@ -111,6 +117,12 @@ const messages = {
             policy: 'politique de confidentialité',
 
             link: 'Lier mon compte'
+        },
+        success: {
+            created: 'Votre compte a été créé',
+            access: 'Vous recevrez l\'accès au(x) serveur(s) Discord sous peu, merci de patienter quelques minutes',
+            close: 'Vous pouvez fermer cette fenêtre',
+            profile: 'Voir mon profil'
         },
         about: {
             sources: 'Sources originales',

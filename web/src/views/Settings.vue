@@ -1,6 +1,6 @@
 <template>
     <div id="settings">
-        <div id="settings-wrapper" :class="{ 'seen': seen }">
+        <div id="settings-wrapper" :class="{ seen }">
             <div id="left">
                 <link-user />
                 <link-stepper step="3" />
@@ -31,15 +31,12 @@
                             <button id="link" :class="{ 'enabled': acceptConditions }" @click="submit" v-html="$t('settings.link')" />
                         </div>
                     </div>
+
                     <div id="submitting" v-if="submitting && !error" :key="1">
                         <link-loading />
                     </div>
-                    <div class="error" v-if="error" :key="2">
-                        <h1 class="title" v-html="$t('error.title')" />
-                        <span class="message" v-html="error" />
 
-                        <a class="action" v-html="$t('error.retry')" @click="retry" />
-                    </div>
+                    <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2" />
                 </transition>
             </div>
         </div>
@@ -50,13 +47,14 @@
     import { mapState } from 'vuex';
 
     import LinkCheckbox from '../components/Checkbox';
+    import LinkError    from '../components/Error';
     import LinkLoading  from '../components/Loading';
     import LinkStepper  from '../components/Stepper';
     import LinkUser     from '../components/User';
 
     export default {
         name: 'link-settings',
-        components: { LinkLoading, LinkCheckbox, LinkUser, LinkStepper },
+        components: { LinkError, LinkLoading, LinkCheckbox, LinkUser, LinkStepper },
 
         mounted() {
             setTimeout(() => this.$store.commit('setExpanded', true), 300);
@@ -83,8 +81,8 @@
 
                 this.submitting = true;
 
-                this.$store.dispatch('register', this.saveEmail) // TODO: Handle errors
-                    .then(() => this.$router.push({ name: 'profile' }))
+                this.$store.dispatch('register', this.saveEmail)
+                    .then(() => this.$router.push({ name: 'success' }))
                     .catch(err => this.error = err);
             },
             retry() {

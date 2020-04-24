@@ -92,12 +92,9 @@ export default new Vuex.Store({
                     console.warn(e);
 
                     commit('logout');
-
-                    return;
                 }
 
-
-                if (user.username) {
+                if (user && user.username) {
                     commit('setProfile', user);
                 }
             } else {

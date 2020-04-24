@@ -45,7 +45,7 @@
     }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
     .meta-text {
         overflow: auto;
 
@@ -65,8 +65,6 @@
     }
 
     .back {
-        cursor: pointer;
-
         margin-bottom: 15px;
     }
 
