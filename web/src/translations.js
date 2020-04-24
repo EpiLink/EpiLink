@@ -5,6 +5,8 @@ Vue.use(VueI18n);
 
 const messages = {
     en: {
+        back: 'Back',
+
         // Pages
         home: {
             welcome: 'Welcome',
@@ -40,22 +42,25 @@ const messages = {
 
             link: 'Link my account'
         },
+        about: {
+            sources: 'Original sources',
+            authors: 'Authors',
+            disclaimer: ['For any question, please refer to the', 'instance maintainers first']
+        },
 
         layout: {
             cancel: 'Cancel the procedure',
             logout: 'Log out',
 
             navigation: {
-                instance: 'Instance',
+                tos: 'Terms of Services',
                 privacy: 'Privacy',
-                sources: 'Sources',
                 about: 'About'
             }
         },
 
         error: {
             title: 'Error',
-            back: 'Back',
             retry: 'Retry'
         },
 
@@ -70,6 +75,8 @@ const messages = {
         }
     },
     fr: {
+        back: 'Retour',
+
         // Pages
         home: {
             welcome: 'Bienvenue',
@@ -105,22 +112,25 @@ const messages = {
 
             link: 'Lier mon compte'
         },
+        about: {
+            sources: 'Sources originales',
+            authors: 'Auteurs',
+            disclaimer: ['Pour toute question, merci de vous adresser en priorité aux mainteneurs de l\'instance', '']
+        },
 
         layout: {
             cancel: 'Annuler la procédure',
             logout: 'Se déconnecter',
 
             navigation: {
-                instance: 'Instance',
+                tos: 'Conditions d\'utilisation',
                 privacy: 'Confidentialité',
-                sources: 'Sources',
                 about: 'À Propos'
             }
         },
 
         error: {
             title: 'Erreur',
-            back: 'Retour',
             retry: 'Rééssayer'
         },
 

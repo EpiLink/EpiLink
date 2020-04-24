@@ -110,7 +110,7 @@
 
         padding: 32px 35px 38px;
 
-        background-color: #e21f0c;
+        background-color: #db1e0c;
 
         #cross-left, #cross-right {
             width: 50px;

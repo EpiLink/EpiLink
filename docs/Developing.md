@@ -34,20 +34,24 @@ Note that most of these internally call NPM with specific arguments. NPM is auto
 Launching the front-end can be done like so:
 
 ```
-$ ./gradlew serveWeb --no-daemon
+$ ./gradlew serveWeb --no-daemon -PbackendUrl="https://..."
 ```
 
 The app will be served on `http://localhost:8080` by default, but might be served elsewhere if `8080` is already taken.
+
+You can provide the backendUrl with `-PbackendUrl="..."`. By default, it takes the value "http://localhost:9090". Remove the option entirely if you are fine with the default.
 
 The `--no-daemon` is necessary, otherwise the underlying server would not be terminated when Ctrl+C-ing out of the server. Or maybe not. See [this issue](https://github.com/node-gradle/gradle-node-plugin/issues/65).
 
 ### Compiling
 
 ```
-$ ./gradlew bundleWeb
+$ ./gradlew bundleWeb -PbackendUrl="..."
 ```
 
 The results will be available under the `build` folder at the root `EpiLink` directory.
+
+You must provide the backendUrl with `-PbackendUrl="..."`. This is the URL under which the back-end is served (without the `/api/v1` at the end).
 
 ## Back-end
 

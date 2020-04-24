@@ -10,7 +10,9 @@ export default new Vuex.Store({
         expanded: false,
         meta: null,
         popup: null,
-        user: null
+        user: null,
+        privacyPolicy: null,
+        termsOfService: null
     },
     mutations: {
         setExpanded(state, expanded) {
@@ -63,6 +65,16 @@ export default new Vuex.Store({
         logout(state) {
             state.user = null;
             deleteSession();
+        },
+        setPrivacyPolicy(state, policy) {
+            if (!state.privacyPolicy) {
+                state.privacyPolicy = policy;
+            }
+        },
+        setTermsOfService(state, terms) {
+            if (!state.termsOfService) {
+                state.termsOfService = terms;
+            }
         }
     },
     actions: {
@@ -70,8 +82,6 @@ export default new Vuex.Store({
             if (state.meta) {
                 return;
             }
-
-            commit('setMeta', await request('/meta/info'));
 
             if (isPermanentSession()) {
                 let user;
@@ -97,6 +107,8 @@ export default new Vuex.Store({
                     commit('setTempProfile', user);
                 }
             }
+
+            commit('setMeta', await request('/meta/info'));
         },
         async postCode({ state, commit }, { service, code, uri }) {
             const { next, attachment } = await request('POST', '/register/authcode/' + service, {
@@ -131,6 +143,20 @@ export default new Vuex.Store({
             await request('POST', '/register', { keepIdentity: saveEmail });
 
             commit('setRegistered');
+        },
+        async fetchPrivacyPolicy({ state, commit }) {
+            if (state.privacyPolicy) {
+                return;
+            }
+
+            commit('setPrivacyPolicy', await request('/meta/privacy'));
+        },
+        async fetchTermsOfService({ state, commit }) {
+            if (state.termsOfService) {
+                return;
+            }
+
+            commit('setTermsOfService', await request('/meta/tos'));
         }
     }
 });

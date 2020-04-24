@@ -29,15 +29,19 @@
                     <img id="logo" src="../assets/logo.svg" />
                     <span id="title">EpiLink</span>
                 </router-link>
+                <template v-if="instance">
+                    <div id="instance-separator"></div>
+                    <span id="instance" v-html="instance" />
+                </template>
                 <template v-if="canLogout">
-                    <div id="separator"></div>
+                    <div id="logout-separator"></div>
                     <a id="logout" @click="logout">{{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout') }}</a>
                 </template>
             </div>
             <ul id="navigation">
-                <li class="navigation-item" v-for="route of routes">
-                    <router-link v-if="route.route" :to="{ name: route.path }" v-html="$t(`layout.navigation.${route.title}`)" />
-                    <a v-if="route.url" :href="route.url" target="_blank" v-html="$t(`layout.navigation.${route.title}`)" />
+                <li class="navigation-item" v-for="r of routes">
+                    <router-link v-if="r.route" :to="{ name: r.name }" v-html="$t(`layout.navigation.${r.name}`)" />
+                    <a v-if="r.url" :href="r.url" v-html="r.name" />
                 </li>
             </ul>
         </div>
@@ -48,13 +52,6 @@
     import { mapState } from 'vuex';
     import LinkLoading  from './components/Loading';
 
-    const ROUTES = [
-        { title: 'instance', route: 'instance' },
-        { title: 'privacy', route: 'privacy' },
-        { title: 'sources', url: 'https://github.com/Litarvan/EpiLink' }, // TODO: Dynamic
-        { title: 'about', route: 'about' }
-    ];
-
     export default {
         name: 'link-app',
         components: { LinkLoading },
@@ -64,8 +61,6 @@
         },
         data() {
             return {
-                routes: ROUTES,
-                loaded: false,
                 error: null
             };
         },
@@ -81,14 +76,28 @@
             },
             redirected() {
                 return this.$route.name === 'redirect';
+            },
+            routes() {
+                const meta = this.$store.state.meta;
+                const urls = meta && meta.footerUrls;
+
+                return [
+                    { name: 'tos', route: 'tos' },
+                    { name: 'privacy', route: 'privacy' },
+                    { name: 'about', route: 'about' },
+
+                    ...(urls || [])
+                ];
+            },
+            instance() {
+                const meta = this.$store.state.meta;
+                return meta && meta.title;
             }
         },
         methods: {
             load() {
                 if (!this.redirected) {
-                    this.$store.dispatch('load')
-                        .then(() => this.loaded = true)
-                        .catch(err => this.error = err);
+                    this.$store.dispatch('load').catch(err => this.error = err);
                 }
             },
             logout() {
@@ -198,11 +207,25 @@
                 @include lato(bold);
             }
 
-            #separator {
+            #instance-separator, #logout-separator {
+                background-color: #313338;
+            }
+
+            #instance-separator {
+                width: 1px;
+                height: $footer-height / 2;
+
+                margin-left: 8px;
+                margin-right: 9px;
+            }
+
+            #instance {
+                font-size: 18px;
+            }
+
+            #logout-separator {
                 width: 10px;
                 height: 1px;
-
-                background-color: #313338;
 
                 margin-left: 10px;
                 margin-right: 10px;
