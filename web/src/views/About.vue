@@ -13,8 +13,9 @@
         </div>
 
         <div id="disclaimer">
-            Pour toute question, merci de vous adresser en priorité aux mainteneurs de l'instance
+            {{ $t('about.disclaimer')[0] }}
             '<span class="instance">{{ instance }}</span>'
+            {{ $t('about.disclaimer')[1] }}
         </div>
 
         <div id="authors-section">

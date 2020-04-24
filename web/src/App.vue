@@ -78,12 +78,15 @@
                 return this.$route.name === 'redirect';
             },
             routes() {
+                const meta = this.$store.state.meta;
+                const urls = meta && meta.footerUrls;
+
                 return [
                     { name: 'tos', route: 'tos' },
                     { name: 'privacy', route: 'privacy' },
                     { name: 'about', route: 'about' },
 
-                    ...this.$store.state.meta.footerUrls
+                    ...(urls || [])
                 ];
             },
             instance() {

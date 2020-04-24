@@ -44,7 +44,8 @@ const messages = {
         },
         about: {
             sources: 'Original sources',
-            authors: 'Authors'
+            authors: 'Authors',
+            disclaimer: ['For any question, please refer to the', 'instance maintainers first']
         },
 
         layout: {
@@ -113,7 +114,8 @@ const messages = {
         },
         about: {
             sources: 'Sources originales',
-            authors: 'Auteurs'
+            authors: 'Auteurs',
+            disclaimer: ['Pour toute question, merci de vous adresser en priorité aux mainteneurs de l\'instance', '']
         },
 
         layout: {
