@@ -131,8 +131,11 @@ export default new Vuex.Store({
 
             if (state.user.temp) {
                 await request('DELETE', '/register');
+            } else {
+                await request('POST', '/user/logout');
             }
 
+            console.log('Successfully logged out');
             commit('logout');
         },
         async register({ state, commit }, saveEmail) {
