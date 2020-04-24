@@ -115,6 +115,22 @@ class DatabaseTest : KoinBaseTest(
     }
 
     @Test
+    fun `Test Microsoft user with no validator can create account`() {
+        val hey = "hey".sha256()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
+            coEvery { getBansFor(hey) } returns listOf()
+        }
+        mockHere<Rulebook> {
+            every { validator } returns null
+        }
+        test {
+            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
+            assertTrue(adv is Allowed)
+        }
+    }
+
+    @Test
     fun `Test Microsoft user with email rejected cannot create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {

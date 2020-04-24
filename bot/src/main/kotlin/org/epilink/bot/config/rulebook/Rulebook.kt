@@ -53,7 +53,7 @@ class Rulebook(
     /**
      * Function used to validate email addresses
      */
-    val validator: EmailValidator
+    val validator: EmailValidator?
 )
 
 /**
@@ -200,7 +200,7 @@ class RulebookBuilder {
      * Actually build a rulebook from this builder and return it.
      */
     internal fun buildRulebook(): Rulebook {
-        return Rulebook(builtRules, validator ?: { true })
+        return Rulebook(builtRules, validator)
     }
 }
 

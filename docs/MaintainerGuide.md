@@ -91,11 +91,11 @@ server:
 
 ```yaml
 tokens:
-    discordToken: ~
-    discordOAuthClientId: ~
-    discordOAuthSecret: ~
-    msftOAuthClientId: ~
-    msftOAuthSecret: ~
+    discordToken: ...
+    discordOAuthClientId: ...
+    discordOAuthSecret: ...
+    msftOAuthClientId: ...
+    msftOAuthSecret: ...
     msftTenant: common
 ```
 
