@@ -35,8 +35,9 @@
                 </template>
             </div>
             <ul id="navigation">
-                <li class="navigation-item" v-for="route of routes">
-                    <router-link :to="{ name: route.name }" v-html="$t(`layout.navigation.${route.title}`)" />
+                <li class="navigation-item" v-for="r of routes">
+                    <router-link v-if="r.route" :to="{ name: r.name }" v-html="$t(`layout.navigation.${r.name}`)" />
+                    <a v-if="r.url" :href="r.url" v-html="r.name" />
                 </li>
             </ul>
         </div>
@@ -46,11 +47,6 @@
 <script>
     import { mapState } from 'vuex';
     import LinkLoading  from './components/Loading';
-
-    const ROUTES = [
-        { title: 'privacy', name: 'privacy' },
-        { title: 'about', name: 'about' }
-    ];
 
     export default {
         name: 'link-app',
@@ -77,6 +73,15 @@
             },
             redirected() {
                 return this.$route.name === 'redirect';
+            },
+            routes() {
+                return [
+                    { name: 'tos', route: 'tos' },
+                    { name: 'privacy', route: 'privacy' },
+                    { name: 'about', route: 'about' },
+
+                    ...this.$store.state.meta.footerUrls
+                ];
             }
         },
         methods: {

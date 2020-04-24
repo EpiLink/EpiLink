@@ -52,6 +52,7 @@ const messages = {
             logout: 'Log out',
 
             navigation: {
+                tos: 'Terms of use',
                 privacy: 'Privacy',
                 about: 'About'
             }
@@ -120,6 +121,7 @@ const messages = {
             logout: 'Se déconnecter',
 
             navigation: {
+                tos: 'Conditions d\'utilisation',
                 privacy: 'Confidentialité',
                 about: 'À Propos'
             }
