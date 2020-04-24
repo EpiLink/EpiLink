@@ -3,6 +3,7 @@ plugins {
     id "com.github.ben-manes.versions" version "0.28.0"
     id 'java'
     id 'application'
+    id "com.github.hierynomus.license"
 }
 
 repositories {
@@ -123,4 +124,8 @@ if (project.hasProperty("withFrontend")) {
     classes.dependsOn 'bootstrapFrontEnd'
 } else {
     classes.dependsOn 'cleanFrontEnd'
+}
+
+license {
+    header rootProject.file("LICENSE_HEADER")
 }
