@@ -53,7 +53,7 @@ const messages = {
             logout: 'Log out',
 
             navigation: {
-                tos: 'Terms of use',
+                tos: 'Terms of Services',
                 privacy: 'Privacy',
                 about: 'About'
             }
