@@ -29,8 +29,12 @@
                     <img id="logo" src="../assets/logo.svg" />
                     <span id="title">EpiLink</span>
                 </router-link>
+                <template v-if="instance">
+                    <div id="instance-separator"></div>
+                    <span id="instance" v-html="instance" />
+                </template>
                 <template v-if="canLogout">
-                    <div id="separator"></div>
+                    <div id="logout-separator"></div>
                     <a id="logout" @click="logout">{{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout') }}</a>
                 </template>
             </div>
@@ -57,7 +61,6 @@
         },
         data() {
             return {
-                routes: ROUTES,
                 error: null
             };
         },
@@ -82,6 +85,10 @@
 
                     ...this.$store.state.meta.footerUrls
                 ];
+            },
+            instance() {
+                const meta = this.$store.state.meta;
+                return meta && meta.title;
             }
         },
         methods: {
@@ -197,11 +204,26 @@
                 @include lato(bold);
             }
 
-            #separator {
+            #instance-separator, #logout-separator {
+                background-color: #313338;
+            }
+
+            #instance-separator {
+                width: 1px;
+                height: $footer-height / 2;
+
+                margin-left: 8px;
+                margin-right: 9px;
+            }
+
+            #instance {
+                font-style: italic;
+                font-size: 18px;
+            }
+
+            #logout-separator {
                 width: 10px;
                 height: 1px;
-
-                background-color: #313338;
 
                 margin-left: 10px;
                 margin-right: 10px;
