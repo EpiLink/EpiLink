@@ -12,7 +12,7 @@ Go through all of these steps before going public:
 - [Configure it](#configuration) using the [sample configuration](/bot/config/epilink_config.yaml) as a template
 - Make sure everything works
 - Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
-- Enable [HTTPS redirection and set the reverse proxy headers configuration](#http-server-settings)
+- [Set the reverse proxy headers configuration](#http-server-settings)
 - Make sure everything still works
 
 After doing all that, you will be good to go! Read on to learn how to do all of these things!
@@ -28,7 +28,7 @@ All-in-one is recommended for most use cases, although it is not necessarily the
 
 You will also need a Redis server. All-in-one packages may include a ready-to-use Redis server.
 
-**EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
+**EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
 
 **If, somehow, you do not use a reverse proxy, launch EpiLink with the `-n` option.** Otherwise, attackers could fake their IP address by passing their own `X-Forwarded-*` headers.
 
@@ -69,7 +69,6 @@ redis: "redis://localhost:6379"
 server:
   port: 9090
   frontendUrl: ~
-  enableHttpsRedirect: true # or false, but should be true for production systems. Only use false for testing!
   proxyType: None # or XForwarded, or Forwarded
   logo: "https://..." # optional
   footers: # optional
@@ -81,7 +80,6 @@ server:
 
 * `port`: The port on which the back-end will be served
 * `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown, or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
-* `enableHttpsRedirect` ***SECURITY***: Enables HTTPS redirection for all HTTP requests when set to true. Setting it to false causes EpiLink to accept HTTP request -- which you should only do if you are testing things.
 * `proxyType` ***SECURITY***: Tells EpiLink how the reverse proxy it is behind passes down remote host information.
     * `None`: For testing only, when EpiLink is not behind a reverse proxy at all.
     * `XForwarded`: When remote host information is passed through the `X-Forwarded-*` headers.
