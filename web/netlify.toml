@@ -1,8 +1,0 @@
-[build]
-	publish = "../build/web"
-	command = "npm run prod"
-
-[[redirects]]
-	from = "/*"
-	to = "index.html"
-	status = 200
