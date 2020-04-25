@@ -45,14 +45,6 @@ db: epilink.db
 # Format: https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax
 redis: "redis://localhost:6379"
 
-# Rulebook declaration
-# See the docs for more information
-#----#
-#rulebook: |
-#  "MyRule" { ... }
-# OR #
-#rulebookFile: myFile.rule.kts
-
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
 # environment values.
@@ -94,6 +86,13 @@ tokens:
 discord:
   # The URL displayed as the log-in URL in the bot's default welcome messages (nullable)
   welcomeUrl: "https://my.amazing.welcome.page/hello"
+  # Rulebook declaration
+  # See the docs for more information
+  #----#
+  #rulebook: |
+  #  "MyRule" { ... }
+  # OR #
+  #rulebookFile: myFile.rule.kts
   # See the documentation on custom roles for more details on this option. You can omit it if you do not need it.
   roles: []
   servers:

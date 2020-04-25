@@ -163,6 +163,12 @@ Note: If you need to use multiple tenants, and cannot guarantee identities by ju
 discord:
   welomeUrl: ~
   roles: []
+
+  rulebook: |
+    ...
+  # OR
+  rulebookFile: ...
+
   servers:
     - id: ...
       ...
@@ -266,7 +272,7 @@ fields: # Optional
 
 Most of these should be familiar if you have ever used Discord embed. You can remove elements you do not use (those that are marked with `# Optional`).
 
-### Rulebook configuration
+#### Rulebook configuration
 
 ```yaml
 rulebook: |
