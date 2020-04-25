@@ -73,6 +73,7 @@ export default {
         logout: 'Se déconnecter',
 
         navigation: {
+            home: 'Accueil',
             tos: 'Conditions d\'utilisation',
             privacy: 'Confidentialité',
             about: 'À Propos'

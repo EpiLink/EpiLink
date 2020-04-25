@@ -45,7 +45,7 @@
             </div>
             <ul id="navigation">
                 <li class="navigation-item" v-for="r of routes">
-                    <router-link v-if="r.route" :to="{ name: r.name }" v-html="$t(`layout.navigation.${r.name}`)" />
+                    <router-link v-if="r.route" :to="{ name: r.route }" v-html="$t(`layout.navigation.${r.route}`)" />
                     <a v-if="r.url" :href="r.url" target="_blank">{{ r.name }}</a>
                 </li>
             </ul>
@@ -89,11 +89,13 @@
                 const urls = meta && meta.footerUrls;
 
                 return [
+                    { route: 'home' },
+
                     ...(urls || []),
 
-                    { name: 'tos', route: 'tos' },
-                    { name: 'privacy', route: 'privacy' },
-                    { name: 'about', route: 'about' }
+                    { route: 'tos' },
+                    { route: 'privacy' },
+                    { route: 'about' }
                 ];
             },
             instance() {
