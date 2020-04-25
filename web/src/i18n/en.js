@@ -20,7 +20,7 @@ export default {
         connect: 'Log in with Microsoft'
     },
     notFound: {
-        description: 'The requested page does not exist'
+        description: 'The requested page does not exist.'
     },
     redirect: {
         success: 'Successfully connected',
@@ -38,26 +38,26 @@ export default {
     },
     success: {
         created: 'Your account has been created',
-        access: 'You will get access to the Discord servers soon, please wait for a few minutes',
-        close: 'You can close this window',
+        access: 'You will get access to the Discord servers soon, please wait for a few minutes.',
+        close: 'You can close this window.',
         profile: 'Go to my profile'
     },
     profile: {
-        noticeUncheck: 'Unchecking this option will completely remove your identity from our servers',
-        noticeCheck: 'Checking this option will require you to login to Microsoft again',
+        noticeUncheck: 'Unchecking this option will completely remove your identity from our servers.',
+        noticeCheck: 'Checking this option will require you to log in to Microsoft again.',
 
         admin: 'Administrator',
         identityAccesses: 'Accesses to your identity',
         automatedAccess: 'Automated access',
         manualAccess: 'Manual access',
-        noAccess: 'No saved access',
+        noAccess: 'No known accesses',
 
         save: 'Save'
     },
     about: {
         sources: 'Original sources',
         authors: 'Authors',
-        disclaimer: ['For any question, please refer to the', 'instance maintainers first']
+        disclaimer: ['For any question, please refer to the', 'instance maintainers first.']
     },
 
     layout: {

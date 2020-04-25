@@ -9,7 +9,7 @@ export default {
     auth: {
         waiting: {
             title: 'En attente',
-            description: 'En attente de la confirmation dans la fenêtre séparée'
+            description: 'En attente de la confirmation dans la fenêtre séparée...'
         },
         fetching: {
             title: 'Chargement',
@@ -20,7 +20,7 @@ export default {
         connect: 'Se connecter via Microsoft'
     },
     notFound: {
-        description: 'La page demandée n\'existe pas'
+        description: 'La page demandée n\'existe pas.'
     },
     redirect: {
         success: 'Connexion réussie',
@@ -38,13 +38,13 @@ export default {
     },
     success: {
         created: 'Votre compte a été créé',
-        access: 'Vous recevrez l\'accès au(x) serveur(s) Discord sous peu, merci de patienter quelques minutes',
-        close: 'Vous pouvez fermer cette fenêtre',
+        access: 'Vous recevrez l\'accès au(x) serveur(s) Discord sous peu, merci de patienter quelques minutes.',
+        close: 'Vous pouvez fermer cette fenêtre.',
         profile: 'Voir mon profil'
     },
     profile: {
-        noticeUncheck: 'Décocher cette option supprimera complètement votre identité du serveur',
-        noticeCheck: 'Après avoir coché cette option, vous devrez vous connecter à nouveau à Microsoft',
+        noticeUncheck: 'Décocher cette option supprimera complètement votre identité du serveur.',
+        noticeCheck: 'Après avoir coché cette option, vous devrez vous connecter à nouveau à Microsoft.',
 
         admin: 'Administrateur',
         identityAccesses: 'Accès à votre identité',
@@ -57,7 +57,7 @@ export default {
     about: {
         sources: 'Sources originales',
         authors: 'Auteurs',
-        disclaimer: ['Pour toute question, merci de vous adresser en priorité aux mainteneurs de l\'instance', '']
+        disclaimer: ['Pour toute question, merci de vous adresser en priorité aux mainteneurs de l\'instance.', '']
     },
 
     layout: {
