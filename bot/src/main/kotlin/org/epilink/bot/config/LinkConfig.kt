@@ -103,7 +103,11 @@ data class LinkWebServerConfiguration(
     /**
      * A list of footers that should be displayed in the front-end
      */
-    val footers: List<LinkFooterUrl> = listOf()
+    val footers: List<LinkFooterUrl> = listOf(),
+    /**
+     * Logo URL that is passed to the front-end
+     */
+    val logo: String? = null
 )
 
 /**

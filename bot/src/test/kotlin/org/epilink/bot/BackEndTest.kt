@@ -76,6 +76,7 @@ class BackEndTest : KoinBaseTest(
             every { idPrompt } returns "My id prompt text is the best"
         }
         mockHere<LinkWebServerConfiguration> {
+            every { logo } returns "https://amazinglogo"
             every { footers } returns listOf(
                 LinkFooterUrl("Hello", "https://hello"),
                 LinkFooterUrl("Heeeey", "/macarena")
@@ -87,7 +88,7 @@ class BackEndTest : KoinBaseTest(
             val data = fromJson<ApiSuccess>(call.response).data
             assertNotNull(data)
             assertEquals("EpiLink Test Instance", data["title"])
-            assertEquals(null, data.getValue("logo"))
+            assertEquals("https://amazinglogo", data.getValue("logo"))
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
             assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
             assertEquals("My id prompt text is the best", data.getString("idPrompt"))
