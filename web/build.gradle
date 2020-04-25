@@ -1,5 +1,8 @@
+import com.hierynomus.gradle.license.tasks.*
+
 plugins {
   id "com.github.node-gradle.node" version "2.2.3"
+  id "com.github.hierynomus.license"
 }
 
 String backEndUrl() {
@@ -45,3 +48,22 @@ task serveWeb(type: NpmTask) {
       environment = ['BACKEND_URL': backendUrl]
   }
 }
+
+task licenseFormatJs(type: LicenseFormat) {
+  source fileTree("src").include("**/*.js", "**/*.vue", "**/*.scss")
+}
+
+task licenseCheckJs(type: LicenseCheck) {
+  source fileTree("src").include("**/*.js", "**/*.vue", "**/*.scss")
+}
+
+license {
+  header rootProject.file("LICENSE_HEADER")
+  mapping {
+    scss = "JAVADOC_STYLE"
+    vue = "XML_STYLE"
+  }
+}
+
+licenseFormat.dependsOn licenseFormatJs
+tasks["license"].dependsOn licenseCheckJs
