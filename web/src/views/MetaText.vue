@@ -39,7 +39,7 @@
         computed: {
             content() {
                 const prop = this.isPrivacyPolicy ? 'privacyPolicy' : 'termsOfService';
-                return this.$store.state[prop];
+                return this.$store.state.texts[prop];
             }
         }
     }

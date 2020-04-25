@@ -73,7 +73,7 @@
                     uri: getRedirectURI(service)
                 }).then(() => {
                     let route = 'profile';
-                    if (this.$store.state.user.temp) {
+                    if (this.$store.state.auth.user.temp) {
                         route = service === 'discord' ? 'microsoft' : 'settings';
                     }
 

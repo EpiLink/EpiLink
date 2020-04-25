@@ -5,7 +5,7 @@
                 <transition name="fade" mode="out-in">
                     <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
                         <transition name="fade">
-                            <router-view></router-view>
+                            <router-view :key="$route.path"></router-view>
                         </transition>
                     </div>
 
@@ -68,7 +68,7 @@
                 return !!this.$store.state.meta;
             },
             canLogout() {
-                const user = this.$store.state.user;
+                const user = this.$store.state.auth.user;
                 return user && (user.temp ? 'link' : 'real');
             },
             redirected() {

@@ -32,7 +32,7 @@ export function isPermanentSession() {
 }
 
 /**
- * Performs an asynchrone HTTP request to the backend API.
+ * Performs an asynchronous HTTP request to the backend API.
  * The only required arguments is the 'path', any optional argument can be given
  *
  * Example : request('/auth/apply', { session obj }) is a valid call

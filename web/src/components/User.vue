@@ -15,7 +15,7 @@
     export default {
         name: 'link-user',
 
-        computed: mapState(['user']),
+        computed: mapState({ user: state => state.auth.user }),
         filters: {
             nick(s) {
                 return s.substring(0, s.indexOf('#'));

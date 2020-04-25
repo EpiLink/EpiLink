@@ -1,0 +1,109 @@
+import request, { deleteSession, isPermanentSession } from '../api';
+
+export default {
+    state: {
+        user: null
+    },
+    mutations: {
+        setTempProfile(state, { discordUsername, discordAvatarUrl, email }) {
+            console.log(`Logged in as '${discordUsername}' (temporary session)`);
+
+            state.user = {
+                temp: true,
+
+                username: discordUsername,
+                avatar: discordAvatarUrl,
+                email
+            };
+        },
+        setProfile(state, { username, avatarUrl, identifiable }) {
+            console.log(`Logged in as '${username}' (permanent session)`);
+
+            state.user = {
+                temp: false,
+
+                username,
+                avatar: avatarUrl,
+                identifiable
+            };
+        },
+        setRegistered(state) {
+            if (!state.user.temp) {
+                return;
+            }
+
+            state.user.temp = false;
+        },
+        logout(state) {
+            state.user = null;
+            deleteSession();
+        }
+    },
+    actions: {
+        async refresh({ commit }) {
+            if (!isPermanentSession()) {
+                const user = await request('/register/info');
+
+                if (user.discordUsername) {
+                    commit('setTempProfile', user);
+                }
+
+                return;
+            }
+
+            let user;
+            try {
+                user = await request('/user');
+            } catch(e) {
+                console.warn('Could not retrieve logged user, session probably expired');
+                console.warn(e);
+
+                commit('logout');
+            }
+
+            if (user && user.username) {
+                commit('setProfile', user);
+            }
+        },
+
+        async postCode({ state, commit }, { service, code, uri }) {
+            const { next, attachment } = await request('POST', '/register/authcode/' + service, {
+                code,
+                redirectUri: uri
+            });
+
+            if (next === 'continue') {
+                commit('setTempProfile', attachment);
+            } else if (next === 'login') {
+                commit('setProfile', await request('/user'));
+            } else {
+                console.log(`Unknown next step ${next}`);
+            }
+        },
+
+        async register({ state, commit }, saveEmail) {
+            if (!state.user || !state.user.temp) {
+                return;
+            }
+
+            await request('POST', '/register', { keepIdentity: saveEmail });
+
+            commit('setRegistered');
+        },
+
+        async logout({ state, commit }) {
+            if (!state.user) {
+                return;
+            }
+
+            if (state.user.temp) {
+                await request('DELETE', '/register');
+            } else {
+                await request('POST', '/user/logout');
+            }
+
+            console.log('Successfully logged out');
+            commit('logout');
+        }
+    }
+};

@@ -23,9 +23,9 @@
         components: { LinkUser, LinkStepper },
 
         beforeMount() {
-            if (!this.$store.state.user) {
+            if (!this.$store.state.auth.user) {
                 this.$router.push({ name: 'home' });
-            } else if (this.$store.state.user.email) {
+            } else if (this.$store.state.auth.user.email) {
                 this.$router.push({ name: 'settings' });
             }
         },
@@ -34,7 +34,7 @@
                 submitting: false
             };
         },
-        computed: mapState(['user']),
+        computed: mapState({ user: state => state.auth.user }),
         methods: {
             login() {
                 if (this.submitting) {

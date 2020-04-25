@@ -72,7 +72,11 @@
                 saveEmail: false
             }
         },
-        computed: mapState(['user', 'meta', 'accesses']),
+        computed: mapState({
+            user: state => state.auth.user,
+            meta: state => state.meta,
+            accesses: state => state.accesses.accesses
+        }),
         methods: {
             submit() {
 

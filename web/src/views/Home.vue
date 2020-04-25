@@ -17,7 +17,7 @@
         name: 'link-home',
 
         mounted() {
-            const user = this.$store.state.user;
+            const user = this.$store.state.auth.user;
             if (user) {
                 this.$router.push({ name: user.temp ? (user.email ? 'settings' : 'microsoft') : 'profile' });
             }
