@@ -110,7 +110,7 @@ task bootstrapFrontEnd {
 }
 
 task bundleFrontEndIntoResources(type: Copy) {
-    dependsOn ':web:bundleWeb'
+    dependsOn ':epilink-frontend:bundleWeb'
     mustRunAfter 'processResources'
     from '../build/web'
     into 'build/resources/main/frontend'
