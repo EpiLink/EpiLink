@@ -17,9 +17,6 @@ name: My EpiLink Instance
 server:
   # The port that should be used for the server.
   port: 9090
-  # True to enable HTTPS redirection for all HTTP connections, false to allow HTTP connections.
-  # !!SWITCH TO TRUE FOR PRODUCTION SYSTEMS!!
-  enableHttpsRedirect: false
   # Either None, Forwarded or XForwarded depending on how you use your reverse proxy to transmit the remote host's
   # information
   # !!SWITCH TO THE CORRECT VALUE! FAILURE TO DO SO COULD LEAD TO SECURITY FLAWS!!
@@ -30,6 +27,9 @@ server:
   # The URL of the front-end, WITH a trailing slash /, or null if the URL is unknown
   # Leave as ~ if the front-end is bootstrapped (i.e. the front-end is served on the same server as the back-end)
   frontendUrl: ~
+  # (Optional) Custom logo that will be displayed to the user. ~ means default, in which case it will show EpiLink's
+  # logo
+  logo: ~
   # An optional list of custom footers that should be shown on the front-end
   footers: # optional
     - name: My Footer URL
@@ -41,14 +41,6 @@ db: epilink.db
 # Redis URI to the Redis instance to use
 # Format: https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax
 redis: "redis://localhost:6379"
-
-# Rulebook declaration
-# See the docs for more information
-#----#
-#rulebook: |
-#  "MyRule" { ... }
-# OR #
-#rulebookFile: myFile.rule.kts
 
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
@@ -91,6 +83,13 @@ tokens:
 discord:
   # The URL displayed as the log-in URL in the bot's default welcome messages (nullable)
   welcomeUrl: "https://my.amazing.welcome.page/hello"
+  # Rulebook declaration
+  # See the docs for more information
+  #----#
+  #rulebook: |
+  #  "MyRule" { ... }
+  # OR #
+  #rulebookFile: myFile.rule.kts
   # See the documentation on custom roles for more details on this option. You can omit it if you do not need it.
   roles: []
   servers:

@@ -89,10 +89,6 @@ data class LinkWebServerConfiguration(
      */
     val port: Int,
     /**
-     * True if HTTP requests should be redirected to HTTPS, false if HTTP requests should be allowed
-     */
-    val enableHttpsRedirect: Boolean,
-    /**
      * Determine which (possibly de-facto) standard to follow for proxy headers support.
      */
     val proxyType: ProxyType,
@@ -103,7 +99,11 @@ data class LinkWebServerConfiguration(
     /**
      * A list of footers that should be displayed in the front-end
      */
-    val footers: List<LinkFooterUrl> = listOf()
+    val footers: List<LinkFooterUrl> = listOf(),
+    /**
+     * Logo URL that is passed to the front-end
+     */
+    val logo: String? = null
 )
 
 /**

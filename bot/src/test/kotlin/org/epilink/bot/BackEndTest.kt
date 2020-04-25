@@ -76,6 +76,7 @@ class BackEndTest : KoinBaseTest(
             every { idPrompt } returns "My id prompt text is the best"
         }
         mockHere<LinkWebServerConfiguration> {
+            every { logo } returns "https://amazinglogo"
             every { footers } returns listOf(
                 LinkFooterUrl("Hello", "https://hello"),
                 LinkFooterUrl("Heeeey", "/macarena")
@@ -87,14 +88,14 @@ class BackEndTest : KoinBaseTest(
             val data = fromJson<ApiSuccess>(call.response).data
             assertNotNull(data)
             assertEquals("EpiLink Test Instance", data["title"])
-            assertEquals(null, data.getValue("logo"))
+            assertEquals("https://amazinglogo", data.getValue("logo"))
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
             assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
             assertEquals("My id prompt text is the best", data.getString("idPrompt"))
             val footers = data.getListOfMaps("footerUrls")
             assertEquals(2, footers.size)
             assertTrue(footers.any { it["name"] == "Hello" && it["url"] == "https://hello" })
-            assertTrue(footers.any { it["name"] == "Heeeey" && it["url"] == "/macarena"})
+            assertTrue(footers.any { it["name"] == "Heeeey" && it["url"] == "/macarena" })
         }
     }
 
@@ -268,6 +269,7 @@ class BackEndTest : KoinBaseTest(
     @Test
     @OptIn(UsesTrueIdentity::class)
     fun `Test full registration sequence, discord then msft`() {
+        var userCreated = false
         mockHere<LinkDiscordBackEnd> {
             coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
@@ -277,10 +279,13 @@ class BackEndTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         val db = mockHere<LinkServerDatabase> {
-            coEvery { getUser("yes") } returns null
+            coEvery { getUser("yes") } answers { if(userCreated) mockk() else null }
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
             coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
-            coEvery { createUser(any(), any(), any(), any()) } returns mockk { every { discordId } returns "yes" }
+            coEvery { createUser(any(), any(), any(), any()) } answers {
+                userCreated = true
+                mockk { every { discordId } returns "yes" }
+            }
             coEvery { isUserIdentifiable("yes") } returns true
         }
         val bot = mockHere<LinkRoleManager> {
@@ -347,6 +352,20 @@ class BackEndTest : KoinBaseTest(
         withTestEpiLink {
             handleRequest(HttpMethod.Get, "/api/v1/user") {
                 addHeader("SessionId", "eeebaaa")
+            }.run {
+                assertStatus(HttpStatusCode.Unauthorized)
+            }
+        }
+    }
+
+    @Test
+    fun `Test user with invalid session id fails`() {
+        withTestEpiLink {
+            val sid = setupSession()
+            val db = get<LinkServerDatabase>()
+            coEvery { db.getUser(any()) } returns null
+            handleRequest(HttpMethod.Get, "/api/v1/user") {
+                addHeader("SessionId", sid)
             }.run {
                 assertStatus(HttpStatusCode.Unauthorized)
             }
