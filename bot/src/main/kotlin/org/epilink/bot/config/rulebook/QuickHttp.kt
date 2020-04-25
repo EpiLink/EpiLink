@@ -69,3 +69,33 @@ suspend fun httpGetJson(
 
     return withContext(Dispatchers.Default) { ObjectMapper().readValue(response) }
 }
+
+/**
+ * Get a key, where the value is expected to be a map
+ */
+fun Map<*, *>.getMap(key: String) = this[key] as? Map<*, *> ?: error("Invalid format, $key is not a map")
+
+/**
+ * Get a key, where the value is expected to be a list
+ */
+fun Map<*, *>.getList(key: String) = this[key] as? List<*> ?: error("Invalid format, $key is not a list")
+
+/**
+ * Get a key, where the value is expected to be a string
+ */
+fun Map<*, *>.getString(key: String) = this[key] as? String ?: error("Invalid format, $key is not a string")
+
+/**
+ * Get a value at an index, where the value is expected to be a map
+ */
+fun List<*>.getMap(index: Int) = this[index] as? Map<*, *> ?: error("Invalid format, value at index $index is not a map")
+
+/**
+ * Get the value at an index, where the value is expected to be a list
+ */
+fun List<*>.getList(index: Int) = this[index] as? List<*> ?: error("Invalid format, value at index $index is not a list")
+
+/**
+ * Get the value at an index, where the value is expected to be a string
+ */
+fun List<*>.getString(index: Int) = this[index] as? String ?: error("Invalid format, value at index $index is not a string")
