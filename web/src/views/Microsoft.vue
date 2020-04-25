@@ -23,9 +23,10 @@
         components: { LinkUser, LinkStepper },
 
         beforeMount() {
-            if (!this.$store.state.auth.user) {
+            const user = this.$store.state.auth;
+            if (!user) {
                 this.$router.push({ name: 'home' });
-            } else if (this.$store.state.auth.user.email) {
+            } else if (user.email) {
                 this.$router.push({ name: 'settings' });
             }
         },

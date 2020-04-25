@@ -37,6 +37,13 @@ export default {
         logout(state) {
             state.user = null;
             deleteSession();
+        },
+        setIdentifiable(state, identifiable) {
+            if (!state.user) {
+                return;
+            }
+
+            state.user.identifiable = identifiable;
         }
     },
     actions: {
@@ -104,6 +111,28 @@ export default {
 
             console.log('Successfully logged out');
             commit('logout');
+        },
+
+        async removeIdentity({ state, commit }) {
+            if (!state.user || !state.user.identifiable) {
+                return;
+            }
+
+            await request('DELETE', '/user/identity');
+            commit('setIdentifiable', false);
+        },
+
+        async postIdentity({ state, commit }, { code, uri }) {
+            if (!state.user || state.user.identifiable) {
+                return;
+            }
+
+            await request('POST', '/user/identity', {
+                code,
+                redirectUri: uri
+            });
+
+            commit('setIdentifiable', true);
         }
     }
 };

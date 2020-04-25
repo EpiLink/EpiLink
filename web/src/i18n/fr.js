@@ -46,9 +46,11 @@ export default {
         noticeUncheck: 'Décocher cette option supprimera complètement votre identité du serveur',
         noticeCheck: 'Après avoir coché cette option, vous devrez vous connecter à nouveau à Microsoft',
 
+        admin: 'Administrateur',
         identityAccesses: 'Accès à votre identité',
         automatedAccess: 'Accès automatique',
         manualAccess: 'Accès manuel',
+        noAccess: 'Pas d\'accès enregistré',
 
         save: 'Sauvegarder'
     },

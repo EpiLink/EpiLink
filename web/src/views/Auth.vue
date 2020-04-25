@@ -65,15 +65,17 @@
                 this.onDestroy();
 
                 const service = this.$route.params.service;
+                const isTemp = this.$store.state.auth.user.temp;
+
                 console.log(`Received code for service ${service}`);
 
-                this.$store.dispatch('postCode', {
+                this.$store.dispatch(isTemp ? 'postCode' : 'postIdentity', {
                     service: service === 'microsoft' ? 'msft' : 'discord',
                     code: msg.data.code,
                     uri: getRedirectURI(service)
                 }).then(() => {
                     let route = 'profile';
-                    if (this.$store.state.auth.user.temp) {
+                    if (isTemp) {
                         route = service === 'discord' ? 'microsoft' : 'settings';
                     }
 

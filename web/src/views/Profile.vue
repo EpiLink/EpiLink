@@ -7,10 +7,10 @@
                 <h2 id="accesses-title" v-html="$t('profile.identityAccesses')" />
                 <div id="accesses-container">
                     <transition name="fade" mode="out-in">
-                        <div id="accesses" v-if="accesses" :key="0">
+                        <div id="accesses" v-if="accesses && accesses.length" :key="0">
                             <div class="access" v-for="(access, i) of accesses" :class="{ first: !i }" :key="i">
                                 <div>
-                                    <span class="author">{{ access.author }}</span>
+                                    <span class="author">{{ access.author || $t('profile.admin') }}</span>
                                     -
                                     <span class="type" v-html="$t(`profile.${access.automated ? 'automated' : 'manual'}Access`)" />
                                 </div>
@@ -18,46 +18,56 @@
                                 <p class="reason">{{ access.reason }}</p>
                             </div>
                         </div>
-                        <div id="loading-container" v-if="!accesses" :key="1">
+                        <div class="center-container" v-if="!accesses" :key="1">
                             <link-loading />
                         </div>
+                        <div class="center-container" v-if="accesses && !accesses.length" :key="2" v-html="$t('profile.noAccess')" />
                     </transition>
                 </div>
             </div>
             <div id="right">
-                <link-option v-model="saveEmail">
-                    <p class="title" v-html="$t('settings.remember')" />
-                    <div class="id-prompt" v-html="meta.idPrompt" />
-                    <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check')) }}</p>
-                </link-option>
+                <transition name="fade" mode="out-in">
+                    <div id="form" v-if="!submitting && !error" :key="0">
+                        <link-option v-model="saveEmail">
+                            <p class="title" v-html="$t('settings.remember')" />
+                            <div class="id-prompt" v-html="meta.idPrompt" />
+                            <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check')) }}</p>
+                        </link-option>
 
-                <link-button :enabled="saveEmail !== wasChecked" @action="submit">
-                    {{ saveEmail && !wasChecked ? $t('microsoft.connect') : $t('profile.save') }}
-                </link-button>
+                        <link-button :enabled="saveEmail !== wasChecked" @action="submit">
+                            {{ saveEmail && !wasChecked ? $t('microsoft.connect') : $t('profile.save') }}
+                        </link-button>
+                    </div>
+
+                    <link-loading v-if="submitting && !error" :key="1" />
+
+                    <link-error v-if="error" :error="error" :message="accesses ? 'back' : 'error.retry'" @action="retry" :key="2" />
+                </transition>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-    import { mapState } from 'vuex';
-    import LinkButton   from '../components/Button';
-    import LinkLoading  from '../components/Loading';
+    import { mapState }  from 'vuex';
+    import { openPopup } from '../api';
 
-    import LinkOption from '../components/Option';
-    import LinkUser   from '../components/User';
+    import LinkButton  from '../components/Button';
+    import LinkError   from '../components/Error';
+    import LinkLoading from '../components/Loading';
+    import LinkOption  from '../components/Option';
+    import LinkUser    from '../components/User';
 
     export default {
         name: 'link-profile',
-        components: { LinkLoading, LinkButton, LinkOption, LinkUser },
+        components: { LinkError, LinkLoading, LinkButton, LinkOption, LinkUser },
 
         mounted() {
             setTimeout(() => this.$store.commit('setExpanded', true), 300);
             setTimeout(() => this.seen = true, 700);
 
             this.saveEmail = this.wasChecked = this.user.identifiable;
-
-            this.$store.dispatch('fetchAccesses'); // TODO: Handle error
+            this.loadAccesses();
         },
         destroyed() {
             this.seen = false;
@@ -69,7 +79,10 @@
                 seen: false,
 
                 wasChecked: false,
-                saveEmail: false
+                saveEmail: false,
+
+                submitting: false,
+                error: null
             }
         },
         computed: mapState({
@@ -78,14 +91,53 @@
             accesses: state => state.accesses.accesses
         }),
         methods: {
+            loadAccesses() {
+                this.$store.dispatch('fetchAccesses')
+                    .catch(err => this.error = err);
+            },
             submit() {
+                if (this.wasChecked && !this.saveEmail) {
+                    this.submitting = true;
+                    this.$store.dispatch('removeIdentity')
+                        .then(() => {
+                            this.submitting = false;
+                            this.saveEmail = false;
+                            this.wasChecked = false;
+                        })
+                        .catch(err => this.error = err);
+                } else if (!this.wasChecked && this.saveEmail) {
+                    const name = this.$t('popups.microsoft');
 
+                    this.$router.push({
+                        name: 'auth',
+                        params: { service: 'microsoft' }
+                    });
+
+                    setTimeout(() => {
+                        const popup = openPopup(name, 'microsoft', this.$store.state.meta.authorizeStub_msft);
+                        this.$store.commit('openPopup', popup);
+                    }, 300);
+                }
+            },
+            retry() {
+                this.error = null;
+
+                if (this.accesses) {
+                    this.submitting = false;
+                } else {
+                    this.loadAccesses();
+                }
             }
         },
         filters: {
             date(str) {
-                const d = new Date(str);
-                return d.toLocaleDateString(navigator.language, { day: 'numeric', month: 'long', year: 'numeric' });
+                return new Date(str).toLocaleDateString(navigator.language, {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric'
+                });
             }
         }
     }
@@ -119,7 +171,7 @@
         box-sizing: border-box;
     }
 
-    #loading-container {
+    .center-container {
         flex: 1;
 
         display: flex;
@@ -175,19 +227,21 @@
                 .reason {
                     margin: 0;
                     margin-top: 10px;
-
-                    display: -webkit-box;
-                    -webkit-box-orient: vertical;
-                    -webkit-line-clamp: 3;
-
-                    text-overflow: ellipsis;
-                    overflow: hidden;
                 }
             }
         }
     }
 
     #right {
-        justify-content: space-evenly;
+        justify-content: center;
+        align-items: center;
+
+        #form {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+
+            flex: 1;
+        }
     }
 </style>

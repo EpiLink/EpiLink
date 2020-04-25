@@ -8,8 +8,9 @@ export default (to, from, next) => {
 
     const go = p => next(path !== p ? p : undefined);
 
-    const authAuthorized = (path === '/auth/discord' && fromPath === '/') || (path === '/auth/microsoft' && fromPath === '/microsoft');
     const isAuthRoute = path === '/' || path === '/microsoft' || path === '/settings';
+    const authAuthorized = (path === '/auth/discord' && fromPath === '/') ||
+        (path === '/auth/microsoft' && (fromPath === '/microsoft' || fromPath === '/profile'));
 
     if (isAuthRoute || (path.startsWith('/auth/') && !authAuthorized) || (path === '/success' && fromPath !== '/settings')) {
         if (!user || !user.username) {

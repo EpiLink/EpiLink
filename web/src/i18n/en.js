@@ -46,9 +46,11 @@ export default {
         noticeUncheck: 'Unchecking this option will completely remove your identity from our servers',
         noticeCheck: 'Checking this option will require you to login to Microsoft again',
 
+        admin: 'Administrator',
         identityAccesses: 'Accesses to your identity',
         automatedAccess: 'Automated access',
         manualAccess: 'Manual access',
+        noAccess: 'No saved access',
 
         save: 'Save'
     },
