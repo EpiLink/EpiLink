@@ -15,23 +15,19 @@
                 <link-loading />
             </div>
 
-            <div class="error" v-if="error" :key="2">
-                <h1 class="title" v-html="$t('error.title')" />
-                <span class="message" v-html="error" />
-
-                <a class="action" v-html="$t('back')" @click="$router.back()" />
-            </div>
+            <link-error v-if="error" :error="error" message="back" @action="$router.back()" :key="2" />
         </transition>
     </div>
 </template>
 
 <script>
     import { getRedirectURI } from '../api';
+    import LinkError          from '../components/Error';
     import LinkLoading        from '../components/Loading';
 
     export default {
         name: 'link-auth',
-        components: { LinkLoading },
+        components: { LinkError, LinkLoading },
 
         mounted() {
             window.addEventListener('message', this.onMessage);
@@ -69,15 +65,17 @@
                 this.onDestroy();
 
                 const service = this.$route.params.service;
+                const user = this.$store.state.auth.user;
+
                 console.log(`Received code for service ${service}`);
 
-                this.$store.dispatch('postCode', {
+                this.$store.dispatch((!user || user.temp) ? 'postCode' : 'postIdentity', {
                     service: service === 'microsoft' ? 'msft' : 'discord',
                     code: msg.data.code,
                     uri: getRedirectURI(service)
                 }).then(() => {
                     let route = 'profile';
-                    if (this.$store.state.user.temp) {
+                    if (this.$store.state.auth.user.temp) {
                         route = service === 'discord' ? 'microsoft' : 'settings';
                     }
 

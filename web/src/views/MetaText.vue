@@ -39,13 +39,13 @@
         computed: {
             content() {
                 const prop = this.isPrivacyPolicy ? 'privacyPolicy' : 'termsOfService';
-                return this.$store.state[prop];
+                return this.$store.state.texts[prop];
             }
         }
     }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
     .meta-text {
         overflow: auto;
 
@@ -65,8 +65,6 @@
     }
 
     .back {
-        cursor: pointer;
-
         margin-bottom: 15px;
     }
 

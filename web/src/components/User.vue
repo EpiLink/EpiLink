@@ -5,7 +5,7 @@
             <span>{{ user.username | nick }}</span>
             <span class="tag">{{ user.username | tag }}</span>
         </div>
-        <span class="email" v-if="user.email" v-html="user.email" />
+        <span class="email" v-if="user.email">{{ user.email }}</span>
     </div>
 </template>
 
@@ -15,7 +15,7 @@
     export default {
         name: 'link-user',
 
-        computed: mapState(['user']),
+        computed: mapState({ user: state => state.auth.user }),
         filters: {
             nick(s) {
                 return s.substring(0, s.indexOf('#'));
