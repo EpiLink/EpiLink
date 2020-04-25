@@ -172,6 +172,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 intercept(ApplicationCallPipeline.Features) {
                     val session = call.sessions.get<ConnectedSession>()
                     if (session == null || db.getUser(session.discordId) == null /* see #121 */) {
+                        call.sessions.clear<ConnectedSession>()
                         logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
                         call.respond(
                             HttpStatusCode.Unauthorized,
