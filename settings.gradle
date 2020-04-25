@@ -1,3 +1,4 @@
 rootProject.name = 'EpiLink'
 include 'bot', 'web'
-
+project(":bot").name = "epilink-backend"
+project(":web").name = "epilink-frontend"
