@@ -11,7 +11,7 @@ repositories {
     jcenter()
 }
 
-version = "0.1"
+version = "0.1.1"
 
 compileKotlin {
     kotlinOptions.jvmTarget = "11"

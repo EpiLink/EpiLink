@@ -6,22 +6,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased (0.1.1)
+## 0.1.1
 
 ### Added
 
 * Added the ability to set a logo on the back-end ([#111](https://github.com/EpiLink/EpiLink/issues/111))
-* Fixed the 'remember me' checkbox on the profile page sometimes not being selected when it should be ([#124](https://github.com/EpiLink/EpiLink/issues/124))
 
 ### Fixed
 
 * Fixed error on back-end on invalid session ([#127](https://github.com/EpiLink/EpiLink/issues/127))
+* Fixed the 'remember me' checkbox on the profile page sometimes not being selected when it should be ([#124](https://github.com/EpiLink/EpiLink/issues/124))
 * Fixed CORS support on HTTPS ([#115](https://github.com/EpiLink/EpiLink/issues/115))
 * Various building fixes ([#118](https://github.com/EpiLink/EpiLink/issues/118), [#110](https://github.com/EpiLink/EpiLink/issues/110))
 
 ### Removed
 
-* Removed HTTPS redirection options ([#120](https://github.com/EpiLink/EpiLink/issues/120))
+* Removed HTTPS redirection options ([#120](https://github.com/EpiLink/EpiLink/issues/120)). 
+  * **BREAKING CHANGE:** Delete the `enableHttpsRedirect` option in your configuration file.
 
 ## 0.1
 
