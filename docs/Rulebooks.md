@@ -8,7 +8,7 @@ Rulebooks are small Kotlin scripts that implement custom rules for custom roles.
 
 Rulebooks can also be used for additional checks on your end: for example, checking that someone's email matches some format you need. This is useful for making sure only users from a domain you trust can log in.
 
-An example is: I know that the user's email address is `ab@c.de`, and I want to automatically give them a "Manager" role depending on the reply of some web API that returns JSON. Using a rule, you can specify that the Manager role follows a "CheckStatus" rule, and implement the CheckStatus rule to send a HTTP GET request to your own API, check the JSON reply, and apply roles automatically based on this reply. 
+An example is: I know that the user's email address is `ab@c.de`, and I want to automatically give them a "Manager" role depending on the reply of some web API that returns JSON. Using a rule, you can specify that the Manager role follows a "CheckStatus" rule, and implement the CheckStatus rule to send an HTTP GET request to your own API, check the JSON reply, and apply roles automatically based on this reply. 
 
 ## Where should I put my rulebook?
 
@@ -160,3 +160,47 @@ discord:
 * EpiLink detects that `myRole` is in the server (from the server's config), and that that role is determined by the custom rule `MyRule` in the rulebook (from the roles config). **This rule gets executed as part of the role refresh process, regardless of whether Jake chose to keep his identity in the system or not.**
 * EpiLink detects that `otherRole` is in the server (from the server's config), and that that role is determined by the custom *strong-identity* rule `OtherRule`. **This rule gets executed as part of the role refresh process ONLY IF Jake chose to keep his identity in the system.** This also generates an identity access, and the user may get notified depending on the [privacy configuration](MaintainerGuide.md#privacy-configuration). Otherwise, the rule is simply ignored and the role is not applied.
 * The role `third` is NOT in the server. Its rule is therefore not executed.
+
+### Helper functions
+
+Some functions are designed to help you if you want to perform network requests for processing rules. They are available in [this file](/bot/src/main/kotlin/org/epilink/bot/config/rulebook/QuickHttp.kt) and can directly be used anywhere you want in your rule.
+
+For example, say we have some API at `https://myapi.com/api/endpoint?email=...` that requires basic auth and returns the following on a GET request:
+
+```json5
+{
+  "id": "123",
+  "positions": [
+    {
+      "place": "hamburg",
+      "group": "hamburgTeam"
+    },
+    {
+      "place": "paris",
+      "group": "frenchDevs"
+    }
+  ]
+}
+```
+
+You could write a rule that gives a role to `frenchDevs` like so (we assume that the frenchDevs group is always present in the second group and only if the list has 2 elements):
+
+```kotlin
+"FrenchDevsRule" % { email ->
+    val result = httpGetJson(
+        url = "https://myapi.com/api/endpoint?email=" + email.encodeURLQueryComponent(),
+        basicAuth = "apiusername" to "apipassword"
+    )
+    val positions = result.getList("positions")
+    if (positions.size > 2) {
+        val positionForParis = positions.getMap(1) // Gets the map at index 1 in the array
+        val group = positionForParis.getString("group")
+        if (group == "frenchDevs") {
+            roles += "frenchDevelopers"
+            // frenchDevelopers is an EpiLink role that we can then use and map to Discord roles!
+        }
+    }
+}
+```
+
+> *Note:* The helper functions are very limited at the moment. You can use your own functions, or manually create Ktor clients, but this is not recommended. Instead, if you want to do something the current helper functions can't do, please open an issue so that we can add it to EpiLink!
