@@ -12,10 +12,12 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 
 ### Added
 
+* Added license checking for the project (#103)
+* Added profile page (#107)
 * Added reverse proxy and HTTPS redirection support (#93, #98)
 * Added rate-limiting (#93)
-* Added relinking endpoints (#85)
-* Added i18n support to the front-end (#84)
+* Added relinking endpoints and front-end support (#85, #107)
+* Added i18n support to the front-end (#84, #107)
 * Added e-mail validation to rulebooks (#80)
 * Added logging all over the place (#74)
 * Added `/user` endpoints (#60, #76, #102)
