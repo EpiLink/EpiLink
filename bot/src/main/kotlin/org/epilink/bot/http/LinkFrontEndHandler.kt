@@ -99,7 +99,7 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                     exposeHeader("RegistrationSessionId")
                     exposeHeader("SessionId")
 
-                    host(frontUrl.dropLast(1).replace(Regex("https?://"), ""))
+                    host(frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https"))
                 }
                 routing {
                     get("/{...}") {
