@@ -104,6 +104,7 @@ export default {
             await request('POST', '/register', { keepIdentity: saveEmail });
 
             commit('setRegistered');
+            commit('setIdentifiable', saveEmail);
         },
 
         async logout({ state, commit }) {
