@@ -327,7 +327,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     private fun getInstanceInformation(): InstanceInformation =
         InstanceInformation(
             title = env.name,
-            logo = null, // TODO add a cfg entry for the logo
+            logo = wsCfg.logo,
             authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
             authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
             idPrompt = legal.idPrompt,

@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased (0.2)
+
+### Added
+
+* Added the ability to set a logo on the back-end (#111)
+
 ## 0.1
 
 Initial release. Introduces so many things it will make your eyes hurt, probably.
