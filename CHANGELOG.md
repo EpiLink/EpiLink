@@ -10,9 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-* Various building fixes (#118, #110)
-* Fixed CORS support on HTTPS (#115)
 * Added the ability to set a logo on the back-end (#111)
+
+### Fixed
+
+* Fixed CORS support on HTTPS (#115)
+* Various building fixes (#118, #110)
+
+### Removed
+
+* Removed HTTPS redirection options (#120)
 
 ## 0.1
 
