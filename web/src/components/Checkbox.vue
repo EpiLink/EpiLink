@@ -19,6 +19,11 @@
                 this.checked = !this.checked;
                 this.$emit('input', this.checked);
             }
+        },
+        watch: {
+            value(val) {
+                this.checked = val;
+            }
         }
     }
 </script>

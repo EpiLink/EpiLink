@@ -22,6 +22,7 @@ body {
 
 a {
   transition: color 225ms;
+  cursor: pointer;
 
   &, &:visited {
     color: black;
@@ -33,6 +34,18 @@ a {
   }
 }
 
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .2s;
+}
+
+.fade-enter-active {
+  transition-delay: .2s;
+}
+
+.fade-enter, .fade-leave-active {
+  opacity: 0;
+}
+
 @keyframes bg-fade {
   0% {
     background-color: white;
@@ -40,5 +53,15 @@ a {
 
   100% {
     background-color: #202427;
+  }
+}
+
+@keyframes fade {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
   }
 }

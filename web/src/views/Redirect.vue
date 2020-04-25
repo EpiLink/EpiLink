@@ -1,11 +1,6 @@
 <template>
-    <!-- TODO: Gérer l'erreur -->
-
     <div id="redirect">
-        <div id="check-container" v-if="status">
-            <div id="check">
-            </div>
-        </div>
+        <link-check id="check" v-if="status" />
 
         <div id="refusal-container" v-if="!status">
             <div id="cross-left"></div>
@@ -17,8 +12,11 @@
 </template>
 
 <script>
+    import LinkCheck from '../components/Check';
+
     export default {
         name: 'link-redirect',
+        components: { LinkCheck },
 
         mounted() {
             if (!window.opener) {
@@ -71,44 +69,19 @@
         align-items: center;
     }
 
-    #check-container, #text {
+    #check, #text {
         animation: fade 0.75s 0.25s ease 1 both;
-    }
-
-    #check-container, #refusal-container {
-        width: 200px;
-        height: 200px;
-
-        border-radius: 50%;
-    }
-
-    #check-container {
-        background-color: lighten(#37C837, 4.5%);
-
-        #check {
-            width: 100px;
-            height: 50px;
-
-            margin-top: 107.5px;
-            margin-left: 37.5px;
-
-            border: solid 15px white;
-            border-top: none;
-            border-right: none;
-            border-radius: 4px;
-
-            transform: rotate(-45deg);
-            transform-origin: top left;
-
-            animation: check 0.5s 0.5s ease 1 both;
-        }
     }
 
     #refusal-container {
         display: inline-flex;
         box-sizing: border-box;
 
+        width: 200px;
+        height: 200px;
         padding: 32px 35px 38px;
+
+        border-radius: 50%;
 
         background-color: #db1e0c;
 
@@ -144,33 +117,5 @@
         margin-bottom: 0;
 
         height: 50px;
-    }
-
-    @keyframes check {
-        0% {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        50% {
-            opacity: 1;
-            width: 0;
-            height: 50px;
-        }
-
-        100% {
-            width: 100px;
-        }
-    }
-
-    @keyframes fade {
-        0% {
-            opacity: 0;
-        }
-
-        100% {
-            opacity: 1;
-        }
     }
 </style>
