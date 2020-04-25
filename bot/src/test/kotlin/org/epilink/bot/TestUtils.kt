@@ -29,7 +29,7 @@ import kotlin.test.assertEquals
 
 val minimalConfig = LinkConfiguration(
     "Test",
-    server = LinkWebServerConfiguration(0, false, ProxyType.None, null),
+    server = LinkWebServerConfiguration(0, ProxyType.None, null),
     db = "",
     tokens = LinkTokens(
         discordToken = "",
