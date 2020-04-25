@@ -17,9 +17,6 @@ name: My EpiLink Instance
 server:
   # The port that should be used for the server.
   port: 9090
-  # True to enable HTTPS redirection for all HTTP connections, false to allow HTTP connections.
-  # !!SWITCH TO TRUE FOR PRODUCTION SYSTEMS!!
-  enableHttpsRedirect: false
   # Either None, Forwarded or XForwarded depending on how you use your reverse proxy to transmit the remote host's
   # information
   # !!SWITCH TO THE CORRECT VALUE! FAILURE TO DO SO COULD LEAD TO SECURITY FLAWS!!

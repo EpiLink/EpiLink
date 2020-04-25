@@ -50,17 +50,11 @@ internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
      */
     private var server: ApplicationEngine = embeddedServer(Netty, wsCfg.port) {
         when (wsCfg.proxyType) {
-            None -> logger.info("Reverse proxy support is DISABLED.")
+            None -> logger.warn("Reverse proxy support is DISABLED. Use a reverse proxy and configure it for HTTPS!")
             Forwarded -> install(ForwardedHeaderSupport)
                 .also { logger.debug { "'Forwarded' header support installed." } }
             XForwarded -> install(XForwardedHeaderSupport)
                 .also { logger.debug { "'X-Forwarded-*' header support installed." } }
-        }
-        if (wsCfg.enableHttpsRedirect) {
-            install(HttpsRedirect)
-            logger.debug { "HTTPS redirection installed." }
-        } else {
-            logger.warn("HTTPS redirection is DISABLED.")
         }
         logger.debug("Installing EpiLink API")
         with(backend) { epilinkApiModule() }
