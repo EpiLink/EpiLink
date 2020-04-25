@@ -26,7 +26,7 @@
                 </router-link>
                 <template v-if="instance">
                     <div id="instance-separator"></div>
-                    <span id="instance" v-html="instance" />
+                    <span id="instance">{{ instance}}</span>
                 </template>
                 <template v-if="canLogout">
                     <div id="logout-separator"></div>
@@ -36,7 +36,7 @@
             <ul id="navigation">
                 <li class="navigation-item" v-for="r of routes">
                     <router-link v-if="r.route" :to="{ name: r.name }" v-html="$t(`layout.navigation.${r.name}`)" />
-                    <a v-if="r.url" :href="r.url" v-html="r.name" target="_blank" />
+                    <a v-if="r.url" :href="r.url" target="_blank">{{ r.name }}</a>
                 </li>
             </ul>
         </div>

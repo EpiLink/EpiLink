@@ -1,7 +1,7 @@
 <template>
     <div class="error">
         <h1 class="title" v-html="$t('error.title')" />
-        <p class="message" v-html="error" />
+        <p class="message">{{ error }}</p>
 
         <a class="action" @click="action" v-html="$t(message)" />
     </div>

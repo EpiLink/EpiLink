@@ -5,7 +5,7 @@
             <span>{{ user.username | nick }}</span>
             <span class="tag">{{ user.username | tag }}</span>
         </div>
-        <span class="email" v-if="user.email" v-html="user.email" />
+        <span class="email" v-if="user.email">{{ user.email }}</span>
     </div>
 </template>
 
