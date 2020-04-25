@@ -71,6 +71,7 @@ server:
   frontendUrl: ~
   enableHttpsRedirect: true # or false, but should be true for production systems. Only use false for testing!
   proxyType: None # or XForwarded, or Forwarded
+  logo: "https://..." # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -85,6 +86,7 @@ server:
     * `None`: For testing only, when EpiLink is not behind a reverse proxy at all.
     * `XForwarded`: When remote host information is passed through the `X-Forwarded-*` headers.
     * `Forwarded`: When remote host information is passed through the standard `Forwarded` header.
+* `logo` *(optional, null by default)*: A URL to the logo of this instance, used by the front-end. When null (or `~`), the logo of EpiLink is used.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 
 ### Credentials
