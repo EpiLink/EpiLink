@@ -8,9 +8,13 @@ Vue.use(Vuex);
 export default new Vuex.Store({
     state: {
         expanded: false,
-        meta: null,
         popup: null,
+
+        meta: null,
         user: null,
+        shouldDisclose: null,
+        accesses: null,
+
         privacyPolicy: null,
         termsOfService: null
     },
@@ -50,10 +54,16 @@ export default new Vuex.Store({
                 email
             };
         },
-        setProfile(state, { username, avatar }) {
+        setProfile(state, { username, avatarUrl, identifiable }) {
             console.log(`Logged in as '${username}' (permanent session)`);
 
-            state.user = { temp: false, username, avatar };
+            state.user = {
+                temp: false,
+
+                username,
+                avatar: avatarUrl,
+                identifiable
+            };
         },
         setRegistered(state) {
             if (!state.user.temp) {
@@ -75,6 +85,10 @@ export default new Vuex.Store({
             if (!state.termsOfService) {
                 state.termsOfService = terms;
             }
+        },
+        setAccesses(state, { manualAuthorsDisclosed, accesses }) {
+            state.shouldDisclose = manualAuthorsDisclosed;
+            state.accesses = accesses;
         }
     },
     actions: {
@@ -157,6 +171,9 @@ export default new Vuex.Store({
             }
 
             commit('setTermsOfService', await request('/meta/tos'));
+        },
+        async fetchAccesses({ commit }) {
+            commit('setAccesses', await request('/user/idaccesslogs'));
         }
     }
 });

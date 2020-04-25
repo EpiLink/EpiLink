@@ -32,7 +32,7 @@
         border-radius: 4px;
 
         color: #FEFEFE;
-        background-color: #c1c4cd;
+        background-color: #C3C6CD;
 
         padding: 8px 50px;
 
@@ -40,6 +40,8 @@
         font-size: 22px;
 
         transition: background-color .15s ease-in-out;
+
+        cursor: default;
 
         &.enabled {
             cursor: pointer;

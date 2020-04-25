@@ -66,10 +66,16 @@
             margin-bottom: 0;
         }
 
+        .warning, .notice {
+            margin: 5px 0;
+        }
+
         .warning {
             color: #C24343;
+        }
 
-            margin-top: 5px;
+        .notice {
+            color: #57BD57;
         }
     }
 </style>

@@ -1,4 +1,4 @@
-import Vue from 'vue';
+import Vue     from 'vue';
 import VueI18n from 'vue-i18n';
 
 Vue.use(VueI18n);
@@ -47,6 +47,16 @@ const messages = {
             access: 'You will get access to the Discord servers soon, please wait for a few minutes',
             close: 'You can close this window',
             profile: 'Go to my profile'
+        },
+        profile: {
+            noticeUncheck: 'Unchecking this option will completely remove your identity from our servers',
+            noticeCheck: 'Checking this option will require you to login to Microsoft again',
+
+            identityAccesses: 'Accesses to your identity',
+            automatedAccess: 'Automated access',
+            manualAccess: 'Manual access',
+
+            save: 'Save'
         },
         about: {
             sources: 'Original sources',
@@ -123,6 +133,16 @@ const messages = {
             access: 'Vous recevrez l\'accès au(x) serveur(s) Discord sous peu, merci de patienter quelques minutes',
             close: 'Vous pouvez fermer cette fenêtre',
             profile: 'Voir mon profil'
+        },
+        profile: {
+            noticeUncheck: 'Décocher cette option supprimera complètement votre identité du serveur',
+            noticeCheck: 'Après avoir coché cette option, vous devrez vous connecter à nouveau à Microsoft',
+
+            identityAccesses: 'Accès à votre identité',
+            automatedAccess: 'Accès automatique',
+            manualAccess: 'Accès manuel',
+
+            save: 'Sauvegarder'
         },
         about: {
             sources: 'Sources originales',
