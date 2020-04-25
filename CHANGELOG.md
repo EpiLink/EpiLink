@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
+* Fixed error on back-end on invalid session (#127)
 * Fixed CORS support on HTTPS (#115)
 * Various building fixes (#118, #110)
 
