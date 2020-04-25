@@ -6,13 +6,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased (0.2)
+## Unreleased (0.1.1)
 
 ### Added
 
 * Various building fixes (#118, #110)
 * Fixed CORS support on HTTPS (#115)
 * Added the ability to set a logo on the back-end (#111)
+* Fixed the 'remember me' checkbox on the profile page sometimes not being selected when it should be (#124)
 
 ## 0.1
 
