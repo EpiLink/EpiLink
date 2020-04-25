@@ -11,6 +11,8 @@ identity.
 
 Currently in development.
 
+EpiLink is available under the Mozilla Public License 2.0 (no copyleft exception) `MPL-2.0-no-copyleft-exception` [(info)](https://spdx.org/licenses/MPL-2.0-no-copyleft-exception.html).
+
 ## Requirements
 
 - Java JDK >= 11, both for building and running. Do NOT use Oracle's JRE/JDK (licensing concerns), consider using AdoptOpenJDK instead.

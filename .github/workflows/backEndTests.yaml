@@ -1,4 +1,4 @@
-name: Back-end tests
+name: Tests
 
 on: [push, pull_request]
 
@@ -11,6 +11,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+      - name: Check license headers
+        run: ./gradlew license
       - name: Build with Gradle
         run: ./gradlew jar
       - name: Test with gradle
