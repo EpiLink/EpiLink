@@ -73,6 +73,7 @@ export default {
         logout: 'Log out',
 
         navigation: {
+            home: 'Home',
             tos: 'Terms of Services',
             privacy: 'Privacy',
             about: 'About'

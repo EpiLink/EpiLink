@@ -41,6 +41,7 @@ export default {
             }
 
             state.user.temp = false;
+            delete state.user.email;
         },
         logout(state) {
             state.user = null;
