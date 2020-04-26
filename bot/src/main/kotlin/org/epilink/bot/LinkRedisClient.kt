@@ -17,12 +17,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.withContext
+import org.epilink.bot.discord.CacheResult
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.discord.StandardRoles
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.run
 import org.slf4j.LoggerFactory
+import java.time.Duration
 import java.util.*
 
 /**
@@ -137,15 +139,17 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
         discordName: String,
         discordDisc: String,
         identity: String?
-    ): List<String> {
-        val cachedResult = getCachedRoles(rule, discordId)
-        if (cachedResult != null) {
-            logger.debug { "Returning cached results for ${rule.name} on $discordId: $cachedResult" }
-            return cachedResult
+    ): List<String> =
+        when (val cachedResult = getCachedRoles(rule, discordId)) {
+            null -> {
+                logger.debug { "No cached results or cache disabled for rule $rule (ID $discordId): running rule" }
+                execAndCacheRule(rule, discordId, discordName, discordDisc, identity)
+            }
+            else -> {
+                logger.debug { "Returning cached results for ${rule.name} on $discordId: $cachedResult" }
+                cachedResult
+            }
         }
-        logger.debug { "No cached results or cache disabled for rule $rule (ID $discordId): running rule" }
-        return execAndCacheRule(rule, discordId, discordName, discordDisc, identity)
-    }
 
     private suspend fun execAndCacheRule(
         rule: Rule,
@@ -160,23 +164,33 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
         }
         // Cache the results if the rule should be cached
         if (rule.cacheDuration != null) {
-            logger.debug {
-                "Caching rule ${rule.name} results $result for Discord ID $discordId for ${rule.cacheDuration.toSeconds()} seconds"
-            }
-            val key = buildKey(rule.name, discordId)
-            // Add the key to the index entry
-            redis.sadd(buildIndexKey(discordId), key).awaitSingle()
-            // If some roles were returned, add them to the key
-            val valueToCache = if (result.isEmpty()) listOf(StandardRoles.None.roleName) else result
-            redis.sadd(key, *valueToCache.toTypedArray()).awaitSingle()
-            redis.expire(key, rule.cacheDuration.toSeconds()).awaitSingle().also {
-                if (!it) {
-                    logger.error("Failed to set TTL for session $key")
-                }
+            cacheResults(rule.name, rule.cacheDuration, discordId, result)
+        }
+        return result
+    }
+
+    private suspend fun cacheResults(
+        ruleName: String,
+        cacheDuration: Duration,
+        discordId: String,
+        roles: List<String>
+    ) {
+        logger.debug {
+            "Caching rule $ruleName results $roles for Discord ID $discordId for ${cacheDuration.toSeconds()} seconds"
+        }
+        val key = buildKey(ruleName, discordId)
+        // Add the key to the index entry
+        redis.sadd(buildIndexKey(discordId), key).awaitSingle()
+        // Clear the value (just in case)
+        redis.del(key).awaitSingle()
+        // If roles were returned, add them to the key. Otherwise, use the special `_none` as the only element
+        val valueToCache = if (roles.isEmpty()) listOf(StandardRoles.None.roleName) else roles
+        redis.sadd(key, *valueToCache.toTypedArray()).awaitSingle()
+        redis.expire(key, cacheDuration.toSeconds()).awaitSingle().also {
+            if (!it) {
+                logger.error("Failed to set TTL for session $key")
             }
         }
-
-        return result
     }
 
     private suspend fun getCachedRoles(rule: Rule, discordId: String): List<String>? {
@@ -204,6 +218,11 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
             }
         }
     }
+
+    override suspend fun tryCache(rule: Rule, discordId: String): CacheResult =
+        getCachedRoles(rule, discordId)
+            ?.let { CacheResult.Hit(it) }
+            ?: CacheResult.NotFound
 
     // Note: prefix has a trailing _
     private fun buildKey(ruleName: String, discordId: String) = prefix + ruleName + "_" + discordId

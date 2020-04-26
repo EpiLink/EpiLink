@@ -46,9 +46,34 @@ interface RuleMediator {
     ): List<String>
 
     /**
+     * Attempts to hit the cache with the given rule and Discord ID.
+     *
+     * - On success, returns a [CacheResult.Hit] with the cached result
+     * - On failure, returns [CacheResult.NotFound].
+     */
+    suspend fun tryCache(rule: Rule, discordId: String): CacheResult
+
+    /**
      * Invalidates all cached rule results for the given discordId, effectively "forgetting" about all of them.
      */
     suspend fun invalidateCache(discordId: String)
+}
+
+/**
+ * Represents a result of the [RuleMediator.tryCache] operation.
+ */
+sealed class CacheResult {
+    /**
+     * Represents a successful "cache hit". The cache returned a non-expired result for the given rule and role.
+     *
+     * @property roles The cached roles, i.e. the cached result of the rule
+     */
+    class Hit(val roles: List<String>) : CacheResult()
+
+    /**
+     * Represents an unsuccessful cache hit attempt.
+     */
+    object NotFound : CacheResult()
 }
 
 /**
@@ -70,4 +95,9 @@ class NoCacheRuleMediator : RuleMediator {
     override suspend fun invalidateCache(discordId: String) {
         // Does nothing, we don't store any cache anyway
     }
+
+    /**
+     * Always fails because we do not store cache
+     */
+    override suspend fun tryCache(rule: Rule, discordId: String): CacheResult = CacheResult.NotFound
 }
