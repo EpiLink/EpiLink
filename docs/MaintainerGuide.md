@@ -30,10 +30,6 @@ You will also need a Redis server. All-in-one packages may include a ready-to-us
 
 **EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
 
-**If, somehow, you do not use a reverse proxy, launch EpiLink with the `-n` option.** Otherwise, attackers could fake their IP address by passing their own `X-Forwarded-*` headers.
-
-Please open an issue on GitHub if you need to use the standard `Forwarded` header instead of `X-Fowarded-*`.  
-
 ## Running
 
 EpiLink can be ran with a few arguments. Run `path/to/epilink -h` for help.
