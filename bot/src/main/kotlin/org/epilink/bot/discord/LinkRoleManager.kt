@@ -217,30 +217,29 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         userId: String,
         rulesInfo: Collection<RuleWithRequestingGuilds>,
         tellUserIfFailed: Boolean
-    ): Set<String> = withContext(Dispatchers.IO) {
+    ): Set<String> {
         // Get the user. If the user is unknown, return an empty set: they should not have any role
         val dbUser = database.getUser(userId)
-        if (dbUser == null) {
-            logger.debug { "Unidentified user $userId roles determined: none" }
-            return@withContext setOf()
-        }
-        // Check if the user is allowed to join servers. If not, return an empty set.
-        val adv = database.canUserJoinServers(dbUser)
-        if (adv is Disallowed) {
-            if (tellUserIfFailed) {
-                facade.sendDirectMessage(userId, messages.getCouldNotJoinEmbed("any server at all", adv.reason))
+        val adv = dbUser?.let { database.canUserJoinServers(it) }
+        return when {
+            dbUser == null ->
+                // Unknown user
+                setOf<String>().also { logger.debug { "Unidentified user $userId roles determined: none" } }
+            adv is Disallowed -> {
+                // Disallowed user
+                if (tellUserIfFailed)
+                    facade.sendDirectMessage(userId, messages.getCouldNotJoinEmbed("any server at all", adv.reason))
+                setOf<String>().also { logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" } }
             }
-            logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" }
-            return@withContext setOf()
-        }
-        // Check the user's roles
-        logger.debug { "Determining ${userId}'s roles..." }
-        val identifiable = database.isUserIdentifiable(userId)
-        val baseSet = getBaseRoleSetForKnown(identifiable)
-        if (rulesInfo.isEmpty()) {
-            return@withContext baseSet // No rules to apply
-        } else {
-            computeAllowedUserRoles(dbUser, identifiable, rulesInfo).union(baseSet)
+            // At this point the user is known and allowed
+            else -> {
+                val identifiable = database.isUserIdentifiable(userId)
+                val baseSet = getBaseRoleSetForKnown(identifiable)
+                if (rulesInfo.isEmpty())
+                    baseSet
+                else
+                    baseSet.union(computeAllowedUserRoles(dbUser, identifiable, rulesInfo))
+            }
         }
     }
 
