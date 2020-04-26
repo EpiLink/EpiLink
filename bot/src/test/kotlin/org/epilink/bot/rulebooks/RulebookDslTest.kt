@@ -100,4 +100,24 @@ class RulebookDslTest {
         assertEquals("Hello", result.name)
         assertEquals(Duration.ofHours(1), result.duration)
     }
+
+    @Test
+    fun `Hour duration test`() {
+        assertEquals(Duration.ofHours(123), 123.hours)
+    }
+
+    @Test
+    fun `Minute duration test`() {
+        assertEquals(Duration.ofMinutes(101), 101.minutes)
+    }
+
+    @Test
+    fun `Second duration test`() {
+        assertEquals(Duration.ofSeconds(976), 976.seconds)
+    }
+
+    @Test
+    fun `Day duration test`() {
+        assertEquals(Duration.ofDays(333), 333.days)
+    }
 }
