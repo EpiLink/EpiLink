@@ -301,9 +301,13 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
                     strongIdRulesInfo.joinToString(", ") { it.rule.name } + ")"
         }
         val author = "EpiLink Discord Bot"
+        // IntelliJ wants to put facade.getGuildName in joinToString which is not possible because joinToString is not
+        // inline-able and we need coroutines here
+        @Suppress("SimplifiableCallChain")
         val reason =
             "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
-                    strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().joinToString(", ")
+                    strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().map { facade.getGuildName(it) }
+                        .joinToString(", ")
         val id = database.accessIdentity(dbUser, true, author, reason)
         messages.getIdentityAccessEmbed(true, author, reason)?.let {
             facade.sendDirectMessage(dbUser.discordId, it)
