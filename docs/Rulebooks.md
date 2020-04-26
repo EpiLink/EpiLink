@@ -281,3 +281,9 @@ The cache of a specific user may become invalid in some specific cases, meaning 
 * The identity settings of the user change (loss or gain of identity)
 
 Cache invalidation always leads to a refresh of the roles of the user on all servers.
+
+### Reserved rule names
+
+You must not use these rule names, as they may interfere with other functionality in EpiLink:
+
+* `_INDEX_`

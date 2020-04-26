@@ -50,6 +50,15 @@ This is the data that is collected by default for logged-in users
 * Lifespan: Until the Redis session expires or until the user logs out, whichever happens first
 * Where: Redis database (`el_ses_` prefix)
 
+### For cached rules
+
+See [here](Rulebooks.md#rule-caching) for general information about rule caching.
+
+* Data: EpiLink roles (which may contain additional information depending on what your rules do)
+* Scope: All rules which are cached
+* Lifespan: The time set for each rule's cache expiration
+* Where: Redis database (`el_rc_` prefix)
+
 ## Data that is transmitted to Discord
 
 By default, EpiLink only sends information to Discord about who has an account (`_known` EpiLink role) and who has their identity recorded in the database (`_identified` EpiLink role) in the form of the [role mappings you configure](MaintainerGuide.md#discord-server-configuration).
