@@ -89,24 +89,18 @@ interface LinkRoleManager {
     /**
      * Get the role list for a user. The user may have an EpiLink or not, the user may be banned or not.
      *
-     * [strongIdGuildNames] should contain the name of the guilds that required strong identity rules. It is ignored
-     * if no such rules were used.
-     *
      * This function triggers an identity access if the user is known, is identifiable and a strong rule is passed in
      * the rules parameter.
      *
      * @param userId The user we want to determine roles for
-     * @param rules The rules that will be called to determine additional roles
-     * @param strongIdGuildNames The name of guilds that require strong rules. Only used for building the ID access
-     * reason
+     * @param rulesInfo Rules alongside the guilds that request the use of such rules
      * @param tellUserIfFailed If true, the user is warned if he is banned via a Discord DM. If false, the role
      * update is stopped silently.
      */
     @OptIn(UsesTrueIdentity::class)
     suspend fun getRolesForUser(
         userId: String,
-        rules: Collection<Rule>,
-        strongIdGuildNames: Collection<String>,
+        rulesInfo: Collection<RuleWithRequestingGuilds>,
         tellUserIfFailed: Boolean
     ): Set<String>
 }
@@ -139,13 +133,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         val rules = getRulesRelevantForGuilds(*whereConnected.toTypedArray())
         logger.debug { "Updating ${discordId}'s roles requires calling the rules ${rules.joinToString(", ") { it.rule.name }}" }
         // Compute the roles
-        val roles = getRolesForUser(
-            discordId,
-            rules.map { it.rule },
-            rules.filter { it.rule is StrongIdentityRule }
-                .flatMap { it.requestingGuilds }.map { facade.getGuildName(it) },
-            tellUserIfFailed
-        )
+        val roles = getRolesForUser(discordId, rules, tellUserIfFailed)
         logger.debug {
             "Computed EpiLink roles for $discordId for guilds ${whereConnected.joinToString(", ")}:" +
                     roles.joinToString(", ")
@@ -227,8 +215,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     @OptIn(UsesTrueIdentity::class)
     override suspend fun getRolesForUser(
         userId: String,
-        rules: Collection<Rule>,
-        strongIdGuildNames: Collection<String>,
+        rulesInfo: Collection<RuleWithRequestingGuilds>,
         tellUserIfFailed: Boolean
     ): Set<String> = withContext(Dispatchers.IO) {
         // Get the user. If the user is unknown, return an empty set: they should not have any role
@@ -249,41 +236,75 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         // Check the user's roles
         logger.debug { "Determining ${userId}'s roles..." }
         val identifiable = database.isUserIdentifiable(userId)
-        // The base set is the set of standard EpiLink roles (_known, _identified)
-        val baseSet =
-            if (identifiable) setOf(StandardRoles.Identified.roleName, StandardRoles.Known.roleName)
-            else setOf(StandardRoles.Known.roleName)
-        if(rules.isEmpty()) {
+        val baseSet = getBaseRoleSetForKnown(identifiable)
+        if (rulesInfo.isEmpty()) {
             return@withContext baseSet // No rules to apply
+        } else {
+            computeAllowedUserRoles(dbUser, identifiable, rulesInfo).union(baseSet)
         }
-        // The identity of the user, or null if the user is not identifiable (or if no rules are strong identity)
-        val identity = if (identifiable) roleUpdateIdAccess(dbUser, rules, strongIdGuildNames) else null
-        // Information required for applying rules
-        val (did, discordName, discordDiscriminator) = facade.getDiscordUserInfo(userId)
-        // Run all of the rules asynchronously
-        rules.map { async { ruleMediator.runRule(it, did, discordName, discordDiscriminator, identity) } }
-            // Await, flatten, turn into a set
-            .awaitAll().flatten().toSet()
-            .union(baseSet)
     }
+
+    // Computes the roles (based on rules) for a user who we assume is known and allowed.
+    @UsesTrueIdentity
+    private suspend fun computeAllowedUserRoles(
+        dbUser: LinkUser,
+        identifiable: Boolean,
+        rulesInfo: Collection<RuleWithRequestingGuilds>
+    ): Set<String> {
+        val userId = dbUser.discordId
+        // Use cached values directly
+        val (cachedRules, cachedRoles) = getCachedRulesAndRoles(rulesInfo, userId)
+        return rulesInfo.filter { it.rule !in cachedRules }.let { remaining ->
+            remaining.runAll(
+                facade.getDiscordUserInfo(userId),
+                if (identifiable) roleUpdateIdAccess(dbUser, remaining) else null
+            )
+        }.union(cachedRoles)
+    }
+
+    // Runs all of the rules in the given list
+    @UsesTrueIdentity
+    private suspend fun List<RuleWithRequestingGuilds>.runAll(info: DiscordUserInfo, identity: String?) =
+        coroutineScope {
+            map {
+                async { ruleMediator.runRule(it.rule, info.id, info.username, info.discriminator, identity) }
+            }.awaitAll().flatten().toSet()
+        }
+
+    // Tries all the rules for caching, and returns a pair with the rules where the cache was hit, and the resulting
+    // roles
+    private suspend fun getCachedRulesAndRoles(
+        rulesInfo: Collection<RuleWithRequestingGuilds>,
+        userId: String
+    ): Pair<Collection<Rule>, Collection<String>> =
+        rulesInfo
+            .map { it.rule to ruleMediator.tryCache(it.rule, userId) }
+            .filter { it.second is CacheResult.Hit }
+            .let { li -> li.map { it.first } to li.flatMap { (it.second as CacheResult.Hit).roles } }
+
+    // Computes the base set is the set of standard EpiLink roles (_known, _identified)
+    private fun getBaseRoleSetForKnown(identifiable: Boolean): Set<String> =
+        mutableSetOf(StandardRoles.Known.roleName).apply {
+            if (identifiable) add(StandardRoles.Identified.roleName)
+        }
 
     @UsesTrueIdentity
     private suspend fun roleUpdateIdAccess(
         dbUser: LinkUser,
-        rules: Collection<Rule>,
-        strongIdGuildNames: Collection<String>
+        rulesInfo: Collection<RuleWithRequestingGuilds>
     ): String? {
-        if (rules.none { it is StrongIdentityRule }) {
+        val strongIdRulesInfo = rulesInfo.filter { it.rule is StrongIdentityRule }
+        if (strongIdRulesInfo.isEmpty()) {
             return null
         }
         logger.debug {
             "Identity required for strong rules (Discord user ${dbUser.discordId}, rules " +
-                    rules.filterIsInstance<StrongIdentityRule>().joinToString(", ") { it.name } + ")"
+                    strongIdRulesInfo.joinToString(", ") { it.rule.name } + ")"
         }
         val author = "EpiLink Discord Bot"
         val reason =
             "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
-                    strongIdGuildNames.joinToString(", ")
+                    strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().joinToString(", ")
         val id = database.accessIdentity(dbUser, true, author, reason)
         messages.getIdentityAccessEmbed(true, author, reason)?.let {
             facade.sendDirectMessage(dbUser.discordId, it)
