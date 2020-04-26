@@ -10,7 +10,7 @@ package org.epilink.bot.discord
 
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.StrongIdentityRule
-import org.epilink.bot.rulebook.WeakIdentityRule
+import org.epilink.bot.rulebook.run
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("epilink.rulemediator")
@@ -35,6 +35,7 @@ interface RuleMediator {
      * @param discordName The Discord username of the user (without the discriminator)
      * @param discordDisc The Discord discriminator of the user
      * @param identity The identity of the user, or null if the user is not identifiable
+     * @see org.epilink.bot.rulebook.run
      */
     suspend fun runRule(
         rule: Rule,
@@ -61,16 +62,7 @@ class NoCacheRuleMediator : RuleMediator {
         discordDisc: String,
         identity: String?
     ): List<String> =
-        rule.runCatching {
-            when {
-                this is WeakIdentityRule ->
-                    determineRoles(discordId, discordName, discordDisc)
-                this is StrongIdentityRule && identity != null ->
-                    determineRoles(discordId, discordName, discordDisc, identity)
-                else ->
-                    listOf()
-            }
-        }.getOrElse { ex ->
+        rule.runCatching { run(discordId, discordName, discordDisc, identity) }.getOrElse { ex ->
             logger.error("Failed to apply rule ${rule.name} due to an unexpected exception.", ex)
             listOf()
         }

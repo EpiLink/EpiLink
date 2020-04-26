@@ -81,6 +81,21 @@ sealed class Rule(
 )
 
 /**
+ * Run a rule directly. Always runs the rule if the rule is a weak identity rule. If the rule is a strong identity rule,
+ * it is only ran when identity is not null, otherwise it is not ran and an empty list is returned. May throw any
+ * exception, you should use this with runCatching.
+ */
+suspend fun Rule.run(discordId: String, discordName: String, discordDisc: String, identity: String?): List<String> =
+    when {
+        this is WeakIdentityRule ->
+            determineRoles(discordId, discordName, discordDisc)
+        this is StrongIdentityRule && identity != null ->
+            determineRoles(discordId, discordName, discordDisc, identity)
+        else ->
+            listOf()
+    }
+
+/**
  * Class for rules that do not require access to the identity of the user
  */
 class WeakIdentityRule(

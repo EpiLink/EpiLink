@@ -50,6 +50,9 @@ class LinkServerEnvironment(
         single<LinkDatabaseFacade> { SQLiteExposedFacadeImpl(cfg.db) }
         // Higher level database functionality
         single<LinkServerDatabase> { LinkServerDatabaseImpl() }
+        // Cache-based features
+        @Suppress("RemoveExplicitTypeArguments")
+        single<CacheClient> { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryCacheClient() }
     }
 
     /**
@@ -96,8 +99,6 @@ class LinkServerEnvironment(
         single {
             LinkMicrosoftBackEnd(cfg.tokens.msftOAuthClientId, cfg.tokens.msftOAuthSecret, cfg.tokens.msftTenant)
         }
-
-        single { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryStorageProvider() }
 
         single { legal }
     }

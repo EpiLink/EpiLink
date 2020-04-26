@@ -9,19 +9,20 @@
 package org.epilink.bot.discord
 
 import kotlinx.coroutines.*
+import org.epilink.bot.CacheClient
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.isMonitored
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
-import org.epilink.bot.rulebook.WeakIdentityRule
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.debug
 import org.koin.core.KoinComponent
+import org.koin.core.get
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
 
@@ -78,11 +79,12 @@ interface LinkRoleManager {
     suspend fun updateUserWithRoles(discordId: String, guildId: String, roles: Collection<String>)
 
     /**
-     * Run an update of roles in all of the guilds the bot is connected to for the given user elsewhere.
+     * Reset all cached roles and run an update of roles in all of the guilds the bot is connected to for the given
+     * user.
      *
      * This function returns immediately and the operation is ran in a separate coroutine scope.
      */
-    fun updateRolesOnAllGuildsLater(discordId: String): Job
+    fun invalidateAllRoles(discordId: String): Job
 
     /**
      * Get the role list for a user. The user may have an EpiLink or not, the user may be banned or not.
@@ -119,7 +121,9 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val config: LinkDiscordConfig by inject()
     private val rulebook: Rulebook by inject()
     private val facade: LinkDiscordClientFacade by inject()
-    private val ruleMediator: RuleMediator by inject()
+    private val ruleMediator: RuleMediator by lazy {
+        get<CacheClient>().newRuleMediator("el_rc_")
+    }
     private val scope = CoroutineScope(Dispatchers.Default)
 
     override suspend fun updateRolesOnGuilds(
@@ -164,8 +168,9 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             updateRolesOnGuilds(memberId, listOf(guildId), true)
     }
 
-    override fun updateRolesOnAllGuildsLater(discordId: String): Job =
+    override fun invalidateAllRoles(discordId: String): Job =
         scope.launch {
+            ruleMediator.invalidateCache(discordId)
             updateRolesOnGuilds(discordId, facade.getGuilds(), true)
         }
 

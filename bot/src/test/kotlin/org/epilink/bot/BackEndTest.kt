@@ -58,7 +58,7 @@ data class ApiErrorDetails(
 class BackEndTest : KoinBaseTest(
     module {
         single<LinkBackEnd> { LinkBackEndImpl() }
-        single<SessionStorageProvider> { MemoryStorageProvider() }
+        single<CacheClient> { MemoryCacheClient() }
     }
 ) {
     @Test
@@ -289,7 +289,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { isUserIdentifiable("yes") } returns true
         }
         val bot = mockHere<LinkRoleManager> {
-            coEvery { updateRolesOnAllGuildsLater(any()) } returns mockk()
+            coEvery { invalidateAllRoles(any()) } returns mockk()
         }
         withTestEpiLink {
             val regHeader = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
@@ -334,7 +334,7 @@ class BackEndTest : KoinBaseTest(
                 // Only checks that it was logged in properly. The results of /api/v1/user are tested elsewhere
                 assertTrue { this.response.content!!.contains("yes") }
             }
-            coVerify { bot.updateRolesOnAllGuildsLater(any()) }
+            coVerify { bot.invalidateAllRoles(any()) }
         }
     }
 
@@ -476,7 +476,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
         }
         val rm = mockHere<LinkRoleManager> {
-            every { updateRolesOnAllGuildsLater("userid") } returns mockk()
+            every { invalidateAllRoles("userid") } returns mockk()
         }
         val sd = mockHere<LinkServerDatabase> {
             coEvery { isUserIdentifiable("userid") } returns false
@@ -494,7 +494,7 @@ class BackEndTest : KoinBaseTest(
                 assertNull(resp.data)
             }
         }
-        coVerify { rm.updateRolesOnAllGuildsLater(any()) }
+        coVerify { rm.invalidateAllRoles(any()) }
         coVerify { sd.relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") }
     }
 
@@ -584,7 +584,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { deleteUserIdentity("userid") } just runs
         }
         val rm = mockHere<LinkRoleManager> {
-            every { updateRolesOnAllGuildsLater("userid") } returns mockk()
+            every { invalidateAllRoles("userid") } returns mockk()
         }
         withTestEpiLink {
             val sid = setupSession("userid")
@@ -597,7 +597,7 @@ class BackEndTest : KoinBaseTest(
             }
         }
         coVerify { sd.deleteUserIdentity("userid") }
-        coVerify { rm.updateRolesOnAllGuildsLater(any()) }
+        coVerify { rm.invalidateAllRoles(any()) }
     }
 
     @Test
