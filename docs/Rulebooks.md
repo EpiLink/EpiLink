@@ -246,7 +246,7 @@ EpiLink stores rules caches using the `el_rc_` prefix. The syntax of cached rule
 
 #### Cached strong rules and ID access notifications
 
-A strong rule that is cached will only generate ID access notifications when the rule is executed. For example, let's take the rule "MyStrongRule" defined above:
+A strong rule that is cached will only generate ID access notifications (and thus ID access logs) when the rule is *actually* executed and never when the cached results are used instead. For example, let's take the rule "MyStrongRule" defined above:
 
 ```
 User A joins a server which uses that rule
