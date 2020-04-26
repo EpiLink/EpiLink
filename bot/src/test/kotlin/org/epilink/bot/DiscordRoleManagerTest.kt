@@ -47,7 +47,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         runBlocking {
             val rm = get<LinkRoleManager>()
-            rm.getRolesForUser("userid", mockk(), mockk(), true)
+            rm.getRolesForUser("userid", mockk(), true)
         }
         coVerifyAll {
             sd.canUserJoinServers(any())
@@ -374,7 +374,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), mockk(), false)
+            val roles = rm.getRolesForUser("userid", mockk(), false)
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
     }
@@ -388,7 +388,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), mockk(), false)
+            val roles = rm.getRolesForUser("userid", mockk(), false)
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
     }
@@ -409,7 +409,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), mockk(), true)
+            val roles = rm.getRolesForUser("userid", mockk(), true)
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
         coVerify { dcf.sendDirectMessage("userid", embed) }
@@ -426,7 +426,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(), listOf(), true)
+            val roles = rm.getRolesForUser("userid", listOf(), true)
             assertEquals(setOf("_known"), roles)
         }
     }
@@ -442,7 +442,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(), listOf(), true)
+            val roles = rm.getRolesForUser("userid", listOf(), true)
             assertEquals(setOf("_known", "_identified"), roles)
         }
     }
@@ -484,7 +484,14 @@ class DiscordRoleManagerTest : KoinBaseTest(
         declare<RuleMediator> { NoCacheRuleMediator() }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(rule1, rule2), listOf("Guildo", "Abcde"), true)
+            val roles = rm.getRolesForUser(
+                "userid",
+                listOf(
+                    RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
+                    RuleWithRequestingGuilds(rule2, setOf("Otherrr"))
+                ),
+                true
+            )
             assertEquals(
                 setOf("_known", "_identified", "sir_email@@", "sirId_userid", "wirId_userid", "wirDisc_disc"),
                 roles
@@ -517,11 +524,15 @@ class DiscordRoleManagerTest : KoinBaseTest(
         declare<RuleMediator> { NoCacheRuleMediator() }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(rule1, rule2), listOf("Guildo", "Abcde"), true)
-            assertEquals(
-                setOf("_known", "wirId_userid", "wirDisc_disc"),
-                roles
+            val roles = rm.getRolesForUser(
+                "userid",
+                listOf(
+                    RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
+                    RuleWithRequestingGuilds(rule2, setOf("Other"))
+                ),
+                true
             )
+            assertEquals(setOf("_known", "wirId_userid", "wirDisc_disc"), roles)
         }
     }
 
