@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+* Changed some front-end logging to be `TRACE` instead of `DEBUG` to reduce verbosity ([#140](https://github.com/EpiLink/EpiLink/issues/140))
 * Rounded the favicon ([#126](https://github.com/EpiLink/EpiLink/issues/126))
 * Reversed the order of the ID accesses on the profile page ([#129](https://github.com/EpiLink/EpiLink/issues/129))
 * Removing the e-mail after registration ([#131](https://github.com/EpiLink/EpiLink/issues/131))
