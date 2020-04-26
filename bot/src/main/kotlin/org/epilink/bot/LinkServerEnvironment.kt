@@ -26,6 +26,7 @@ import org.koin.core.logger.Level
 import org.koin.dsl.module
 import org.koin.logger.slf4jLogger
 import org.slf4j.LoggerFactory
+import kotlin.system.measureTimeMillis
 
 /**
  * This class is responsible for holding configuration information and
@@ -121,20 +122,24 @@ class LinkServerEnvironment(
         try {
             runBlocking {
                 coroutineScope {
-                    listOf(
-                        async {
-                            logger.debug { "Staring Discord bot facade" }
-                            app.koin.get<LinkDiscordClientFacade>().start()
-                        },
-                        async {
-                            logger.debug { "Starting storage provider" }
-                            app.koin.get<SessionStorageProvider>().start()
-                        },
-                        async {
-                            logger.debug { "Starting database facade" }
-                            app.koin.get<LinkDatabaseFacade>().start()
+                    launch {
+                        logger.debug { "Staring Discord bot facade" }
+                        measureTimeMillis { app.koin.get<LinkDiscordClientFacade>().start() }.also {
+                            logger.debug { "Discord bot facade started in $it ms" }
                         }
-                    ).awaitAll()
+                    }
+                    launch {
+                        logger.debug { "Starting cache provider" }
+                        measureTimeMillis { app.koin.get<CacheClient>().start() }.also {
+                            logger.debug { "Cache provider started in $it ms" }
+                        }
+                    }
+                    launch {
+                        logger.debug { "Starting database facade" }
+                        measureTimeMillis { app.koin.get<LinkDatabaseFacade>().start() }.also {
+                            logger.debug { "Database facade started in $it ms" }
+                        }
+                    }
                 }
             }
             logger.debug { "Starting server" }
