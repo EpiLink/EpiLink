@@ -6,10 +6,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2 (Unreleased)
+## ([Unreleased]) 0.2
 
 ### Added
 
+* Added more helpers for manipulating received objects in rulebooks (and documented networking capabilities) ([#132](https://github.com/EpiLink/EpiLink/issues/132))
 * Added the home page in the footer navigation ([#123](https://github.com/EpiLink/EpiLink/issues/123))
 * Rounded the favicon ([#126](https://github.com/EpiLink/EpiLink/issues/126))
 * Reversed the order of the ID accesses on the profile page ([#129](https://github.com/EpiLink/EpiLink/issues/129))
@@ -19,7 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Fixed the about page punctuation ([#130](https://github.com/EpiLink/EpiLink/issues/130))
 
-## 0.1.1
+## [0.1.1] - 2020-04-25
+
+Emergency fixes.
 
 ### Added
 
@@ -37,7 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Removed HTTPS redirection options ([#120](https://github.com/EpiLink/EpiLink/issues/120)). 
   * **BREAKING CHANGE:** Delete the `enableHttpsRedirect` option in your configuration file.
 
-## 0.1
+## [0.1.0] - 2020-04-25
 
 Initial release. Introduces so many things it will make your eyes hurt, probably.
 
@@ -72,3 +75,7 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added Ktor server and back-end server ([#5](https://github.com/EpiLink/EpiLink/issues/5), [#13](https://github.com/EpiLink/EpiLink/issues/13))
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
+
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.1.1...dev
+[0.1.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.1.1
+[0.1.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.1
