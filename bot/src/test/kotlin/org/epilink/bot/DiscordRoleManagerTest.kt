@@ -462,6 +462,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { getDiscordUserInfo("userid") } returns dui.copy()
             coEvery { sendDirectMessage("userid", embed) } just runs
+            coEvery { getGuildName(any()) } returns "NAME"
         }
         mockHere<LinkDiscordMessages> {
             coEvery { getIdentityAccessEmbed(true, any(), any()) } returns embed
