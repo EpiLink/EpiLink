@@ -13,10 +13,10 @@ import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordRoleSpec
 import org.epilink.bot.config.LinkDiscordServerSpec
-import org.epilink.bot.config.rulebook.Rule
-import org.epilink.bot.config.rulebook.Rulebook
-import org.epilink.bot.config.rulebook.StrongIdentityRule
-import org.epilink.bot.config.rulebook.WeakIdentityRule
+import org.epilink.bot.rulebook.Rule
+import org.epilink.bot.rulebook.Rulebook
+import org.epilink.bot.rulebook.StrongIdentityRule
+import org.epilink.bot.rulebook.WeakIdentityRule
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.*
 import org.koin.dsl.module

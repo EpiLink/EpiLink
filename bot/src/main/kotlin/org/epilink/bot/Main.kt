@@ -17,8 +17,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.epilink.bot.config.*
-import org.epilink.bot.config.rulebook.Rulebook
-import org.epilink.bot.config.rulebook.loadRules
+import org.epilink.bot.rulebook.Rulebook
+import org.epilink.bot.rulebook.loadRules
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.LinkOption

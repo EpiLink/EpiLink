@@ -12,10 +12,10 @@ import kotlinx.coroutines.*
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.isMonitored
-import org.epilink.bot.config.rulebook.Rule
-import org.epilink.bot.config.rulebook.Rulebook
-import org.epilink.bot.config.rulebook.StrongIdentityRule
-import org.epilink.bot.config.rulebook.WeakIdentityRule
+import org.epilink.bot.rulebook.Rule
+import org.epilink.bot.rulebook.Rulebook
+import org.epilink.bot.rulebook.StrongIdentityRule
+import org.epilink.bot.rulebook.WeakIdentityRule
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser

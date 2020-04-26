@@ -6,7 +6,7 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-package org.epilink.bot.config.rulebook
+package org.epilink.bot.rulebook
 
 import org.epilink.bot.debug
 import org.slf4j.LoggerFactory

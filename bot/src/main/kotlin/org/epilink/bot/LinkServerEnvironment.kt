@@ -12,7 +12,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import kotlinx.coroutines.*
 import org.epilink.bot.config.LinkConfiguration
-import org.epilink.bot.config.rulebook.Rulebook
+import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkServerDatabaseImpl
