@@ -119,6 +119,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val config: LinkDiscordConfig by inject()
     private val rulebook: Rulebook by inject()
     private val facade: LinkDiscordClientFacade by inject()
+    private val ruleMediator: RuleMediator by inject()
     private val scope = CoroutineScope(Dispatchers.Default)
 
     override suspend fun updateRolesOnGuilds(
@@ -255,36 +256,11 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         // Information required for applying rules
         val (did, discordName, discordDiscriminator) = facade.getDiscordUserInfo(userId)
         // Run all of the rules asynchronously
-        rules.map { async { runRule(it, did, discordName, discordDiscriminator, identity) } }
+        rules.map { async { ruleMediator.runRule(it, did, discordName, discordDiscriminator, identity) } }
             // Await, flatten, turn into a set
             .awaitAll().flatten().toSet()
             .union(baseSet)
     }
-
-    /**
-     * Utility function for running a rule with the given parameters and retrieving roles out of said rule
-     */
-    @UsesTrueIdentity
-    private suspend fun runRule(
-        rule: Rule,
-        discordId: String,
-        discordName: String,
-        discordDisc: String,
-        identity: String?
-    ): List<String> =
-        rule.runCatching {
-            when {
-                this is WeakIdentityRule ->
-                    determineRoles(discordId, discordName, discordDisc)
-                this is StrongIdentityRule && identity != null ->
-                    determineRoles(discordId, discordName, discordDisc, identity)
-                else ->
-                    listOf()
-            }
-        }.getOrElse { ex ->
-            logger.error("Failed to apply rule ${rule.name} due to an unexpected exception.", ex)
-            listOf()
-        }
 
     @UsesTrueIdentity
     private suspend fun roleUpdateIdAccess(

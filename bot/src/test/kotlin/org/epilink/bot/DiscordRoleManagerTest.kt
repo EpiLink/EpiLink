@@ -155,6 +155,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dm = mockHere<LinkDiscordMessages> {
             coEvery { getIdentityAccessEmbed(true, any(), any()) } returns mockk()
         }
+        declare<RuleMediator> { NoCacheRuleMediator() }
         runBlocking {
             val rm = get<LinkRoleManager>()
             rm.updateRolesOnGuilds("userid", listOf("serverid", "otherserver", "ghostserver"), true)
@@ -480,6 +481,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             roles += "wirId_$userDiscordId"
             roles += "wirDisc_$userDiscordDiscriminator"
         }
+        declare<RuleMediator> { NoCacheRuleMediator() }
         val rm = get<LinkRoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", listOf(rule1, rule2), listOf("Guildo", "Abcde"), true)
@@ -512,6 +514,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             roles += "wirId_$userDiscordId"
             roles += "wirDisc_$userDiscordDiscriminator"
         }
+        declare<RuleMediator> { NoCacheRuleMediator() }
         val rm = get<LinkRoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", listOf(rule1, rule2), listOf("Guildo", "Abcde"), true)
