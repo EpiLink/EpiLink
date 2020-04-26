@@ -27,6 +27,7 @@ import io.ktor.routing.get
 import io.ktor.routing.routing
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.debug
+import org.epilink.bot.trace
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
@@ -129,22 +130,22 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
     }
 
     private suspend fun ApplicationCall.respondBootstrapped() {
-        logger.debug { "Responding to ${request.uri} with bootstrapped"}
+        logger.trace { "Responding to ${request.uri} with bootstrapped"}
         // The path (without the initial /)
         val path = request.path().substring(1)
         if (path.isEmpty())
         // Request on /, respond with the index
             respondDefaultFrontEnd()
         else {
-            logger.debug { "Attempting to resolve resource $path" }
+            logger.trace { "Attempting to resolve resource $path" }
             // Request somewhere else: is it something in the frontend?
             val f = resolveResource(path, "frontend")
             if (f != null) {
-                logger.debug { "Responding with resolved resource" }
+                logger.debug { "Responding to ${request.uri} with resolved bootstrapped resource" }
                 // Respond with the frontend element
                 respond(f)
             } else {
-                logger.debug("Did not resolve")
+                logger.trace { "Did not resolve bootstrapped $path" }
                 // Respond with the index
                 respondDefaultFrontEnd()
             }
