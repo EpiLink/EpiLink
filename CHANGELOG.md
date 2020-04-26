@@ -18,6 +18,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed the 'remember me' checkbox on the profile page sometimes not being selected when it should be ([#124](https://github.com/EpiLink/EpiLink/issues/124))
 * Fixed CORS support on HTTPS ([#115](https://github.com/EpiLink/EpiLink/issues/115))
 * Various building fixes ([#118](https://github.com/EpiLink/EpiLink/issues/118), [#110](https://github.com/EpiLink/EpiLink/issues/110))
+* Added the home page in the footer navigation ([#123](https://github.com/EpiLink/EpiLink/issues/123))
+* Rounded the favicon ([#126](https://github.com/EpiLink/EpiLink/issues/126))
+* Reversed the order of the ID accesses on the profile page ([#129](https://github.com/EpiLink/EpiLink/issues/129))
+* Fixed the about page punctuation ([#130](https://github.com/EpiLink/EpiLink/issues/130))
+* Removing the e-mail after registration ([#131](https://github.com/EpiLink/EpiLink/issues/131))
 
 ### Removed
 
