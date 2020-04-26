@@ -64,23 +64,23 @@ class DiscordRoleManagerTest : KoinBaseTest(
         // Gigantic test that pretty much represents the complete functionality of the role update
         val r = mockHere<Rulebook> {
             every { rules } returns mapOf(
-                "My Rule" to WeakIdentityRule("My Rule") {
+                "My Rule" to WeakIdentityRule("My Rule", null) {
                     assertEquals("userid", userDiscordId)
                     assertEquals("hi", userDiscordName)
                     assertEquals("1234", userDiscordDiscriminator)
                     roles += "fromWeak"
                 },
-                "My Strong Rule" to StrongIdentityRule("My Stronger Rule") { email ->
+                "My Strong Rule" to StrongIdentityRule("My Stronger Rule", null) { email ->
                     assertEquals("userid", userDiscordId)
                     assertEquals("hi", userDiscordName)
                     assertEquals("1234", userDiscordDiscriminator)
                     assertEquals("user@example.com", email)
                     roles += "fromStrong"
                 },
-                "Not Called Rule" to WeakIdentityRule("Not Called Rule") {
+                "Not Called Rule" to WeakIdentityRule("Not Called Rule", null) {
                     error("Don't call me!")
                 },
-                "Not Called Strong Rule" to StrongIdentityRule("Not Called Strong Rule") {
+                "Not Called Strong Rule" to StrongIdentityRule("Not Called Strong Rule", null) {
                     error("Don't call me!")
                 }
             )
@@ -466,7 +466,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         mockHere<LinkDiscordMessages> {
             coEvery { getIdentityAccessEmbed(true, any(), any()) } returns embed
         }
-        val rule1 = StrongIdentityRule("StrongRule") {
+        val rule1 = StrongIdentityRule("StrongRule", null) {
             assertEquals("email@@", it)
             assertEquals("userid", userDiscordId)
             assertEquals("uname", userDiscordName)
@@ -474,7 +474,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             roles += "sir_$it"
             roles += "sirId_$userDiscordId"
         }
-        val rule2 = WeakIdentityRule("WeakRule") {
+        val rule2 = WeakIdentityRule("WeakRule", null) {
             assertEquals("userid", userDiscordId)
             assertEquals("uname", userDiscordName)
             assertEquals("disc", userDiscordDiscriminator)
@@ -506,8 +506,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         mockHere<LinkDiscordClientFacade> {
             coEvery { getDiscordUserInfo("userid") } returns dui.copy()
         }
-        val rule1 = StrongIdentityRule("StrongRule", mockk())
-        val rule2 = WeakIdentityRule("WeakRule") {
+        val rule1 = StrongIdentityRule("StrongRule", null, mockk())
+        val rule2 = WeakIdentityRule("WeakRule", null) {
             assertEquals("userid", userDiscordId)
             assertEquals("uname", userDiscordName)
             assertEquals("disc", userDiscordDiscriminator)
