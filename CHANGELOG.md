@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+* Changed some front-end logging to be `TRACE` instead of `DEBUG` to reduce verbosity ([#140](https://github.com/EpiLink/EpiLink/issues/140))
 * Changed the internal management of cache-related utilities, now using a unified interface for generating session management and rule caching objects ([#135](https://github.com/EpiLink/EpiLink/issues/135))
 * Refactored the role management code for better readability ([#135](https://github.com/EpiLink/EpiLink/issues/135))
 * Changed the way EpiLink launches initial services ([#135](https://github.com/EpiLink/EpiLink/issues/135))
