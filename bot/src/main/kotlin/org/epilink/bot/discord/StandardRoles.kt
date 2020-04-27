@@ -22,5 +22,11 @@ enum class StandardRoles(val roleName: String) {
     /**
      * A user who is authenticated through EpiLink
      */
-    Known("_known")
+    Known("_known"),
+
+    /**
+     * Used for representing a "no role" scenario when an empty collection is not appropriate. In those cases, this
+     * should be the only element of the collection.
+     */
+    None("_none")
 }

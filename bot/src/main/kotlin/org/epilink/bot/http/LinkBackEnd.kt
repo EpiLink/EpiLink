@@ -76,7 +76,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
 
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
 
-    private val storageProvider: SessionStorageProvider by inject()
+    private val cacheClient: CacheClient by inject()
 
     private val legal: LinkLegalTexts by inject()
 
@@ -97,11 +97,11 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         install(Sessions) {
             header<RegisterSession>(
                 "RegistrationSessionId",
-                storageProvider.createStorage("el_reg_")
+                cacheClient.newSessionStorage("el_reg_")
             )
             header<ConnectedSession>(
                 "SessionId",
-                storageProvider.createStorage("el_ses_")
+                cacheClient.newSessionStorage("el_ses_")
             )
         }
 
@@ -220,7 +220,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     }
                     val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
                     db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
-                    roleManager.updateRolesOnAllGuildsLater(session.discordId)
+                    roleManager.invalidateAllRoles(session.discordId)
                     call.respond(apiSuccess("Successfully relinked Microsoft account"))
                 }
 
@@ -230,7 +230,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     val session = call.sessions.get<ConnectedSession>()!!
                     if (db.isUserIdentifiable(session.discordId)) {
                         db.deleteUserIdentity(session.discordId)
-                        roleManager.updateRolesOnAllGuildsLater(session.discordId)
+                        roleManager.invalidateAllRoles(session.discordId)
                         call.respond(apiSuccess("Successfully deleted identity"))
                     } else {
                         throw LinkEndpointException(IdentityAlreadyUnknown, isEndUserAtFault = true)
@@ -288,7 +288,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                             val options: AdditionalRegistrationOptions =
                                 call.receiveCatching() ?: return@post
                             val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
-                            roleManager.updateRolesOnAllGuildsLater(u.discordId)
+                            roleManager.invalidateAllRoles(u.discordId)
                             call.loginAs(u, discordUsername, discordAvatarUrl)
                             logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
                             call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
