@@ -9,7 +9,7 @@
 package org.epilink.bot
 
 import io.mockk.mockk
-import org.epilink.bot.config.rulebook.Rulebook
+import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.logger.Level

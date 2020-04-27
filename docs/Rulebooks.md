@@ -204,3 +204,86 @@ You could write a rule that gives a role to `frenchDevs` like so (we assume that
 ```
 
 > *Note:* The helper functions are very limited at the moment. You can use your own functions, or manually create Ktor clients, but this is not recommended. Instead, if you want to do something the current helper functions can't do, please open an issue so that we can add it to EpiLink!
+
+### Rule caching
+
+Rules can do things that take a lot of time: contacting an API on the web, computing a prime number... In short: calling every rule every single time we want to use them costs us a lot of time and bandwidth. Fortunately, there is a way to declare rules that, if they were previously called, will remember the output and give the previous output directly.
+
+This is called "rule caching".
+
+```kotlin
+("MyRule" cachedFor 3.hours) {
+    // ...
+}
+
+("MyStrongRule" cachedFor 10.minutes) % { email ->
+    // ...
+}
+```
+
+These are perfectly normal rules, except that they will "remember" their output for a certain period of time and, if called again for the same user, they will give back that remembered output instead of running the rule again.
+
+Rules are cached on a user-level, because a rule is expected to have consistent results if called for the same person twice in a row.
+
+#### Time durations
+
+You can use the following time durations. Use an integer instead of `x`:
+
+* `x.days` for a duration of x days
+* `x.hours` for a duration of x hours
+* `x.minutes` for a duration of x minutes
+* `x.seconds` for a duration of x seconds
+
+The minimum is 1 second.
+
+#### Redis & caching
+
+**Caching requires a Redis server. Rules will NOT be cached if you are not [using a redis server](MaintainerGuide.md#general-settings).**
+
+EpiLink relies on Redis' `EXPIRES` command.
+
+EpiLink stores rules caches using the `el_rc_` prefix. The syntax of cached rules is `el_rc_rulename_userid`, and an additional set is saved, `el_rc__INDEX__userid` which contains all of the currently saved caches for the given `userid`. This is used for [invalidating caches](#cache-invalidation).
+
+#### Cached strong rules and ID access notifications
+
+A strong rule that is cached will only generate ID access notifications (and thus ID access logs) when the rule is *actually* executed and never when the cached results are used instead. For example, let's take the rule "MyStrongRule" defined above:
+
+```
+User A joins a server which uses that rule
+    -> Rule gets executed, and needs the user's identity
+    -> ID ACCES NOTIFICATION
+    -> The results of the rule are saved for 10 minutes
+
+...wait for 3 minutes...
+
+User A joins another server which also uses that rule
+    -> A cache for this rule with this user exists
+    -> Rule is NOT executed, the previously saved results are used instead
+    -> No ID access notification, because using the user's identity was not necessary here
+
+...wait for 7 minutes, cache of the saved results expires...
+
+User A joins yet another server which uses the rule
+    -> Rule has no saved cache (10 minutes have passed, the previous results have "expired")
+    -> Rule gets executed, and needs the user's identity
+    -> ID ACCESS NOTIFICATION
+    -> The results of the rule are saved for 10 minutes
+```
+
+If a single update needs two rules, and only one of them actually needs to be executed (the other is cached), then an ID access is still generated, but only for the rule that we need to execute.
+
+Note that if a user B joined at any point during this process, the rule would have been executed for him. A saved rule depends on both the *rule* and the exact *user*. Here, the "cached rule" is really just "cached results for rule MyStrongRule with user A". A user B joining would mean we would be looking for "cached results for rule MyStrongRule with user B".
+
+#### Cache invalidation
+
+The cache of a specific user may become invalid in some specific cases, meaning that even though it has not expired yet, it should not be relied on because something changed about the user. Invalidation leads to the deletion of all cached results for the user on all rules. The cache is currently "invalidated" when:
+
+* The identity settings of the user change (loss or gain of identity)
+
+Cache invalidation always leads to a refresh of the roles of the user on all servers.
+
+### Reserved rule names
+
+You must not use these rule names, as they may interfere with other functionality in EpiLink:
+
+* `_INDEX_`

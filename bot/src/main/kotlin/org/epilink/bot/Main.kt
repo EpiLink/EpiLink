@@ -8,6 +8,8 @@
  */
 package org.epilink.bot
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.LoggerContext
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.xenomachina.argparser.ArgParser
@@ -17,8 +19,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.epilink.bot.config.*
-import org.epilink.bot.config.rulebook.Rulebook
-import org.epilink.bot.config.rulebook.loadRules
+import org.epilink.bot.rulebook.Rulebook
+import org.epilink.bot.rulebook.loadRules
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -35,6 +37,11 @@ class CliArgs(parser: ArgParser) {
      * Path to the configuration file, w.r.t. the current working directory
      */
     val config by parser.positional("path to the configuration file")
+
+    /**
+     * If present, enables debug info
+     */
+    val verbose by parser.flagging("-v", "--verbose", help = "Enables DEBUG output for EpiLink loggers")
 }
 
 /**
@@ -57,6 +64,12 @@ fun main(args: Array<String>) = mainBody("epilink") {
             """.trimIndent()
         )
     ).parseInto(::CliArgs)
+
+    if (cliArgs.verbose) {
+        val ctx = LoggerFactory.getILoggerFactory() as LoggerContext
+        ctx.getLogger("epilink").level = Level.DEBUG
+        logger.debug("DEBUG output enabled. Remove flag -v to disable.")
+    }
 
     logger.debug("Loading configuration")
 

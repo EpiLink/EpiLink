@@ -6,10 +6,11 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-package org.epilink.bot.config.rulebook
+package org.epilink.bot.rulebook
 
 import org.epilink.bot.debug
 import org.slf4j.LoggerFactory
+import java.time.Duration
 import kotlin.script.experimental.annotations.KotlinScript
 
 /*
@@ -71,16 +72,37 @@ sealed class Rule(
     /**
      * The name of this rule
      */
-    val name: String
+    val name: String,
+    /**
+     * The amount of time the results returned by this rule should be cached for, or null if the results
+     * should not be cached.
+     */
+    val cacheDuration: Duration?
 )
+
+/**
+ * Run a rule directly. Always runs the rule if the rule is a weak identity rule. If the rule is a strong identity rule,
+ * it is only ran when identity is not null, otherwise it is not ran and an empty list is returned. May throw any
+ * exception, you should use this with runCatching.
+ */
+suspend fun Rule.run(discordId: String, discordName: String, discordDisc: String, identity: String?): List<String> =
+    when {
+        this is WeakIdentityRule ->
+            determineRoles(discordId, discordName, discordDisc)
+        this is StrongIdentityRule && identity != null ->
+            determineRoles(discordId, discordName, discordDisc, identity)
+        else ->
+            listOf()
+    }
 
 /**
  * Class for rules that do not require access to the identity of the user
  */
 class WeakIdentityRule(
     name: String,
+    cacheDuration: Duration?,
     private val roles: RuleDeterminer
-) : Rule(name) {
+) : Rule(name, cacheDuration) {
     /**
      * Execute this rule and return the determined roles
      */
@@ -108,8 +130,9 @@ class WeakIdentityRule(
  */
 class StrongIdentityRule(
     name: String,
+    cacheDuration: Duration?,
     private val roles: RuleDeterminerWithIdentity
-) : Rule(name) {
+) : Rule(name, cacheDuration) {
     /**
      * Execute this rule and return the determined roles.
      */
@@ -153,6 +176,25 @@ typealias EmailValidator = suspend (String) -> Boolean
 // ******************** DSL ******************** //
 
 /**
+ * A rule name with a cache duration, only intended for use in the DSL
+ */
+data class NameWithDuration(
+    /**
+     * The rule name
+     */
+    val name: String,
+    /**
+     * The cache duration
+     */
+    val duration: Duration
+)
+
+/**
+ * Create a name with a duration couple that can be used to create cache-able rules
+ */
+infix fun String.cachedFor(duration: Duration) = NameWithDuration(this, duration)
+
+/**
  * Marks some type or function as part of the Rulebook DSL API
  */
 @DslMarker
@@ -173,10 +215,7 @@ class RulebookBuilder {
      */
     @RulebookDsl
     operator fun String.invoke(ruleDeterminer: RuleDeterminer) {
-        if (builtRules.containsKey(this)) {
-            error("Duplicate rule names: $this was defined more than once")
-        }
-        builtRules[this] = WeakIdentityRule(this, ruleDeterminer)
+        addWeakRule(this, null, ruleDeterminer)
     }
 
     /**
@@ -184,11 +223,38 @@ class RulebookBuilder {
      */
     @RulebookDsl
     operator fun String.rem(ruleDeterminerWithIdentity: RuleDeterminerWithIdentity) {
-        if (builtRules.containsKey(this)) {
-            error("Duplicate rule names: $this was defined more than once")
+        addStrongRule(this, null, ruleDeterminerWithIdentity)
+    }
+
+    /**
+     * Create a cache-able weak-identity rule. Throws an error in case of conflicting rule names.
+     */
+    @RulebookDsl
+    operator fun NameWithDuration.invoke(ruleDeterminer: RuleDeterminer) {
+        addWeakRule(this.name, this.duration, ruleDeterminer)
+    }
+
+    /**
+     * Create a cache-able strong-identity rule. Throws an error in case of conflicting rule names.
+     */
+    @RulebookDsl
+    operator fun NameWithDuration.rem(ruleDeterminerWithIdentity: RuleDeterminerWithIdentity) {
+        addStrongRule(this.name, this.duration, ruleDeterminerWithIdentity)
+    }
+
+    private fun addWeakRule(name: String, cacheDuration: Duration?, ruleDeterminer: RuleDeterminer) {
+        if (builtRules.containsKey(name)) {
+            error("Duplicate rule names: $name was defined more than once")
         }
-        builtRules[this] =
-            StrongIdentityRule(this, ruleDeterminerWithIdentity)
+        builtRules[name] = WeakIdentityRule(name, cacheDuration, ruleDeterminer)
+    }
+
+    private fun addStrongRule(name: String, cacheDuration: Duration?, ruleDeterminer: RuleDeterminerWithIdentity) {
+        if (builtRules.containsKey(name)) {
+            error("Duplicate rule names: $name was defined more than once")
+        }
+        builtRules[name] =
+            StrongIdentityRule(name, cacheDuration, ruleDeterminer)
     }
 
     /**
@@ -211,6 +277,12 @@ class RulebookBuilder {
         return Rulebook(builtRules, validator)
     }
 }
+
+/**
+ * A function for creating rulebooks within Kotlin code. Not for use within rulebook files.
+ */
+fun rulebook(block: RulebookBuilder.() -> Unit): Rulebook =
+    RulebookBuilder().apply(block).buildRulebook()
 
 /**
  * Class for exceptions that happen inside a rule

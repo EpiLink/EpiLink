@@ -12,7 +12,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import kotlinx.coroutines.*
 import org.epilink.bot.config.LinkConfiguration
-import org.epilink.bot.config.rulebook.Rulebook
+import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkServerDatabaseImpl
@@ -26,6 +26,7 @@ import org.koin.core.logger.Level
 import org.koin.dsl.module
 import org.koin.logger.slf4jLogger
 import org.slf4j.LoggerFactory
+import kotlin.system.measureTimeMillis
 
 /**
  * This class is responsible for holding configuration information and
@@ -49,6 +50,9 @@ class LinkServerEnvironment(
         single<LinkDatabaseFacade> { SQLiteExposedFacadeImpl(cfg.db) }
         // Higher level database functionality
         single<LinkServerDatabase> { LinkServerDatabaseImpl() }
+        // Cache-based features
+        @Suppress("RemoveExplicitTypeArguments")
+        single<CacheClient> { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryCacheClient() }
     }
 
     /**
@@ -69,6 +73,8 @@ class LinkServerEnvironment(
         single<LinkDiscordClientFacade> {
             LinkDiscord4JFacadeImpl(cfg.tokens.discordOAuthClientId, cfg.tokens.discordToken)
         }
+        // Rule mediator (e.g. for caching)
+        single<RuleMediator> { NoCacheRuleMediator() }
     }
 
     /**
@@ -94,8 +100,6 @@ class LinkServerEnvironment(
             LinkMicrosoftBackEnd(cfg.tokens.msftOAuthClientId, cfg.tokens.msftOAuthSecret, cfg.tokens.msftTenant)
         }
 
-        single { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryStorageProvider() }
-
         single { legal }
     }
 
@@ -119,20 +123,24 @@ class LinkServerEnvironment(
         try {
             runBlocking {
                 coroutineScope {
-                    listOf(
-                        async {
-                            logger.debug { "Staring Discord bot facade" }
-                            app.koin.get<LinkDiscordClientFacade>().start()
-                        },
-                        async {
-                            logger.debug { "Starting storage provider" }
-                            app.koin.get<SessionStorageProvider>().start()
-                        },
-                        async {
-                            logger.debug { "Starting database facade" }
-                            app.koin.get<LinkDatabaseFacade>().start()
+                    launch {
+                        logger.debug { "Staring Discord bot facade" }
+                        measureTimeMillis { app.koin.get<LinkDiscordClientFacade>().start() }.also {
+                            logger.debug { "Discord bot facade started in $it ms" }
                         }
-                    ).awaitAll()
+                    }
+                    launch {
+                        logger.debug { "Starting cache provider" }
+                        measureTimeMillis { app.koin.get<CacheClient>().start() }.also {
+                            logger.debug { "Cache provider started in $it ms" }
+                        }
+                    }
+                    launch {
+                        logger.debug { "Starting database facade" }
+                        measureTimeMillis { app.koin.get<LinkDatabaseFacade>().start() }.also {
+                            logger.debug { "Database facade started in $it ms" }
+                        }
+                    }
                 }
             }
             logger.debug { "Starting server" }

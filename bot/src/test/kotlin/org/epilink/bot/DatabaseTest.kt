@@ -11,13 +11,11 @@ package org.epilink.bot
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkPrivacy
-import org.epilink.bot.config.rulebook.Rulebook
+import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.db.*
 import org.epilink.bot.http.data.IdAccess
 import org.koin.dsl.module
 import org.koin.test.get
-import java.security.MessageDigest
-import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.*

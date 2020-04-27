@@ -105,8 +105,8 @@ internal class LinkDiscord4JFacadeImpl(
         logger.debug {
             """
             Role transaction for user $discordId in guild $guildId 
-                +Added: ${toAdd.joinToString(", ")}
-                -Removed: ${toRemove.joinToString(", ")}
+                [+]    To add: ${toAdd.joinToString(", ").orIfEmpty("(none)")}
+                [-] To remove: ${toRemove.joinToString(", ").orIfEmpty("(none)")}
             """.trimIndent()
         }
         val member = client.getMemberById(
@@ -118,14 +118,24 @@ internal class LinkDiscord4JFacadeImpl(
             val adding =
                 toAdd.map { Snowflake.of(it) }
                     .minus(currentRoles)
-                    .also { logger.debug { "Will only add " + it.joinToString(", ") { it.asString() } } }
+                    .also { set ->
+                        if (set.isNotEmpty())
+                            logger.debug { "Will only add " + set.joinToString(", ") { it.asString() } }
+                    }
                     .map { async { member.addRole(it).await() } }
             val removing =
                 toRemove.map { Snowflake.of(it) }
                     .intersect(currentRoles)
-                    .also { logger.debug { "Will only remove " + it.joinToString(", ") { it.asString() } } }
+                    .also { set ->
+                        if (set.isNotEmpty())
+                            logger.debug { "Will only remove " + set.joinToString(", ") { it.asString() } }
+                    }
                     .map { async { member.removeRole(it).await() } }
-            (adding + removing).awaitAll()
+            if (adding.isEmpty() && removing.isEmpty()) {
+                logger.debug { "Nothing to change" }
+            } else {
+                (adding + removing).awaitAll()
+            }
         }
     }
 
@@ -215,3 +225,5 @@ internal class LinkDiscord4JFacadeImpl(
         get() = this.errorResponse?.fields?.get("code")?.toString()
 
 }
+
+private fun String.orIfEmpty(other: String) = if (this.isEmpty()) other else this

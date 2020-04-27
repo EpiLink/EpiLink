@@ -8,7 +8,7 @@
  */
 package org.epilink.bot.rulebooks
 
-import org.epilink.bot.config.rulebook.*
+import org.epilink.bot.rulebook.*
 import kotlin.test.*
 
 class RulebookHelpersTest {
