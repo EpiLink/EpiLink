@@ -1,14 +1,12 @@
 # Documentation for EpiLink
 
-[README](/README.md) | Documentation
-
 |    | **Links** |
 |:--:|:---- |
-| [📖](/docs/MaintainerGuide.md) | [**Instance Maintainer Guide**](/docs/MaintainerGuide.md) |
-| [🎯](/docs/Rulebooks.md) | [**Rulebooks**](/docs/Rulebooks.md) |
-| [‍⚖](/docs/GDPR.md) | [**GDPR information**](/docs/GDPR.md) |
-| [🛠](/docs/Developing.md) | [**Developing, compiling and running instructions**](/docs/Developing.md) |
-| [⚙](/docs/Api.md) | [**API Documentation**\*](/docs/Api.md) |
+| [📖](MaintainerGuide.md) | [**Instance Maintainer Guide**](MaintainerGuide.md) |
+| [🎯](Rulebooks.md) | [**Rulebooks**](Rulebooks.md) |
+| [‍⚖](GDPR.md) | [**GDPR information**](GDPR.md) |
+| [🛠](Developing.md) | [**Developing, compiling and running instructions**](Developing.md) |
+| [⚙](Api.md) | [**API Documentation**\*](Api.md) |
 
 These documentation pages describe how to configure, develop on and use EpiLink.
 
