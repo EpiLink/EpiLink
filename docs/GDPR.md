@@ -6,7 +6,7 @@
 
 Users, the instance you use may have been modified by the instance's maintainers, who may have added features or disabled some components. Please refer to their privacy policy for the official information.
 
-**Maintainers are responsible for their own policies and must comply with local laws. EpiLink is provided with no guarantees whatsoever from its development team.**
+!> **Maintainers are responsible for their own policies and must comply with local laws. EpiLink is provided with no guarantees whatsoever from its development team.**
 
 ## Information recorded by EpiLink
 

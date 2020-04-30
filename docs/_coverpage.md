@@ -8,6 +8,6 @@
 - All-in-one: Discord bot and web portal
 - Free and Open-Source: MPLv2 (No copyleft exception)
 
-[Docs](#documentation-for-epilink) [GitHub repository](https://github.com/EpiLink/EpiLink)
+[Docs](#epilink) [GitHub repository](https://github.com/EpiLink/EpiLink)
 
 ![](/bg.jpg)
