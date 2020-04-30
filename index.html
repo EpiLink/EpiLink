@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EpiLink</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="EpiLink Project Website">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <!-- Theme -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+  <!-- Lato font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@700&display=swap">
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico">
+  <!-- Overriding theme stuff -->
+  <style>
+    :root {
+      --theme-color   : rgb(45,166,45);
+      --cover-background-image: initial; /* Necessary to override theme */
+      --cover-background-color: rgba(0,0,0,0); /* Necessary to override theme */
+    }
+    .cover-main h1 {
+      font-family: Lato, sans-serif;
+      font-weight: 700;
+    }
+    .cover-main img {
+      width: 165px;
+      height: 165px;
+      border-radius: 7px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <!-- Docsify config -->
+  <script>
+    window.$docsify = {
+      name: 'EpiLink',
+      repo: 'https://github.com/EpiLink/EpiLink',
+      loadSidebar: true,
+      subMaxLevel: 3,
+      coverpage: true
+    }
+  </script>
+  <!-- Docsify -->
+  <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+  <!-- Prism for YAML and Kotlin syntax highlighting -->
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-yaml.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-kotlin.min.js"></script>
+</body>
+</html>
