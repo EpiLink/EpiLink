@@ -1,7 +1,5 @@
 # Instance Maintainer Guide
 
-[Go back to main Documentation page](/docs/README.md)
-
 This page will guide you through the configuration of a working EpiLink instance.
 
 ## Getting started

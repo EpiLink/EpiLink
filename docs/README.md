@@ -1,20 +1,13 @@
 # Documentation for EpiLink
 
-|    | **Links** |
-|:--:|:---- |
-| [📖](MaintainerGuide.md) | [**Instance Maintainer Guide**](MaintainerGuide.md) |
-| [🎯](Rulebooks.md) | [**Rulebooks**](Rulebooks.md) |
-| [‍⚖](GDPR.md) | [**GDPR information**](GDPR.md) |
-| [🛠](Developing.md) | [**Developing, compiling and running instructions**](Developing.md) |
-| [⚙](Api.md) | [**API Documentation**\*](Api.md) |
+EpiLink is an authentication server and Discord bot that:
 
-These documentation pages describe how to configure, develop on and use EpiLink.
+* Links Discord account to Microsoft accounts (Office 365 included)
+* Automatically attributes roles based on who is known or not
+* Automatically attributes roles based on [e-mail addresses](Rulebooks.md#e-mail-validation) and even [HTTPS requests](Rulebooks.md#rule-declaration)
+* Has a nice web front-end so that users can control their accounts
+* Automatically notifies users whenever their identity has been accessed ([can be disabled](MaintainerGuide.md#privacy-configuration))
 
-This section is kind of empty right now, but will be expanded as the project
-grows.
-
-
-\* The API is not intended to be used as an external API, although it technically could be used as such. Instance maintainers may forbid (e.g. through their ToS) usage of the API by anything other than the front-end.
 
 ## Important
 

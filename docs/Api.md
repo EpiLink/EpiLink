@@ -1,6 +1,6 @@
-# Backend API
+# Back-end API
 
-[Go back to main Documentation page](/docs/README.md)
+**The API is not intended to be used as an external API**, although it technically could be used as such. Instance maintainers may forbid (e.g. through their ToS) usage of the API by anything other than the front-end.
 
 This is documentation of the backend API of EpiLink.
 

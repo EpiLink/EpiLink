@@ -1,7 +1,5 @@
 # Rulebooks
 
-[Go back to main Documentation page](/docs/README.md)
-
 ## What are rulebooks?
 
 Rulebooks are small Kotlin scripts that implement custom rules for custom roles. They are intended to be used to gather information about a user (possibly using their real identity) and give them roles automatically.
