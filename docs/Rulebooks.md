@@ -20,7 +20,7 @@ You must make these points clear to your users.
 
 ## The Rulebook itself
 
-First, see [the rulebooks section of the Maintainer Guide](/docs/MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is.
+First, see [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is.
 
 This section will cover the basics of rulebooks. This assumes some knowledge of Kotlin.
 
@@ -86,7 +86,7 @@ In the example above, two rules are defined, `StartsWithZ` as a weak identity ru
 
 Strong identity rules are skipped for users who chose not to have their identity kept by EpiLink.
 
-**Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](/docs/MaintainerGuide.md#privacy-configuration).
+**Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](MaintainerGuide.md#privacy-configuration).
 
 ### Accessing information
 
