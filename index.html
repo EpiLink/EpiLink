@@ -15,9 +15,11 @@
   <!-- Overriding theme stuff -->
   <style>
     :root {
-      --theme-color   : rgb(45,166,45);
+      --theme-color: rgb(45,166,45);
       --cover-background-image: initial; /* Necessary to override theme */
       --cover-background-color: rgba(0,0,0,0); /* Necessary to override theme */
+      --sidebar-name-font-family: Lato, sans-serif;
+      --sidebar-name-font-weight: 700;
     }
     .cover-main h1 {
       font-family: Lato, sans-serif;
@@ -40,13 +42,17 @@
       loadSidebar: true,
       subMaxLevel: 3,
       coverpage: true,
+      homepage: 'EpiLink.md',
       auto2top: true
     }
   </script>
   <!-- Docsify -->
   <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
-  <!-- Prism for YAML and Kotlin syntax highlighting -->
+  <!-- Prism for YAML, JSON and Kotlin syntax highlighting -->
   <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-yaml.min.js"></script>
+  <script>
+    Prism.languages.json5 = Prism.languages.js
+  </script>
   <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-kotlin.min.js"></script>
 </body>
 </html>
