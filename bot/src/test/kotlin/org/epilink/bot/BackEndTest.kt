@@ -15,6 +15,7 @@ import io.ktor.server.testing.*
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.mockk.*
+import org.epilink.bot.config.LinkContactInformation
 import org.epilink.bot.config.LinkFooterUrl
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.db.*
@@ -81,6 +82,10 @@ class BackEndTest : KoinBaseTest(
                 LinkFooterUrl("Hello", "https://hello"),
                 LinkFooterUrl("Heeeey", "/macarena")
             )
+            every { contacts } returns listOf(
+                LinkContactInformation("Number One", "numberone@my-email.com"),
+                LinkContactInformation("The Two", "othernumber@eeeee.es")
+            )
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/info")
@@ -96,6 +101,10 @@ class BackEndTest : KoinBaseTest(
             assertEquals(2, footers.size)
             assertTrue(footers.any { it["name"] == "Hello" && it["url"] == "https://hello" })
             assertTrue(footers.any { it["name"] == "Heeeey" && it["url"] == "/macarena" })
+            val contacts = data.getListOfMaps("contacts")
+            assertEquals(2, contacts.size)
+            assertTrue(contacts.any { it["name"] == "Number One" && it["email"] == "numberone@my-email.com" })
+            assertTrue(contacts.any { it["name"] == "The Two" && it["email"] == "othernumber@eeeee.es" })
         }
     }
 
@@ -279,7 +288,7 @@ class BackEndTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         val db = mockHere<LinkServerDatabase> {
-            coEvery { getUser("yes") } answers { if(userCreated) mockk() else null }
+            coEvery { getUser("yes") } answers { if (userCreated) mockk() else null }
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
             coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
             coEvery { createUser(any(), any(), any(), any()) } answers {

@@ -119,7 +119,8 @@ These endpoints can be used to retrieve information from the back-end that is us
   "authorizeStub_msft": "...",
   "authorizeStub_discord": "...",
   "idPrompt": "...",
-  "footerUrls": [ /* ... */ ] 
+  "footerUrls": [ /* ... */ ] ,
+  "contacts": [ /* ... */ ]
 }
 ```
 
@@ -129,12 +130,25 @@ The `authorizeStub` values are OAuth2 authorization links (the ones you use for 
 
 `footerUrls` is a list of [FooterUrl](#footerurl) objects, each describing a link that should be displayed in the footer. These links are customized by the back-end.
 
+`contacts` is a list of [ContactInformation](#contactinformation) objects, each describing a person that can be contacted (e.g. an instance maintainer). May be empty. *(since version 0.2.0)*
+
 #### FooterUrl
 
 ```json5
 {
   "name": "URL Title",
   "url": "https://..."
+}
+```
+
+#### ContactInformation
+
+?> Since version 0.2.0
+
+```json5
+{
+  "name": "Mike Schmidt",
+  "email": "mike.schmidt@freddyfazbear.pizza"
 }
 ```
 
