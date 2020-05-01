@@ -94,9 +94,6 @@
                     { route: 'home' },
 
                     ...(urls || []),
-
-                    { route: 'tos' },
-                    { route: 'privacy' },
                     ...(instance || []),
                     { route: 'about' }
                 ];
