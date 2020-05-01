@@ -7,7 +7,7 @@ This page will guide you through the configuration of a working EpiLink instance
 Go through all of these steps before going public:
 
 - Get EpiLink (and all of the [required stuff](#deployment-methods))
-- [Configure it](#configuration) using the [sample configuration](/bot/config/epilink_config.yaml) as a template
+- [Configure it](#configuration) using the [sample configuration](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml) as a template
 - Make sure everything works
 - Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
 - [Set the reverse proxy headers configuration](#http-server-settings)
