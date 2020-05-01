@@ -10,7 +10,7 @@
 -->
 <template>
     <div id="home">
-        <img id="logo" src="../../assets/logo.svg"/>
+        <img id="logo" :src="logo"/>
         <h1 id="title" v-html="$t('home.welcome')" />
 
         <button id="discord" @click="login">
@@ -30,6 +30,11 @@
             const user = this.$store.state.auth.user;
             if (user) {
                 this.$router.push({ name: user.temp ? (user.email ? 'settings' : 'microsoft') : 'profile' });
+            }
+        },
+        computed: {
+            logo() {
+                return this.$store.state.meta.logo || require("../../assets/logo.svg")
             }
         },
         methods: {
