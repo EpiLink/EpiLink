@@ -128,7 +128,7 @@ if (project.hasProperty("withFrontend")) {
 }
 
 license {
-    header rootProject.file("LICENSE_HEADER")
+    header rootProject.file("LHEADER")
     // Exclude front-end test files
     exclude("frontend/*")
 }
