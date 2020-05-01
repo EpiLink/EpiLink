@@ -47,7 +47,9 @@ internal class LinkDiscord4JFacadeImpl(
      * Coroutine scope used for firing things in events
      */
     private val scope =
-        CoroutineScope(Dispatchers.Default)
+        CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
+            logger.error("Uncaught exception in Discord4J client", ex)
+        })
 
     /**
      * The actual Discord client

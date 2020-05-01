@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+* Added the logo configured on the back-end to the front-end ([#146](https://github.com/EpiLink/EpiLink/issues/146))
 * Rule caching added: rules' outputs can now be cached to avoid calling a rule again and again ([#135](https://github.com/EpiLink/EpiLink/issues/135))
     * **NOTE:** `_INDEX_` is now a reserved rule name
 * You can now run EpiLink with `DEBUG` output by using the `-v` command-line argument ([#135](https://github.com/EpiLink/EpiLink/issues/135)) 
@@ -19,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+* Moved `LICENSE_HEADER` to `LHEADER` ([#144](https://github.com/EpiLink/EpiLink/issues/144))
 * Changed some front-end logging to be `TRACE` instead of `DEBUG` to reduce verbosity ([#140](https://github.com/EpiLink/EpiLink/issues/140))
 * Changed the internal management of cache-related utilities, now using a unified interface for generating session management and rule caching objects ([#135](https://github.com/EpiLink/EpiLink/issues/135))
 * Refactored the role management code for better readability ([#135](https://github.com/EpiLink/EpiLink/issues/135))
@@ -29,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
+* Properly handle exceptions in the role manager, rate limiter memory and Discord client ([#144](https://github.com/EpiLink/EpiLink/issues/144))
 * Fixed the about page punctuation ([#130](https://github.com/EpiLink/EpiLink/issues/130))
 
 ## [0.1.1] - 2020-04-25

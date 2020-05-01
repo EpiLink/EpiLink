@@ -58,7 +58,7 @@ task licenseCheckJs(type: LicenseCheck) {
 }
 
 license {
-  header rootProject.file("LICENSE_HEADER")
+  header rootProject.file("LHEADER")
   mapping {
     scss = "JAVADOC_STYLE"
     vue = "XML_STYLE"
