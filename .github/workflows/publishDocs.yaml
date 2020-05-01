@@ -2,7 +2,7 @@ name: Publish docs
 
 on:
   push:
-    branches: [utybo/docs-website]
+    branches: [dev]
 
 jobs:
   publish:
