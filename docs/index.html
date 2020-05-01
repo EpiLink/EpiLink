@@ -48,8 +48,11 @@
   </script>
   <!-- Docsify -->
   <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
-  <!-- Prism for YAML and Kotlin syntax highlighting -->
+  <!-- Prism for YAML, JSON and Kotlin syntax highlighting -->
   <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-yaml.min.js"></script>
+  <script>
+    Prism.languages.json5 = Prism.languages.js
+  </script>
   <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-kotlin.min.js"></script>
 </body>
 </html>
