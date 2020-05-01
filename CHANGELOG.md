@@ -1,6 +1,6 @@
 # Changelog
 
-[README](/README.md) | [Documentation](/docs/README.md) | CHANGELOG
+[README](/README.md) | [Documentation](/docs/EpiLink.md) | CHANGELOG
 
 All notable changes to this project will be documented in this file.
 
@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+* Added a [documentation site](https://epilink.zoroark.guru) ([#142](https://github.com/EpiLink/EpiLink/issues/142))
 * Added the logo configured on the back-end to the front-end ([#146](https://github.com/EpiLink/EpiLink/issues/146))
 * Rule caching added: rules' outputs can now be cached to avoid calling a rule again and again ([#135](https://github.com/EpiLink/EpiLink/issues/135))
     * **NOTE:** `_INDEX_` is now a reserved rule name

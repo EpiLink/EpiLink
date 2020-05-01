@@ -1,7 +1,5 @@
 # Instance Maintainer Guide
 
-[Go back to main Documentation page](/docs/README.md)
-
 This page will guide you through the configuration of a working EpiLink instance.
 
 ## Getting started
@@ -9,7 +7,7 @@ This page will guide you through the configuration of a working EpiLink instance
 Go through all of these steps before going public:
 
 - Get EpiLink (and all of the [required stuff](#deployment-methods))
-- [Configure it](#configuration) using the [sample configuration](/bot/config/epilink_config.yaml) as a template
+- [Configure it](#configuration) using the [sample configuration](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml) as a template
 - Make sure everything works
 - Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
 - [Set the reverse proxy headers configuration](#http-server-settings)
@@ -80,8 +78,12 @@ server:
     * `None`: For testing only, when EpiLink is not behind a reverse proxy at all.
     * `XForwarded`: When remote host information is passed through the `X-Forwarded-*` headers.
     * `Forwarded`: When remote host information is passed through the standard `Forwarded` header.
+    
+!> Not setting the `proxyType` or setting it to the incorrect value will lead to (at best) too aggressive rate-limiting or (at worst) security issues and possible IP spoofing from users!
+
 * `logo` *(optional, null by default)*: A URL to the logo of this instance, used by the front-end. When null (or `~`), the logo of EpiLink is used.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
+
 
 ### Credentials
 
@@ -187,13 +189,13 @@ Depending on the situation, a server may or may not be *monitored*. A *monitored
   rule: MyRule
 ```
 
-This section is used to define roles that are defined by [rules](/docs/Rulebooks.md): more specifically, what roles determined by what rules.
+This section is used to define roles that are defined by [rules](Rulebooks.md): more specifically, what roles determined by what rules.
 
 Each element is made of:
 
 * `name`: The name of the role. This is the name you add in your rules (`roles += "myRoleName"`), and the one you use in the server role dictionary (`myRoleName: 123455`).
 * `displayName` *(optional)*: The name of the role, as displayed to the user. Unused at the moment.
-* `rule`: The rule that determines this role. This is the name of the rule defined in the [rulebook](/docs/Rulebooks.md) that determines if this role should be added. This can be a weak identity or a strong identity rule. A rule can be used for more than one role.
+* `rule`: The rule that determines this role. This is the name of the rule defined in the [rulebook](Rulebooks.md) that determines if this role should be added. This can be a weak identity or a strong identity rule. A rule can be used for more than one role.
 
 #### Discord server configuration
 
@@ -279,7 +281,7 @@ rulebook: |
 rulebookFile: myFile.rule.kts
 ```
 
-Custom roles can be determined using custom rules, and you can additionally validate e-mail addresses with rulebooks. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](/docs/Rulebooks.md).
+Custom roles can be determined using custom rules, and you can additionally validate e-mail addresses with rulebooks. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](Rulebooks.md).
 
 * You can use no rulebooks whatsoever: in this case, simply do not declare `rulebook` nor `rulebookFile`.
 * You can put the rulebook directly in the configuration file (using `rulebook`). In this case, do not declare `rulebookFile`

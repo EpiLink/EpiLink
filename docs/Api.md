@@ -1,6 +1,6 @@
-# Backend API
+# Back-end API
 
-[Go back to main Documentation page](/docs/README.md)
+**The API is not intended to be used as an external API**, although it technically could be used as such. Instance maintainers may forbid (e.g. through their ToS) usage of the API by anything other than the front-end.
 
 This is documentation of the backend API of EpiLink.
 
@@ -50,7 +50,7 @@ Note that 429 errors *never* return API responses, they always return a JSON obj
 Provides information on the error that happened. A list of codes is available below. The description is always the same,
 see the api response's message for more specific information about the error.
 
-#### Error codes
+## Error codes
 
 These are the different codes that can be seen in [ErrorData](#errordata) objects.
 
@@ -59,7 +59,7 @@ additional clarifications here).
 
 More information can usually be found in the [ApiResponse](#apiresponse)'s message.
 
-##### 1xx codes
+### 1xx codes
 
 These codes are specific for the registration and identity modification processes.
 
@@ -75,7 +75,7 @@ These codes are specific for the registration and identity modification processe
 | 111 | This account's identity cannot be removed, because it is not present in the database (for the `/user/identity` endpoint) |
 | 112 | This account's identity does not match the one retrieved via the authcode (different IDs). |
 
-##### 2xx codes
+### 2xx codes
 
 These codes are for situations where an external API call failed.
 
@@ -85,7 +85,7 @@ These codes are for situations where an external API call failed.
 | 202 | Something went wrong with a Microsoft API call |
 
 
-##### 3xx codes
+### 3xx codes
 
 These are general codes that can be encountered.
 
@@ -95,7 +95,7 @@ These are general codes that can be encountered.
 | 301 | You do not have the permission to do that (i.e. you are logged in but can't do that) |
 
 
-##### 9xx codes
+### 9xx codes
 
 Special codes for when things really go wrong.
 

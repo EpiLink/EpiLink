@@ -1,6 +1,6 @@
 # Developing, compiling and running
 
-[Go back to main Documentation page](/docs/README.md)
+This page describes how to get up and running with EpiLink from scratch.
 
 ## Environment
 
