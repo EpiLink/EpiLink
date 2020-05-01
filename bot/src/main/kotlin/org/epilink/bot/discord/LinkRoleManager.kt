@@ -118,7 +118,9 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val ruleMediator: RuleMediator by lazy {
         get<CacheClient>().newRuleMediator("el_rc_")
     }
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
+        logger.error("Uncaught exception in role manager launched coroutine", ex)
+    })
 
     override suspend fun updateRolesOnGuilds(
         discordId: String,
