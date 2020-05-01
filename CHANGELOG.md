@@ -1,6 +1,6 @@
 # Changelog
 
-[README](/README.md) | [Documentation](/docs/README.md) | CHANGELOG
+[README](/README.md) | [Documentation](/docs/EpiLink.md) | CHANGELOG
 
 All notable changes to this project will be documented in this file.
 

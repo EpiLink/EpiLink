@@ -3,7 +3,7 @@
 ![Back-end tests](https://github.com/Litarvan/EpiLink/workflows/Back-end%20tests/badge.svg)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/a8a3663c-084c-4c4c-92a7-0d68f517ef9d/deploy-status)](https://app.netlify.com/sites/epilink/deploys)
 
-README | [Documentation](/docs/README.md) | [CHANGELOG](/CHANGELOG.md)
+README | [Documentation](/docs/EpiLink.md) | [CHANGELOG](/CHANGELOG.md)
 
 EpiLink is an account verification server, allowing you to link a Discord identity to a Microsoft (including Office 365)
 identity.
