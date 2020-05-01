@@ -62,6 +62,11 @@ export default {
 
         save: 'Sauvegarder'
     },
+    instance: {
+        poweredBy: 'Propulsé par',
+        contactTitle: 'Informations de contact',
+        contactDesc: 'Cette instance est gérée par les personnes suivantes. Vous pouvez les contacter pour toute requête.'
+    },
     about: {
         sources: 'Sources originales',
         authors: 'Auteurs',
@@ -76,6 +81,7 @@ export default {
             home: 'Accueil',
             tos: 'Conditions d\'utilisation',
             privacy: 'Confidentialité',
+            instance: 'Instance',
             about: 'À Propos'
         }
     },
