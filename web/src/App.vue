@@ -36,7 +36,8 @@
                 </router-link>
                 <template v-if="instance">
                     <div id="instance-separator"></div>
-                    <span id="instance">{{ instance}}</span>
+                    <img id="logo-instance" v-if="instanceLogo" :src="instanceLogo">
+                    <span id="instance">{{ instance }}</span>
                 </template>
                 <template v-if="canLogout">
                     <div id="logout-separator"></div>
@@ -101,6 +102,10 @@
             instance() {
                 const meta = this.$store.state.meta;
                 return meta && meta.title;
+            },
+            instanceLogo() {
+                const meta = this.$store.state.meta;
+                return meta && meta.logo;
             }
         },
         methods: {
@@ -203,6 +208,16 @@
 
                 margin: 9px;
                 margin-left: 12px;
+
+                border-radius: 3px;
+            }
+
+            #logo-instance {
+                width: 27px;
+                height: 27px;
+
+                margin: 9px;
+                margin-left: 3px;
 
                 border-radius: 3px;
             }
