@@ -11,5 +11,5 @@
     
 - External links
 
-    - [GitHub repository](https://github.com/EpiLink/EpiLink)
+    - [📚 GitHub repository](https://github.com/EpiLink/EpiLink)
     - [🚀 Changelog](https://github.com/EpiLink/EpiLink/tree/dev/CHANGELOG.md)
