@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * EpiLink now shows how much time some services took to be launched ([#135](https://github.com/EpiLink/EpiLink/issues/135))
 * Added more helpers for manipulating received objects in rulebooks (and documented networking capabilities) ([#132](https://github.com/EpiLink/EpiLink/issues/132))
 * Added the home page in the footer navigation ([#123](https://github.com/EpiLink/EpiLink/issues/123))
+* Added a back arrow button on the meta text pages ([#141](https://github.com/EpiLink/EpiLink/issues/141))
 
 ### Changed
 
