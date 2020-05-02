@@ -391,9 +391,12 @@ fun LinkTokens.check(): List<ConfigReportElement> {
 /**
  * Check the web server's configuration
  */
-@Suppress("unused")
 fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
-    return listOf()
+    val reports = mutableListOf<ConfigReportElement>()
+    if (this.frontendUrl?.endsWith("/") == false) { // Equality check because left side can be null
+        reports += ConfigError(true, "The frontendUrl value in the server config must have a trailing slash (add a / at the end of your URL)")
+    }
+    return reports
 }
 
 /**

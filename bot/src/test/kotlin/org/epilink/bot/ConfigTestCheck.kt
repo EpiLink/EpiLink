@@ -10,10 +10,7 @@ package org.epilink.bot
 
 import io.mockk.every
 import io.mockk.mockk
-import org.epilink.bot.config.ConfigError
-import org.epilink.bot.config.ConfigWarning
-import org.epilink.bot.config.LinkLegalConfiguration
-import org.epilink.bot.config.check
+import org.epilink.bot.config.*
 import kotlin.test.*
 
 class ConfigTestCheck {
@@ -85,5 +82,14 @@ class ConfigTestCheck {
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigWarning && it.message.contains("identityPromptText") })
+    }
+
+    @Test
+    fun `Test no trailing slash at end of front-end URL triggers error`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { frontendUrl } returns "https://whereismy.slash"
+        }
+        val reports = config.check()
+        assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("frontendUrl")})
     }
 }
