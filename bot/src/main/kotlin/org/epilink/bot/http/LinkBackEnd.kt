@@ -333,7 +333,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
             authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
             idPrompt = legal.idPrompt,
-            footerUrls = wsCfg.footers
+            footerUrls = wsCfg.footers,
+            contacts = wsCfg.contacts
         )
 
     /**

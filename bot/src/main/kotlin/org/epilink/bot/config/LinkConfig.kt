@@ -103,7 +103,13 @@ data class LinkWebServerConfiguration(
     /**
      * Logo URL that is passed to the front-end
      */
-    val logo: String? = null
+    val logo: String? = null,
+    /**
+     * Contact information for instance maintainers
+     *
+     * @since 0.2.0
+     */
+    val contacts: List<LinkContactInformation> = listOf()
 )
 
 /**
@@ -118,6 +124,22 @@ data class LinkFooterUrl(
      * The actual URL
      */
     val url: String
+)
+
+/**
+ * Represents the contact information for a single person
+ *
+ * @since 0.2.0
+ */
+data class LinkContactInformation(
+    /**
+     * The name of the person
+     */
+    val name: String,
+    /**
+     * Their email address
+     */
+    val email: String
 )
 
 /**

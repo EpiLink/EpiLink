@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+* Added the "Instance" page on the front-end ([#148](https://github.com/EpiLink/EpiLink/issues/148))
+* Added maintainer information in the back-end configuration + endpoints ([#148](https://github.com/EpiLink/EpiLink/issues/148))
 * Added a back arrow button on the meta text pages ([#141](https://github.com/EpiLink/EpiLink/issues/141))
 * Added a [documentation site](https://epilink.zoroark.guru) ([#142](https://github.com/EpiLink/EpiLink/issues/142))
 * Added the logo configured on the back-end to the front-end ([#146](https://github.com/EpiLink/EpiLink/issues/146))
@@ -30,6 +32,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Rounded the favicon ([#126](https://github.com/EpiLink/EpiLink/issues/126))
 * Reversed the order of the ID accesses on the profile page ([#129](https://github.com/EpiLink/EpiLink/issues/129))
 * Removing the e-mail after registration ([#131](https://github.com/EpiLink/EpiLink/issues/131))
+
+### Removed
+
+* Removed the footer links for "Terms of Services" and "Privacy" ([#148](https://github.com/EpiLink/EpiLink/issues/148))
+    * These are now available from the new Instance page, and are still accessible from the registration process
 
 ### Fixed
 

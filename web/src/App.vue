@@ -88,14 +88,13 @@
             routes() {
                 const meta = this.$store.state.meta;
                 const urls = meta && meta.footerUrls;
+                const instance = meta && [{ route: 'instance' }];
 
                 return [
                     { route: 'home' },
 
                     ...(urls || []),
-
-                    { route: 'tos' },
-                    { route: 'privacy' },
+                    ...(instance || []),
                     { route: 'about' }
                 ];
             },

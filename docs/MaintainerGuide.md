@@ -70,6 +70,11 @@ server:
       url: "https://myawesome.com"
     - name: Hello
       url: "https://example.com"
+  contacts: # optional
+    - name: Mike Schmidt
+      email: "schmidt@freddy.pizza"
+    - name: William Afton
+      email: "w_afton@circusbaby.pizza"
 ```
 
 * `port`: The port on which the back-end will be served
@@ -83,7 +88,7 @@ server:
 
 * `logo` *(optional, null by default)*: A URL to the logo of this instance, used by the front-end. When null (or `~`), the logo of EpiLink is used.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
-
+* `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 
 ### Credentials
 

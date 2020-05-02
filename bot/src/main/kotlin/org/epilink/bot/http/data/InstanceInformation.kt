@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.http.data
 
+import org.epilink.bot.config.LinkContactInformation
 import org.epilink.bot.config.LinkFooterUrl
 
 // See the Api.md documentation file for more information
@@ -18,5 +19,6 @@ data class InstanceInformation(
     val authorizeStub_msft: String,
     val authorizeStub_discord: String,
     val idPrompt: String,
-    val footerUrls: List<LinkFooterUrl>
+    val footerUrls: List<LinkFooterUrl>,
+    val contacts: List<LinkContactInformation>
 )
