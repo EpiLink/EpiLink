@@ -1,18 +1,18 @@
 # EpiLink 🔗
 
-![Back-end tests](https://github.com/Litarvan/EpiLink/workflows/Back-end%20tests/badge.svg)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/a8a3663c-084c-4c4c-92a7-0d68f517ef9d/deploy-status)](https://app.netlify.com/sites/epilink/deploys)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/EpiLink/EpiLink/Tests/dev?label=Tests&logo=github&style=for-the-badge)
+[![Netlify Status](https://img.shields.io/netlify/a8a3663c-084c-4c4c-92a7-0d68f517ef9d?color=blue&logo=netlify&style=for-the-badge)](https://app.netlify.com/sites/epilink/deploys)
+[![MPL 2.0 No copyleft exception license](https://img.shields.io/badge/License-MPL%202.0%20(NCE)-lightgray?style=for-the-badge)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/EpiLink/EpiLink?color=darkgreen&include_prereleases&label=Latest%20release&style=for-the-badge)](https://github.com/EpiLink/EpiLink/releases) 
 
-README | [Documentation](/docs/EpiLink.md) | [CHANGELOG](/CHANGELOG.md)
+**Links:** [Documentation](https://epilink.zoroark.guru) | [CHANGELOG](/CHANGELOG.md)
 
 EpiLink is an account verification server, allowing you to link a Discord identity to a Microsoft (including Office 365)
 identity.
 
 ![Screenshot of the front-end](docs/img/front.png)
 
-Currently in development.
-
-EpiLink is available under the Mozilla Public License 2.0 (no copyleft exception) `MPL-2.0-no-copyleft-exception` [(info)](https://spdx.org/licenses/MPL-2.0-no-copyleft-exception.html).
+EpiLink is available under the Mozilla Public License 2.0 (no copyleft exception) `MPL-2.0-no-copyleft-exception` [(info)](LICENSE).
 
 ## Requirements
 
@@ -22,8 +22,8 @@ EpiLink is available under the Mozilla Public License 2.0 (no copyleft exception
 
 ## Developing, running and building
 
-Check [this documentation file](/docs/Developing.md) for information
+Check [this page](https://epilink.zoroark.guru/#/Developing) for information.
 
 ## I need help!
 
-Feel free to open an issue if you have any question on this project. Make sure to read the documentation too, you have a lot of information there!
+Feel free to open an issue if you have any question on this project. Make sure to read the [documentation](https://epilink.zoroark.guru) too, you have a lot of information there!
