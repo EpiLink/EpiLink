@@ -214,7 +214,7 @@
 
         #accesses {
             display: flex;
-            flex-direction: column-reverse;
+            flex-direction: column;
 
             .access {
                 padding: 10px;
