@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Added the "Instance" page on the front-end ([#148](https://github.com/EpiLink/EpiLink/issues/148))
 * Added maintainer information in the back-end configuration + endpoints ([#148](https://github.com/EpiLink/EpiLink/issues/148))
+* Added a back arrow button on the meta text pages ([#141](https://github.com/EpiLink/EpiLink/issues/141))
 * Added a [documentation site](https://epilink.zoroark.guru) ([#142](https://github.com/EpiLink/EpiLink/issues/142))
 * Added the logo configured on the back-end to the front-end ([#146](https://github.com/EpiLink/EpiLink/issues/146))
 * Rule caching added: rules' outputs can now be cached to avoid calling a rule again and again ([#135](https://github.com/EpiLink/EpiLink/issues/135))
@@ -39,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
+* Fixed the ordering of ID accesses on the profile page ([#141](https://github.com/EpiLink/EpiLink/issues/141))
 * Properly handle exceptions in the role manager, rate limiter memory and Discord client ([#144](https://github.com/EpiLink/EpiLink/issues/144))
 * Fixed the about page punctuation ([#130](https://github.com/EpiLink/EpiLink/issues/130))
 
