@@ -16,7 +16,7 @@ export default {
     mutations: {
         setAccesses(state, { manualAuthorsDisclosed, accesses }) {
             state.shouldDisclose = manualAuthorsDisclosed;
-            state.accesses = accesses;
+            state.accesses = accesses.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         }
     },
     actions: {
