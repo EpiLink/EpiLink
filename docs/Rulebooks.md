@@ -2,9 +2,7 @@
 
 ## What are rulebooks?
 
-Rulebooks are small Kotlin scripts that implement custom rules for custom roles. They are intended to be used to gather information about a user (possibly using their real identity) and give them roles automatically.
-
-Rulebooks can also be used for additional checks on your end: for example, checking that someone's email matches some format you need. This is useful for making sure only users from a domain you trust can log in.
+Rulebooks are small Kotlin scripts that implement custom rules for custom roles. They are intended to be used to gather information about a user (possibly using their real identity) and give them roles automatically. Rulebooks can also be used for additional checks on your end: for example, checking that someone's email matches some format you need. This is useful for making sure only users from a domain you trust can log in.
 
 An example is: I know that the user's email address is `ab@c.de`, and I want to automatically give them a "Manager" role depending on the reply of some web API that returns JSON. Using a rule, you can specify that the Manager role follows a "CheckStatus" rule, and implement the CheckStatus rule to send an HTTP GET request to your own API, check the JSON reply, and apply roles automatically based on this reply. 
 
@@ -16,11 +14,11 @@ You can either put your rulebook directly in the configuration file, or in a sep
 
 **Rules can potentially leak users' identity, and constitute a use of real identities that you should probably indicate in your privacy policy.** Retrieving roles automatically may also hinder the anonymity of your users with regards to other users (e.g. someone may be able to determine who someone is using their roles). This, of course, is not an issue if you do not care about the anonymity of your users.
 
-You must make these points clear to your users.
+You should make these points clear to your users.
 
 ## The Rulebook itself
 
-First, see [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is.
+First, see [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is. Note that `rulebook`/`rulebookFile` can only be specified in the `discord` section of the configuration file.
 
 This section will cover the basics of rulebooks. This assumes some knowledge of Kotlin.
 
@@ -36,7 +34,7 @@ emailValidator { email ->
 }
 ```
 
-The validator must return a boolean value. By default, in Kotlin, the last expression of a lambda block is the return value. So, if we wanted to only accept email addresses that end in `@mydomain.fi`, you could use:
+The validator must return a boolean value. By default, in Kotlin, the last expression of a lambda block is the return value. So, if you wanted to only accept email addresses that end in `@mydomain.fi`, you could use:
 
 ```kotlin
 emailValidator { email -> 
@@ -56,7 +54,7 @@ All usual boolean operators can be used, so this would also be valid to match bo
 emailValidator { it.endsWith("@mydomain.fi") || it.endsWith("@otherdomain.org") }
 ```
 
-The e-mail validator is ran during the registration process only, and does not generate any identity access notification, as it is part of the registration process.
+?> The e-mail validator is ran during the registration process only, and does not generate any identity access notification, as it is part of the registration process, where such a use is logically expected.
 
 ### Rule declaration
 
@@ -86,7 +84,7 @@ In the example above, two rules are defined, `StartsWithZ` as a weak identity ru
 
 Strong identity rules are skipped for users who chose not to have their identity kept by EpiLink.
 
-**Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](MaintainerGuide.md#privacy-configuration).
+!> **Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](MaintainerGuide.md#privacy-configuration).
 
 ### Accessing information
 
@@ -201,11 +199,11 @@ You could write a rule that gives a role to `frenchDevs` like so (we assume that
 }
 ```
 
-> *Note:* The helper functions are very limited at the moment. You can use your own functions, or manually create Ktor clients, but this is not recommended. Instead, if you want to do something the current helper functions can't do, please open an issue so that we can add it to EpiLink!
+?> The helper functions are very limited at the moment. You can use your own functions, or manually create Ktor clients, but this is not recommended. Instead, if you want to do something the current helper functions can't do, please [open an issue](https://github.com/EpiLink/EpiLink/issues) so that we can add it to EpiLink!
 
 ### Rule caching
 
-Rules can do things that take a lot of time: contacting an API on the web, computing a prime number... In short: calling every rule every single time we want to use them costs us a lot of time and bandwidth. Fortunately, there is a way to declare rules that, if they were previously called, will remember the output and give the previous output directly.
+Rules can do things that take a lot of time: contacting an API on the web, computing a prime number... In short: calling every rule every single time we want to use them costs us a lot of time and bandwidth. Fortunately, there is a way to declare rules that, if they were called recently, will remember the output and give the remembered output directly.
 
 This is called "rule caching".
 
@@ -221,7 +219,7 @@ This is called "rule caching".
 
 These are perfectly normal rules, except that they will "remember" their output for a certain period of time and, if called again for the same user, they will give back that remembered output instead of running the rule again.
 
-Rules are cached on a user-level, because a rule is expected to have consistent results if called for the same person twice in a row.
+?> Rules are cached on a user-level, because a rule is expected to have consistent results if called for the same person twice in a row. For example, different values would be cached for the rule MyRule for a user Mike and another user Jack.
 
 #### Time durations
 
@@ -236,15 +234,15 @@ The minimum is 1 second.
 
 #### Redis & caching
 
-**Caching requires a Redis server. Rules will NOT be cached if you are not [using a redis server](MaintainerGuide.md#general-settings).**
+!> **Caching requires a Redis server.** Rules will NOT be cached if you are not [using a redis server](MaintainerGuide.md#general-settings).
 
 EpiLink relies on Redis' `EXPIRES` command.
 
-EpiLink stores rules caches using the `el_rc_` prefix. The syntax of cached rules is `el_rc_rulename_userid`, and an additional set is saved, `el_rc__INDEX__userid` which contains all of the currently saved caches for the given `userid`. This is used for [invalidating caches](#cache-invalidation).
+EpiLink stores rules caches using the `el_rc_` prefix. The syntax of cached rules is `el_rc_rulename_userid`, and an additional set is saved named `el_rc__INDEX__userid` which contains all the currently saved caches for the given `userid`. This is used for [invalidating caches](#cache-invalidation).
 
 #### Cached strong rules and ID access notifications
 
-A strong rule that is cached will only generate ID access notifications (and thus ID access logs) when the rule is *actually* executed and never when the cached results are used instead. For example, let's take the rule "MyStrongRule" defined above:
+A strong rule that can be cached will only generate ID access notifications (and thus log an ID access) when the rule is *actually* executed, never when cached results are used. For example, let's take the rule "MyStrongRule" defined above:
 
 ```
 User A joins a server which uses that rule
@@ -270,11 +268,11 @@ User A joins yet another server which uses the rule
 
 If a single update needs two rules, and only one of them actually needs to be executed (the other is cached), then an ID access is still generated, but only for the rule that we need to execute.
 
-Note that if a user B joined at any point during this process, the rule would have been executed for him. A saved rule depends on both the *rule* and the exact *user*. Here, the "cached rule" is really just "cached results for rule MyStrongRule with user A". A user B joining would mean we would be looking for "cached results for rule MyStrongRule with user B".
+?> Note that if a user B joined at any point during this process, the rule would have been executed for him. A saved rule depends on both the *rule* and the exact *user*. Here, the "cached rule" is really just "cached results for rule MyStrongRule with user A". A user B joining would mean we would be looking for "cached results for rule MyStrongRule with user B".
 
 #### Cache invalidation
 
-The cache of a specific user may become invalid in some specific cases, meaning that even though it has not expired yet, it should not be relied on because something changed about the user. Invalidation leads to the deletion of all cached results for the user on all rules. The cache is currently "invalidated" when:
+The cache of a specific user may become invalid in some specific cases, meaning that even though it has not expired yet, it should not be relied on because something changed about the user. Invalidation leads to the deletion of all cached results for the user on all rules. The cache is "invalidated" when:
 
 * The identity settings of the user change (loss or gain of identity)
 
