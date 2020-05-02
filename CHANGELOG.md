@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+* Added an error for when the `frontendUrl` configuration property does not have a trailing slash ([150](https://github.com/EpiLink/EpiLink/pull/150))
 * Added the "Instance" page on the front-end ([#148](https://github.com/EpiLink/EpiLink/issues/148))
 * Added maintainer information in the back-end configuration + endpoints ([#148](https://github.com/EpiLink/EpiLink/issues/148))
 * Added a back arrow button on the meta text pages ([#141](https://github.com/EpiLink/EpiLink/issues/141))
