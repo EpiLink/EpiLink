@@ -1,0 +1,15 @@
+version: '3'
+services:
+  redis:
+    image: redis:6.0-alpine
+    restart: always
+    command: redis-server
+  epilink:
+    image: epilink
+    build: .
+    restart: always
+    env_file: ./vars.env
+    volumes:
+      - ./config:/var/run/epilink/config
+    ports:
+      - "127.0.0.1:9090:9090"
