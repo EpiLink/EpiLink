@@ -9,11 +9,15 @@ if ! [ -f $CONFIG_PATH ]; then
   echo "! Can't find the given config files !"
 
   echo "You must mount a volume to the /var/run/epilink/config folder and put a configuration file in it."
-  echo "Then, provide his name in the 'CONFIG_FILE' environment variable"
+  echo "Then, put its path in the 'CONFIG_FILE' environment variable"
 
   exit 1
 fi
 
+if [ "$VERBOSE" = true ]; then
+  ARGS=-v
+fi
+
 echo
 
-bin/epilink-backend $CONFIG_PATH
+bin/epilink-backend $ARGS $CONFIG_PATH
