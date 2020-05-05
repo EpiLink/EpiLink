@@ -10,10 +10,10 @@ ENV USER epilink
 RUN addgroup -g 1000 $USER && adduser -u 1000 -D -G $USER $USER
 
 # Installing the runtime dependencies
-RUN apk add openjdk11-jre-headless openjdk11-jdk
+RUN apk add --no-cache openjdk11-jre-headless
 
 # Setting up build project files
-RUN mkdir -p $BUILD_ROOT
+RUN mkdir -p $BUILD_ROOT && mkdir -p $LINK_ROOT
 WORKDIR $BUILD_ROOT
 
 COPY gradle ./gradle
@@ -23,28 +23,21 @@ RUN mkdir -p bot/
 COPY bot/src bot/src
 COPY bot/build.gradle bot/
 
-# Building Epilink
-RUN ./gradlew distZip
+# Building
+RUN apk add --no-cache openjdk11-jdk && \
+    ./gradlew distZip && \
+    cd $LINK_ROOT && \
+    unzip $BUILD_ROOT/bot/build/distributions/epilink-backend-*.zip && \
+    mv epilink-backend-*/* ./ && rm -rf epilink-backend-*/ && \
+    rm -rf $BUILD_ROOT && rm -rf /root/.gradle && \
+    apk del openjdk11-jdk && \
+    chown -R $USER:$USER ./
 
-# Setting up runtime project files
-RUN mkdir -p $LINK_ROOT
 WORKDIR $LINK_ROOT
-
-RUN unzip $BUILD_ROOT/bot/build/distributions/epilink-backend-*.zip
-RUN mv epilink-backend-*/* ./
-RUN rm -r epilink-backend-*/
 
 # Copying run script
 COPY bot/docker_run.sh ./run
-
-# Setting permissions
-RUN chown -R $USER:$USER ./
-RUN chmod u+x ./run
-RUN chmod u+x ./bin/epilink-backend
-
-# Cleaning
-RUN rm -rf $BUILD_ROOT
-RUN apk del openjdk11-jdk
+RUN chmod u+x ./run ./bin/epilink-backend
 
 # Final settings
 USER $USER
