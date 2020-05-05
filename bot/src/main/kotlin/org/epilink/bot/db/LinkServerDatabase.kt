@@ -10,7 +10,7 @@ package org.epilink.bot.db
 
 import org.epilink.bot.*
 import org.epilink.bot.config.LinkPrivacy
-import org.epilink.bot.config.rulebook.Rulebook
+import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch

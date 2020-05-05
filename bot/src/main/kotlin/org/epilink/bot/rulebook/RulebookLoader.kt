@@ -6,7 +6,7 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-package org.epilink.bot.config.rulebook
+package org.epilink.bot.rulebook
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,7 +37,7 @@ suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.De
             dependenciesFromCurrentContext(wholeClasspath = true)
         }
         implicitReceivers(RulebookBuilder::class)
-        defaultImports("org.epilink.bot.config.rulebook.*", "io.ktor.http.*")
+        defaultImports("org.epilink.bot.rulebook.*", "io.ktor.http.*")
     }
     val evalConfig = createJvmEvaluationConfigurationFromTemplate<RulebookScript> {
         implicitReceivers(builder)

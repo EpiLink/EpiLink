@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.epilink.bot.CliArgs
-import org.epilink.bot.config.rulebook.Rulebook
+import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.discord.DiscordEmbed
 import org.epilink.bot.discord.StandardRoles
 import java.nio.file.Files
@@ -103,7 +103,13 @@ data class LinkWebServerConfiguration(
     /**
      * Logo URL that is passed to the front-end
      */
-    val logo: String? = null
+    val logo: String? = null,
+    /**
+     * Contact information for instance maintainers
+     *
+     * @since 0.2.0
+     */
+    val contacts: List<LinkContactInformation> = listOf()
 )
 
 /**
@@ -118,6 +124,22 @@ data class LinkFooterUrl(
      * The actual URL
      */
     val url: String
+)
+
+/**
+ * Represents the contact information for a single person
+ *
+ * @since 0.2.0
+ */
+data class LinkContactInformation(
+    /**
+     * The name of the person
+     */
+    val name: String,
+    /**
+     * Their email address
+     */
+    val email: String
 )
 
 /**
@@ -369,9 +391,12 @@ fun LinkTokens.check(): List<ConfigReportElement> {
 /**
  * Check the web server's configuration
  */
-@Suppress("unused")
 fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
-    return listOf()
+    val reports = mutableListOf<ConfigReportElement>()
+    if (this.frontendUrl?.endsWith("/") == false) { // Equality check because left side can be null
+        reports += ConfigError(true, "The frontendUrl value in the server config must have a trailing slash (add a / at the end of your URL)")
+    }
+    return reports
 }
 
 /**

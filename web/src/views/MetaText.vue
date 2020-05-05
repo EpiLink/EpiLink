@@ -10,7 +10,10 @@
 -->
 <template>
     <div class="meta-text">
-        <h1 class="title" v-html="capitalize($t(`settings.${isPrivacyPolicy ? 'policy' : 'terms'}`))" />
+        <h1 class="title" :class="{ overflow: title.length > 30 }">
+            <a @click="$router.back()"><img class="back-icon" src="../../assets/back.svg" /></a>
+            {{ title | capitalize }}
+        </h1>
         <a class="back" @click="$router.back()" v-html="$t('back')" />
 
         <div class="text-content">
@@ -34,10 +37,10 @@
         },
         data() {
             return {
-                isPrivacyPolicy: this.$route.name === 'privacy'
+                title: this.$t(`settings.${this.$route.name === 'privacy' ? 'policy' : 'terms'}`)
             };
         },
-        methods: {
+        filters: {
             capitalize(str) {
                 if (!str) {
                     return str;
@@ -71,7 +74,21 @@
 
     .title {
         margin-bottom: 10px;
+
         font-size: 30px;
+        text-align: center;
+
+        .back-icon {
+            margin-right: 10px;
+            margin-bottom: -3px;
+
+            width: 28px;
+            height: 28px;
+        }
+
+        &.overflow .back-icon {
+            margin-left: -25px;
+        }
     }
 
     .back {

@@ -8,11 +8,8 @@
  */
 package org.epilink.bot.ratelimiting
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.withContext
 import org.epilink.bot.debug
 import org.slf4j.LoggerFactory
 import java.time.Duration
@@ -47,7 +44,9 @@ class InMemoryRateLimiter(
     private val mapPurgeSize: Int,
     private val mapPurgeWaitDuration: Duration
 ) : RateLimiter<String> {
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
+        logger.error("Uncaught exception in in-memory rate limiter storage", ex)
+    })
     private val mutex = Mutex()
     private val isPurgeRunning = AtomicBoolean(false)
     private var lastPurgeTime = Instant.now()

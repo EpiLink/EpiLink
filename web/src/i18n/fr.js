@@ -62,10 +62,15 @@ export default {
 
         save: 'Sauvegarder'
     },
+    instance: {
+        poweredBy: 'Propulsé par',
+        contactTitle: 'Informations de contact',
+        contactDesc: 'Cette instance est gérée par les personnes suivantes. Vous pouvez les contacter pour toute requête.'
+    },
     about: {
         sources: 'Sources originales',
         authors: 'Auteurs',
-        disclaimer: ['Pour toute question, merci de vous adresser en priorité aux mainteneurs de l\'instance.', '']
+        disclaimer: ['Pour toute question, merci de vous adresser en priorité aux mainteneurs de l\'instance', '.']
     },
 
     layout: {
@@ -73,8 +78,10 @@ export default {
         logout: 'Se déconnecter',
 
         navigation: {
+            home: 'Accueil',
             tos: 'Conditions d\'utilisation',
             privacy: 'Confidentialité',
+            instance: 'Instance',
             about: 'À Propos'
         }
     },

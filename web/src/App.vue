@@ -36,7 +36,8 @@
                 </router-link>
                 <template v-if="instance">
                     <div id="instance-separator"></div>
-                    <span id="instance">{{ instance}}</span>
+                    <img id="logo-instance" v-if="instanceLogo" :src="instanceLogo">
+                    <span id="instance">{{ instance }}</span>
                 </template>
                 <template v-if="canLogout">
                     <div id="logout-separator"></div>
@@ -45,7 +46,7 @@
             </div>
             <ul id="navigation">
                 <li class="navigation-item" v-for="r of routes">
-                    <router-link v-if="r.route" :to="{ name: r.name }" v-html="$t(`layout.navigation.${r.name}`)" />
+                    <router-link v-if="r.route" :to="{ name: r.route }" v-html="$t(`layout.navigation.${r.route}`)" />
                     <a v-if="r.url" :href="r.url" target="_blank">{{ r.name }}</a>
                 </li>
             </ul>
@@ -87,18 +88,23 @@
             routes() {
                 const meta = this.$store.state.meta;
                 const urls = meta && meta.footerUrls;
+                const instance = meta && [{ route: 'instance' }];
 
                 return [
-                    ...(urls || []),
+                    { route: 'home' },
 
-                    { name: 'tos', route: 'tos' },
-                    { name: 'privacy', route: 'privacy' },
-                    { name: 'about', route: 'about' }
+                    ...(urls || []),
+                    ...(instance || []),
+                    { route: 'about' }
                 ];
             },
             instance() {
                 const meta = this.$store.state.meta;
                 return meta && meta.title;
+            },
+            instanceLogo() {
+                const meta = this.$store.state.meta;
+                return meta && meta.logo;
             }
         },
         methods: {
@@ -201,6 +207,16 @@
 
                 margin: 9px;
                 margin-left: 12px;
+
+                border-radius: 3px;
+            }
+
+            #logo-instance {
+                width: 27px;
+                height: 27px;
+
+                margin: 9px;
+                margin-left: 3px;
 
                 border-radius: 3px;
             }

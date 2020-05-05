@@ -13,10 +13,10 @@ import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordRoleSpec
 import org.epilink.bot.config.LinkDiscordServerSpec
-import org.epilink.bot.config.rulebook.Rule
-import org.epilink.bot.config.rulebook.Rulebook
-import org.epilink.bot.config.rulebook.StrongIdentityRule
-import org.epilink.bot.config.rulebook.WeakIdentityRule
+import org.epilink.bot.rulebook.Rule
+import org.epilink.bot.rulebook.Rulebook
+import org.epilink.bot.rulebook.StrongIdentityRule
+import org.epilink.bot.rulebook.WeakIdentityRule
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.*
 import org.koin.dsl.module
@@ -47,7 +47,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         runBlocking {
             val rm = get<LinkRoleManager>()
-            rm.getRolesForUser("userid", mockk(), mockk(), true)
+            rm.getRolesForUser("userid", mockk(), true)
         }
         coVerifyAll {
             sd.canUserJoinServers(any())
@@ -64,23 +64,23 @@ class DiscordRoleManagerTest : KoinBaseTest(
         // Gigantic test that pretty much represents the complete functionality of the role update
         val r = mockHere<Rulebook> {
             every { rules } returns mapOf(
-                "My Rule" to WeakIdentityRule("My Rule") {
+                "My Rule" to WeakIdentityRule("My Rule", null) {
                     assertEquals("userid", userDiscordId)
                     assertEquals("hi", userDiscordName)
                     assertEquals("1234", userDiscordDiscriminator)
                     roles += "fromWeak"
                 },
-                "My Strong Rule" to StrongIdentityRule("My Stronger Rule") { email ->
+                "My Strong Rule" to StrongIdentityRule("My Stronger Rule", null) { email ->
                     assertEquals("userid", userDiscordId)
                     assertEquals("hi", userDiscordName)
                     assertEquals("1234", userDiscordDiscriminator)
                     assertEquals("user@example.com", email)
                     roles += "fromStrong"
                 },
-                "Not Called Rule" to WeakIdentityRule("Not Called Rule") {
+                "Not Called Rule" to WeakIdentityRule("Not Called Rule", null) {
                     error("Don't call me!")
                 },
-                "Not Called Strong Rule" to StrongIdentityRule("Not Called Strong Rule") {
+                "Not Called Strong Rule" to StrongIdentityRule("Not Called Strong Rule", null) {
                     error("Don't call me!")
                 }
             )
@@ -155,6 +155,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dm = mockHere<LinkDiscordMessages> {
             coEvery { getIdentityAccessEmbed(true, any(), any()) } returns mockk()
         }
+        declare<CacheClient> { MemoryCacheClient() }
         runBlocking {
             val rm = get<LinkRoleManager>()
             rm.updateRolesOnGuilds("userid", listOf("serverid", "otherserver", "ghostserver"), true)
@@ -373,7 +374,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), mockk(), false)
+            val roles = rm.getRolesForUser("userid", mockk(), false)
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
     }
@@ -387,7 +388,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), mockk(), false)
+            val roles = rm.getRolesForUser("userid", mockk(), false)
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
     }
@@ -408,7 +409,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), mockk(), true)
+            val roles = rm.getRolesForUser("userid", mockk(), true)
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
         coVerify { dcf.sendDirectMessage("userid", embed) }
@@ -425,7 +426,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(), listOf(), true)
+            val roles = rm.getRolesForUser("userid", listOf(), true)
             assertEquals(setOf("_known"), roles)
         }
     }
@@ -441,7 +442,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(), listOf(), true)
+            val roles = rm.getRolesForUser("userid", listOf(), true)
             assertEquals(setOf("_known", "_identified"), roles)
         }
     }
@@ -461,11 +462,12 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { getDiscordUserInfo("userid") } returns dui.copy()
             coEvery { sendDirectMessage("userid", embed) } just runs
+            coEvery { getGuildName(any()) } returns "NAME"
         }
         mockHere<LinkDiscordMessages> {
             coEvery { getIdentityAccessEmbed(true, any(), any()) } returns embed
         }
-        val rule1 = StrongIdentityRule("StrongRule") {
+        val rule1 = StrongIdentityRule("StrongRule", null) {
             assertEquals("email@@", it)
             assertEquals("userid", userDiscordId)
             assertEquals("uname", userDiscordName)
@@ -473,16 +475,24 @@ class DiscordRoleManagerTest : KoinBaseTest(
             roles += "sir_$it"
             roles += "sirId_$userDiscordId"
         }
-        val rule2 = WeakIdentityRule("WeakRule") {
+        val rule2 = WeakIdentityRule("WeakRule", null) {
             assertEquals("userid", userDiscordId)
             assertEquals("uname", userDiscordName)
             assertEquals("disc", userDiscordDiscriminator)
             roles += "wirId_$userDiscordId"
             roles += "wirDisc_$userDiscordDiscriminator"
         }
+        declare<CacheClient> { MemoryCacheClient() }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(rule1, rule2), listOf("Guildo", "Abcde"), true)
+            val roles = rm.getRolesForUser(
+                "userid",
+                listOf(
+                    RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
+                    RuleWithRequestingGuilds(rule2, setOf("Otherrr"))
+                ),
+                true
+            )
             assertEquals(
                 setOf("_known", "_identified", "sir_email@@", "sirId_userid", "wirId_userid", "wirDisc_disc"),
                 roles
@@ -504,21 +514,26 @@ class DiscordRoleManagerTest : KoinBaseTest(
         mockHere<LinkDiscordClientFacade> {
             coEvery { getDiscordUserInfo("userid") } returns dui.copy()
         }
-        val rule1 = StrongIdentityRule("StrongRule", mockk())
-        val rule2 = WeakIdentityRule("WeakRule") {
+        val rule1 = StrongIdentityRule("StrongRule", null, mockk())
+        val rule2 = WeakIdentityRule("WeakRule", null) {
             assertEquals("userid", userDiscordId)
             assertEquals("uname", userDiscordName)
             assertEquals("disc", userDiscordDiscriminator)
             roles += "wirId_$userDiscordId"
             roles += "wirDisc_$userDiscordDiscriminator"
         }
+        declare<CacheClient> { MemoryCacheClient() }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(rule1, rule2), listOf("Guildo", "Abcde"), true)
-            assertEquals(
-                setOf("_known", "wirId_userid", "wirDisc_disc"),
-                roles
+            val roles = rm.getRolesForUser(
+                "userid",
+                listOf(
+                    RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
+                    RuleWithRequestingGuilds(rule2, setOf("Other"))
+                ),
+                true
             )
+            assertEquals(setOf("_known", "wirId_userid", "wirDisc_disc"), roles)
         }
     }
 

@@ -23,7 +23,6 @@ export default new Vuex.Store({
     state: {
         expanded: false,
         popup: null,
-
         meta: null
     },
     mutations: {

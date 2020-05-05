@@ -1,7 +1,5 @@
 # Instance Maintainer Guide
 
-[Go back to main Documentation page](/docs/README.md)
-
 This page will guide you through the configuration of a working EpiLink instance.
 
 ## Getting started
@@ -9,7 +7,7 @@ This page will guide you through the configuration of a working EpiLink instance
 Go through all of these steps before going public:
 
 - Get EpiLink (and all of the [required stuff](#deployment-methods))
-- [Configure it](#configuration) using the [sample configuration](/bot/config/epilink_config.yaml) as a template
+- [Configure it](#configuration) using the [sample configuration](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml) as a template
 - Make sure everything works
 - Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
 - [Set the reverse proxy headers configuration](#http-server-settings)
@@ -17,9 +15,21 @@ Go through all of these steps before going public:
 
 After doing all that, you will be good to go! Read on to learn how to do all of these things!
 
-## Deployment methods
+## Deployment
 
-There are (or, rather, will be) several ways of deploying EpiLink:
+!> **EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
+
+### Using Docker
+
+EpiLink can be deployed using the official Docker image (which only includes the backend).
+
+Simply clone the [Docker repository](https://github.com/EpiLink/docker), edit the `config/epilink.yaml`
+file by following the [configuration](#configuration) section, and run it using `docker-compose up`
+(add `-d` to run it in background).
+
+### Manual
+
+There are (or, rather, will be) several ways of deploying EpiLink manually:
 
 - All-in-one package (includes back-end, front-end and JRE, optionally a Redis server)
 - Separate packages (one for back-end, one for front-end, requires a JRE and Redis server to be installed) 
@@ -28,13 +38,7 @@ All-in-one is recommended for most use cases, although it is not necessarily the
 
 You will also need a Redis server. All-in-one packages may include a ready-to-use Redis server.
 
-**EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
-
-**If, somehow, you do not use a reverse proxy, launch EpiLink with the `-n` option.** Otherwise, attackers could fake their IP address by passing their own `X-Forwarded-*` headers.
-
-Please open an issue on GitHub if you need to use the standard `Forwarded` header instead of `X-Fowarded-*`.  
-
-## Running
+#### Running
 
 EpiLink can be ran with a few arguments. Run `path/to/epilink -h` for help.
 
@@ -61,7 +65,9 @@ redis: "redis://localhost:6379"
 
 * `db`: This is the location of the SQLite database. Use a full, absolute path instead of a relative path just to be on the safe side.
 
-* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion) and `el_reg_` (EpiLink REGistration) prefixes for all of its keys. This value can also be `~` to use an in-memory storage, but this is **not recommended** and should only be used for development purposes. Values are never cleared from the memory when using in-memory storage, resulting in leaks everywhere. Keys are not timed out either, nor are they saved in-between runs, so really only use that when you want to test or develop on EpiLink.
+* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion), `el_reg_` (EpiLink REGistration) and `el_rc_` (EpiLink Rule Cache) prefixes for all of its keys. 
+
+?> This value can also be `~` to use an in-memory storage, but this is **not recommended** and should only be used for development purposes. Values are never cleared from the memory when using in-memory storage, resulting in leaks everywhere. Keys are not timed out either, nor are they saved in-between runs, so really only use that when you want to test or develop on EpiLink.
 
 ### HTTP Server Settings
 
@@ -76,6 +82,11 @@ server:
       url: "https://myawesome.com"
     - name: Hello
       url: "https://example.com"
+  contacts: # optional
+    - name: Mike Schmidt
+      email: "schmidt@freddy.pizza"
+    - name: William Afton
+      email: "w_afton@circusbaby.pizza"
 ```
 
 * `port`: The port on which the back-end will be served
@@ -84,8 +95,12 @@ server:
     * `None`: For testing only, when EpiLink is not behind a reverse proxy at all.
     * `XForwarded`: When remote host information is passed through the `X-Forwarded-*` headers.
     * `Forwarded`: When remote host information is passed through the standard `Forwarded` header.
+    
+!> Not setting the `proxyType` or setting it to the incorrect value will lead to (at best) too aggressive rate-limiting or (at worst) security issues and possible IP spoofing from users!
+
 * `logo` *(optional, null by default)*: A URL to the logo of this instance, used by the front-end. When null (or `~`), the logo of EpiLink is used.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
+* `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 
 ### Credentials
 
@@ -127,13 +142,9 @@ If you need to support multiple tenants and have to resort to tenants like `comm
 
 ##### Registering EpiLink
 
-Go to the [Azure portal](https://portal.azure.com) and connect to your account ([which one?](#choosing-an-account-and-tenants)). Go to the Azure Active Directory view, then "App Registrations" and "New registration".
+Go to the [Azure portal](https://portal.azure.com) and log in with your Microsoft account ([which one?](#choosing-an-account-and-tenants)). Go to the Azure Active Directory view, then "App Registrations" and "New registration".
 
-Carefully choose the "Supported account types field" ([help](#choosing-an-account-and-tenants)).
-
-The registering process can take some time, just be patient.
-
-Once done, you will be redirected to your app's page.
+Carefully choose the "Supported account types field" ([help](#choosing-an-account-and-tenants)). The registering process can take some time, just be patient. Once done, you will be redirected to your app's page.
 
 You will need to create a secret manually, as Azure AD does not create one for you automatically. Simply go to Certificates & Secrets and click on New client secret. Note that the secret will not be visible once you leave the page, so copy it then and not later!
 
@@ -151,9 +162,9 @@ You should also add redirection URIs based on where the front-end is served. The
 * `common` to accept any Microsoft account (personal, business/school account)
 * `consumers` to accept only personal Microsoft accounts
 * `organizations` to accept only business/school accounts
-* Your tenant's ID to accept only accounts from your tenant. You can get it by connecting to the Azure portal with your work account and going to `?` -> Show Diagnostics. In the JSON file, you will find a list of tenants, simply pick the ID of the one you want.v
+* Your tenant's ID to accept only accounts from your tenant. You can get it by connecting to the Azure portal with your work account and going to `?` -> Show Diagnostics. In the JSON file, you will find a list of tenants, simply pick the ID of the one you want.
 
-Note: If you need to use multiple tenants, and cannot guarantee identities by just having a tenant in place, you can validate e-mail addresses using rulebooks. [Read this for more information](Rulebooks.md#e-mail-validation).
+?> If you need to use multiple tenants, and cannot guarantee identities by just having a tenant in place, you can validate e-mail addresses using rulebooks. [Read this for more information](Rulebooks.md#e-mail-validation).
 
 ### Discord configuration
 
@@ -191,13 +202,13 @@ Depending on the situation, a server may or may not be *monitored*. A *monitored
   rule: MyRule
 ```
 
-This section is used to define roles that are defined by [rules](/docs/Rulebooks.md): more specifically, what roles determined by what rules.
+This section is used to define roles that are defined by [rules](Rulebooks.md): more specifically, what roles determined by what rules.
 
 Each element is made of:
 
 * `name`: The name of the role. This is the name you add in your rules (`roles += "myRoleName"`), and the one you use in the server role dictionary (`myRoleName: 123455`).
 * `displayName` *(optional)*: The name of the role, as displayed to the user. Unused at the moment.
-* `rule`: The rule that determines this role. This is the name of the rule defined in the [rulebook](/docs/Rulebooks.md) that determines if this role should be added. This can be a weak identity or a strong identity rule. A rule can be used for more than one role.
+* `rule`: The rule that determines this role. This is the name of the rule defined in the [rulebook](Rulebooks.md) that determines if this role should be added. This can be a weak identity or a strong identity rule. A rule can be used for more than one role.
 
 #### Discord server configuration
 
@@ -235,7 +246,7 @@ The EpiLink role names that begin with a `_` are roles that EpiLink determines a
 
 Role names that do not begin with a `_` are custom roles you define through [rules in rulebooks](Rulebooks.md).
 
-You do not have to specify all possible roles in the server role specification. EpiLink will ignore any role that does not match, is not recognized, or is not defined.
+?> You do not have to specify all the existing EpiLink roles in the server role specification. EpiLink will ignore any role that does not match, is not recognized, or is not defined.
 
 #### Discord embed configuration
 
@@ -268,7 +279,7 @@ fields: # Optional
   - ...
 ```
 
-Most of these should be familiar if you have ever used Discord embed. You can remove elements you do not use (those that are marked with `# Optional`).
+Most of these should be familiar if you have ever used Discord embeds before. You can remove elements you do not use (those that are marked with `# Optional`).
 
 #### Rulebook configuration
 
@@ -283,14 +294,14 @@ rulebook: |
 rulebookFile: myFile.rule.kts
 ```
 
-Custom roles can be determined using custom rules, and you can additionally validate e-mail addresses with rulebooks. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](/docs/Rulebooks.md).
+Custom roles can be determined using custom rules, and you can additionally validate e-mail addresses with rulebooks. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](Rulebooks.md).
 
 * You can use no rulebooks whatsoever: in this case, simply do not declare `rulebook` nor `rulebookFile`.
 * You can put the rulebook directly in the configuration file (using `rulebook`). In this case, do not declare `rulebookFile`
 * You can put the rulebook in a separate file (using `rulebookFile`). The value of `rulebookFile` is the path to the rulebook file **relative to the configuration file**. If the rulebook named `epilink.rule.kts` is located in the same folder as your config file, you can just use `rulebookFile: epilink.rule.kts`
 * Using *both* `rulebook` and `rulebookFile` at the same time will result in an error upon launching EpiLink.
 
-A note in case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, all e-mail addresses will be treated as valid.
+!> In case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, **all e-mail addresses will be treated as valid.** In other words, **if you use a general tenant as your Microsoft tenant instead of a specific one, use e-mail validation, otherwise untrusted parties may be authenticated via EpiLink!**
 
 ### Privacy configuration
 
@@ -337,6 +348,8 @@ All three options **are HTML**. Use them to format your text with lists and othe
 * `policy`/`policyFile`: The privacy policy, either directly written in the config file (`policy`), or as a path relative to the configuration file's location (`policyFile`)
 * `identityPromptText`: The text that is shown below the "Remember who I am" checkbox in the registration page. This should describe in a few words what the user should expect to happen if they check (or uncheck) the box. You can also put "See the privacy policy for more details". This is also HTML.
 
-All options are optional, but you SHOULD fill them in regardless. Not filling them in results in a warning. Filling both a in-config option *and* its file-based counterpart will result in an error, similar to `rulebook`/`rulebookFile`.
+All options are optional, but you should fill them in regardless. Not filling them in results in a warning in the start-up logs. Filling both an in-config option *and* its file-based counterpart will result in an error, similar to `rulebook`/`rulebookFile`.
 
 Seek legal advice if you do not know what to put in the terms of services or the privacy policy. These may not even be required if you are using EpiLink as part of an intranet infrastructure.
+
+You may also want to specify `contacts` in the [server configuration](#http-server-settings).

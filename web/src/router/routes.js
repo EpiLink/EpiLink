@@ -16,6 +16,7 @@ import Auth      from '../views/Auth';
 import Settings  from '../views/Settings';
 import About     from '../views/About';
 import Success   from '../views/Success';
+import Instance  from "../views/Instance";
 
 export default [
     {
@@ -62,6 +63,11 @@ export default [
         path: '/tos',
         name: 'tos',
         component: MetaText
+    },
+    {
+        path: '/instance',
+        name: 'instance',
+        component: Instance
     },
     {
         path: '/about',

@@ -113,6 +113,8 @@
                             this.submitting = false;
                             this.saveEmail = false;
                             this.wasChecked = false;
+
+                            this.loadAccesses();
                         })
                         .catch(err => this.error = err);
                 } else if (!this.wasChecked && this.saveEmail) {

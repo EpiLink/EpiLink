@@ -29,6 +29,15 @@ inline fun Logger.debug(ex: Throwable, lazyMsg: () -> String) {
 }
 
 /**
+ * Send a lazily constructed trace message only if trace logging is enabled
+ */
+inline fun Logger.trace(lazyMsg: () -> String) {
+    if(isTraceEnabled) {
+        trace(lazyMsg())
+    }
+}
+
+/**
  * Send the given info message if debug is disabled, or the given debug message if debug is enabled
  */
 inline fun Logger.infoOrDebug(infoMessage: String, lazyDebugMsg: () -> String) {

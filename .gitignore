@@ -17,3 +17,6 @@ app.bundle.js
 bot/config/epilink_config_real.yaml
 bot/config/epilink.rule.kts
 out/
+
+config/*
+!config/.gitkeep

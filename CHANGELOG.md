@@ -1,12 +1,54 @@
 # Changelog
 
-[README](/README.md) | [Documentation](/docs/README.md) | CHANGELOG
-
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.1.1
+## [Unreleased]
+
+## [0.2.0] - 2020-05-05
+
+### Added
+
+* Added an error for when the `frontendUrl` configuration property does not have a trailing slash ([150](https://github.com/EpiLink/EpiLink/pull/150))
+* Added the "Instance" page on the front-end ([#148](https://github.com/EpiLink/EpiLink/issues/148))
+* Added maintainer information in the back-end configuration + endpoints ([#148](https://github.com/EpiLink/EpiLink/issues/148))
+* Added a back arrow button on the meta text pages ([#141](https://github.com/EpiLink/EpiLink/issues/141))
+* Added a [documentation site](https://epilink.zoroark.guru) ([#142](https://github.com/EpiLink/EpiLink/issues/142))
+* Added the logo configured on the back-end to the front-end ([#146](https://github.com/EpiLink/EpiLink/issues/146))
+* Rule caching added: rules' outputs can now be cached to avoid calling a rule again and again ([#135](https://github.com/EpiLink/EpiLink/issues/135))
+    * **NOTE:** `_INDEX_` is now a reserved rule name
+* You can now run EpiLink with `DEBUG` output by using the `-v` command-line argument ([#135](https://github.com/EpiLink/EpiLink/issues/135)) 
+* EpiLink now shows how much time some services took to be launched ([#135](https://github.com/EpiLink/EpiLink/issues/135))
+* Added more helpers for manipulating received objects in rulebooks (and documented networking capabilities) ([#132](https://github.com/EpiLink/EpiLink/issues/132))
+* Added the home page in the footer navigation ([#123](https://github.com/EpiLink/EpiLink/issues/123))
+* Added a [Docker image](https://hub.docker.com/r/litarvan/epilink) 
+
+### Changed
+
+* Moved `LICENSE_HEADER` to `LHEADER` ([#144](https://github.com/EpiLink/EpiLink/issues/144))
+* Changed some front-end logging to be `TRACE` instead of `DEBUG` to reduce verbosity ([#140](https://github.com/EpiLink/EpiLink/issues/140))
+* Changed the internal management of cache-related utilities, now using a unified interface for generating session management and rule caching objects ([#135](https://github.com/EpiLink/EpiLink/issues/135))
+* Refactored the role management code for better readability ([#135](https://github.com/EpiLink/EpiLink/issues/135))
+* Changed the way EpiLink launches initial services ([#135](https://github.com/EpiLink/EpiLink/issues/135))
+* Rounded the favicon ([#126](https://github.com/EpiLink/EpiLink/issues/126))
+* Reversed the order of the ID accesses on the profile page ([#129](https://github.com/EpiLink/EpiLink/issues/129))
+* Removing the e-mail after registration ([#131](https://github.com/EpiLink/EpiLink/issues/131))
+
+### Removed
+
+* Removed the footer links for "Terms of Services" and "Privacy" ([#148](https://github.com/EpiLink/EpiLink/issues/148))
+    * These are now available from the new Instance page, and are still accessible from the registration process
+
+### Fixed
+
+* Fixed the ordering of ID accesses on the profile page ([#141](https://github.com/EpiLink/EpiLink/issues/141))
+* Properly handle exceptions in the role manager, rate limiter memory and Discord client ([#144](https://github.com/EpiLink/EpiLink/issues/144))
+* Fixed the about page punctuation ([#130](https://github.com/EpiLink/EpiLink/issues/130))
+
+## [0.1.1] - 2020-04-25
+
+Emergency fixes.
 
 ### Added
 
@@ -24,7 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Removed HTTPS redirection options ([#120](https://github.com/EpiLink/EpiLink/issues/120)). 
   * **BREAKING CHANGE:** Delete the `enableHttpsRedirect` option in your configuration file.
 
-## 0.1
+## [0.1.0] - 2020-04-25
 
 Initial release. Introduces so many things it will make your eyes hurt, probably.
 
@@ -59,3 +101,8 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added Ktor server and back-end server ([#5](https://github.com/EpiLink/EpiLink/issues/5), [#13](https://github.com/EpiLink/EpiLink/issues/13))
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
+
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.2.0...dev
+[0.2.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.2.0
+[0.1.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.1.1
+[0.1.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.1
