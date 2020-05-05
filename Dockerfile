@@ -40,7 +40,7 @@ ENV USER epilink
 ENV LINK_ROOT /var/run/epilink
 ENV JAVA_HOME $LINK_ROOT/jvm
 
-# Setting up Java dependencies, took from  AdoptOpenJDK/openjdk-docker 
+# Setting up Java dependencies, taken from AdoptOpenJDK/openjdk-docker 
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 RUN apk add --no-cache --virtual .build-deps curl binutils \
     && GLIBC_VER="2.31-r0" \
