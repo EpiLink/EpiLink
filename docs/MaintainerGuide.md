@@ -15,9 +15,21 @@ Go through all of these steps before going public:
 
 After doing all that, you will be good to go! Read on to learn how to do all of these things!
 
-## Deployment methods
+## Deployment
 
-There are (or, rather, will be) several ways of deploying EpiLink:
+!> **EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
+
+### Using Docker
+
+EpiLink can be deployed using the official Docker image (which only includes the backend).
+
+Simply clone the [Docker repository](https://github.com/EpiLink/docker), edit the `config/epilink.yaml`
+file by following the [configuration](#configuration) section, and run it using `docker-compose up`
+(add `-d` to run it in background).
+
+### Manual
+
+There are (or, rather, will be) several ways of deploying EpiLink manually:
 
 - All-in-one package (includes back-end, front-end and JRE, optionally a Redis server)
 - Separate packages (one for back-end, one for front-end, requires a JRE and Redis server to be installed) 
@@ -26,9 +38,7 @@ All-in-one is recommended for most use cases, although it is not necessarily the
 
 You will also need a Redis server. All-in-one packages may include a ready-to-use Redis server.
 
-!> **EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
-
-## Running
+#### Running
 
 EpiLink can be ran with a few arguments. Run `path/to/epilink -h` for help.
 
