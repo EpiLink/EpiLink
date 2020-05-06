@@ -29,7 +29,7 @@ RUN jlink \
       --no-header-files --no-man-pages \
       --compress=2 \
       --strip-debug \
-      --add-modules java.base,java.desktop,java.logging,java.sql,java.naming,java.security.jgss,java.xml,java.management,java.scripting,java.compiler,java.rmi \
+      --add-modules java.base,java.desktop,java.logging,java.sql,java.naming,java.security.jgss,java.xml,java.management,java.scripting,java.compiler,java.rmi,jdk.unsupported \
       --output /tmp/epilink-jvm
 
 
