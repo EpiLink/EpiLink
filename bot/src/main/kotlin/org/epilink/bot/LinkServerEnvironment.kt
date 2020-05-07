@@ -73,8 +73,6 @@ class LinkServerEnvironment(
         single<LinkDiscordClientFacade> {
             LinkDiscord4JFacadeImpl(cfg.tokens.discordOAuthClientId, cfg.tokens.discordToken)
         }
-        // Rule mediator (e.g. for caching)
-        single<RuleMediator> { NoCacheRuleMediator() }
     }
 
     /**
