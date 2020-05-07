@@ -21,6 +21,8 @@ import org.epilink.bot.discord.*
 import org.epilink.bot.discord.LinkDiscordMessagesImpl
 import org.epilink.bot.discord.LinkRoleManagerImpl
 import org.epilink.bot.http.*
+import org.epilink.bot.http.endpoints.LinkRegistrationApi
+import org.epilink.bot.http.endpoints.LinkRegistrationApiImpl
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.dsl.module
@@ -99,6 +101,8 @@ class LinkServerEnvironment(
         }
 
         single { legal }
+
+        single<LinkRegistrationApi> { LinkRegistrationApiImpl() }
     }
 
     /**
