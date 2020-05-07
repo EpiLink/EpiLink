@@ -1,4 +1,4 @@
-package org.epilink.bot.http
+package org.epilink.bot.http.endpoints
 
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -9,11 +9,11 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.sessions.*
-import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.debug
 import org.epilink.bot.discord.LinkRoleManager
+import org.epilink.bot.http.*
 import org.epilink.bot.http.data.AdditionalRegistrationOptions
 import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.RegistrationContinuation
@@ -73,7 +73,7 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                                 HttpStatusCode.BadRequest,
                                 ApiErrorResponse(
                                     "Missing session header",
-                                    StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
+                                    toErrorData()
                                 )
                             )
                         } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
@@ -90,7 +90,7 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                                 HttpStatusCode.BadRequest,
                                 ApiErrorResponse(
                                     "Incomplete registration process",
-                                    StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
+                                    toErrorData()
                                 )
                             )
                         } else {
@@ -102,7 +102,9 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                             roleManager.invalidateAllRoles(u.discordId)
                             with(back) { call.loginAs(u, discordUsername, discordAvatarUrl) }
                             logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
-                            call.respond(HttpStatusCode.Created, apiSuccess("Account created, logged in."))
+                            call.respond(HttpStatusCode.Created,
+                                apiSuccess("Account created, logged in.")
+                            )
                         }
                     }
                 }
@@ -120,7 +122,7 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                                 HttpStatusCode.NotFound,
                                 ApiErrorResponse(
                                     "Invalid service: $service",
-                                    StandardErrorCodes.UnknownService.toErrorData()
+                                    toErrorData()
                                 )
                             )
                         }
@@ -147,7 +149,10 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
             logger.debug { "Microsoft user $id ($email) is not allowed to create an account: " + adv.reason }
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiErrorResponse(adv.reason, StandardErrorCodes.AccountCreationNotAllowed.toErrorData())
+                ApiErrorResponse(
+                    adv.reason,
+                    toErrorData()
+                )
             )
             return
         }
@@ -178,14 +183,22 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
         if (user != null) {
             logger.debug { "User already exists: logging in" }
             with(back) { call.loginAs(user, username, avatarUrl) }
-            call.respond(ApiSuccessResponse("Logged in", RegistrationContinuation("login", null)))
+            call.respond(
+                ApiSuccessResponse(
+                    "Logged in",
+                    RegistrationContinuation("login", null)
+                )
+            )
         } else {
             val adv = db.isDiscordUserAllowedToCreateAccount(id)
             if (adv is Disallowed) {
                 logger.debug { "Discord user $id cannot create account: " + adv.reason }
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiErrorResponse(adv.reason, StandardErrorCodes.AccountCreationNotAllowed.toErrorData())
+                    ApiErrorResponse(
+                        adv.reason,
+                        toErrorData()
+                    )
                 )
                 return
             }

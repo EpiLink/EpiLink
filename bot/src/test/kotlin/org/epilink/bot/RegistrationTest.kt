@@ -17,6 +17,8 @@ import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
+import org.epilink.bot.http.endpoints.LinkRegistrationApi
+import org.epilink.bot.http.endpoints.LinkRegistrationApiImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.dsl.module

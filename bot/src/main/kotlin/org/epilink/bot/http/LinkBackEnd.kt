@@ -37,6 +37,7 @@ import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.data.InstanceInformation
 import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.UserInformation
+import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.ratelimiting.RateLimiting

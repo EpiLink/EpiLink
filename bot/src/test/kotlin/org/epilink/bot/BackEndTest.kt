@@ -29,8 +29,8 @@ import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.*
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
+import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.sessions.ConnectedSession
-import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.test.get
