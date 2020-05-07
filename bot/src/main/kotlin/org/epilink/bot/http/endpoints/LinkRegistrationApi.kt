@@ -9,6 +9,7 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.sessions.*
+import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.debug
@@ -73,7 +74,7 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                                 HttpStatusCode.BadRequest,
                                 ApiErrorResponse(
                                     "Missing session header",
-                                    toErrorData()
+                                    StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
                                 )
                             )
                         } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
@@ -90,7 +91,7 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                                 HttpStatusCode.BadRequest,
                                 ApiErrorResponse(
                                     "Incomplete registration process",
-                                    toErrorData()
+                                    StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
                                 )
                             )
                         } else {
@@ -122,7 +123,7 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                                 HttpStatusCode.NotFound,
                                 ApiErrorResponse(
                                     "Invalid service: $service",
-                                    toErrorData()
+                                    StandardErrorCodes.UnknownService.toErrorData()
                                 )
                             )
                         }
@@ -151,7 +152,7 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                 HttpStatusCode.BadRequest,
                 ApiErrorResponse(
                     adv.reason,
-                    toErrorData()
+                    StandardErrorCodes.AccountCreationNotAllowed.toErrorData()
                 )
             )
             return
@@ -197,7 +198,7 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                     HttpStatusCode.BadRequest,
                     ApiErrorResponse(
                         adv.reason,
-                        toErrorData()
+                        StandardErrorCodes.AccountCreationNotAllowed.toErrorData()
                     )
                 )
                 return
