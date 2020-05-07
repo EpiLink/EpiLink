@@ -12,23 +12,32 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.*
+import io.ktor.sessions.SessionStorage
+import io.ktor.sessions.defaultSessionSerializer
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
+import io.ktor.util.KtorExperimentalAPI
 import io.mockk.*
+import kotlinx.coroutines.runBlocking
+import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.config.LinkContactInformation
 import org.epilink.bot.config.LinkFooterUrl
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkRoleManager
+import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.*
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
+import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.test.get
 import java.time.Duration
 import java.time.Instant
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.*
 
 data class ApiSuccess(
@@ -56,12 +65,45 @@ data class ApiErrorDetails(
     val description: String
 )
 
+class DummyCacheClient(private val sessionStorageProvider: () -> SessionStorage) : CacheClient {
+    override suspend fun start() {}
+
+    override fun newRuleMediator(prefix: String): RuleMediator {
+        error("Not supported")
+    }
+
+    override fun newSessionStorage(prefix: String): SessionStorage = sessionStorageProvider()
+}
+
 class BackEndTest : KoinBaseTest(
     module {
         single<LinkBackEnd> { LinkBackEndImpl() }
-        single<CacheClient> { MemoryCacheClient() }
+        // TODO make this cleaner, this is here because the server calls registrationApi.install
+        single<LinkRegistrationApi> { mockk { every { install(any()) } just runs } }
     }
 ) {
+    override fun additionalModule(): Module? = module {
+        single<CacheClient> { DummyCacheClient { sessionStorage } }
+    }
+
+    private val sessionStorage = object : SimplifiedSessionStorage() {
+        private val sessions = ConcurrentHashMap<String, ByteArray>()
+        override suspend fun read(id: String): ByteArray? {
+            return sessions[id]
+        }
+
+        override suspend fun write(id: String, data: ByteArray?) {
+            if (data == null)
+                sessions.remove(id)
+            else
+                sessions[id] = data
+        }
+
+        override suspend fun invalidate(id: String) {
+            sessions.remove(id)
+        }
+    }
+
     @Test
     fun `Test meta information gathering`() {
         mockHere<LinkServerEnvironment> {
@@ -138,214 +180,7 @@ class BackEndTest : KoinBaseTest(
         }
     }
 
-    @Test
-    fun `Test Microsoft account authcode registration`() {
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
-        }
-        mockHere<LinkServerDatabase> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
-        }
-        withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
-                setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
-            }
-            call.assertStatus(HttpStatusCode.OK)
-            val data = fromJson<ApiSuccess>(call.response).data
-            assertNotNull(data)
-            assertEquals("continue", data.getString("next"))
-            val regInfo = data.getMap("attachment")
-            assertEquals("fakemail", regInfo.getString("email"))
-            assertEquals(null, regInfo.getValue("discordUsername"))
-            assertEquals(null, regInfo.getValue("discordAvatarUrl"))
-            val session = call.sessions.get<RegisterSession>()
-            assertEquals(RegisterSession(microsoftUid = "fakeguid", email = "fakemail"), session)
-        }
-    }
 
-    @Test
-    fun `Test Microsoft account authcode registration when disallowed`() {
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
-        }
-        mockHere<LinkServerDatabase> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche")
-        }
-        withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
-                setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
-            }
-            call.assertStatus(HttpStatusCode.BadRequest)
-            val error = fromJson<ApiError>(call.response)
-            assertEquals("Cheh dans ta tronche", error.message)
-            assertEquals(101, error.data.code)
-        }
-    }
-
-    @Test
-    fun `Test Discord account authcode registration account does not exist`() {
-        mockHere<LinkDiscordBackEnd> {
-            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
-            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
-        }
-        mockHere<LinkServerDatabase> {
-            coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
-            coEvery { getUser("yes") } returns null
-        }
-        withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
-                setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
-            }
-            call.assertStatus(HttpStatusCode.OK)
-            val data = fromJson<ApiSuccess>(call.response).data
-            assertEquals("continue", data!!.getString("next"))
-            val regInfo = data.getMap("attachment")
-            assertEquals(null, regInfo.getValue("email"))
-            assertEquals("no", regInfo.getString("discordUsername"))
-            assertEquals("maybe", regInfo.getString("discordAvatarUrl"))
-            val session = call.sessions.get<RegisterSession>()
-            assertEquals(
-                RegisterSession(discordId = "yes", discordUsername = "no", discordAvatarUrl = "maybe"),
-                session
-            )
-        }
-    }
-
-    @Test
-    fun `Test Discord account authcode registration account already exists`() {
-        mockHere<LinkDiscordBackEnd> {
-            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
-            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
-        }
-        mockHere<LinkServerDatabase> {
-            coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
-        }
-        withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
-                setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
-            }
-            call.assertStatus(HttpStatusCode.OK)
-            val data = fromJson<ApiSuccess>(call.response).data
-            assertEquals("login", data!!.getString("next"))
-            assertEquals(null, data.getValue("attachment"))
-            val session = call.sessions.get<ConnectedSession>()
-            assertEquals(
-                ConnectedSession(discordId = "yes", discordUsername = "no", discordAvatar = "maybe"),
-                session
-            )
-        }
-    }
-
-    @Test
-    fun `Test Discord account authcode registration when disallowed`() {
-        mockHere<LinkDiscordBackEnd> {
-            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
-            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
-        }
-        mockHere<LinkServerDatabase> {
-            coEvery { getUser("yes") } returns null
-            coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Disallowed("Cheh dans ta tête")
-        }
-        withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
-                setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
-            }
-            call.assertStatus(HttpStatusCode.BadRequest)
-            val error = fromJson<ApiError>(call.response)
-            assertEquals("Cheh dans ta tête", error.message)
-            assertEquals(101, error.data.code)
-        }
-    }
-
-    @Test
-    fun `Test registration session deletion`() {
-        withTestEpiLink {
-            val header = handleRequest(HttpMethod.Get, "/api/v1/register/info").run {
-                assertStatus(HttpStatusCode.OK)
-                assertNotNull(sessions.get<RegisterSession>())
-                response.headers["RegistrationSessionId"]!!
-            }
-            handleRequest(HttpMethod.Delete, "/api/v1/register") {
-                addHeader("RegistrationSessionId", header)
-            }.apply {
-                assertNull(sessions.get<RegisterSession>())
-            }
-        }
-    }
-
-    @Test
-    @OptIn(UsesTrueIdentity::class)
-    fun `Test full registration sequence, discord then msft`() {
-        var userCreated = false
-        mockHere<LinkDiscordBackEnd> {
-            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
-            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
-        }
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
-        }
-        val db = mockHere<LinkServerDatabase> {
-            coEvery { getUser("yes") } answers { if (userCreated) mockk() else null }
-            coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
-            coEvery { createUser(any(), any(), any(), any()) } answers {
-                userCreated = true
-                mockk { every { discordId } returns "yes" }
-            }
-            coEvery { isUserIdentifiable("yes") } returns true
-        }
-        val bot = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles(any()) } returns mockk()
-        }
-        withTestEpiLink {
-            val regHeader = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
-                setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
-            }.run {
-                assertStatus(HttpStatusCode.OK)
-                val data = fromJson<ApiSuccess>(response).data
-                assertNotNull(data)
-                assertEquals("continue", data.getString("next"))
-                assertEquals("no", data.getMap("attachment").getString("discordUsername"))
-                response.headers["RegistrationSessionId"]!!
-            }
-            handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
-                addHeader("RegistrationSessionId", regHeader)
-                setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
-            }.apply {
-                assertStatus(HttpStatusCode.OK)
-                val data = fromJson<ApiSuccess>(response).data
-                assertNotNull(data)
-                assertEquals("continue", data.getString("next"))
-                assertEquals("fakemail", data.getMap("attachment").getString("email"))
-                assertEquals("no", data.getMap("attachment").getString("discordUsername"))
-            }
-            val loginHeader = handleRequest(HttpMethod.Post, "/api/v1/register") {
-                addHeader("RegistrationSessionId", regHeader)
-                setJsonBody("""{"keepIdentity": true}""")
-            }.run {
-                assertStatus(HttpStatusCode.Created)
-                assertNull(sessions.get<RegisterSession>())
-                assertEquals(ConnectedSession("yes", "no", "maybe"), sessions.get<ConnectedSession>())
-                response.headers["SessionId"]!!
-            }
-            coVerify { db.createUser("yes", "fakeguid", "fakemail", true) }
-            // Simulate the DB knowing about the new user
-            mockHere<LinkServerDatabase> {
-                coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
-            }
-            handleRequest(HttpMethod.Get, "/api/v1/user") {
-                addHeader("SessionId", loginHeader)
-            }.apply {
-                assertStatus(HttpStatusCode.OK)
-                // Only checks that it was logged in properly. The results of /api/v1/user are tested elsewhere
-                assertTrue { this.response.content!!.contains("yes") }
-            }
-            coVerify { bot.invalidateAllRoles(any()) }
-        }
-    }
 
     @Test
     fun `Test user without session id fails`() {
@@ -623,7 +458,8 @@ class BackEndTest : KoinBaseTest(
         }
     }
 
-    private fun TestApplicationEngine.setupSession(
+    @OptIn(KtorExperimentalAPI::class) // We get a choice between a deprecated or an experimental func...
+    private fun setupSession(
         discId: String = "discordid",
         discUsername: String = "discorduser#1234",
         discAvatarUrl: String? = "https://avatar/url",
@@ -637,14 +473,17 @@ class BackEndTest : KoinBaseTest(
                 every { creationDate } returns created
             }
         }
-        softMockHere<LinkDiscordBackEnd> {
-            coEvery { getDiscordToken("auth", "redir") } returns "tok"
-            coEvery { getDiscordInfo("tok") } returns DiscordUserInfo(discId, discUsername, discAvatarUrl)
-        }
-        val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
-            setJsonBody("""{"code":"auth","redirectUri":"redir"}""")
-        }
-        return call.response.headers["SessionId"] ?: error("Did not return a SessionId")
+        // Generate an ID
+        val arr = ByteArray(128)
+        Random().nextBytes(arr)
+        val id = Hex.encodeHexString(arr)
+        // Generate the session data
+        val data = defaultSessionSerializer<ConnectedSession>().serialize(
+            ConnectedSession(discId, discUsername, discAvatarUrl)
+        ).toByteArray()
+        // Put that in our test session storage
+        runBlocking { sessionStorage.write(id, data) }
+        return id
     }
 
     /**
@@ -654,11 +493,6 @@ class BackEndTest : KoinBaseTest(
     private inline fun <reified T : Any> softMockHere(crossinline initializer: T.() -> Unit): T {
         val injected = getKoin().getOrNull<T>()
         return injected?.apply(initializer) ?: mockHere(initializer)
-    }
-
-    private fun TestApplicationRequest.setJsonBody(json: String) {
-        addHeader("Content-Type", "application/json")
-        setBody(json)
     }
 
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =

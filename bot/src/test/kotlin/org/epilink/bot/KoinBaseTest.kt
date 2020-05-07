@@ -14,14 +14,32 @@ import org.koin.core.module.Module
 import org.koin.test.KoinTest
 import kotlin.test.*
 
+/**
+ * A base for all classes that run tests that use Koin. This class (and its subclasses) automatically start and stop
+ * Koin.
+ */
 open class KoinBaseTest(
     private val module: Module
 ) : KoinTest {
 
+    /**
+     * Useful for specifying a second module that has more complicated behavior and cannot be put in the constructor
+     * directly.
+     *
+     * @return A second module to add to Koin, or null if only the constructor's module should be considered.
+     */
+    open fun additionalModule(): Module? {
+        return null
+    }
+
     @BeforeTest
     fun setupKoin() {
         startKoin {
-            modules(module)
+            val additional = additionalModule()
+            if (additional != null)
+                modules(module, additional)
+            else
+                modules(module)
         }
     }
 

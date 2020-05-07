@@ -18,7 +18,9 @@ import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.http.hostWithPort
 import io.ktor.server.testing.TestApplicationCall
+import io.ktor.server.testing.TestApplicationRequest
 import io.ktor.server.testing.TestApplicationResponse
+import io.ktor.server.testing.setBody
 import io.mockk.mockk
 import org.epilink.bot.config.*
 import org.koin.test.KoinTest
@@ -87,4 +89,9 @@ inline fun <reified T> fromJson(response: TestApplicationResponse): T {
 
 fun String.sha256(): ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))
+}
+
+fun TestApplicationRequest.setJsonBody(json: String) {
+    addHeader("Content-Type", "application/json")
+    setBody(json)
 }
