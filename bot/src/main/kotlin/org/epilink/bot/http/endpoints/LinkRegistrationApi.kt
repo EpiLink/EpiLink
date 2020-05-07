@@ -32,7 +32,7 @@ interface LinkRegistrationApi {
 }
 
 class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
-    private val logger = LoggerFactory.getLogger("epilink.api")
+    private val logger = LoggerFactory.getLogger("epilink.api.registration")
 
     private val discordBackEnd: LinkDiscordBackEnd by inject()
 
