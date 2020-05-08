@@ -16,13 +16,13 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.routing
-import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.Sessions
 import io.mockk.*
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
+import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkUserApi
@@ -30,7 +30,10 @@ import org.epilink.bot.ratelimiting.RateLimiting
 import org.koin.core.get
 import org.koin.dsl.module
 import org.koin.test.mock.declare
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class BackEndTest : KoinBaseTest(
     module {
@@ -110,6 +113,7 @@ class BackEndTest : KoinBaseTest(
         val user = mockHere<LinkUserApi> { every { install(any()) } just runs }
         val meta = mockHere<LinkMetaApi> { every { install(any()) } just runs }
         val register = mockHere<LinkRegistrationApi> { every { install(any()) } just runs }
+        val admin = mockHere<LinkAdminApi> { every { install(any()) } just runs }
         withTestApplication({
             with(get<LinkBackEnd>()) { epilinkApiModule() }
         }) { }
@@ -122,6 +126,7 @@ class BackEndTest : KoinBaseTest(
             user.install(any())
             meta.install(any())
             register.install(any())
+            admin.install(any())
         }
     }
 }

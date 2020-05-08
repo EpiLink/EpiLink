@@ -24,6 +24,7 @@ import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.CacheClient
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes.UnknownError
+import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkUserApi
@@ -74,6 +75,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     private val metaApi: LinkMetaApi by inject()
 
     private val userApi: LinkUserApi by inject()
+
+    private val adminApi: LinkAdminApi by inject()
 
     override fun Application.installFeatures() {
         /*
@@ -137,6 +140,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             userApi.install(this)
             registrationApi.install(this)
             metaApi.install(this)
+            adminApi.install(this)
         }
     }
 }

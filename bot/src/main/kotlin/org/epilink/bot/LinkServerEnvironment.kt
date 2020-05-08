@@ -109,6 +109,8 @@ class LinkServerEnvironment(
         single<LinkMetaApi> { LinkMetaApiImpl() }
 
         single<LinkUserApi> { LinkUserApiImpl() }
+
+        single<LinkAdminApi> { LinkAdminApiImpl() }
     }
 
     /**
