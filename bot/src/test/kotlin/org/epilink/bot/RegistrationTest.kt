@@ -17,6 +17,8 @@ import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
+import org.epilink.bot.http.endpoints.LinkMetaApi
+import org.epilink.bot.http.endpoints.LinkMetaApiImpl
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApiImpl
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -30,6 +32,7 @@ class RegistrationTest : KoinBaseTest(
         // TODO just don't depend on LinkBackEnd -- that requires separating feature installation somewhere
         //      else
         single<LinkBackEnd> { LinkBackEndImpl() }
+        single<LinkMetaApi> { LinkMetaApiImpl() }
         single<LinkRegistrationApi> { LinkRegistrationApiImpl() }
         single<CacheClient> { MemoryCacheClient() }
     }
@@ -260,6 +263,7 @@ class RegistrationTest : KoinBaseTest(
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             with(get<LinkBackEnd>()) {
+                // TODO Only install features
                 epilinkApiModule()
             }
         }, block)

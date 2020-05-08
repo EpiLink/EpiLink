@@ -8,10 +8,11 @@
  */
 package org.epilink.bot
 
-import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.testing.*
+import io.ktor.server.testing.TestApplicationEngine
+import io.ktor.server.testing.handleRequest
+import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.SessionStorage
 import io.ktor.sessions.defaultSessionSerializer
 import io.ktor.sessions.get
@@ -20,15 +21,14 @@ import io.ktor.util.KtorExperimentalAPI
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
-import org.epilink.bot.config.LinkContactInformation
-import org.epilink.bot.config.LinkFooterUrl
-import org.epilink.bot.config.LinkWebServerConfiguration
-import org.epilink.bot.db.*
+import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.*
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
+import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.module.Module
@@ -80,6 +80,7 @@ class BackEndTest : KoinBaseTest(
         single<LinkBackEnd> { LinkBackEndImpl() }
         // TODO make this cleaner, this is here because the server calls registrationApi.install
         single<LinkRegistrationApi> { mockk { every { install(any()) } just runs } }
+        single<LinkMetaApi> { mockk { every { install(any()) } just runs } }
     }
 ) {
     override fun additionalModule(): Module? = module {
@@ -103,84 +104,6 @@ class BackEndTest : KoinBaseTest(
             sessions.remove(id)
         }
     }
-
-    @Test
-    fun `Test meta information gathering`() {
-        mockHere<LinkServerEnvironment> {
-            every { name } returns "EpiLink Test Instance"
-        }
-        mockHere<LinkDiscordBackEnd> {
-            every { getAuthorizeStub() } returns "I am a Discord authorize stub"
-        }
-        mockHere<LinkMicrosoftBackEnd> {
-            every { getAuthorizeStub() } returns "I am a Microsoft authorize stub"
-        }
-        mockHere<LinkLegalTexts> {
-            every { idPrompt } returns "My id prompt text is the best"
-        }
-        mockHere<LinkWebServerConfiguration> {
-            every { logo } returns "https://amazinglogo"
-            every { footers } returns listOf(
-                LinkFooterUrl("Hello", "https://hello"),
-                LinkFooterUrl("Heeeey", "/macarena")
-            )
-            every { contacts } returns listOf(
-                LinkContactInformation("Number One", "numberone@my-email.com"),
-                LinkContactInformation("The Two", "othernumber@eeeee.es")
-            )
-        }
-        withTestEpiLink {
-            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/info")
-            call.assertStatus(HttpStatusCode.OK)
-            val data = fromJson<ApiSuccess>(call.response).data
-            assertNotNull(data)
-            assertEquals("EpiLink Test Instance", data["title"])
-            assertEquals("https://amazinglogo", data.getValue("logo"))
-            assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
-            assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
-            assertEquals("My id prompt text is the best", data.getString("idPrompt"))
-            val footers = data.getListOfMaps("footerUrls")
-            assertEquals(2, footers.size)
-            assertTrue(footers.any { it["name"] == "Hello" && it["url"] == "https://hello" })
-            assertTrue(footers.any { it["name"] == "Heeeey" && it["url"] == "/macarena" })
-            val contacts = data.getListOfMaps("contacts")
-            assertEquals(2, contacts.size)
-            assertTrue(contacts.any { it["name"] == "Number One" && it["email"] == "numberone@my-email.com" })
-            assertTrue(contacts.any { it["name"] == "The Two" && it["email"] == "othernumber@eeeee.es" })
-        }
-    }
-
-    @Test
-    fun `Test ToS retrieval`() {
-        val tos = "<p>ABCDEFG</p>"
-        mockHere<LinkLegalTexts> {
-            every { tosText } returns tos
-        }
-        withTestEpiLink {
-            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/tos")
-            call.assertStatus(HttpStatusCode.OK)
-            assertEquals(ContentType.Text.Html, call.response.contentType())
-            val data = call.response.content
-            assertEquals(tos, data)
-        }
-    }
-
-    @Test
-    fun `Test PP retrieval`() {
-        val pp = "<p>Privacy policyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</p>"
-        mockHere<LinkLegalTexts> {
-            every { policyText } returns pp
-        }
-        withTestEpiLink {
-            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/privacy")
-            call.assertStatus(HttpStatusCode.OK)
-            assertEquals(ContentType.Text.Html, call.response.contentType())
-            val data = call.response.content
-            assertEquals(pp, data)
-        }
-    }
-
-
 
     @Test
     fun `Test user without session id fails`() {

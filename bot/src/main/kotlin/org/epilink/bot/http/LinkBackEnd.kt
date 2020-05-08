@@ -19,7 +19,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.ParametersBuilder
-import io.ktor.http.content.TextContent
 import io.ktor.jackson.jackson
 import io.ktor.request.header
 import io.ktor.request.receive
@@ -29,14 +28,13 @@ import io.ktor.sessions.*
 import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.*
-import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
-import org.epilink.bot.http.data.InstanceInformation
 import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.UserInformation
+import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
@@ -66,28 +64,20 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
 
     private val logger = LoggerFactory.getLogger("epilink.api")
 
-    /**
-     * The environment the back end lives in
-     */
-    private val env: LinkServerEnvironment by inject()
-
     private val db: LinkServerDatabase by inject()
 
     private val roleManager: LinkRoleManager by inject()
-
-    private val discordBackEnd: LinkDiscordBackEnd by inject()
 
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
 
     private val cacheClient: CacheClient by inject()
 
-    private val legal: LinkLegalTexts by inject()
-
-    private val wsCfg: LinkWebServerConfiguration by inject()
-
     private val registrationApi: LinkRegistrationApi by inject()
 
+    private val metaApi: LinkMetaApi by inject()
+
     override fun Application.epilinkApiModule() {
+        // TODO put feature initialization in a separate function
         /*
          * Used for automatically converting stuff to JSON when calling
          * "respond" with generic objects.
@@ -116,6 +106,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             route("/api/v1") {
                 epilinkApiV1()
                 registrationApi.install(this)
+                metaApi.install(this)
             }
         }
     }
@@ -151,25 +142,6 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     HttpStatusCode.InternalServerError,
                     ApiErrorResponse("An unknown error occurred. Please report this.", UnknownError.toErrorData())
                 )
-            }
-        }
-
-        route("meta") {
-            rateLimited(limit = 50, timeBeforeReset = Duration.ofMinutes(1)) {
-                @ApiEndpoint("GET /api/v1/meta/info")
-                get("info") {
-                    call.respond(ApiSuccessResponse(data = getInstanceInformation()))
-                }
-
-                @ApiEndpoint("GET /api/v1/meta/tos")
-                get("tos") {
-                    call.respond(HttpStatusCode.OK, TextContent(legal.tosText, ContentType.Text.Html))
-                }
-
-                @ApiEndpoint("GET /api/v1/meta/privacy")
-                get("privacy") {
-                    call.respond(HttpStatusCode.OK, TextContent(legal.policyText, ContentType.Text.Html))
-                }
             }
         }
 
@@ -247,22 +219,6 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     }
 
     /**
-     * Create an [InstanceInformation] object based on this back end's environment and configuration
-     */
-    private fun getInstanceInformation(): InstanceInformation =
-        InstanceInformation(
-            title = env.name,
-            logo = wsCfg.logo,
-            authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
-            authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
-            idPrompt = legal.idPrompt,
-            footerUrls = wsCfg.footers,
-            contacts = wsCfg.contacts
-        )
-
-
-
-    /**
      * Setup the sessions to log in the passed user object
      */
     override fun ApplicationCall.loginAs(user: LinkUser, username: String, avatar: String?) {
@@ -274,29 +230,4 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
     @UsesTrueIdentity
     private suspend fun ConnectedSession.toUserInformation() =
         UserInformation(discordId, discordUsername, discordAvatar, db.isUserIdentifiable(discordId))
-}
-
-/**
- * Utility function for appending classic OAuth parameters to a ParametersBuilder object all at once.
- */
-fun ParametersBuilder.appendOauthParameters(
-    clientId: String, secret: String, authcode: String, redirectUri: String
-) {
-    append("grant_type", "authorization_code")
-    append("client_id", clientId)
-    append("client_secret", secret)
-    append("code", authcode)
-    append("redirect_uri", redirectUri)
-}
-
-/**
- * Utility function for performing a GET on the given url (with the given bearer as the "Authorization: Bearer" header),
- * turning the JSON result into a map and returning that map.
- */
-suspend fun HttpClient.getJson(url: String, bearer: String): Map<String, Any?> {
-    val result = get<String>(url) {
-        header("Authorization", "Bearer $bearer")
-        header(HttpHeaders.Accept, ContentType.Application.Json)
-    }
-    return ObjectMapper().readValue(result)
 }
