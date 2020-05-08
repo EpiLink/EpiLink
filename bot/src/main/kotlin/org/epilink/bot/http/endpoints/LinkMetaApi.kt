@@ -33,7 +33,7 @@ interface LinkMetaApi {
     fun install(route: Route)
 }
 
-class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
+internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
     /**
      * The environment the back end lives in
      */
