@@ -31,7 +31,8 @@ import org.koin.core.inject
 import org.slf4j.LoggerFactory
 
 /**
- * Interface for the back-end
+ * Interface for the back-end. This component is responsible for the installation of features, error-handling and
+ * routes.
  */
 interface LinkBackEnd {
 
@@ -41,14 +42,14 @@ interface LinkBackEnd {
     fun Application.installFeatures()
 
     /**
-     * Install the error handling interceptor. Automatically called by [epilinkApiModule]
+     * Install the error handling interceptor. Automatically called by [epilinkApiModule].
      */
     // TODO describe the error handling process
     fun Route.installErrorHandling()
 
     /**
      * Ktor module for the back-end API routes and features. This just calls all of the relevant
-     * installation code.
+     * installation code (including feature installation and error handling routing).
      */
     fun Application.epilinkApiModule()
 }
