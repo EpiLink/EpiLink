@@ -52,91 +52,92 @@ class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
 
     private val back: LinkBackEnd by inject()
 
-    override fun install(route: Route) =
+    override fun install(route: Route) {
         with(route) { registration() }
+    }
 
-    private fun Route.registration() {
-        route("register") {
-            rateLimited(limit = 10, timeBeforeReset = Duration.ofMinutes(1)) {
-                @ApiEndpoint("GET /api/v1/register/info")
-                get("info") {
-                    val session = call.sessions.getOrSet { RegisterSession() }
-                    call.respondRegistrationStatus(session)
-                }
+    private fun Route.registration() = route("/api/v1/register") {
+        rateLimited(limit = 10, timeBeforeReset = Duration.ofMinutes(1)) {
+            @ApiEndpoint("GET /api/v1/register/info")
+            get("info") {
+                val session = call.sessions.getOrSet { RegisterSession() }
+                call.respondRegistrationStatus(session)
+            }
 
-                @ApiEndpoint("DELETE /api/v1/register")
-                delete {
-                    logger.debug { "Clearing registry session ${call.request.header("RegistrationSessionId")}" }
-                    call.sessions.clear<RegisterSession>()
-                    call.respond(HttpStatusCode.OK)
-                }
+            @ApiEndpoint("DELETE /api/v1/register")
+            delete {
+                logger.debug { "Clearing registry session ${call.request.header("RegistrationSessionId")}" }
+                call.sessions.clear<RegisterSession>()
+                call.respond(HttpStatusCode.OK)
+            }
 
-                @ApiEndpoint("POST /api/v1/register")
-                post {
-                    with(call.sessions.get<RegisterSession>()) {
-                        if (this == null) {
-                            logger.debug {
-                                "Missing/unknown session header for call from reg. session ${call.request.header("RegistrationSessionId")}"
-                            }
-                            call.respond(
-                                HttpStatusCode.BadRequest,
-                                ApiErrorResponse(
-                                    "Missing session header",
-                                    StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
-                                )
+            @ApiEndpoint("POST /api/v1/register")
+            post {
+                with(call.sessions.get<RegisterSession>()) {
+                    if (this == null) {
+                        logger.debug {
+                            "Missing/unknown session header for call from reg. session ${call.request.header("RegistrationSessionId")}"
+                        }
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiErrorResponse(
+                                "Missing session header",
+                                StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
                             )
-                        } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
-                            logger.debug {
-                                """
+                        )
+                    } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
+                        logger.debug {
+                            """
                             Incomplete registration process for session ${call.request.header("RegistrationSessionId")}
                             discordId = $discordId
                             discordUsername = $discordUsername
                             email = $email
                             microsoftUid = $microsoftUid
                             """.trimIndent()
-                            }
-                            call.respond(
-                                HttpStatusCode.BadRequest,
-                                ApiErrorResponse(
-                                    "Incomplete registration process",
-                                    StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
-                                )
-                            )
-                        } else {
-                            val regSessionId = call.request.header("RegistrationSessionId")
-                            logger.debug { "Completing registration session for $regSessionId" }
-                            val options: AdditionalRegistrationOptions =
-                                call.receiveCatching() ?: return@post
-                            val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
-                            roleManager.invalidateAllRoles(u.discordId)
-                            with(back) { call.loginAs(u, discordUsername, discordAvatarUrl) }
-                            logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
-                            call.respond(HttpStatusCode.Created,
-                                apiSuccess("Account created, logged in.")
-                            )
                         }
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiErrorResponse(
+                                "Incomplete registration process",
+                                StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
+                            )
+                        )
+                    } else {
+                        val regSessionId = call.request.header("RegistrationSessionId")
+                        logger.debug { "Completing registration session for $regSessionId" }
+                        val options: AdditionalRegistrationOptions =
+                            call.receiveCatching() ?: return@post
+                        val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
+                        roleManager.invalidateAllRoles(u.discordId)
+                        with(back) { call.loginAs(u, discordUsername, discordAvatarUrl) }
+                        logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
+                        call.respond(
+                            HttpStatusCode.Created,
+                            apiSuccess("Account created, logged in.")
+                        )
+                    }
+                }
+            }
+
+            @ApiEndpoint("POST /register/authcode/discord")
+            @ApiEndpoint("POST /register/authcode/msft")
+            post("authcode/{service}") {
+                when (val service = call.parameters["service"]) {
+                    null -> error("Invalid service") // Should not happen
+                    "discord" -> processDiscordAuthCode(call, call.receive())
+                    "msft" -> processMicrosoftAuthCode(call, call.receive())
+                    else -> {
+                        logger.debug { "Attempted to register under unknown service $service" }
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiErrorResponse(
+                                "Invalid service: $service",
+                                StandardErrorCodes.UnknownService.toErrorData()
+                            )
+                        )
                     }
                 }
 
-                @ApiEndpoint("POST /register/authcode/discord")
-                @ApiEndpoint("POST /register/authcode/msft")
-                post("authcode/{service}") {
-                    when (val service = call.parameters["service"]) {
-                        null -> error("Invalid service") // Should not happen
-                        "discord" -> processDiscordAuthCode(call, call.receive())
-                        "msft" -> processMicrosoftAuthCode(call, call.receive())
-                        else -> {
-                            logger.debug { "Attempted to register under unknown service $service" }
-                            call.respond(
-                                HttpStatusCode.NotFound,
-                                ApiErrorResponse(
-                                    "Invalid service: $service",
-                                    StandardErrorCodes.UnknownService.toErrorData()
-                                )
-                            )
-                        }
-                    }
-                }
             }
         }
     }

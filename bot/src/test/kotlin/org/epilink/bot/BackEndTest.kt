@@ -10,6 +10,7 @@ package org.epilink.bot
 
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
@@ -78,9 +79,6 @@ class DummyCacheClient(private val sessionStorageProvider: () -> SessionStorage)
 class BackEndTest : KoinBaseTest(
     module {
         single<LinkBackEnd> { LinkBackEndImpl() }
-        // TODO make this cleaner, this is here because the server calls registrationApi.install
-        single<LinkRegistrationApi> { mockk { every { install(any()) } just runs } }
-        single<LinkMetaApi> { mockk { every { install(any()) } just runs } }
     }
 ) {
     override fun additionalModule(): Module? = module {
@@ -421,7 +419,12 @@ class BackEndTest : KoinBaseTest(
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             with(get<LinkBackEnd>()) {
-                epilinkApiModule()
+                installFeatures()
+            }
+            routing {
+                with(get<LinkBackEnd>()) { installErrorHandling() }
+                // TODO Remove once no routes are in the LinkBackEnd class
+                with(get<LinkBackEnd>() as LinkBackEndImpl) { epilinkApiV1() }
             }
         }, block)
 }

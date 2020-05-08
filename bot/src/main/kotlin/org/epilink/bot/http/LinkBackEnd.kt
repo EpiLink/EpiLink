@@ -8,17 +8,9 @@
  */
 package org.epilink.bot.http
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.application.*
-import io.ktor.client.HttpClient
-import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.features.ContentNegotiation
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.ParametersBuilder
 import io.ktor.jackson.jackson
 import io.ktor.request.header
 import io.ktor.request.receive
@@ -49,8 +41,21 @@ import java.time.Duration
  * Interface for the back-end
  */
 interface LinkBackEnd {
+
     /**
-     * Ktor module for the back-end API
+     * Ktor module for the back-end features
+     */
+    fun Application.installFeatures()
+
+    /**
+     * Install the error handling interceptor. Automatically called by [epilinkApiModule]
+     */
+    // TODO describe the error handling process
+    fun Route.installErrorHandling()
+
+    /**
+     * Ktor module for the back-end API routes and features. This just calls all of the relevant
+     * installation code.
      */
     fun Application.epilinkApiModule()
 
@@ -76,8 +81,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
 
     private val metaApi: LinkMetaApi by inject()
 
-    override fun Application.epilinkApiModule() {
-        // TODO put feature initialization in a separate function
+    override fun Application.installFeatures() {
         /*
          * Used for automatically converting stuff to JSON when calling
          * "respond" with generic objects.
@@ -101,23 +105,9 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         }
 
         install(RateLimiting)
-
-        routing {
-            route("/api/v1") {
-                epilinkApiV1()
-                registrationApi.install(this)
-                metaApi.install(this)
-            }
-        }
     }
 
-    /**
-     * Defines the API endpoints. Served under /api/v1
-     *
-     * Anything responded in here SHOULD use [ApiResponse] in JSON form.
-     */
-    private fun Route.epilinkApiV1() {
-
+    override fun Route.installErrorHandling() {
         // Make sure that exceptions are not left for Ktor to try and figure out.
         // Ktor would figure it out, but we a) need to log them b) respond with an ApiResponse
         intercept(ApplicationCallPipeline.Monitoring) {
@@ -144,8 +134,27 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                 )
             }
         }
+    }
 
-        route("user") {
+    override fun Application.epilinkApiModule() {
+        installFeatures()
+        routing {
+            installErrorHandling()
+            epilinkApiV1()
+            registrationApi.install(this)
+            metaApi.install(this)
+        }
+    }
+
+    /**
+     * Defines the API endpoints. Served under /api/v1
+     *
+     * Anything responded in here SHOULD use [ApiResponse] in JSON form.
+     */
+    // TODO remove the public
+    fun Route.epilinkApiV1() {
+
+        route("/api/v1/user") {
             rateLimited(limit = 20, timeBeforeReset = Duration.ofMinutes(1)) {
                 intercept(ApplicationCallPipeline.Features) {
                     val session = call.sessions.get<ConnectedSession>()

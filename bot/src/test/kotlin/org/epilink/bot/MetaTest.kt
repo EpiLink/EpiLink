@@ -11,6 +11,7 @@ package org.epilink.bot
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.contentType
 import io.ktor.server.testing.handleRequest
@@ -40,8 +41,6 @@ class MetaTest : KoinBaseTest(
     module {
         single<LinkMetaApi> { LinkMetaApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }
-        // TODO make this cleaner, this is here because the server calls registrationApi.install
-        single<LinkRegistrationApi> { mockk { every { install(any()) } just runs } }
         single<CacheClient> { MemoryCacheClient() }
     }
 ) {
@@ -123,9 +122,7 @@ class MetaTest : KoinBaseTest(
 
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
-            with(get<LinkBackEnd>()) {
-                // TODO Only install features
-                epilinkApiModule()
-            }
+            with(get<LinkBackEnd>()) { installFeatures() }
+            routing { get<LinkMetaApi>().install(this) }
         }, block)
 }

@@ -10,6 +10,7 @@ package org.epilink.bot
 
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
@@ -25,8 +26,6 @@ import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
-import org.epilink.bot.http.endpoints.LinkMetaApi
-import org.epilink.bot.http.endpoints.LinkMetaApiImpl
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApiImpl
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -37,10 +36,7 @@ import kotlin.test.*
 
 class RegistrationTest : KoinBaseTest(
     module {
-        // TODO just don't depend on LinkBackEnd -- that requires separating feature installation somewhere
-        //      else
         single<LinkBackEnd> { LinkBackEndImpl() }
-        single<LinkMetaApi> { LinkMetaApiImpl() }
         single<LinkRegistrationApi> { LinkRegistrationApiImpl() }
         single<CacheClient> { MemoryCacheClient() }
     }
@@ -256,23 +252,13 @@ class RegistrationTest : KoinBaseTest(
                 coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
                 coEvery { isUserIdentifiable("yes") } returns true
             }
-            // TODO get rid of this part because it's a dependency on the back-end/user endpoints
-            handleRequest(HttpMethod.Get, "/api/v1/user") {
-                addHeader("SessionId", loginHeader)
-            }.apply {
-                assertStatus(HttpStatusCode.OK)
-                // Only checks that it was logged in properly. The results of /api/v1/user are tested elsewhere
-                assertTrue { this.response.content!!.contains("yes") }
-            }
             coVerify { bot.invalidateAllRoles(any()) }
         }
     }
 
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
-            with(get<LinkBackEnd>()) {
-                // TODO Only install features
-                epilinkApiModule()
-            }
+            with(get<LinkBackEnd>()) { installFeatures() }
+            routing { get<LinkRegistrationApi>().install(this) }
         }, block)
 }

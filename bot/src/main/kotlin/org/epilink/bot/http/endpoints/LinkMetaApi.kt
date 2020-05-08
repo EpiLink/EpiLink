@@ -51,7 +51,7 @@ class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
         with(route) { meta() }
 
     private fun Route.meta() {
-        route("meta") {
+        route("/api/v1/meta") {
             rateLimited(limit = 50, timeBeforeReset = Duration.ofMinutes(1)) {
                 @ApiEndpoint("GET /api/v1/meta/info")
                 get("info") {
