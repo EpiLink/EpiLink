@@ -16,10 +16,7 @@ import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
 import org.epilink.bot.db.Allowed
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkServerDatabase
@@ -28,6 +25,7 @@ import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApiImpl
+import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.dsl.module
@@ -131,6 +129,9 @@ class RegistrationTest : KoinBaseTest(
         mockHere<LinkServerDatabase> {
             coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
         }
+        val lua = mockHere<LinkUserApi> {
+            every { loginAs(any(), any(), "no", "maybe") } just runs
+        }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
                 setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
@@ -140,14 +141,8 @@ class RegistrationTest : KoinBaseTest(
             val data = fromJson<ApiSuccess>(call.response).data
             assertEquals("login", data!!.getString("next"))
             assertEquals(null, data.getValue("attachment"))
-            // Check that a session was set
-            val session = call.sessions.get<ConnectedSession>()
-            assertEquals(
-                ConnectedSession(discordId = "yes", discordUsername = "no", discordAvatar = "maybe"),
-                session
-            )
-            // Check that a SessionId header is present
-            assertTrue(call.response.headers.contains("SessionId"))
+            // Check that the log-in code was called
+            verify { lua.loginAs(any(), any(), "no", "maybe") }
         }
     }
 
@@ -212,6 +207,9 @@ class RegistrationTest : KoinBaseTest(
         val bot = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRoles(any()) } returns mockk()
         }
+        val lua = mockHere<LinkUserApi> {
+            every { loginAs(any(), any(), "no", "maybe") } just runs
+        }
         withTestEpiLink {
             // Discord authentication
             val regHeader = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
@@ -237,14 +235,12 @@ class RegistrationTest : KoinBaseTest(
                 assertEquals("no", data.getMap("attachment").getString("discordUsername"))
             }
             // Create the account
-            val loginHeader = handleRequest(HttpMethod.Post, "/api/v1/register") {
+            handleRequest(HttpMethod.Post, "/api/v1/register") {
                 addHeader("RegistrationSessionId", regHeader)
                 setJsonBody("""{"keepIdentity": true}""")
-            }.run {
+            }.apply {
                 assertStatus(HttpStatusCode.Created)
-                assertNull(sessions.get<RegisterSession>())
-                assertEquals(ConnectedSession("yes", "no", "maybe"), sessions.get<ConnectedSession>())
-                response.headers["SessionId"]!!
+                verify { lua.loginAs(any(), any(), "no", "maybe") }
             }
             coVerify { db.createUser("yes", "fakeguid", "fakemail", true) }
             // Simulate the DB knowing about the new user

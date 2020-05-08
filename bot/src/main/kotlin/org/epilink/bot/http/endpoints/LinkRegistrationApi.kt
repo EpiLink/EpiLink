@@ -52,6 +52,8 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
 
     private val back: LinkBackEnd by inject()
 
+    private val userApi: LinkUserApi by inject()
+
     override fun install(route: Route) {
         with(route) { registration() }
     }
@@ -109,7 +111,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                             call.receiveCatching() ?: return@post
                         val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
                         roleManager.invalidateAllRoles(u.discordId)
-                        with(back) { call.loginAs(u, discordUsername, discordAvatarUrl) }
+                        with(userApi) { loginAs(call, u, discordUsername, discordAvatarUrl) }
                         logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
                         call.respond(
                             HttpStatusCode.Created,
@@ -192,7 +194,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
         val user = db.getUser(id)
         if (user != null) {
             logger.debug { "User already exists: logging in" }
-            with(back) { call.loginAs(user, username, avatarUrl) }
+            with(userApi) { loginAs(call, user, username, avatarUrl) }
             call.respond(
                 ApiSuccessResponse(
                     "Logged in",

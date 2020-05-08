@@ -12,30 +12,23 @@ import io.ktor.application.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
-import io.ktor.request.header
-import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.routing.*
+import io.ktor.routing.Route
+import io.ktor.routing.routing
 import io.ktor.sessions.*
 import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.*
-import org.epilink.bot.StandardErrorCodes.*
-import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.StandardErrorCodes.UnknownError
 import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
-import org.epilink.bot.discord.LinkRoleManager
-import org.epilink.bot.http.data.RegistrationAuthCode
-import org.epilink.bot.http.data.UserInformation
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
+import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.ratelimiting.RateLimiting
-import org.epilink.bot.ratelimiting.rateLimited
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
-import java.time.Duration
 
 /**
  * Interface for the back-end
@@ -58,8 +51,6 @@ interface LinkBackEnd {
      * installation code.
      */
     fun Application.epilinkApiModule()
-
-    fun ApplicationCall.loginAs(user: LinkUser, username: String, avatar: String?)
 }
 
 /**
@@ -69,17 +60,13 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
 
     private val logger = LoggerFactory.getLogger("epilink.api")
 
-    private val db: LinkServerDatabase by inject()
-
-    private val roleManager: LinkRoleManager by inject()
-
-    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
-
     private val cacheClient: CacheClient by inject()
 
     private val registrationApi: LinkRegistrationApi by inject()
 
     private val metaApi: LinkMetaApi by inject()
+
+    private val userApi: LinkUserApi by inject()
 
     override fun Application.installFeatures() {
         /*
@@ -140,103 +127,9 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
         installFeatures()
         routing {
             installErrorHandling()
-            epilinkApiV1()
+            userApi.install(this)
             registrationApi.install(this)
             metaApi.install(this)
         }
     }
-
-    /**
-     * Defines the API endpoints. Served under /api/v1
-     *
-     * Anything responded in here SHOULD use [ApiResponse] in JSON form.
-     */
-    // TODO remove the public
-    fun Route.epilinkApiV1() {
-
-        route("/api/v1/user") {
-            rateLimited(limit = 20, timeBeforeReset = Duration.ofMinutes(1)) {
-                intercept(ApplicationCallPipeline.Features) {
-                    val session = call.sessions.get<ConnectedSession>()
-                    if (session == null || db.getUser(session.discordId) == null /* see #121 */) {
-                        call.sessions.clear<ConnectedSession>()
-                        logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
-                        call.respond(
-                            HttpStatusCode.Unauthorized,
-                            ApiErrorResponse("You are not authenticated.", MissingAuthentication.toErrorData())
-                        )
-                        return@intercept finish()
-                    }
-                    proceed()
-                }
-
-                @ApiEndpoint("GET /api/v1/user")
-                @OptIn(UsesTrueIdentity::class) // returns whether user is identifiable or not
-                get {
-                    val session = call.sessions.get<ConnectedSession>()!!
-                    logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
-                    call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation()))
-                }
-
-                @ApiEndpoint("GET /api/v1/user/idaccesslogs")
-                get("idaccesslogs") {
-                    val session = call.sessions.get<ConnectedSession>()!!
-                    logger.info("Generating access logs for a user")
-                    logger.debug { "Generating access logs for ${session.discordId} (${session.discordUsername})" }
-                    call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
-                }
-
-                @ApiEndpoint("POST /api/v1/user/logout")
-                post("logout") {
-                    call.sessions.clear<ConnectedSession>()
-                    call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out"))
-                }
-
-                @ApiEndpoint("POST /api/v1/user/identity")
-                @OptIn(UsesTrueIdentity::class)
-                post("identity") {
-                    val session = call.sessions.get<ConnectedSession>()!!
-                    val auth = call.receive<RegistrationAuthCode>()
-                    logger.info("Relinking a user account")
-                    logger.debug {
-                        "User ${session.discordId} (${session.discordUsername}) has asked for a relink with authcode ${auth.code}."
-                    }
-                    val microsoftToken = microsoftBackEnd.getMicrosoftToken(auth.code, auth.redirectUri)
-                    if (db.isUserIdentifiable(session.discordId)) {
-                        throw LinkEndpointException(IdentityAlreadyKnown, isEndUserAtFault = true)
-                    }
-                    val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
-                    db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
-                    roleManager.invalidateAllRoles(session.discordId)
-                    call.respond(apiSuccess("Successfully relinked Microsoft account"))
-                }
-
-                @ApiEndpoint("DELETE /api/v1/user/identity")
-                @OptIn(UsesTrueIdentity::class)
-                delete("identity") {
-                    val session = call.sessions.get<ConnectedSession>()!!
-                    if (db.isUserIdentifiable(session.discordId)) {
-                        db.deleteUserIdentity(session.discordId)
-                        roleManager.invalidateAllRoles(session.discordId)
-                        call.respond(apiSuccess("Successfully deleted identity"))
-                    } else {
-                        throw LinkEndpointException(IdentityAlreadyUnknown, isEndUserAtFault = true)
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Setup the sessions to log in the passed user object
-     */
-    override fun ApplicationCall.loginAs(user: LinkUser, username: String, avatar: String?) {
-        logger.debug { "Logging ${user.discordId} ($username) in" }
-        sessions.clear<RegisterSession>()
-        sessions.set(ConnectedSession(user.discordId, username, avatar))
-    }
-
-    @UsesTrueIdentity
-    private suspend fun ConnectedSession.toUserInformation() =
-        UserInformation(discordId, discordUsername, discordAvatar, db.isUserIdentifiable(discordId))
 }

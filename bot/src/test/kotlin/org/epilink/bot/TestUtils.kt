@@ -72,6 +72,15 @@ fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
 inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T =
     declare { mockk(block = body) }
 
+/**
+ * Similar to mockHere, but if an instance of T is already injected, apply the initializer to it instead of
+ * replacing it
+ */
+inline fun <reified T : Any> KoinTest.softMockHere(crossinline initializer: T.() -> Unit): T {
+    val injected = getKoin().getOrNull<T>()
+    return injected?.apply(initializer) ?: mockHere(initializer)
+}
+
 fun Map<String, Any?>.getString(key: String): String =
     this.getValue(key) as String
 
