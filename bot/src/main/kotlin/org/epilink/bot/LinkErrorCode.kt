@@ -109,6 +109,7 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     /**
      * Sent when an API call failed because the user is logged in but does not have enough permissions to do something
      */
+    @Suppress("unused")
     InsufficientPermission(301, "You do not have permission to do that.");
 
     /**

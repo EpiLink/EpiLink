@@ -8,24 +8,30 @@
  */
 package org.epilink.bot.http
 
-import io.ktor.application.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCallPipeline
+import io.ktor.application.call
+import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.routing
-import io.ktor.sessions.*
+import io.ktor.sessions.Sessions
+import io.ktor.sessions.header
 import kotlinx.coroutines.coroutineScope
-import org.epilink.bot.*
+import org.epilink.bot.CacheClient
+import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes.UnknownError
-import org.epilink.bot.db.LinkUser
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.ratelimiting.RateLimiting
+import org.epilink.bot.toApiResponse
+import org.epilink.bot.toErrorData
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory

@@ -29,7 +29,14 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 import java.time.Duration
 
+/**
+ * Interface for the /meta API route
+ */
 interface LinkMetaApi {
+    /**
+     * Installs the route here (the route for "/api/v1" is automatically added, so you must call this at the
+     * root route)
+     */
     fun install(route: Route)
 }
 

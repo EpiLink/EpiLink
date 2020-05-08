@@ -380,7 +380,7 @@ fun LinkTokens.check(): List<ConfigReportElement> {
         report += ConfigError(true, "discordToken was left with its default value: please provide a bot token!")
     }
     if (msftOAuthClientId == "...") {
-        report += ConfigError(true, "msftOauthCliientId was left with its default value: please provide a client ID!")
+        report += ConfigError(true, "msftOauthClientId was left with its default value: please provide a client ID!")
     }
     if (msftOAuthSecret == "...") {
         report += ConfigError(true, "msftOAuthSecret was left with its default value: please provide a secret!")

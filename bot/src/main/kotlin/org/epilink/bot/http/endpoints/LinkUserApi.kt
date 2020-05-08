@@ -39,10 +39,20 @@ import org.koin.core.inject
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
+/**
+ * Route for user APIs
+ */
 interface LinkUserApi {
+    /**
+     * Installs the route here (the route for "/api/v1" is automatically added, so you must call this at the
+     * root route)
+     */
     fun install(route: Route)
 
-    // TODO Reminder for docs, this also clears the registration session
+    /**
+     * Logs in the caller with the given database user, username and avatar URL. Also clears the registration session
+     * for this call, if any.
+     */
     fun loginAs(call: ApplicationCall, user: LinkUser, username: String, avatar: String?)
 }
 
@@ -137,7 +147,6 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     /**
      * Setup the sessions to log in the passed user object
      */
-    // TODO test
     override fun loginAs(
         call: ApplicationCall,
         user: LinkUser,

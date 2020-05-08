@@ -35,7 +35,14 @@ import org.koin.core.inject
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
+/**
+ * Route for the registration endpoints
+ */
 interface LinkRegistrationApi {
+    /**
+     * Installs the route here (the route for "/api/v1" is automatically added, so you must call this at the
+     * root route)
+     */
     fun install(route: Route)
 }
 
@@ -49,8 +56,6 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
     private val db: LinkServerDatabase by inject()
 
     private val roleManager: LinkRoleManager by inject()
-
-    private val back: LinkBackEnd by inject()
 
     private val userApi: LinkUserApi by inject()
 
