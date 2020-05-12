@@ -206,9 +206,14 @@ internal class LinkDiscord4JFacadeImpl(
     private suspend fun DiscordClient.loginAndAwaitReady() {
         suspendCoroutine<Unit> { cont ->
             this.eventDispatcher.on(ReadyEvent::class.java)
-                .subscribe {
+                .take(1)
+                .subscribe({
+                    logger.debug { "Discord client has signaled that it is ready" }
                     cont.resume(Unit)
-                }
+                }, {
+                    // I don't think that can happen, but let's log it either way
+                    logger.error("Unexpected exception in Discord ready event receiver", it)
+                })
             this.login()
                 .doOnError {
                     logger.error("Encountered general Discord error", it)
