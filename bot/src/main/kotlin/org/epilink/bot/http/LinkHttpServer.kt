@@ -57,7 +57,6 @@ internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
         }
         logger.debug("Installing EpiLink API")
         with(backend) {
-            installFeatures()
             epilinkApiModule()
         }
         logger.debug("Installing EpiLink front-end handler")
