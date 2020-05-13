@@ -24,10 +24,7 @@ import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
-import org.epilink.bot.http.LinkBackEnd
-import org.epilink.bot.http.LinkBackEndImpl
-import org.epilink.bot.http.LinkMicrosoftBackEnd
-import org.epilink.bot.http.MicrosoftUserInfo
+import org.epilink.bot.http.*
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.http.endpoints.LinkUserApi
@@ -45,6 +42,7 @@ class UserTest : KoinBaseTest(
     module {
         single<LinkUserApi> { LinkUserApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }
+        single<LinkSessionChecks> { mockk { coEvery { verifyUser(any()) } returns true }}
     }
 ) {
     override fun additionalModule(): Module? = module {
@@ -52,40 +50,6 @@ class UserTest : KoinBaseTest(
     }
 
     private val sessionStorage = UnsafeTestSessionStorage()
-
-    @Test
-    fun `Test user without session id fails`() {
-        withTestEpiLink {
-            handleRequest(HttpMethod.Get, "/api/v1/user").run {
-                assertStatus(HttpStatusCode.Unauthorized)
-            }
-        }
-    }
-
-    @Test
-    fun `Test user with incorrect session id fails`() {
-        withTestEpiLink {
-            handleRequest(HttpMethod.Get, "/api/v1/user") {
-                addHeader("SessionId", "eeebaaa")
-            }.run {
-                assertStatus(HttpStatusCode.Unauthorized)
-            }
-        }
-    }
-
-    @Test
-    fun `Test user with invalid session id fails`() {
-        withTestEpiLink {
-            val sid = setupSession()
-            val db = get<LinkServerDatabase>()
-            coEvery { db.getUser(any()) } returns null
-            handleRequest(HttpMethod.Get, "/api/v1/user") {
-                addHeader("SessionId", sid)
-            }.run {
-                assertStatus(HttpStatusCode.Unauthorized)
-            }
-        }
-    }
 
     @OptIn(UsesTrueIdentity::class)
     @Test

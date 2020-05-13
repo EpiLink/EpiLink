@@ -27,6 +27,7 @@ import org.epilink.bot.http.endpoints.LinkRegistrationApiImpl
 import org.epilink.bot.http.endpoints.LinkUserApiImpl
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.logger.slf4jLogger
 import org.slf4j.LoggerFactory
@@ -57,6 +58,8 @@ class LinkServerEnvironment(
         // Cache-based features
         @Suppress("RemoveExplicitTypeArguments")
         single<CacheClient> { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryCacheClient() }
+        // Admin list
+        single(named("admins")) { cfg.admins }
     }
 
     /**
@@ -111,6 +114,8 @@ class LinkServerEnvironment(
         single<LinkUserApi> { LinkUserApiImpl() }
 
         single<LinkAdminApi> { LinkAdminApiImpl() }
+
+        single<LinkSessionChecks> { LinkSessionChecksImpl() }
     }
 
     /**
@@ -118,12 +123,6 @@ class LinkServerEnvironment(
      */
     val name: String
         get() = cfg.name
-
-    /**
-     * The list of Discord IDs of the administrators of this instance
-     */
-    val admins: List<String>
-        get() = cfg.admins
 
     /**
      * Start Koin, the Discord bot + session storage provider and then the HTTP server, in that order.

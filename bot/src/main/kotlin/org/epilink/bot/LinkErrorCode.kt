@@ -9,6 +9,7 @@
 package org.epilink.bot
 
 import org.epilink.bot.http.ApiErrorData
+import org.epilink.bot.http.ApiErrorResponse
 
 /**
  * Represents an error code that can be sent by the API, which has an integer code and a string description. The
@@ -27,6 +28,12 @@ interface LinkErrorCode {
  * Utility function for dumping the information of an error code into an ApiErrorData object
  */
 fun LinkErrorCode.toErrorData(): ApiErrorData = ApiErrorData(code, description)
+
+/**
+ * Utility function for turning an error code into a proper API Error response with the given description, filling
+ * the error information with the error code.
+ */
+fun LinkErrorCode.toResponse(description: String) = ApiErrorResponse(description, toErrorData())
 
 /**
  * Standard error codes of the EpiLink API.
@@ -109,8 +116,7 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     /**
      * Sent when an API call failed because the user is logged in but does not have enough permissions to do something
      */
-    @Suppress("unused")
-    InsufficientPermission(301, "You do not have permission to do that.");
+    InsufficientPermissions(301, "You do not have permission to do that.");
 
     /**
      * Returns a string representation of this error code

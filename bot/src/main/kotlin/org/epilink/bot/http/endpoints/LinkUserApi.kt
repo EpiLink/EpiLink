@@ -12,7 +12,6 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
-import io.ktor.request.header
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
@@ -33,7 +32,6 @@ import org.epilink.bot.http.data.UserInformation
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.ratelimiting.rateLimited
-import org.epilink.bot.toErrorData
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
@@ -65,6 +63,8 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
 
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
 
+    private val sessionChecks: LinkSessionChecks by inject()
+
     override fun install(route: Route) {
         with(route) { user() }
     }
@@ -72,20 +72,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     fun Route.user() = route("/api/v1/user") {
         rateLimited(limit = 20, timeBeforeReset = Duration.ofMinutes(1)) {
             intercept(ApplicationCallPipeline.Features) {
-                val session = call.sessions.get<ConnectedSession>()
-                if (session == null || db.getUser(session.discordId) == null /* see #121 */) {
-                    call.sessions.clear<ConnectedSession>()
-                    logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
-                    call.respond(
-                        HttpStatusCode.Unauthorized,
-                        ApiErrorResponse(
-                            "You are not authenticated.",
-                            StandardErrorCodes.MissingAuthentication.toErrorData()
-                        )
-                    )
-                    return@intercept finish()
-                }
-                proceed()
+                if (sessionChecks.verifyUser(this)) proceed()
             }
 
             @ApiEndpoint("GET /api/v1/user")

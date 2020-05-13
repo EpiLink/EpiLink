@@ -53,7 +53,8 @@ interface LinkServerDatabase {
     suspend fun isUserIdentifiable(discordId: String): Boolean
 
     /**
-     * Retrieve the identity of a user. This access is logged within the system and the user is notified.
+     * Retrieve the identity of a user. This access is logged within the system but the user is not notified.
+     * Notification should be handled by using the Discord classes.
      */
     @UsesTrueIdentity
     suspend fun accessIdentity(
