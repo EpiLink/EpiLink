@@ -55,7 +55,11 @@ data class LinkConfiguration(
     /**
      * Legal configuration, with ToS and privacy policy configs
      */
-    val legal: LinkLegalConfiguration = LinkLegalConfiguration()
+    val legal: LinkLegalConfiguration = LinkLegalConfiguration(),
+    /**
+     * List of administrators (by Discord ID)
+     */
+    val admins: List<String> = listOf()
 )
 
 /**

@@ -120,6 +120,12 @@ class LinkServerEnvironment(
         get() = cfg.name
 
     /**
+     * The list of Discord IDs of the administrators of this instance
+     */
+    val admins: List<String>
+        get() = cfg.admins
+
+    /**
      * Start Koin, the Discord bot + session storage provider and then the HTTP server, in that order.
      */
     fun start() {
