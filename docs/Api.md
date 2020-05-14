@@ -94,6 +94,15 @@ These are general codes that can be encountered.
 | 300 | You need authentication to be able to access this resource |
 | 301 | You do not have the permission to do that (i.e. you are logged in but can't do that) |
 
+### 4xx codes
+
+These are codes that can be encountered in the administration APIs only. (These are not HTTP errors!)
+
+| Code | Description |
+|:----:| ----------- |
+| 400 | Invalid admin request |
+| 401 | Incomplete admin request |
+| 430 | Attempted to get the identity of a non-identifiable user |
 
 ### 9xx codes
 
@@ -476,3 +485,41 @@ Returns a classic success [API response](#apiresponse) if successful (with HTTP 
 Error code 111 (identity already unknown) is relevant here. [See all error codes](#error-codes).
 
 Upon success, triggers a role update.
+
+## Administrative endpoints /admin
+
+All endpoints are checked: the caller must have admins permissions (by specifying the caller's Discord ID as an "admin") *and* be identifiable.
+
+### Objects
+
+#### IdRequest
+
+```json5
+{
+  "target": "...", // Discord ID of the targeted user
+  "reason": "..." // Reason that will be notified to the user
+}
+```
+
+#### IdRequestResult
+
+```json5
+{
+  "target": "...", // Discord ID of the user
+  "identity": "..." // Identity of the user
+}
+```
+
+### POST /admin/idrequest
+
+**Request the identity of a user.** This will notify the "target" user (following the instance's privacy settings).
+
+```http request
+POST /api/v1/admin/idrequest
+SessionId: abcdef1234 # mandatory
+Content-Type: application/json # mandatory
+```
+
+The request body is an [IdRequest](#idrequest) JSON object.
+
+Returns a [IdRequestResult] upon success. [Error code 430](#4xx-codes) is relevant here.

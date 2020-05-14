@@ -17,6 +17,9 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkUser
+import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -82,20 +85,29 @@ internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
     }
 }
 
-@OptIn(KtorExperimentalAPI::class) // We get a choice between a deprecated or an experimental func...
+@OptIn(
+    KtorExperimentalAPI::class, // We get a choice between a deprecated or an experimental func...
+    UsesTrueIdentity::class // for setting up identity mocks
+)
 internal fun KoinTest.setupSession(
     sessionStorage: SimplifiedSessionStorage,
     discId: String = "discordid",
     discUsername: String = "discorduser#1234",
     discAvatarUrl: String? = "https://avatar/url",
     msIdHash: ByteArray = byteArrayOf(1, 2, 3, 4, 5),
-    created: Instant = Instant.now() - Duration.ofDays(1)
+    created: Instant = Instant.now() - Duration.ofDays(1),
+    trueIdentity: String? = null
 ): String {
+    val u: LinkUser = mockk {
+        every { discordId } returns discId
+        every { msftIdHash } returns msIdHash
+        every { creationDate } returns created
+    }
     softMockHere<LinkServerDatabase> {
-        coEvery { getUser(discId) } returns mockk {
-            every { discordId } returns discId
-            every { msftIdHash } returns msIdHash
-            every { creationDate } returns created
+        coEvery { getUser(discId) } returns u
+        if (trueIdentity != null) {
+            coEvery { isUserIdentifiable(discId) } returns true
+            coEvery { accessIdentity(u, any(), any(), any()) } returns trueIdentity
         }
     }
     // Generate an ID

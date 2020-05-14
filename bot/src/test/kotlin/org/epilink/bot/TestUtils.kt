@@ -66,7 +66,8 @@ fun KoinTest.declareClientHandler(onlyMatchUrl: String? = null, handler: MockReq
     }
 
 fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
-    assertEquals(status, this.response.status())
+    val actual = this.response.status()
+    assertEquals(status, actual, "Expected status $status, but got $actual instead")
 }
 
 inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T =
