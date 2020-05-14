@@ -14,13 +14,9 @@ import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
-import io.ktor.sessions.defaultSessionSerializer
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import io.ktor.util.KtorExperimentalAPI
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
-import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
@@ -33,10 +29,8 @@ import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.test.get
-import org.koin.test.inject
 import java.time.Duration
 import java.time.Instant
-import java.util.*
 import kotlin.test.*
 
 class UserTest : KoinBaseTest(
@@ -62,6 +56,7 @@ class UserTest : KoinBaseTest(
                 coEvery { isUserIdentifiable("myDiscordId") } returns true
             }
             val sid = setupSession(
+                sessionStorage,
                 discId = "myDiscordId",
                 discUsername = "Discordian#1234",
                 discAvatarUrl = "https://veryavatar"
@@ -89,6 +84,7 @@ class UserTest : KoinBaseTest(
                 coEvery { isUserIdentifiable("myDiscordId") } returns false
             }
             val sid = setupSession(
+                sessionStorage,
                 discId = "myDiscordId",
                 discUsername = "Discordian#1234",
                 discAvatarUrl = "https://veryavatar"
@@ -123,6 +119,7 @@ class UserTest : KoinBaseTest(
         }
         withTestEpiLink {
             val sid = setupSession(
+                sessionStorage,
                 discId = "discordid"
             )
             handleRequest(HttpMethod.Get, "/api/v1/user/idaccesslogs") {
@@ -168,7 +165,7 @@ class UserTest : KoinBaseTest(
             coEvery { relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") } just runs
         }
         withTestEpiLink {
-            val sid = setupSession("userid", msIdHash = hashMsftId)
+            val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
             handleRequest(HttpMethod.Post, "/api/v1/user/identity") {
                 addHeader("SessionId", sid)
                 setJsonBody("""{"code":"msauth","redirectUri":"uriii"}""")
@@ -198,7 +195,7 @@ class UserTest : KoinBaseTest(
             coEvery { isUserIdentifiable("userid") } returns true
         }
         withTestEpiLink {
-            val sid = setupSession("userid", msIdHash = hashMsftId)
+            val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
             handleRequest(HttpMethod.Post, "/api/v1/user/identity") {
                 addHeader("SessionId", sid)
                 setJsonBody("""{"code":"msauth","redirectUri":"uriii"}""")
@@ -235,7 +232,7 @@ class UserTest : KoinBaseTest(
             )
         }
         withTestEpiLink {
-            val sid = setupSession("userid", msIdHash = hashMsftId)
+            val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
             handleRequest(HttpMethod.Post, "/api/v1/user/identity") {
                 addHeader("SessionId", sid)
                 setJsonBody("""{"code":"msauth","redirectUri":"uriii"}""")
@@ -256,7 +253,7 @@ class UserTest : KoinBaseTest(
             coEvery { isUserIdentifiable("userid") } returns false
         }
         withTestEpiLink {
-            val sid = setupSession("userid")
+            val sid = setupSession(sessionStorage, "userid")
             handleRequest(HttpMethod.Delete, "/api/v1/user/identity") {
                 addHeader("SessionId", sid)
             }.apply {
@@ -280,7 +277,7 @@ class UserTest : KoinBaseTest(
             every { invalidateAllRoles("userid") } returns mockk()
         }
         withTestEpiLink {
-            val sid = setupSession("userid")
+            val sid = setupSession(sessionStorage, "userid")
             handleRequest(HttpMethod.Delete, "/api/v1/user/identity") {
                 addHeader("SessionId", sid)
             }.apply {
@@ -299,7 +296,7 @@ class UserTest : KoinBaseTest(
     @Test
     fun `Test user log out`() {
         withTestEpiLink {
-            val sid = setupSession()
+            val sid = setupSession(sessionStorage)
             handleRequest(HttpMethod.Post, "/api/v1/user/logout") {
                 addHeader("SessionId", sid)
             }.apply {
@@ -309,34 +306,6 @@ class UserTest : KoinBaseTest(
             }
             coVerify { sessionChecks.verifyUser(any()) }
         }
-    }
-
-    @OptIn(KtorExperimentalAPI::class) // We get a choice between a deprecated or an experimental func...
-    private fun setupSession(
-        discId: String = "discordid",
-        discUsername: String = "discorduser#1234",
-        discAvatarUrl: String? = "https://avatar/url",
-        msIdHash: ByteArray = byteArrayOf(1, 2, 3, 4, 5),
-        created: Instant = Instant.now() - Duration.ofDays(1)
-    ): String {
-        softMockHere<LinkServerDatabase> {
-            coEvery { getUser(discId) } returns mockk {
-                every { discordId } returns discId
-                every { msftIdHash } returns msIdHash
-                every { creationDate } returns created
-            }
-        }
-        // Generate an ID
-        val arr = ByteArray(128)
-        Random().nextBytes(arr)
-        val id = Hex.encodeHexString(arr)
-        // Generate the session data
-        val data = defaultSessionSerializer<ConnectedSession>().serialize(
-            ConnectedSession(discId, discUsername, discAvatarUrl)
-        ).toByteArray()
-        // Put that in our test session storage
-        runBlocking { sessionStorage.write(id, data) }
-        return id
     }
 
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =

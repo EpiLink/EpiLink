@@ -9,8 +9,21 @@
 package org.epilink.bot
 
 import io.ktor.sessions.SessionStorage
+import io.ktor.sessions.defaultSessionSerializer
+import io.ktor.util.KtorExperimentalAPI
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
+import org.apache.commons.codec.binary.Hex
+import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
+import org.epilink.bot.http.sessions.ConnectedSession
+import org.koin.test.KoinTest
+import java.time.Duration
+import java.time.Instant
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -67,4 +80,33 @@ internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
     override suspend fun invalidate(id: String) {
         sessions.remove(id)
     }
+}
+
+@OptIn(KtorExperimentalAPI::class) // We get a choice between a deprecated or an experimental func...
+internal fun KoinTest.setupSession(
+    sessionStorage: SimplifiedSessionStorage,
+    discId: String = "discordid",
+    discUsername: String = "discorduser#1234",
+    discAvatarUrl: String? = "https://avatar/url",
+    msIdHash: ByteArray = byteArrayOf(1, 2, 3, 4, 5),
+    created: Instant = Instant.now() - Duration.ofDays(1)
+): String {
+    softMockHere<LinkServerDatabase> {
+        coEvery { getUser(discId) } returns mockk {
+            every { discordId } returns discId
+            every { msftIdHash } returns msIdHash
+            every { creationDate } returns created
+        }
+    }
+    // Generate an ID
+    val arr = ByteArray(128)
+    Random().nextBytes(arr)
+    val id = Hex.encodeHexString(arr)
+    // Generate the session data
+    val data = defaultSessionSerializer<ConnectedSession>().serialize(
+        ConnectedSession(discId, discUsername, discAvatarUrl)
+    ).toByteArray()
+    // Put that in our test session storage
+    runBlocking { sessionStorage.write(id, data) }
+    return id
 }
