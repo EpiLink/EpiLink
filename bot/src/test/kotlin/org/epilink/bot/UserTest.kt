@@ -33,6 +33,7 @@ import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.test.get
+import org.koin.test.inject
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -42,7 +43,7 @@ class UserTest : KoinBaseTest(
     module {
         single<LinkUserApi> { LinkUserApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }
-        single<LinkSessionChecks> { mockk { coEvery { verifyUser(any()) } returns true }}
+        single<LinkSessionChecks> { mockk { coEvery { verifyUser(any()) } returns true } }
     }
 ) {
     override fun additionalModule(): Module? = module {
@@ -50,6 +51,8 @@ class UserTest : KoinBaseTest(
     }
 
     private val sessionStorage = UnsafeTestSessionStorage()
+    private val sessionChecks: LinkSessionChecks
+        get() = get() // I'm not sure if inject() handles test execution properly
 
     @OptIn(UsesTrueIdentity::class)
     @Test
@@ -74,6 +77,7 @@ class UserTest : KoinBaseTest(
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
                 assertEquals(true, data.data["identifiable"])
             }
+            coVerify { sessionChecks.verifyUser(any()) }
         }
     }
 
@@ -100,6 +104,7 @@ class UserTest : KoinBaseTest(
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
                 assertEquals(false, data.data["identifiable"])
             }
+            coVerify { sessionChecks.verifyUser(any()) }
         }
     }
 
@@ -141,6 +146,7 @@ class UserTest : KoinBaseTest(
                     assertEquals(inst2.toString(), second["timestamp"])
                 }
             }
+            coVerify { sessionChecks.verifyUser(any()) }
         }
     }
 
@@ -173,8 +179,11 @@ class UserTest : KoinBaseTest(
                 assertNull(resp.data)
             }
         }
-        coVerify { rm.invalidateAllRoles(any()) }
-        coVerify { sd.relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") }
+        coVerify {
+            rm.invalidateAllRoles(any())
+            sd.relinkMicrosoftIdentity("userid", email, "MyMicrosoftId")
+            sessionChecks.verifyUser(any())
+        }
     }
 
     @OptIn(UsesTrueIdentity::class)
@@ -200,7 +209,10 @@ class UserTest : KoinBaseTest(
                 assertEquals(110, err.code)
             }
         }
-        coVerify { mbe.getMicrosoftToken("msauth", "uriii") } // Ensure the back-end has consumed the authcode
+        coVerify {
+            mbe.getMicrosoftToken("msauth", "uriii") // Ensure the back-end has consumed the authcode
+            sessionChecks.verifyUser(any())
+        }
     }
 
     @OptIn(UsesTrueIdentity::class)
@@ -233,6 +245,7 @@ class UserTest : KoinBaseTest(
                 val err = resp.data
                 assertEquals(98765, err.code)
             }
+            coVerify { sessionChecks.verifyUser(any()) }
         }
     }
 
@@ -252,6 +265,7 @@ class UserTest : KoinBaseTest(
                 val err = resp.data
                 assertEquals(111, err.code)
             }
+            coVerify { sessionChecks.verifyUser(any()) }
         }
     }
 
@@ -275,8 +289,11 @@ class UserTest : KoinBaseTest(
                 assertNull(resp.data)
             }
         }
-        coVerify { sd.deleteUserIdentity("userid") }
-        coVerify { rm.invalidateAllRoles(any()) }
+        coVerify {
+            sd.deleteUserIdentity("userid")
+            rm.invalidateAllRoles(any())
+            sessionChecks.verifyUser(any())
+        }
     }
 
     @Test
@@ -290,6 +307,7 @@ class UserTest : KoinBaseTest(
                 assertNull(fromJson<ApiSuccess>(response).data)
                 assertNull(sessions.get<ConnectedSession>())
             }
+            coVerify { sessionChecks.verifyUser(any()) }
         }
     }
 
