@@ -19,11 +19,14 @@ import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.LinkSessionChecksImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.get
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import org.koin.test.mock.declare
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -52,7 +55,11 @@ class SessionChecksTest : KoinBaseTest(
         return call to session
     }
 
-    class MockedResponse(val slot: CapturingSlot<Any>, val pipeline: ApplicationSendPipeline, val response: ApplicationResponse)
+    class MockedResponse(
+        val slot: CapturingSlot<Any>,
+        val pipeline: ApplicationSendPipeline,
+        val response: ApplicationResponse
+    )
 
     private fun mockResponse(mockedCall: ApplicationCall): MockedResponse {
         val respSlot = slot<Any>()
@@ -112,6 +119,7 @@ class SessionChecksTest : KoinBaseTest(
             session.clear("nnname")
             mr.response.status(HttpStatusCode.Unauthorized)
             mr.pipeline.execute(call, any())
+            context.finish()
         }
     }
 
@@ -131,5 +139,63 @@ class SessionChecksTest : KoinBaseTest(
             assertTrue(get<LinkSessionChecks>().verifyUser(context))
         }
         // TODO verifications?
+    }
+
+    @Test
+    fun `Test admin, not an admin`() {
+        val (call, _) = setupMockedSession(ConnectedSession("userid", "username", null))
+        val mr = mockResponse(call)
+        val context = mockk<PipelineContext<Unit, ApplicationCall>> {
+            every { context } returns call
+            every { finish() } just runs
+        }
+        declare(named("admins")) { listOf("adminid") }
+        runBlocking {
+            assertFalse(get<LinkSessionChecks>().verifyAdmin(context))
+        }
+        coVerify {
+            mr.response.status(HttpStatusCode.Unauthorized)
+            mr.pipeline.execute(call, any())
+            context.finish()
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test admin, admin but not identifiable`() {
+        val (call, _) = setupMockedSession(ConnectedSession("adminid", "username", null))
+        val mr = mockResponse(call)
+        val context = mockk<PipelineContext<Unit, ApplicationCall>> {
+            every { context } returns call
+            every { finish() } just runs
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("adminid") } returns false
+        }
+        declare(named("admins")) { listOf("adminid") }
+        runBlocking {
+            assertFalse(get<LinkSessionChecks>().verifyAdmin(context))
+        }
+        coVerify {
+            mr.response.status(HttpStatusCode.Unauthorized)
+            mr.pipeline.execute(call, any())
+            context.finish()
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test admin when correct`() {
+        val (call, _) = setupMockedSession(ConnectedSession("adminid", "username", null))
+        val context = mockk<PipelineContext<Unit, ApplicationCall>> {
+            every { context } returns call
+        }
+        mockHere<LinkServerDatabase> {
+            coEvery { isUserIdentifiable("adminid") } returns true
+        }
+        declare(named("admins")) { listOf("adminid") }
+        runBlocking {
+            assertTrue(get<LinkSessionChecks>().verifyAdmin(context))
+        }
     }
 }

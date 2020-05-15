@@ -77,33 +77,30 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
         } else true
     }
 
-    // TODO tests
     @OptIn(UsesTrueIdentity::class) // Checks if the admin is identifiable
     override suspend fun verifyAdmin(context: PipelineContext<Unit, ApplicationCall>): Boolean = with(context) {
-        if (verifyUser(context)) {
-            val session = call.sessions.get<ConnectedSession>()
-                ?: throw LinkException("Call verifyUser before verifyAdmin!")
-            if (session.discordId !in admins) {
-                // Not an admin
-                call.respond(
-                    HttpStatusCode.Unauthorized,
-                    StandardErrorCodes.InsufficientPermissions.toResponse("Insufficient permissions")
+        val session = call.sessions.get<ConnectedSession>()
+            ?: throw LinkException("Call verifyUser before verifyAdmin!")
+        if (session.discordId !in admins) {
+            // Not an admin
+            call.respond(
+                HttpStatusCode.Unauthorized,
+                StandardErrorCodes.InsufficientPermissions.toResponse("Insufficient permissions")
+            )
+            finish()
+            false
+        } else if (!db.isUserIdentifiable(session.discordId)) {
+            // Admin but not identifiable
+            call.respond(
+                HttpStatusCode.Unauthorized,
+                StandardErrorCodes.InsufficientPermissions.toResponse(
+                    "You need to have your identity recorded to perform administrative tasks"
                 )
-                finish()
-                false
-            } else if (!db.isUserIdentifiable(session.discordId)) {
-                // Admin but not identifiable
-                call.respond(
-                    HttpStatusCode.Unauthorized,
-                    StandardErrorCodes.InsufficientPermissions.toResponse(
-                        "You need to have your identity recorded to perform administrative tasks"
-                    )
-                )
-                finish()
-                false
-            } else {
-                true
-            }
-        } else false
+            )
+            finish()
+            false
+        } else {
+            true
+        }
     }
 }

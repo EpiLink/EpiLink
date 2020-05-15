@@ -99,8 +99,7 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test manual identity request on unknown target`() {
         declare(named("admins")) { listOf("adminid") }
-        val u = mockk<LinkUser>()
-        val db = mockHere<LinkServerDatabase> {
+        mockHere<LinkServerDatabase> {
             coEvery { getUser("userid") } returns null
         }
         withTestEpiLink {
