@@ -13,13 +13,10 @@ import org.epilink.bot.CacheClient
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.isMonitored
+import org.epilink.bot.db.*
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
-import org.epilink.bot.db.Disallowed
-import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.debug
 import org.koin.core.KoinComponent
 import org.koin.core.get
@@ -115,6 +112,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val config: LinkDiscordConfig by inject()
     private val rulebook: Rulebook by inject()
     private val facade: LinkDiscordClientFacade by inject()
+    private val idAccessor: LinkIdAccessor by inject()
     private val ruleMediator: RuleMediator by lazy {
         get<CacheClient>().newRuleMediator("el_rc_")
     }
@@ -302,20 +300,17 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             "Identity required for strong rules (Discord user ${dbUser.discordId}, rules " +
                     strongIdRulesInfo.joinToString(", ") { it.rule.name } + ")"
         }
-        val author = "EpiLink Discord Bot"
         // IntelliJ wants to put facade.getGuildName in joinToString which is not possible because joinToString is not
         // inline-able and we need coroutines here
         @Suppress("SimplifiableCallChain")
-        val reason =
-            "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
+        return idAccessor.accessIdentity(
+            targetId = dbUser.discordId,
+            automated = true,
+            author = "EpiLink Discord Bot",
+            reason =  "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
                     strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().map { facade.getGuildName(it) }
                         .joinToString(", ")
-        val id = database.accessIdentity(dbUser, true, author, reason)
-        messages.getIdentityAccessEmbed(true, author, reason)?.let {
-            facade.sendDirectMessage(dbUser.discordId, it)
-        }
-        return id
-
+        )
     }
 }
 

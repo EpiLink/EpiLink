@@ -14,26 +14,25 @@ import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import org.epilink.bot.db.LinkIdAccessor
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
-import org.epilink.bot.discord.DiscordEmbed
-import org.epilink.bot.discord.LinkDiscordClientFacade
-import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkSessionChecks
-import org.epilink.bot.http.LinkSessionChecksImpl
 import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkAdminApiImpl
-import org.epilink.bot.http.endpoints.LinkUserApi
-import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.get
 import org.koin.test.mock.declare
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class AdminTest : KoinBaseTest(
     module {
@@ -60,19 +59,13 @@ class AdminTest : KoinBaseTest(
     fun `Test manual identity request on identifiable`() {
         declare(named("admins")) { listOf("adminid") }
         val u = mockk<LinkUser>()
-        val db = mockHere<LinkServerDatabase> {
+        mockHere<LinkServerDatabase> {
             coEvery { getUser("userid") } returns u
             coEvery { isUserIdentifiable("userid") } returns true
-            coEvery { accessIdentity(u, false, "admin.name@email", "thisismyreason") } returns "trueidentity@othermail"
         }
-        val embed = mockk<DiscordEmbed>()
-        mockHere<LinkDiscordMessages> {
-            every { getIdentityAccessEmbed(false, "admin.name@email", "thisismyreason") } returns embed
-            every { getIdentityAccessEmbed(true, any(), match { it.contains("another user") }) } returns mockk()
-        }
-        val dcf = mockHere<LinkDiscordClientFacade> {
-            coEvery { sendDirectMessage("userid", embed) } just runs
-            coEvery { sendDirectMessage("adminid", any()) } just runs
+        val lia = mockHere<LinkIdAccessor> {
+            coEvery { accessIdentity("userid", false, "admin.name@email", "thisismyreason") } returns "trueidentity@othermail"
+            coEvery { accessIdentity("adminid", true, any(), match { it.contains("another user") })} returns "admin.name@email"
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid", trueIdentity = "admin.name@email")
@@ -90,8 +83,8 @@ class AdminTest : KoinBaseTest(
             coVerify {
                 sessionChecks.verifyUser(any())
                 sessionChecks.verifyAdmin(any())
-                dcf.sendDirectMessage("userid", embed)
-                db.accessIdentity(u, false, "admin.name@email", "thisismyreason")
+                lia.accessIdentity("userid", false, "admin.name@email", "thisismyreason")
+                lia.accessIdentity("adminid", true, any(), match { it.contains("another user") })
             }
         }
     }

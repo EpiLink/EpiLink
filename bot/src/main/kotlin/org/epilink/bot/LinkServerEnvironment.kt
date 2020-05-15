@@ -10,21 +10,16 @@ package org.epilink.bot
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
-import kotlinx.coroutines.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkConfiguration
-import org.epilink.bot.rulebook.Rulebook
-import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.db.LinkServerDatabaseImpl
+import org.epilink.bot.db.*
 import org.epilink.bot.db.exposed.SQLiteExposedFacadeImpl
 import org.epilink.bot.discord.*
-import org.epilink.bot.discord.LinkDiscordMessagesImpl
-import org.epilink.bot.discord.LinkRoleManagerImpl
 import org.epilink.bot.http.*
 import org.epilink.bot.http.endpoints.*
-import org.epilink.bot.http.endpoints.LinkMetaApiImpl
-import org.epilink.bot.http.endpoints.LinkRegistrationApiImpl
-import org.epilink.bot.http.endpoints.LinkUserApiImpl
+import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.core.qualifier.named
@@ -60,6 +55,8 @@ class LinkServerEnvironment(
         single<CacheClient> { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryCacheClient() }
         // Admin list
         single(named("admins")) { cfg.admins }
+        // "Glue" thing that calls everything required when accessing an identity
+        single<LinkIdAccessor> { LinkIdAccessorImpl() }
     }
 
     /**
@@ -80,6 +77,7 @@ class LinkServerEnvironment(
         single<LinkDiscordClientFacade> {
             LinkDiscord4JFacadeImpl(cfg.tokens.discordOAuthClientId, cfg.tokens.discordToken)
         }
+        single<LinkDiscordMessageSender> { LinkDiscordMessageSenderImpl() }
     }
 
     /**
