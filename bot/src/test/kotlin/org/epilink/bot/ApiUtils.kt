@@ -16,6 +16,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
+import org.epilink.bot.db.LinkIdAccessor
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
@@ -107,7 +108,11 @@ internal fun KoinTest.setupSession(
         coEvery { getUser(discId) } returns u
         if (trueIdentity != null) {
             coEvery { isUserIdentifiable(discId) } returns true
-            coEvery { accessIdentity(u, any(), any(), any()) } returns trueIdentity
+        }
+    }
+    if (trueIdentity != null) {
+        mockHere<LinkIdAccessor> {
+            coEvery { accessIdentity(discId, any(), any(), any()) } returns trueIdentity
         }
     }
     // Generate an ID
