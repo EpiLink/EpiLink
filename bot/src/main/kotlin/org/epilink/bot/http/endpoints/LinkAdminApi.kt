@@ -59,6 +59,13 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
         @OptIn(UsesTrueIdentity::class)
         post("idrequest") {
             val request = call.receive<IdRequest>()
+            if (request.reason.isEmpty()) {
+                call.respond(
+                    BadRequest,
+                    StandardErrorCodes.IncompleteAdminRequest.toResponse("Missing reason")
+                )
+                return@post
+            }
             val session = call.sessions.get<ConnectedSession>()!! // Already validated by interception
             val admin = db.getUser(session.discordId)!! // Already validated by interception
             val target = db.getUser(request.target)
@@ -66,14 +73,21 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 target == null ->
                     call.respond(BadRequest, StandardErrorCodes.InvalidAdminRequest.toResponse("Target does not exist"))
                 !db.isUserIdentifiable(request.target) ->
-                    call.respond(BadRequest, StandardErrorCodes.TargetIsNotIdentifiable.toResponse()) // TODO test
-                request.reason.isEmpty() ->
-                    call.respond(BadRequest, StandardErrorCodes.IncompleteAdminRequest.toResponse("Missing reason")) // TODO test
+                    call.respond(BadRequest, StandardErrorCodes.TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
                     // TODO put the id access mechanism in a separate injectable class
-                    val adminTid = db.accessIdentity(admin, true, "EpiLink Admin Service", "You requested another user's identity: your identity was retrieved for logging purposes.")
-                    messages.getIdentityAccessEmbed(true, "EpiLink Admin Service", "You requested another user's identity: your identity was retrieved for logging purposes.")?.let {
+                    val adminTid = db.accessIdentity(
+                        admin,
+                        true,
+                        "EpiLink Admin Service",
+                        "You requested another user's identity: your identity was retrieved for logging purposes."
+                    )
+                    messages.getIdentityAccessEmbed(
+                        true,
+                        "EpiLink Admin Service",
+                        "You requested another user's identity: your identity was retrieved for logging purposes."
+                    )?.let {
                         discord.sendDirectMessage(session.discordId, it)
                     }
                     // Get the identity and notify

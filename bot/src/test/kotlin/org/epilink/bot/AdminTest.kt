@@ -119,6 +119,53 @@ class AdminTest : KoinBaseTest(
         }
     }
 
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test manual identity request on unidentifiable target`() {
+        declare(named("admins")) { listOf("adminid") }
+        val u = mockk<LinkUser>()
+        mockHere<LinkServerDatabase> {
+            coEvery { getUser("userid") } returns u
+            coEvery { isUserIdentifiable("userid") } returns false
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid", trueIdentity = "admin.name@email")
+            handleRequest(HttpMethod.Post, "/api/v1/admin/idrequest") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"target":"userid","reason":"thisismyreason"}""")
+            }.apply {
+                assertStatus(HttpStatusCode.BadRequest)
+                val err = fromJson<ApiError>(response)
+                assertEquals(430, err.data.code)
+            }
+            coVerify {
+                sessionChecks.verifyUser(any())
+                sessionChecks.verifyAdmin(any())
+            }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test manual identity request missing reason `() {
+        declare(named("admins")) { listOf("adminid") }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid", trueIdentity = "admin.name@email")
+            handleRequest(HttpMethod.Post, "/api/v1/admin/idrequest") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"target":"userid","reason":""}""")
+            }.apply {
+                assertStatus(HttpStatusCode.BadRequest)
+                val err = fromJson<ApiError>(response)
+                assertEquals(401, err.data.code)
+            }
+            coVerify {
+                sessionChecks.verifyUser(any())
+                sessionChecks.verifyAdmin(any())
+            }
+        }
+    }
+
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             with(get<LinkBackEnd>()) {

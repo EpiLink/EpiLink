@@ -66,9 +66,9 @@ class DummyCacheClient(private val sessionStorageProvider: () -> SessionStorage)
     override fun newSessionStorage(prefix: String): SessionStorage = sessionStorageProvider()
 }
 
-// TODO is this necessary?
+// Not strictly necessary, but we require SimplifiedSessionStorage objects in tests
 internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
-    val sessions = ConcurrentHashMap<String, ByteArray>()
+    private val sessions = ConcurrentHashMap<String, ByteArray>()
     override suspend fun read(id: String): ByteArray? {
         return sessions[id]
     }

@@ -20,6 +20,7 @@ import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.http.ApiErrorResponse
 import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.LinkSessionChecksImpl
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -28,6 +29,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -36,7 +38,13 @@ class SessionChecksTest : KoinBaseTest(
         single<LinkSessionChecks> { LinkSessionChecksImpl() }
     }
 ) {
-    // TODO document this mess
+    /**
+     * Used for setting up a fake session by mocking some session functionality.
+     *
+     * Run this when you need to inject a session directly.
+     *
+     * Returns the mocked CurrentSession and ApplicationCall objects
+     */
     private fun setupMockedSession(actualSession: ConnectedSession?): Pair<ApplicationCall, CurrentSession> {
         val headersMocked = mockk<Headers> {
             every { this@mockk[any()] } returns "Mocked"
@@ -55,12 +63,28 @@ class SessionChecksTest : KoinBaseTest(
         return call to session
     }
 
-    class MockedResponse(
+    /**
+     * Object returned by [mockResponse]
+     */
+    private class MockedResponse(
+        /**
+         * Slot in which the sent response is put
+         */
         val slot: CapturingSlot<Any>,
+        /**
+         * The send pipeline that was mocked
+         */
         val pipeline: ApplicationSendPipeline,
+        /**
+         * The application response that was mocked
+         */
         val response: ApplicationResponse
     )
 
+    /**
+     * Sets up necessary components for a mocked ApplicationCall to receive a response, and returns the obejcts that
+     * were mocked in order to do this.
+     */
     private fun mockResponse(mockedCall: ApplicationCall): MockedResponse {
         val respSlot = slot<Any>()
         val respPipeline = mockk<ApplicationSendPipeline> {
@@ -88,7 +112,9 @@ class SessionChecksTest : KoinBaseTest(
         }
         runBlocking {
             assertFalse(get<LinkSessionChecks>().verifyUser(context))
-            // TODO assertions on what respSlot captured
+            val captured = mr.slot.captured
+            assertTrue(captured is ApiErrorResponse)
+            assertEquals(300, captured.data!!.code)
         }
         coVerify {
             session.clear("nnname")
@@ -113,7 +139,9 @@ class SessionChecksTest : KoinBaseTest(
         }
         runBlocking {
             assertFalse(get<LinkSessionChecks>().verifyUser(context))
-            // TODO assertions on what respSlot captured
+            val captured = mr.slot.captured
+            assertTrue(captured is ApiErrorResponse)
+            assertEquals(300, captured.data!!.code)
         }
         coVerify {
             session.clear("nnname")
@@ -125,10 +153,7 @@ class SessionChecksTest : KoinBaseTest(
 
     @Test
     fun `Test user verification user exists`() {
-        val (call, session) = setupMockedSession(ConnectedSession("userid", "username", null))
-        with(session) {
-            every { clear("nnname") } just runs
-        }
+        val (call, _) = setupMockedSession(ConnectedSession("userid", "username", null))
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
@@ -138,7 +163,6 @@ class SessionChecksTest : KoinBaseTest(
         runBlocking {
             assertTrue(get<LinkSessionChecks>().verifyUser(context))
         }
-        // TODO verifications?
     }
 
     @Test
@@ -152,6 +176,9 @@ class SessionChecksTest : KoinBaseTest(
         declare(named("admins")) { listOf("adminid") }
         runBlocking {
             assertFalse(get<LinkSessionChecks>().verifyAdmin(context))
+            val captured = mr.slot.captured
+            assertTrue(captured is ApiErrorResponse)
+            assertEquals(301, captured.data!!.code)
         }
         coVerify {
             mr.response.status(HttpStatusCode.Unauthorized)
@@ -175,6 +202,9 @@ class SessionChecksTest : KoinBaseTest(
         declare(named("admins")) { listOf("adminid") }
         runBlocking {
             assertFalse(get<LinkSessionChecks>().verifyAdmin(context))
+            val captured = mr.slot.captured
+            assertTrue(captured is ApiErrorResponse)
+            assertEquals(301, captured.data!!.code)
         }
         coVerify {
             mr.response.status(HttpStatusCode.Unauthorized)
