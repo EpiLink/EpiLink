@@ -76,6 +76,15 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             ExposedUser.count(ExposedUsers.msftIdHash eq hash) > 0
         }
 
+    override suspend fun recordBan(target: ByteArray, until: Instant?): LinkBan =
+        newSuspendedTransaction(db = db) {
+            ExposedBan.new {
+                msftIdHash = target
+                expiresOn = until
+                issued = Instant.now()
+            }
+        }
+
     override suspend fun getBansFor(hash: ByteArray): List<LinkBan> =
         newSuspendedTransaction(db = db) {
             ExposedBan.find(ExposedBans.msftIdHash eq hash).toList()

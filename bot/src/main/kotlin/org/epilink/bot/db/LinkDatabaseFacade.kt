@@ -43,6 +43,11 @@ interface LinkDatabaseFacade {
     suspend fun getBansFor(hash: ByteArray): List<LinkBan>
 
     /**
+     * Record a new ban against a user.
+     */
+    suspend fun recordBan(target: ByteArray, until: Instant?) : LinkBan
+
+    /**
      * Create a user in the database using the given registration session's information, without any check on the data's
      * coherence. It is the caller's job to check that the parameters are correct.
      *
