@@ -1,5 +1,4 @@
 .gradle
-.idea
 .vscode
 .project
 .classpath
@@ -20,3 +19,12 @@ out/
 
 config/*
 !config/.gitkeep
+
+# IDEA configs that should be kept
+.idea/*
+# Code style configuration
+!.idea/codeStyles/
+# Inspection profiles
+!.idea/inspectionProfiles/
+# Run configurations
+!.idea/runConfigurations/
