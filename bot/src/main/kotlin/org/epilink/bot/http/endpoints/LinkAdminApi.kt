@@ -72,7 +72,6 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     call.respond(BadRequest, StandardErrorCodes.TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
-                    // TODO put the id access mechanism in a separate injectable class
                     val adminTid = idAccessor.accessIdentity(
                         session.discordId,
                         true,

@@ -111,7 +111,7 @@ internal fun KoinTest.setupSession(
         }
     }
     if (trueIdentity != null) {
-        mockHere<LinkIdAccessor> {
+        softMockHere<LinkIdAccessor> {
             coEvery { accessIdentity(discId, any(), any(), any()) } returns trueIdentity
         }
     }
