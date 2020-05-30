@@ -36,7 +36,7 @@ class BanManagerTest : KoinBaseTest(
         }
         runBlocking {
             val exc = assertFailsWith<LinkException> {
-                get<LinkBanManager>().ban("userid", null, "big boy")
+                get<LinkBanManager>().ban("userid", null, "big boy", "the big desc")
             }
             assertEquals("User 'userid' does not exist", exc.message)
         }
@@ -53,17 +53,17 @@ class BanManagerTest : KoinBaseTest(
             coEvery { getUser("userid") } returns u
         }
         val df = mockHere<LinkDatabaseFacade> {
-            coEvery { recordBan(idHash, null, "the_author") } returns ban
+            coEvery { recordBan(idHash, null, "the_author", "the description") } returns ban
         }
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRoles("userid") } returns mockk()
         }
         runBlocking {
-            val realBan = get<LinkBanManager>().ban("userid", null, "the_author")
+            val realBan = get<LinkBanManager>().ban("userid", null, "the_author", "the description")
             assertSame(ban, realBan)
         }
         coVerify {
-            df.recordBan(idHash, null, "the_author")
+            df.recordBan(idHash, null, "the_author", "the description")
             rm.invalidateAllRoles("userid")
         }
     }

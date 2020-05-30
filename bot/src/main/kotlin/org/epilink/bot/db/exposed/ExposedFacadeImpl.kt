@@ -76,7 +76,12 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             ExposedUser.count(ExposedUsers.msftIdHash eq hash) > 0
         }
 
-    override suspend fun recordBan(target: ByteArray, until: Instant?, author: String): LinkBan =
+    override suspend fun recordBan(
+        target: ByteArray,
+        until: Instant?,
+        author: String,
+        reason: String
+    ): LinkBan =
         newSuspendedTransaction(db = db) {
             ExposedBan.new {
                 msftIdHash = target
@@ -261,6 +266,8 @@ private object ExposedBans : IntIdTable("Bans") {
     val revoked = bool("revoked").default(false)
 
     val author = varchar("author", 40)
+
+    val reason = varchar("reason", 2000)
 }
 
 /**
@@ -295,6 +302,8 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
     override var revoked by ExposedBans.revoked
 
     override var author by ExposedBans.author
+
+    override var reason by ExposedBans.reason
 }
 
 /**

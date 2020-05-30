@@ -60,6 +60,11 @@ interface LinkBan {
      * This value is only here for administrative purposes and is not displayed to the user
      */
     val author: String
+
+    /**
+     * The human-readable reason for the ban. May be displayed to the user.
+     */
+    val reason: String
 }
 
 /**
