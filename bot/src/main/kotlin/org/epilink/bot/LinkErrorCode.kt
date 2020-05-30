@@ -132,6 +132,11 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     IncompleteAdminRequest(401, "Incomplete administration request."),
 
     /**
+     * Sent when an admin API call is made and targets a user who does not exist
+     */
+    TargetUserDoesNotExist(402, "Target user does not exist."),
+
+    /**
      * Sent on an ID request when the ID just does not exist.
      */
     TargetIsNotIdentifiable(430, "The targeted user does not have their identity in the database.")

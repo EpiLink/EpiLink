@@ -102,6 +102,7 @@ These are codes that can be encountered in the administration APIs only. (These 
 |:----:| ----------- |
 | 400 | Invalid admin request |
 | 401 | Incomplete admin request |
+| 402 | Invalid request: (target) user does not exist |
 | 430 | Attempted to get the identity of a non-identifiable user |
 
 ### 9xx codes
@@ -239,8 +240,8 @@ This object provides information on the current registration process' status and
 ```json5
 {
   "discordUsername": "example#1234", // nullable
-  "discordAvatarUrl": "https://discordapi.example/myavatar.png" // nullable
-  "email": "email@example.com", // nullable
+  "discordAvatarUrl": "https://discordapi.example/myavatar.png", // nullable
+  "email": "email@example.com" // nullable
 }
 ```
 
@@ -510,6 +511,23 @@ All endpoints are checked: the caller must have admins permissions (by specifyin
 }
 ```
 
+#### RegisteredUserInformation
+
+```json5
+{
+  "discordId": "...",
+  "msftIdHash": "...", 
+  "created": "...",
+  "identifiable": true
+}
+```
+
+- `discordId`: The Discord ID of the user (which you most probably already know)
+- `msftIdHash`: The Microsoft ID hash of the user (URL-safe Base64)
+- `created`: A ISO-8601 Instant of when the account was created, always in UTC (the `Z` at the end).
+- `identifiable`: True or false, whether the user can be identified through an ID access or not.
+
+
 ### POST /admin/idrequest
 
 **Request the identity of a user.** This will notify the "target" user (following the instance's privacy settings).
@@ -522,4 +540,17 @@ Content-Type: application/json # mandatory
 
 The request body is an [IdRequest](#idrequest) JSON object.
 
-Returns a [IdRequestResult] upon success. [Error code 430](#4xx-codes) is relevant here.
+Returns a [IdRequestResult](#idrequestresult) upon success. [Error code 430](#4xx-codes) is relevant here.
+
+### GET /admin/user/{userid}
+
+**Retrieve user information.** This is different from the `/user` endpoint.
+
+```http request
+GET /api/v1/admin/user/{targetid}
+SessionId: abcdef1234 # mandatory
+```
+
+Where `{targetid}` is the Discord ID of the person. 
+
+This endpoint returns a [RegisteredUserInfo](#registereduserinformation) about the target user.

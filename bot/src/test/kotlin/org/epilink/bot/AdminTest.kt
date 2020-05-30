@@ -16,6 +16,7 @@ import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.db.LinkIdAccessor
 import org.epilink.bot.db.LinkServerDatabase
@@ -30,6 +31,9 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.get
 import org.koin.test.mock.declare
+import java.time.Duration
+import java.time.Instant
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -64,8 +68,12 @@ class AdminTest : KoinBaseTest(
             coEvery { isUserIdentifiable("userid") } returns true
         }
         val lia = mockHere<LinkIdAccessor> {
-            coEvery { accessIdentity("userid", false, "admin.name@email", "thisismyreason") } returns "trueidentity@othermail"
-            coEvery { accessIdentity("adminid", true, any(), match { it.contains("another user") })} returns "admin.name@email"
+            coEvery {
+                accessIdentity("userid", false, "admin.name@email", "thisismyreason")
+            } returns "trueidentity@othermail"
+            coEvery {
+                accessIdentity("adminid", true, any(), match { it.contains("another user") })
+            } returns "admin.name@email"
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid", trueIdentity = "admin.name@email")
@@ -155,6 +163,59 @@ class AdminTest : KoinBaseTest(
             coVerify {
                 sessionChecks.verifyUser(any())
                 sessionChecks.verifyAdmin(any())
+            }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user info request user does not exist`() {
+        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkServerDatabase> {
+            coEvery { getUser("targetid") } returns null
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/user/targetid") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"target":"targetid","reason":""}""")
+            }.apply {
+                assertStatus(HttpStatusCode.NotFound)
+                val info = fromJson<ApiError>(response)
+                assertEquals(402, info.data.code)
+            }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user info request success`() {
+        val instant = Instant.now() - Duration.ofHours(19)
+        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkServerDatabase> {
+            coEvery { getUser("targetid") } returns mockk {
+                every { discordId } returns "targetid"
+                every { msftIdHash } returns byteArrayOf(1, 2, 3)
+                every { creationDate } returns instant
+            }
+            coEvery { isUserIdentifiable("targetid") } returns true
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/user/targetid") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"target":"targetid","reason":""}""")
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val info = fromJson<ApiSuccess>(response)
+                assertNotNull(info.data)
+                info.data.apply {
+                    assertEquals("targetid", get("discordId"))
+                    val expectedHash = Base64.getUrlEncoder().encodeToString(byteArrayOf(1, 2, 3))
+                    assertEquals(expectedHash, get("msftIdHash"))
+                    assertEquals(instant.toString(), get("created"))
+                    assertEquals(true, get("identifiable"))
+                }
             }
         }
     }

@@ -10,27 +10,34 @@ package org.epilink.bot.http.endpoints
 
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
+import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
+import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.route
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.LinkIdAccessor
 import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.http.ApiEndpoint
 import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.data.IdRequest
 import org.epilink.bot.http.data.IdRequestResult
+import org.epilink.bot.http.data.RegisteredUserInfo
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import java.util.*
 
 interface LinkAdminApi {
     fun install(route: Route)
@@ -57,19 +64,16 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
         post("idrequest") {
             val request = call.receive<IdRequest>()
             if (request.reason.isEmpty()) {
-                call.respond(
-                    BadRequest,
-                    StandardErrorCodes.IncompleteAdminRequest.toResponse("Missing reason")
-                )
+                call.respond(BadRequest, IncompleteAdminRequest.toResponse("Missing reason"))
                 return@post
             }
             val session = call.sessions.get<ConnectedSession>()!! // Already validated by interception
             val target = db.getUser(request.target)
             when {
                 target == null ->
-                    call.respond(BadRequest, StandardErrorCodes.InvalidAdminRequest.toResponse("Target does not exist"))
+                    call.respond(BadRequest, InvalidAdminRequest.toResponse("Target does not exist"))
                 !db.isUserIdentifiable(request.target) ->
-                    call.respond(BadRequest, StandardErrorCodes.TargetIsNotIdentifiable.toResponse())
+                    call.respond(BadRequest, TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
                     val adminTid = idAccessor.accessIdentity(
@@ -83,5 +87,26 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 }
             }
         }
+
+        @OptIn(UsesTrueIdentity::class)
+        get("user/{targetid}") {
+            val targetId = call.parameters["targetid"]!!
+            val user = db.getUser(targetId)
+            if (user == null) {
+                call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+            } else {
+                val identifiable = db.isUserIdentifiable(targetId)
+                val info = RegisteredUserInfo(
+                    targetId,
+                    user.msftIdHash.encodeUrlSafeBase64(),
+                    user.creationDate.toString(),
+                    identifiable
+                )
+                call.respond(ApiSuccessResponse(data = info))
+            }
+        }
     }
+
+    private fun ByteArray.encodeUrlSafeBase64() =
+        Base64.getUrlEncoder().encodeToString(this)
 }
