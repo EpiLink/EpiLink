@@ -48,6 +48,11 @@ interface LinkBan {
      * The time at which the ban was created
      */
     val issued: Instant
+
+    /**
+     * True if the ban is revoked and should be ignored, false otherwise
+     */
+    val revoked: Boolean
 }
 
 /**

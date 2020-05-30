@@ -126,6 +126,8 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
 
     private val rulebook: Rulebook by inject()
 
+    private val banLogic: LinkBanLogic by inject()
+
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     override suspend fun createUser(
         discordId: String,
@@ -157,14 +159,6 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
     override suspend fun getUser(discordId: String): LinkUser? =
         facade.getUser(discordId)
 
-    /**
-     * Checks whether a ban is currently active or not
-     */
-    private fun LinkBan.isActive(): Boolean {
-        val expiry = expiresOn
-        return /* Ban does not expire */ expiry == null || /* Ban has not expired */ expiry.isAfter(Instant.now())
-    }
-
     override suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory {
         return if (facade.doesUserExist(discordId))
             Disallowed("This Discord account already exists")
@@ -180,7 +174,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
             return Disallowed("This e-mail address was rejected. Are you sure you are using the correct Microsoft account?")
         }
         val b = facade.getBansFor(hash)
-        if (b.any { it.isActive() }) {
+        if (b.any { banLogic.isBanActive(it) }) {
             return Disallowed("This Microsoft account is banned")
         }
         return Allowed
@@ -199,7 +193,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
     }
 
     override suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory {
-        if (facade.getBansFor(dbUser.msftIdHash).any { it.isActive() }) {
+        if (facade.getBansFor(dbUser.msftIdHash).any { banLogic.isBanActive(it) }) {
             logger.debug { "Active bans found for user ${dbUser.discordId}" }
             return Disallowed("You are banned from joining any server at the moment.")
         }

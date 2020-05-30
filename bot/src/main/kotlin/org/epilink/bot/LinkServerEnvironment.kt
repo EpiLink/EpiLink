@@ -57,6 +57,8 @@ class LinkServerEnvironment(
         single(named("admins")) { cfg.admins }
         // "Glue" thing that calls everything required when accessing an identity
         single<LinkIdAccessor> { LinkIdAccessorImpl() }
+        // Ban-related logic (isActive...)
+        single<LinkBanLogic> { LinkBanLogicImpl() }
     }
 
     /**

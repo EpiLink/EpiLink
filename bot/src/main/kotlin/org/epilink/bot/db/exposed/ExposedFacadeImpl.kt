@@ -241,18 +241,23 @@ private object ExposedBans : IntIdTable("Bans") {
      * their account (i.e. delete the row of that user in the [ExposedUsers] table)
      * while still maintaining the information that this Microsoft ID is banned.
      */
-    var msftIdHash = binary("msftIdHash", 64)
+    val msftIdHash = binary("msftIdHash", 64)
 
     /**
      * Null if this is a definitive ban, the expiration date if this is a
      * temporary ban.
      */
-    var expiresOn = timestamp("expiresOn").nullable()
+    val expiresOn = timestamp("expiresOn").nullable()
 
     /**
      * The time at which the ban was issued
      */
-    var issued = timestamp("issued")
+    val issued = timestamp("issued")
+
+    /*
+     * True if the ban is revoked and should be ignored, false otherwise
+     */
+    val revoked = bool("revoked").default(false)
 }
 
 /**
@@ -283,6 +288,8 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
      * The time at which the ban was created
      */
     override var issued by ExposedBans.issued
+
+    override var revoked by ExposedBans.revoked
 }
 
 /**
