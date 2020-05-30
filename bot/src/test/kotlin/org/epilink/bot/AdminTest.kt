@@ -18,10 +18,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import org.epilink.bot.db.LinkIdAccessor
-import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.db.*
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkSessionChecks
@@ -37,6 +34,17 @@ import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+
+private class BanImpl(
+    override val banId: Int,
+    override val msftIdHash: ByteArray,
+    override val expiresOn: Instant?,
+    override val issued: Instant,
+    override val revoked: Boolean,
+    override val author: String,
+    override val reason: String
+) : LinkBan
 
 class AdminTest : KoinBaseTest(
     module {
@@ -216,6 +224,53 @@ class AdminTest : KoinBaseTest(
                     assertEquals(instant.toString(), get("created"))
                     assertEquals(true, get("identifiable"))
                 }
+            }
+        }
+    }
+
+    @Test
+    fun `Test retrieve all bans of user`() {
+        declare(named("admins")) { listOf("adminid") }
+        val msftHash = byteArrayOf(1, 2, 3, 4, 5)
+        val msftHashStr = Base64.getUrlEncoder().encodeToString(msftHash)
+        val now = Instant.now()
+        val bans = listOf(
+            BanImpl(0, msftHash, now - Duration.ofSeconds(10), now - Duration.ofDays(1), true, "Yeet", "You got gnomed"),
+            BanImpl(1, msftHash, null, now - Duration.ofDays(3), false, "Oops", "Tinkie winkiiiie")
+        )
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getBansFor(msftHash) } returns bans
+        }
+        mockHere<LinkBanLogic> {
+            // Technically incorrect, as one of the bans mocked above would still be active
+            // (this ensures we actually use isBanActive)
+            every { isBanActive(any()) } returns false
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/ban/$msftHashStr") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val info = fromJson<ApiSuccess>(response)
+                val data = info.data
+                assertNotNull(data)
+                assertEquals(false, data["banned"])
+                val actualBans = data.getListOfMaps("bans")
+                val banOne = actualBans[0]
+                assertEquals(0, banOne["id"])
+                assertEquals(true, banOne["revoked"])
+                assertEquals("Yeet", banOne["author"])
+                assertEquals("You got gnomed", banOne["reason"])
+                assertEquals(bans[0].expiresOn.toString(), banOne["expiresOn"])
+                assertEquals(bans[0].issued.toString(), banOne["issuedAt"])
+                val banTwo = actualBans[1]
+                assertEquals(1, banTwo["id"])
+                assertEquals(false, banTwo["revoked"])
+                assertEquals("Oops", banTwo["author"])
+                assertEquals("Tinkie winkiiiie", banTwo["reason"])
+                assertNull(banTwo["expiresOn"])
+                assertEquals(bans[1].issued.toString(), banTwo["issuedAt"])
             }
         }
     }

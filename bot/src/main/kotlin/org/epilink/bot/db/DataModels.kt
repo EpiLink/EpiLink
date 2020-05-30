@@ -35,6 +35,11 @@ interface LinkUser {
  */
 interface LinkBan {
     /**
+     * Opaque identifier for this ban
+     */
+    val banId: Int
+
+    /**
      * The banned user's Microsoft ID SHA-256 hash
      */
     val msftIdHash: ByteArray

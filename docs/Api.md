@@ -103,6 +103,7 @@ These are codes that can be encountered in the administration APIs only. (These 
 | 400 | Invalid admin request |
 | 401 | Incomplete admin request |
 | 402 | Invalid request: (target) user does not exist |
+| 403 | Invalid or incoherent ID |
 | 430 | Attempted to get the identity of a non-identifiable user |
 
 ### 9xx codes
@@ -527,6 +528,31 @@ All endpoints are checked: the caller must have admins permissions (by specifyin
 - `created`: A ISO-8601 Instant of when the account was created, always in UTC (the `Z` at the end).
 - `identifiable`: True or false, whether the user can be identified through an ID access or not.
 
+#### UserBans
+
+```json5
+{
+  "banned": true, // or false, tells whether any ban is currently active
+  "bans": [ // Possibly empty array of BanInfo objects
+    //...
+  ]
+}
+```
+
+#### BanInfo
+
+```json5
+{
+  "id": 0,
+  "revoked": false, // or true,
+  "author": "...",
+  "reason": "...",
+  "issuedAt": "...",
+  "expiresOn": "...", // nullable
+}
+```
+
+TODO: document this
 
 ### POST /admin/idrequest
 
@@ -554,3 +580,26 @@ SessionId: abcdef1234 # mandatory
 Where `{targetid}` is the Discord ID of the person. 
 
 This endpoint returns a [RegisteredUserInfo](#registereduserinformation) about the target user.
+
+### GET /admin/ban/{msftHash}
+
+**Get the bans of a user using their Microsoft ID hash.**
+
+```
+GET /admin/ban/{msftHash}
+```
+
+Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid).
+
+Returns a [UserBans](#userbans) object.
+
+### GET /admin/ban/{msftHash}/{banId}
+
+**Get a single ban of a specific user**
+
+### POST /admin/ban/{msftHash}/{banId}/revoke
+
+**Revoke a ban**
+
+### POST /admin/ban/{msftHash}
+

@@ -23,16 +23,11 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.StandardErrorCodes.*
-import org.epilink.bot.db.LinkIdAccessor
-import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.db.*
 import org.epilink.bot.http.ApiEndpoint
 import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.LinkSessionChecks
-import org.epilink.bot.http.data.IdRequest
-import org.epilink.bot.http.data.IdRequestResult
-import org.epilink.bot.http.data.RegisteredUserInfo
+import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
@@ -46,7 +41,9 @@ interface LinkAdminApi {
 internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val sessionChecks: LinkSessionChecks by inject()
     private val db: LinkServerDatabase by inject()
+    private val dbf: LinkDatabaseFacade by inject()
     private val idAccessor: LinkIdAccessor by inject()
+    private val banLogic: LinkBanLogic by inject()
     override fun install(route: Route) {
         with(route) { admin() }
     }
@@ -88,9 +85,10 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
             }
         }
 
+        @ApiEndpoint("GET /api/v1/admin/user/{targetId}")
         @OptIn(UsesTrueIdentity::class)
-        get("user/{targetid}") {
-            val targetId = call.parameters["targetid"]!!
+        get("user/{targetId}") {
+            val targetId = call.parameters["targetId"]!!
             val user = db.getUser(targetId)
             if (user == null) {
                 call.respond(NotFound, TargetUserDoesNotExist.toResponse())
@@ -105,7 +103,21 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 call.respond(ApiSuccessResponse(data = info))
             }
         }
+
+        route("ban/{msftHash}") {
+            @ApiEndpoint("GET /api/v1/admin/user/{msftHash}")
+            get {
+                val msftHash = call.parameters["msftHash"]!!
+                val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
+                val bans = dbf.getBansFor(msftHashBytes)
+                val data = UserBans(bans.any { banLogic.isBanActive(it) }, bans.map { it.toBanInfo() })
+                call.respond(ApiSuccessResponse(data = data))
+            }
+        }
     }
+
+    private fun LinkBan.toBanInfo(): BanInfo =
+        BanInfo(banId, revoked, author, reason, issued.toString(), expiresOn?.toString())
 
     private fun ByteArray.encodeUrlSafeBase64() =
         Base64.getUrlEncoder().encodeToString(this)

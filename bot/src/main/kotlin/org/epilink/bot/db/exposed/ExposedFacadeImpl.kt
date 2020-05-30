@@ -280,6 +280,8 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
         ExposedBans
     )
 
+    override val banId = id.value
+
     /**
      * The SHA256 hash of the Microsoft ID of the banned user.
      *
