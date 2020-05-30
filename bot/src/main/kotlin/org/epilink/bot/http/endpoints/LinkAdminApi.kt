@@ -13,6 +13,7 @@ import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
+import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
@@ -25,6 +26,7 @@ import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.http.ApiEndpoint
+import org.epilink.bot.http.ApiErrorResponse
 import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.data.*
@@ -112,6 +114,26 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 val bans = dbf.getBansFor(msftHashBytes)
                 val data = UserBans(bans.any { banLogic.isBanActive(it) }, bans.map { it.toBanInfo() })
                 call.respond(ApiSuccessResponse(data = data))
+            }
+
+            @ApiEndpoint("GET /api/v1/admin/user/{msftHash}/{banId}")
+            get("{banId}") {
+                val msftHash = call.parameters["msftHash"]!!
+                val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
+                val banId = call.parameters["banId"]!!.toIntOrNull()
+                if (banId == null) {
+                    call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format"))
+                } else {
+                    val ban = dbf.getBan(banId)
+                    when {
+                        ban == null ->
+                            call.respond(NotFound, InvalidId.toResponse("No ban with given ID found"))
+                        !ban.msftIdHash.contentEquals(msftHashBytes) ->
+                            call.respond(NotFound, InvalidId.toResponse("Microsoft ID hash does not correspond"))
+                        else ->
+                            call.respond(OK, ApiSuccessResponse(data = ban.toBanInfo()))
+                    }
+                }
             }
         }
     }

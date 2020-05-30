@@ -96,6 +96,11 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             ExposedBan.find(ExposedBans.msftIdHash eq hash).toList()
         }
 
+    override suspend fun getBan(banId: Int): LinkBan? =
+        newSuspendedTransaction(db = db) {
+            ExposedBan.findById(banId)
+        }
+
     @OptIn(UsesTrueIdentity::class)
     override suspend fun recordNewUser(
         newDiscordId: String,

@@ -585,7 +585,7 @@ This endpoint returns a [RegisteredUserInfo](#registereduserinformation) about t
 
 **Get the bans of a user using their Microsoft ID hash.**
 
-```
+```http request
 GET /admin/ban/{msftHash}
 ```
 
@@ -596,6 +596,22 @@ Returns a [UserBans](#userbans) object.
 ### GET /admin/ban/{msftHash}/{banId}
 
 **Get a single ban of a specific user**
+
+```http request
+GET /admin/ban/{msftHash}/{banId}
+```
+
+Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid) and `{banId}` is the ID of the specific ban that needs to be retrieved.
+
+If any of the following is true:
+
+* No ban exists with the given ban ID
+* The ban ID is incorrect (not properly formatted)
+* The ban exists but does not correspond to the given `msftHash`
+
+A 404 (if the ban does not exist or does not correspond to the `msftHash) or 400 (if the ID is not formatted properly, i.e. not an integer number) error is returned with [error code 403](#4xx-codes).
+
+Returns a [BanInfo](#baninfo) object.
 
 ### POST /admin/ban/{msftHash}/{banId}/revoke
 

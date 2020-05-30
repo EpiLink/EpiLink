@@ -137,6 +137,11 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     TargetUserDoesNotExist(402, "Target user does not exist."),
 
     /**
+     * Sent in case of an invalid or incoherent ID on an admin call
+     */
+    InvalidId(403, "Invalid or incoherent ID."),
+
+    /**
      * Sent on an ID request when the ID just does not exist.
      */
     TargetIsNotIdentifiable(430, "The targeted user does not have their identity in the database.")

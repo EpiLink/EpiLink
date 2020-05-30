@@ -275,6 +275,94 @@ class AdminTest : KoinBaseTest(
         }
     }
 
+    @Test
+    fun `Test retrieve specific ban correct hash`() {
+        declare(named("admins")) { listOf("adminid") }
+        val msftHash = byteArrayOf(1, 2, 3, 4, 5)
+        val msftHashStr = Base64.getUrlEncoder().encodeToString(msftHash)
+        val now = Instant.now()
+        val ban =
+            BanImpl(0, msftHash, now - Duration.ofSeconds(10), now - Duration.ofDays(1), true, "Yeet", "You got gnomed")
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getBan(0) } returns ban
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/ban/$msftHashStr/0") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val info = fromJson<ApiSuccess>(response)
+                val data = info.data
+                assertNotNull(data)
+                assertEquals(0, data["id"])
+                assertEquals(true, data["revoked"])
+                assertEquals("Yeet", data["author"])
+                assertEquals("You got gnomed", data["reason"])
+                assertEquals(ban.expiresOn.toString(), data["expiresOn"])
+                assertEquals(ban.issued.toString(), data["issuedAt"])
+            }
+        }
+    }
+
+    @Test
+    fun `Test retrieve specific ban malformed id`() {
+        declare(named("admins")) { listOf("adminid") }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/ban/sqdfhj/eeeeeee") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.BadRequest)
+                val info = fromJson<ApiError>(response)
+                val data = info.data
+                assertEquals(403, data.code)
+            }
+        }
+    }
+
+    @Test
+    fun `Test retrieve specific ban incorrect hash`() {
+        declare(named("admins")) { listOf("adminid") }
+        val msftHash = byteArrayOf(1, 2, 3, 4, 5)
+        val now = Instant.now()
+        val ban =
+            BanImpl(0, msftHash, now - Duration.ofSeconds(10), now - Duration.ofDays(1), true, "Yeet", "You got gnomed")
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getBan(0) } returns ban
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/ban/sqdfhj/0") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.NotFound)
+                val info = fromJson<ApiError>(response)
+                val data = info.data
+                assertEquals(403, data.code)
+            }
+        }
+    }
+
+    @Test
+    fun `Test retrieve specific ban incorrect id`() {
+        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getBan(33333) } returns null
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/ban/sqdfhj/33333") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.NotFound)
+                val info = fromJson<ApiError>(response)
+                val data = info.data
+                assertEquals(403, data.code)
+            }
+        }
+    }
+
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             with(get<LinkBackEnd>()) {

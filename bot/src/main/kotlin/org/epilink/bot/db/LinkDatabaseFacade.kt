@@ -43,6 +43,11 @@ interface LinkDatabaseFacade {
     suspend fun getBansFor(hash: ByteArray): List<LinkBan>
 
     /**
+     * Gets a ban with the given ban ID, or null if no such ban exists
+     */
+    suspend fun getBan(banId: Int): LinkBan?
+
+    /**
      * Record a new ban against a user.
      */
     suspend fun recordBan(target: ByteArray, until: Instant?, author: String, reason: String) : LinkBan
