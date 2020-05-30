@@ -53,6 +53,13 @@ interface LinkBan {
      * True if the ban is revoked and should be ignored, false otherwise
      */
     val revoked: Boolean
+
+    /**
+     * The name (or email address) of the person who created the ban.
+     *
+     * This value is only here for administrative purposes and is not displayed to the user
+     */
+    val author: String
 }
 
 /**

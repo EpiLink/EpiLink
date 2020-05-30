@@ -17,19 +17,19 @@ import org.koin.core.inject
 import java.time.Instant
 
 interface LinkBanManager {
-    suspend fun ban(userId: String, expiresOn: Instant? = null): LinkBan
+    suspend fun ban(userId: String, expiresOn: Instant?, author: String): LinkBan
 }
 
 internal class LinkBanManagerImpl : LinkBanManager, KoinComponent {
     private val db: LinkServerDatabase by inject()
     private val dbf: LinkDatabaseFacade by inject()
     private val roleManager: LinkRoleManager by inject()
-    override suspend fun ban(userId: String, expiresOn: Instant?): LinkBan {
+    override suspend fun ban(userId: String, expiresOn: Instant?, author: String): LinkBan {
         val u = db.getUser(userId) ?:
             throw LinkException("User '$userId' does not exist")
         // TODO what should we do if a user is already banned?
         // TODO add reasons (that would break db compatibility)
-        val ban = dbf.recordBan(u.msftIdHash, expiresOn)
+        val ban = dbf.recordBan(u.msftIdHash, expiresOn, author)
         roleManager.invalidateAllRoles(userId)
         return ban
     }
