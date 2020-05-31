@@ -10,6 +10,8 @@ package org.epilink.bot
 
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.HttpStatusCode.Companion.BadRequest
+import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
@@ -90,7 +92,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"userid","reason":"thisismyreason"}""")
             }.apply {
-                assertStatus(HttpStatusCode.OK)
+                assertStatus(OK)
                 val id = fromJson<ApiSuccess>(response)
                 val data = id.data
                 assertNotNull(data, "Response has data")
@@ -215,7 +217,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"targetid","reason":""}""")
             }.apply {
-                assertStatus(HttpStatusCode.OK)
+                assertStatus(OK)
                 val info = fromJson<ApiSuccess>(response)
                 assertNotNull(info.data)
                 info.data.apply {
@@ -252,7 +254,7 @@ class AdminTest : KoinBaseTest(
             handleRequest(HttpMethod.Get, "/api/v1/admin/ban/$msftHashStr") {
                 addHeader("SessionId", sid)
             }.apply {
-                assertStatus(HttpStatusCode.OK)
+                assertStatus(OK)
                 val info = fromJson<ApiSuccess>(response)
                 val data = info.data
                 assertNotNull(data)
@@ -292,7 +294,7 @@ class AdminTest : KoinBaseTest(
             handleRequest(HttpMethod.Get, "/api/v1/admin/ban/$msftHashStr/0") {
                 addHeader("SessionId", sid)
             }.apply {
-                assertStatus(HttpStatusCode.OK)
+                assertStatus(OK)
                 val info = fromJson<ApiSuccess>(response)
                 val data = info.data
                 assertNotNull(data)
@@ -314,7 +316,7 @@ class AdminTest : KoinBaseTest(
             handleRequest(HttpMethod.Get, "/api/v1/admin/ban/sqdfhj/eeeeeee") {
                 addHeader("SessionId", sid)
             }.apply {
-                assertStatus(HttpStatusCode.BadRequest)
+                assertStatus(BadRequest)
                 val info = fromJson<ApiError>(response)
                 val data = info.data
                 assertEquals(403, data.code)
@@ -377,13 +379,71 @@ class AdminTest : KoinBaseTest(
             handleRequest(HttpMethod.Post, "/api/v1/admin/ban/$msftHashStr/12345/revoke") {
                 addHeader("SessionId", sid)
             }.apply {
-                assertStatus(HttpStatusCode.OK)
+                assertStatus(OK)
                 val info = fromJson<ApiSuccess>(response)
                 assertEquals("Ban revoked.", info.message)
                 assertNull(info.data)
             }
         }
         coVerify { bm.revokeBan(any(), 12345) }
+    }
+
+    @Test
+    fun `Test creating a ban with valid instant format`() {
+        declare(named("admins")) { listOf("adminid") }
+        val msftHashStr = "Base64"
+        val msftHash = Base64.getDecoder().decode(msftHashStr)
+        val instant = Instant.now() + Duration.ofHours(5)
+        // These don't correspond to the request, this is normal
+        val expInst = Instant.now() + Duration.ofDays(10)
+        val issuedInst = Instant.now()
+        val ban = BanImpl(123, msftHash, expInst, issuedInst, false, "the Author", "a reason")
+        val bm = mockHere<LinkBanManager> {
+            coEvery { ban(msftHashStr, instant, "author identity", "This is my reason") } returns ban
+        }
+        mockHere<LinkIdAccessor> {
+            coEvery { accessIdentity("adminid", true, any(), any()) } returns "author identity"
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Post, "/api/v1/admin/ban/$msftHashStr") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"reason":"This is my reason","expiresOn":"$instant"}""")
+            }.apply {
+                assertStatus(OK)
+                val info = fromJson<ApiSuccess>(response)
+                assertEquals("Ban created.", info.message)
+                val data = info.data
+                assertNotNull(data)
+                assertEquals(123, data["id"])
+                assertEquals(false, data["revoked"])
+                assertEquals("the Author", data["author"])
+                assertEquals("a reason", data["reason"])
+                assertEquals(expInst.toString(), data["expiresOn"])
+                assertEquals(issuedInst.toString(), data["issuedAt"])
+            }
+        }
+        coVerify {
+            bm.ban(msftHashStr, instant, "author identity", "This is my reason")
+        }
+    }
+
+    @Test
+    fun `Test creating a ban with invalid instant`() {
+        declare(named("admins")) { listOf("adminid") }
+        val msftHashStr = "Base64"
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Post, "/api/v1/admin/ban/$msftHashStr") {
+                addHeader("SessionId", sid)
+                setJsonBody("""{"reason":"This is my reason","expiresOn":"that's not ok"}""")
+            }.apply {
+                assertStatus(BadRequest)
+                val info = fromJson<ApiError>(response)
+                assertEquals("Invalid expiry timestamp.", info.message)
+                assertEquals(404, info.data.code)
+            }
+        }
     }
 
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =

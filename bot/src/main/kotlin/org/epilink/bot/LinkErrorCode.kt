@@ -142,6 +142,11 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     InvalidId(403, "Invalid or incoherent ID."),
 
     /**
+     * Sent in case of an invalid or incoherent ID on an admin call
+     */
+    InvalidInstant(404, "Invalid instant (date/hour) format, expecting an ISO-8601 instant format."),
+
+    /**
      * Sent on an ID request when the ID just does not exist.
      */
     TargetIsNotIdentifiable(430, "The targeted user does not have their identity in the database.")

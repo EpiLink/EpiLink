@@ -104,6 +104,7 @@ These are codes that can be encountered in the administration APIs only. (These 
 | 401 | Incomplete admin request |
 | 402 | Invalid request: (target) user does not exist |
 | 403 | Invalid or incoherent ID |
+| 404 | Invalid Instant (date+hour) format |
 | 430 | Attempted to get the identity of a non-identifiable user |
 
 ### 9xx codes
@@ -554,6 +555,17 @@ All endpoints are checked: the caller must have admins permissions (by specifyin
 
 TODO: document this
 
+#### BanRequest
+
+```json5
+{
+  "reason": "...",
+  "expiresOn": "..." // nullable
+}
+```
+
+TODO: document this
+
 ### POST /admin/idrequest
 
 **Request the identity of a user.** This will notify the "target" user (following the instance's privacy settings).
@@ -629,3 +641,16 @@ May return a 400 HTTP error with error code 403 if the ID does not make sense (s
 
 ### POST /admin/ban/{msftHash}
 
+**Ban someone.**
+
+```http request
+POST /admin/ban/{msftHash}
+SessionId: abcdef12345 # mandatory
+Content-Type: application/json # mandatory
+```
+
+The request body is a [BanRequest](#banrequest) object.
+
+Should the ban request have an invalid expiry date, the request is ignored and an HTTP 400 error with [error code 404](#4xx-codes) is returned.
+
+Returns the newly created ban as a [BanInfo](#baninfo) object.

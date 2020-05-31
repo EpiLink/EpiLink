@@ -32,6 +32,7 @@ import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import java.time.Instant
 import java.util.*
 
 interface LinkAdminApi {
@@ -114,6 +115,25 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 val bans = dbf.getBansFor(msftHashBytes)
                 val data = UserBans(bans.any { banLogic.isBanActive(it) }, bans.map { it.toBanInfo() })
                 call.respond(ApiSuccessResponse(data = data))
+            }
+
+            @ApiEndpoint("POST /api/v1/admin/user/{msftHash}")
+            post {
+                val request: BanRequest = call.receive()
+                val expiry = request.expiresOn?.let { runCatching { Instant.parse(it) }.getOrNull() }
+                if (expiry == null && request.expiresOn != null) {
+                    call.respond(BadRequest, InvalidInstant.toResponse("Invalid expiry timestamp."))
+                } else {
+                    val session = call.sessions.get<ConnectedSession>()!!
+                    val identity = idAccessor.accessIdentity(
+                        session.discordId,
+                        true,
+                        "EpiLink Admin Service",
+                        "You requested a ban on someone else: your identity was retrieved for logging purposes."
+                    )
+                    val result = banManager.ban(call.parameters["msftHash"]!!, expiry, identity, request.reason)
+                    call.respond(OK, ApiSuccessResponse("Ban created.", result.toBanInfo()))
+                }
             }
 
             route("{banId}") {
