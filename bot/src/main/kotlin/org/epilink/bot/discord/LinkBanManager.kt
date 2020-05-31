@@ -23,21 +23,22 @@ import java.time.Instant
 import java.util.*
 
 interface LinkBanManager {
-    suspend fun ban(userId: String, expiresOn: Instant?, author: String, reason: String): LinkBan
+    suspend fun ban(msftHashBase64: String, expiresOn: Instant?, author: String, reason: String): LinkBan
 
     suspend fun revokeBan(msftHashBase64: String, banId: Int)
 }
 
 internal class LinkBanManagerImpl : LinkBanManager, KoinComponent {
-    private val db: LinkServerDatabase by inject()
     private val dbf: LinkDatabaseFacade by inject()
     private val roleManager: LinkRoleManager by inject()
     private val banLogic: LinkBanLogic by inject()
 
-    override suspend fun ban(userId: String, expiresOn: Instant?, author: String, reason: String): LinkBan {
-        val u = db.getUser(userId) ?: throw LinkException("User '$userId' does not exist")
-        val ban = dbf.recordBan(u.msftIdHash, expiresOn, author, reason)
-        roleManager.invalidateAllRoles(userId)
+    override suspend fun ban(msftHashBase64: String, expiresOn: Instant?, author: String, reason: String): LinkBan {
+        val actualHash = Base64.getUrlDecoder().decode(msftHashBase64)
+        val ban = dbf.recordBan(actualHash, expiresOn, author, reason)
+        val user = dbf.getUserFromMsftIdHash(actualHash)
+        if (user != null)
+            roleManager.invalidateAllRoles(user.discordId)
         return ban
     }
 

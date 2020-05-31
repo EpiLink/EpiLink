@@ -25,41 +25,27 @@ class BanManagerTest : KoinBaseTest(
     }
 ) {
     @Test
-    fun `Test ban on non-existing user`() {
-        mockHere<LinkServerDatabase> {
-            coEvery { getUser("userid") } returns null
-        }
-        test {
-            val exc = assertFailsWith<LinkException> {
-                ban("userid", null, "big boy", "the big desc")
-            }
-            assertEquals("User 'userid' does not exist", exc.message)
-        }
-    }
-
-    @Test
     fun `Test ban on existing user`() {
         val idHash = byteArrayOf(1, 2, 3, 4)
+        val idHashStr = Base64.getEncoder().encodeToString(idHash)
         val u = mockk<LinkUser> {
-            every { msftIdHash } returns idHash
+            every { discordId } returns "targetid"
         }
         val ban = mockk<LinkBan>()
-        mockHere<LinkServerDatabase> {
-            coEvery { getUser("userid") } returns u
-        }
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { recordBan(idHash, null, "the_author", "the description") } returns ban
+            coEvery { getUserFromMsftIdHash(any()) } returns u
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles("userid") } returns mockk()
+            coEvery { invalidateAllRoles("targetid") } returns mockk()
         }
         test {
-            val realBan = ban("userid", null, "the_author", "the description")
+            val realBan = ban(idHashStr, null, "the_author", "the description")
             assertSame(ban, realBan)
         }
         coVerify {
             df.recordBan(idHash, null, "the_author", "the description")
-            rm.invalidateAllRoles("userid")
+            rm.invalidateAllRoles("targetid")
         }
     }
 
