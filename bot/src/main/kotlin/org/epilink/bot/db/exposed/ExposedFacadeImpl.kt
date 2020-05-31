@@ -63,7 +63,12 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
 
     override suspend fun getUser(discordId: String): LinkUser? =
         newSuspendedTransaction(db = db) {
-            ExposedUser.find { ExposedUsers.discordId eq discordId }.firstOrNull()
+            ExposedUser.find(ExposedUsers.discordId eq discordId).firstOrNull()
+        }
+
+    override suspend fun getUserFromMsftIdHash(msftIdHash: ByteArray): LinkUser? =
+        newSuspendedTransaction(db = db) {
+            ExposedUser.find(ExposedUsers.msftIdHash eq msftIdHash).firstOrNull()
         }
 
     override suspend fun doesUserExist(discordId: String): Boolean =
@@ -123,6 +128,13 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             }
             u
         }
+
+    override suspend fun revokeBan(banId: Int) {
+        newSuspendedTransaction(db = db) {
+            val ban = ExposedBan[banId]
+            ban.revoked = true
+        }
+    }
 
     @UsesTrueIdentity
     override suspend fun isUserIdentifiable(discordId: String): Boolean {
@@ -328,7 +340,7 @@ private object ExposedUsers : IntIdTable("Users") {
     /**
      * The SHA256 hash of the User's Microsoft ID
      */
-    val msftIdHash = binary("msftIdHash", 64)
+    val msftIdHash = binary("msftIdHash", 64).uniqueIndex()
 
     /**
      * The creation date of the user's account

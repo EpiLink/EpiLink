@@ -25,10 +25,8 @@ import io.ktor.sessions.sessions
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
-import org.epilink.bot.http.ApiEndpoint
-import org.epilink.bot.http.ApiErrorResponse
-import org.epilink.bot.http.ApiSuccessResponse
-import org.epilink.bot.http.LinkSessionChecks
+import org.epilink.bot.discord.LinkBanManager
+import org.epilink.bot.http.*
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
@@ -46,6 +44,8 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val dbf: LinkDatabaseFacade by inject()
     private val idAccessor: LinkIdAccessor by inject()
     private val banLogic: LinkBanLogic by inject()
+    private val banManager: LinkBanManager by inject()
+
     override fun install(route: Route) {
         with(route) { admin() }
     }
@@ -116,22 +116,36 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 call.respond(ApiSuccessResponse(data = data))
             }
 
-            @ApiEndpoint("GET /api/v1/admin/user/{msftHash}/{banId}")
-            get("{banId}") {
-                val msftHash = call.parameters["msftHash"]!!
-                val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
-                val banId = call.parameters["banId"]!!.toIntOrNull()
-                if (banId == null) {
-                    call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format"))
-                } else {
-                    val ban = dbf.getBan(banId)
-                    when {
-                        ban == null ->
-                            call.respond(NotFound, InvalidId.toResponse("No ban with given ID found"))
-                        !ban.msftIdHash.contentEquals(msftHashBytes) ->
-                            call.respond(NotFound, InvalidId.toResponse("Microsoft ID hash does not correspond"))
-                        else ->
-                            call.respond(OK, ApiSuccessResponse(data = ban.toBanInfo()))
+            route("{banId}") {
+                @ApiEndpoint("GET /api/v1/admin/user/{msftHash}/{banId}")
+                get {
+                    val msftHash = call.parameters["msftHash"]!!
+                    val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
+                    val banId = call.parameters["banId"]!!.toIntOrNull()
+                    if (banId == null) {
+                        call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format"))
+                    } else {
+                        val ban = dbf.getBan(banId)
+                        when {
+                            ban == null ->
+                                call.respond(NotFound, InvalidId.toResponse("No ban with given ID found"))
+                            !ban.msftIdHash.contentEquals(msftHashBytes) ->
+                                call.respond(NotFound, InvalidId.toResponse("Microsoft ID hash does not correspond"))
+                            else ->
+                                call.respond(OK, ApiSuccessResponse(data = ban.toBanInfo()))
+                        }
+                    }
+                }
+
+                @ApiEndpoint("POST /api/v1/admin/user/{msftHash}/{banId}/revoke")
+                post("revoke") {
+                    val msftHash = call.parameters["msftHash"]!!
+                    val banId = call.parameters["banId"]!!.toIntOrNull()
+                    if (banId == null) {
+                        call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format"))
+                    } else {
+                        banManager.revokeBan(msftHash, banId)
+                        call.respond(OK, apiSuccess("Ban revoked."))
                     }
                 }
             }

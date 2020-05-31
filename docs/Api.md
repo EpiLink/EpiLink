@@ -617,5 +617,15 @@ Returns a [BanInfo](#baninfo) object.
 
 **Revoke a ban**
 
+```http request
+POST /admin/ban/{msftHash}/{banId}/revoke
+```
+
+Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid) and `{banId}` is the ID of the specific ban that needs to be retrieved.
+
+Revokes the ban, making it effectively ignored. If the ban was active before being revoked, the user's roles are re-evaluated.
+
+May return a 400 HTTP error with error code 403 if the ID does not make sense (similar to what [the GET does](#get-adminbanmsfthashbanid)).
+
 ### POST /admin/ban/{msftHash}
 

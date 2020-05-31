@@ -19,6 +19,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.db.*
+import org.epilink.bot.discord.LinkBanManager
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkSessionChecks
@@ -361,6 +362,28 @@ class AdminTest : KoinBaseTest(
                 assertEquals(403, data.code)
             }
         }
+    }
+
+    @Test
+    fun `Test revoking a ban`() {
+        declare(named("admins")) { listOf("adminid") }
+        val msftHash = byteArrayOf(1, 2, 3, 4, 5)
+        val msftHashStr = Base64.getUrlEncoder().encodeToString(msftHash)
+        val bm = mockHere<LinkBanManager> {
+            coEvery { revokeBan(any(), 12345) } returns mockk()
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Post, "/api/v1/admin/ban/$msftHashStr/12345/revoke") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val info = fromJson<ApiSuccess>(response)
+                assertEquals("Ban revoked.", info.message)
+                assertNull(info.data)
+            }
+        }
+        coVerify { bm.revokeBan(any(), 12345) }
     }
 
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
