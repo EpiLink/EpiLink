@@ -205,7 +205,7 @@ class RegistrationTest : KoinBaseTest(
             }
         }
         val bot = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles(any()) } returns mockk()
+            coEvery { invalidateAllRoles(any(), true) } returns mockk()
         }
         val lua = mockHere<LinkUserApi> {
             every { loginAs(any(), any(), "no", "maybe") } just runs
@@ -242,13 +242,10 @@ class RegistrationTest : KoinBaseTest(
                 assertStatus(HttpStatusCode.Created)
                 verify { lua.loginAs(any(), any(), "no", "maybe") }
             }
-            coVerify { db.createUser("yes", "fakeguid", "fakemail", true) }
-            // Simulate the DB knowing about the new user
-            mockHere<LinkServerDatabase> {
-                coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
-                coEvery { isUserIdentifiable("yes") } returns true
+            coVerify {
+                db.createUser("yes", "fakeguid", "fakemail", true)
+                bot.invalidateAllRoles(any(), true)
             }
-            coVerify { bot.invalidateAllRoles(any()) }
         }
     }
 

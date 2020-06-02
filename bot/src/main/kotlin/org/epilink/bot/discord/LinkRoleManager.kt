@@ -80,8 +80,12 @@ interface LinkRoleManager {
      * user.
      *
      * This function returns immediately and the operation is ran in a separate coroutine scope.
+     *
+     * @param discordId The ID of the person whose roles should be reset and re-determined
+     * @param tellUserIfFailed True if the user should be notified in case of a failure, false if such failure should
+     * be silent
      */
-    fun invalidateAllRoles(discordId: String): Job
+    fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean = false): Job
 
     /**
      * Get the role list for a user. The user may have an EpiLink or not, the user may be banned or not.
@@ -120,6 +124,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         logger.error("Uncaught exception in role manager launched coroutine", ex)
     })
 
+    // TODO Add some tests for this function. Its individual components are tested but the whole *apparently* isn't
     override suspend fun updateRolesOnGuilds(
         discordId: String,
         guilds: Collection<String>,
@@ -156,10 +161,10 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             updateRolesOnGuilds(memberId, listOf(guildId), true)
     }
 
-    override fun invalidateAllRoles(discordId: String): Job =
+    override fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean): Job =
         scope.launch {
             ruleMediator.invalidateCache(discordId)
-            updateRolesOnGuilds(discordId, facade.getGuilds(), true)
+            updateRolesOnGuilds(discordId, facade.getGuilds(), tellUserIfFailed)
         }
 
     override suspend fun getRulesRelevantForGuilds(
@@ -212,6 +217,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         facade.manageRoles(discordId, guildId, toObtain, toRemove)
     }
 
+    // TODO indicate actual server where this happens instead of just "any server"
     @OptIn(UsesTrueIdentity::class)
     override suspend fun getRolesForUser(
         userId: String,
@@ -228,7 +234,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             adv is Disallowed -> {
                 // Disallowed user
                 if (tellUserIfFailed)
-                    facade.sendDirectMessage(userId, messages.getCouldNotJoinEmbed("any server at all", adv.reason))
+                    facade.sendDirectMessage(userId, messages.getCouldNotJoinEmbed("any server", adv.reason))
                 setOf<String>().also { logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" } }
             }
             // At this point the user is known and allowed

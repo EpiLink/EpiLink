@@ -158,7 +158,7 @@ class UserTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
         }
         val rm = mockHere<LinkRoleManager> {
-            every { invalidateAllRoles("userid") } returns mockk()
+            every { invalidateAllRoles("userid", true) } returns mockk()
         }
         val sd = mockHere<LinkServerDatabase> {
             coEvery { isUserIdentifiable("userid") } returns false
@@ -177,7 +177,7 @@ class UserTest : KoinBaseTest(
             }
         }
         coVerify {
-            rm.invalidateAllRoles(any())
+            rm.invalidateAllRoles(any(), true)
             sd.relinkMicrosoftIdentity("userid", email, "MyMicrosoftId")
             sessionChecks.verifyUser(any())
         }

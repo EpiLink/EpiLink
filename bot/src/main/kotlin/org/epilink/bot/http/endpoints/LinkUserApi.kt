@@ -112,7 +112,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 }
                 val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
                 db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
-                roleManager.invalidateAllRoles(session.discordId)
+                roleManager.invalidateAllRoles(session.discordId, true)
                 call.respond(apiSuccess("Successfully relinked Microsoft account"))
             }
 

@@ -115,7 +115,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                         val options: AdditionalRegistrationOptions =
                             call.receiveCatching() ?: return@post
                         val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
-                        roleManager.invalidateAllRoles(u.discordId)
+                        roleManager.invalidateAllRoles(u.discordId, true)
                         with(userApi) { loginAs(call, u, discordUsername, discordAvatarUrl) }
                         logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
                         call.respond(
