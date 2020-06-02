@@ -22,6 +22,7 @@ import io.ktor.sessions.Sessions
 import io.ktor.sessions.header
 import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.CacheClient
+import org.epilink.bot.LinkException
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes.UnknownError
 import org.epilink.bot.http.endpoints.LinkAdminApi
@@ -50,8 +51,13 @@ interface LinkBackEnd {
 
     /**
      * Install the error handling interceptor. Automatically called by [epilinkApiModule].
+     *
+     * This automatically catches [LinkEndpointException] and any other exceptions. For the former, a 400 or 500 error
+     * is generated (depending on the exception's [isEndUserAtFault][LinkEndpointException.isEndUserAtFault] value). For
+     * the latter, a 500 error is generated.
+     *
+     * This logs any error and makes sure than any internal error gets returned as a correct API response.
      */
-    // TODO describe the error handling process
     fun Route.installErrorHandling()
 
     /**
