@@ -10,7 +10,6 @@ package org.epilink.bot.http.endpoints
 
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
@@ -22,11 +21,13 @@ import io.ktor.routing.post
 import io.ktor.routing.route
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
-import org.epilink.bot.http.*
+import org.epilink.bot.http.ApiEndpoint
+import org.epilink.bot.http.ApiSuccessResponse
+import org.epilink.bot.http.LinkSessionChecks
+import org.epilink.bot.http.apiSuccess
 import org.epilink.bot.http.data.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
@@ -35,7 +36,15 @@ import org.koin.core.inject
 import java.time.Instant
 import java.util.*
 
+/**
+ * Component that implements administration routes (that is, routes under /admin/). Administration routes
+ * not only require authentication (i.e. logged in user) but also proper authorization (i.e. is actually an admin)
+ */
 interface LinkAdminApi {
+    /**
+     * Install the admin routes into this route. Call this at the root: the implementation will take care of
+     * putting itself under /api/v1/admin.
+     */
     fun install(route: Route)
 }
 

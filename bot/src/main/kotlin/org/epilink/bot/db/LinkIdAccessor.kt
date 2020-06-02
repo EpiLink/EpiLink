@@ -14,7 +14,21 @@ import org.epilink.bot.discord.LinkDiscordMessages
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
+/**
+ * Component that implements ID accessing logic
+ */
 interface LinkIdAccessor {
+    /**
+     * Access the identity of the target.
+     *
+     * @param targetId The Discord ID of the person whose identity should be retrieved
+     * @param automated True if this action is done automatically, false if it is made from an admin's request
+     * @param author The person who requested the identity. May be displayed to the user depending on the server's
+     * privacy settings.
+     * @param reason The reason for the identity access. Will be displayed to the user
+     * @return The identity of the user (e-mail address)
+     * @throws LinkException if the user is not identifiable (i.e. does not have their identity stored in the database)
+     */
     @UsesTrueIdentity
     suspend fun accessIdentity(targetId: String, automated: Boolean, author: String, reason: String): String
 }

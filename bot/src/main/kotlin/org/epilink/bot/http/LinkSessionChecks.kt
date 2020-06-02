@@ -57,7 +57,7 @@ interface LinkSessionChecks {
 }
 
 internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
-    private val logger = LoggerFactory.getLogger("epilink.api.scheck")
+    private val logger = LoggerFactory.getLogger("epilink.api.sessioncheck")
 
     private val db: LinkServerDatabase by inject()
 

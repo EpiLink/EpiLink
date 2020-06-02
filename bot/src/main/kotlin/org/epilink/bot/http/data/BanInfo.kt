@@ -6,10 +6,11 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
+@file:Suppress("KDocMissingDocumentation")
+
 package org.epilink.bot.http.data
 
 // See the Api.md documentation file for more information
-@Suppress("KDocMissingDocumentation")
 data class BanInfo(
     val id: Int,
     val revoked: Boolean,

@@ -123,7 +123,7 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     /**
      * Sent when an API call made to the admin endpoints is invalid
      */
-    InvalidAdminRequest(400, "Invalid administration requets."),
+    InvalidAdminRequest(400, "Invalid administration request."),
     /**
      * Sent when an API call made to the admin endpoints is incomplete.
      *

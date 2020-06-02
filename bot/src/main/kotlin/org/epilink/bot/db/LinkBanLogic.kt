@@ -11,11 +11,21 @@ package org.epilink.bot.db
 import org.koin.core.KoinComponent
 import java.time.Instant
 
+/**
+ * Component that implements some implementation-agnostic logic on bans
+ */
 interface LinkBanLogic {
+    /**
+     * Returns true if the given ban is considered active, false if the ban is considered inactive.
+     *
+     * A user who has at least one active ban is considered banned.
+     *
+     * A ban is considered inactive if it is revoked or has expired. Otherwise, it is considered active.
+     */
     fun isBanActive(ban: LinkBan): Boolean
 }
 
-class LinkBanLogicImpl : KoinComponent, LinkBanLogic {
+internal class LinkBanLogicImpl : KoinComponent, LinkBanLogic {
     override fun isBanActive(ban: LinkBan): Boolean {
         if(ban.revoked)
             return false

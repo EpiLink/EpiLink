@@ -13,7 +13,19 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
 
+/**
+ * A general purpose class for "sending messages later", with "fire and forget" async logic.
+ */
 interface LinkDiscordMessageSender {
+    /**
+     * Send the given message to the user with the given Discord ID at some point in the future.
+     *
+     * The coroutine is immediately scheduled for execution. It is returned as a Job.
+     *
+     * @param discordId The ID of the person who this message should be sent to
+     * @param message The message ot send
+     * @return The task represented as a job
+     */
     fun sendDirectMessageLater(discordId: String, message: DiscordEmbed): Job
 }
 
