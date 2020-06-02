@@ -197,7 +197,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
     override suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory {
         val activeBan = facade.getBansFor(dbUser.msftIdHash).firstOrNull { banLogic.isBanActive(it) }
         if (activeBan != null) {
-            logger.debug { "Active ban found for user ${dbUser.discordId} (with reason ${activeBan.reason}." }
+            logger.debug { "Active ban found for user ${dbUser.discordId} (with reason ${activeBan.reason})." }
             return Disallowed("You are banned from joining any server at the moment. (Ban reason: ${activeBan.reason})")
         }
         return Allowed
