@@ -388,6 +388,7 @@ class AdminTest : KoinBaseTest(
         coVerify { bm.revokeBan(any(), 12345) }
     }
 
+    @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test creating a ban with valid instant format`() {
         declare(named("admins")) { listOf("adminid") }

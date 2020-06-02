@@ -15,6 +15,7 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 
 interface LinkIdAccessor {
+    @UsesTrueIdentity
     suspend fun accessIdentity(targetId: String, automated: Boolean, author: String, reason: String): String
 }
 

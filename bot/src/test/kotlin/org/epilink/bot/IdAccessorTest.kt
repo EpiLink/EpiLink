@@ -53,6 +53,7 @@ class IdAccessorTest : KoinBaseTest(
         }
     }
 
+    @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test automated id access user does not exist`() {
         mockHere<LinkServerDatabase> {

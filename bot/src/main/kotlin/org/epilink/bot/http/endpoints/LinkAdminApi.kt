@@ -108,7 +108,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
         }
 
         route("ban/{msftHash}") {
-            @ApiEndpoint("GET /api/v1/admin/user/{msftHash}")
+            @ApiEndpoint("GET /api/v1/admin/ban/{msftHash}")
             get {
                 val msftHash = call.parameters["msftHash"]!!
                 val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
@@ -117,7 +117,8 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 call.respond(ApiSuccessResponse(data = data))
             }
 
-            @ApiEndpoint("POST /api/v1/admin/user/{msftHash}")
+            @ApiEndpoint("POST /api/v1/admin/ban/{msftHash}")
+            @OptIn(UsesTrueIdentity::class) // Retrieves the ID of the admin
             post {
                 val request: BanRequest = call.receive()
                 val expiry = request.expiresOn?.let { runCatching { Instant.parse(it) }.getOrNull() }
@@ -137,7 +138,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
             }
 
             route("{banId}") {
-                @ApiEndpoint("GET /api/v1/admin/user/{msftHash}/{banId}")
+                @ApiEndpoint("GET /api/v1/admin/ban/{msftHash}/{banId}")
                 get {
                     val msftHash = call.parameters["msftHash"]!!
                     val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
@@ -157,7 +158,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     }
                 }
 
-                @ApiEndpoint("POST /api/v1/admin/user/{msftHash}/{banId}/revoke")
+                @ApiEndpoint("POST /api/v1/admin/ban/{msftHash}/{banId}/revoke")
                 post("revoke") {
                     val msftHash = call.parameters["msftHash"]!!
                     val banId = call.parameters["banId"]!!.toIntOrNull()
