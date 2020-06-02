@@ -21,7 +21,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
-* Re-added the server(s) name(s) in the "could not authenticate you" Discord embed ([#161](https://github.com/EpiLink/EpiLink/pull/161)) 
+* Re-added the server(s) name(s) in the "could not authenticate you" Discord embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Fixed an extra newline in an embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Fixed some Discord crashes called by the client deciding that it does not want to exist ([#161](https://github.com/EpiLink/EpiLink/pull/161)) 
 
 ## [0.2.0] - 2020-05-05
 
