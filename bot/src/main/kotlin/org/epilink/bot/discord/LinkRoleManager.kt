@@ -97,12 +97,15 @@ interface LinkRoleManager {
      * @param rulesInfo Rules alongside the guilds that request the use of such rules
      * @param tellUserIfFailed If true, the user is warned if he is banned via a Discord DM. If false, the role
      * update is stopped silently.
+     * @param guildIds The IDs of the guilds where the roles are needed. Only used for displaying guild names to the
+     * user in case of an error notification.
      */
     @OptIn(UsesTrueIdentity::class)
     suspend fun getRolesForUser(
         userId: String,
         rulesInfo: Collection<RuleWithRequestingGuilds>,
-        tellUserIfFailed: Boolean
+        tellUserIfFailed: Boolean,
+        guildIds: Collection<String>
     ): Set<String>
 }
 
@@ -138,7 +141,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         val rules = getRulesRelevantForGuilds(*whereConnected.toTypedArray())
         logger.debug { "Updating ${discordId}'s roles requires calling the rules ${rules.joinToString(", ") { it.rule.name }}" }
         // Compute the roles
-        val roles = getRolesForUser(discordId, rules, tellUserIfFailed)
+        val roles = getRolesForUser(discordId, rules, tellUserIfFailed, guilds)
         logger.debug {
             "Computed EpiLink roles for $discordId for guilds ${whereConnected.joinToString(", ")}:" +
                     roles.joinToString(", ")
@@ -222,7 +225,8 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     override suspend fun getRolesForUser(
         userId: String,
         rulesInfo: Collection<RuleWithRequestingGuilds>,
-        tellUserIfFailed: Boolean
+        tellUserIfFailed: Boolean,
+        guildIds: Collection<String>
     ): Set<String> {
         // Get the user. If the user is unknown, return an empty set: they should not have any role
         val dbUser = database.getUser(userId)
@@ -234,7 +238,12 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             adv is Disallowed -> {
                 // Disallowed user
                 if (tellUserIfFailed)
-                    facade.sendDirectMessage(userId, messages.getCouldNotJoinEmbed("any server", adv.reason))
+                    facade.sendDirectMessage(
+                        userId,
+                        // See the other SimplifiableCallChain in this file for explanations
+                        @Suppress("SimplifiableCallChain")
+                        messages.getCouldNotJoinEmbed(guildIds.map { facade.getGuildName(it) }.joinToString(", "), adv.reason)
+                    )
                 setOf<String>().also { logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" } }
             }
             // At this point the user is known and allowed
@@ -313,7 +322,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             targetId = dbUser.discordId,
             automated = true,
             author = "EpiLink Discord Bot",
-            reason =  "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
+            reason = "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
                     strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().map { facade.getGuildName(it) }
                         .joinToString(", ")
         )

@@ -41,17 +41,19 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { sendDirectMessage("userid", any()) } just runs
             coEvery { isUserInGuild("userid", "guildid") } returns true
+            coEvery { getGuildName("Hello") } returns "There"
         }
         val dm = mockHere<LinkDiscordMessages> {
-            every { getCouldNotJoinEmbed(any(), "This is my reason") } returns mockk()
+            every { getCouldNotJoinEmbed("There", "This is my reason") } returns mockk()
         }
         runBlocking {
             val rm = get<LinkRoleManager>()
-            rm.getRolesForUser("userid", mockk(), true)
+            rm.getRolesForUser("userid", mockk(), true, listOf("Hello"))
         }
         coVerifyAll {
             sd.canUserJoinServers(any())
             dcf.sendDirectMessage("userid", any())
+            dcf.getGuildName("Hello")
             sd.getUser("userid")
             dm.getCouldNotJoinEmbed(any(), "This is my reason")
         }
@@ -250,7 +252,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), false)
+            val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
     }
@@ -264,7 +266,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), false)
+            val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
     }
@@ -279,13 +281,14 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val embed: DiscordEmbed = mockk()
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { sendDirectMessage("userid", embed) } just runs
+            coEvery { getGuildName("HELLO THERE") } returns "GENERAL KENOBI"
         }
         mockHere<LinkDiscordMessages> {
-            every { getCouldNotJoinEmbed(any(), "This is my reason") } returns embed
+            every { getCouldNotJoinEmbed("GENERAL KENOBI", "This is my reason") } returns embed
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), true)
+            val roles = rm.getRolesForUser("userid", mockk(), true, listOf("HELLO THERE"))
             assertTrue(roles.isEmpty(), "roles should be empty")
         }
         coVerify { dcf.sendDirectMessage("userid", embed) }
@@ -302,7 +305,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(), true)
+            val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
             assertEquals(setOf("_known"), roles)
         }
     }
@@ -318,7 +321,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(), true)
+            val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
             assertEquals(setOf("_known", "_identified"), roles)
         }
     }
@@ -364,7 +367,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
                     RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
                     RuleWithRequestingGuilds(rule2, setOf("Otherrr"))
                 ),
-                true
+                true,
+                listOf()
             )
             assertEquals(
                 setOf("_known", "_identified", "sir_email@@", "sirId_userid", "wirId_userid", "wirDisc_disc"),
@@ -404,7 +408,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
                     RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
                     RuleWithRequestingGuilds(rule2, setOf("Other"))
                 ),
-                true
+                true,
+                listOf()
             )
             assertEquals(setOf("_known", "wirId_userid", "wirDisc_disc"), roles)
         }
