@@ -40,6 +40,8 @@ interface LinkServerDatabase {
     /**
      * Checks whether a user should be able to join a server (i.e. not banned, no irregularities)
      *
+     * At present, the only reason for a known user to be denied joining servers is if they are banned.
+     *
      * @return a database advisory with a end-user friendly reason.
      */
     suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory
@@ -193,9 +195,10 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
     }
 
     override suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory {
-        if (facade.getBansFor(dbUser.msftIdHash).any { banLogic.isBanActive(it) }) {
-            logger.debug { "Active bans found for user ${dbUser.discordId}" }
-            return Disallowed("You are banned from joining any server at the moment.")
+        val activeBan = facade.getBansFor(dbUser.msftIdHash).firstOrNull { banLogic.isBanActive(it) }
+        if (activeBan != null) {
+            logger.debug { "Active ban found for user ${dbUser.discordId} (with reason ${activeBan.reason}." }
+            return Disallowed("You are banned from joining any server at the moment. (Ban reason: ${activeBan.reason})")
         }
         return Allowed
     }

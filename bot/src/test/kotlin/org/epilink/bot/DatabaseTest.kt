@@ -166,7 +166,7 @@ class DatabaseTest : KoinBaseTest(
     fun `Test indefinitely banned user cannot join servers`() {
         val hey = "tested".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(hey) } returns listOf(mockk())
+            coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "HELLO THERE" })
         }
         mockHere<LinkBanLogic> {
             every { isBanActive(any()) } returns true
@@ -177,6 +177,7 @@ class DatabaseTest : KoinBaseTest(
                 every { discordId } returns "banneduid"
             })
             assertTrue(adv is Disallowed, "Expected disallowed")
+            assertTrue(adv.reason.contains("HELLO THERE"), "Expected ban reason to be present")
         }
     }
 
