@@ -220,7 +220,6 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         facade.manageRoles(discordId, guildId, toObtain, toRemove)
     }
 
-    // TODO indicate actual server where this happens instead of just "any server"
     @OptIn(UsesTrueIdentity::class)
     override suspend fun getRolesForUser(
         userId: String,
