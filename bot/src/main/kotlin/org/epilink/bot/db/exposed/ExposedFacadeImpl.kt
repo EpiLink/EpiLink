@@ -93,6 +93,8 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
                 expiresOn = until
                 issued = Instant.now()
                 this.author = author
+                this.reason = reason
+                revoked = false
             }
         }
 
@@ -280,7 +282,7 @@ private object ExposedBans : IntIdTable("Bans") {
     /*
      * True if the ban is revoked and should be ignored, false otherwise
      */
-    val revoked = bool("revoked").default(false)
+    val revoked = bool("revoked")
 
     val author = varchar("author", 40)
 
@@ -297,7 +299,8 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
         ExposedBans
     )
 
-    override val banId = id.value
+    override val banId
+        get() = id.value
 
     /**
      * The SHA256 hash of the Microsoft ID of the banned user.

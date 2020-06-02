@@ -80,6 +80,7 @@ class LinkServerEnvironment(
             LinkDiscord4JFacadeImpl(cfg.tokens.discordOAuthClientId, cfg.tokens.discordToken)
         }
         single<LinkDiscordMessageSender> { LinkDiscordMessageSenderImpl() }
+        single<LinkBanManager> { LinkBanManagerImpl() }
     }
 
     /**
