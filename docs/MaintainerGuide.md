@@ -358,3 +358,29 @@ All options are optional, but you should fill them in regardless. Not filling th
 Seek legal advice if you do not know what to put in the terms of services or the privacy policy. These may not even be required if you are using EpiLink as part of an intranet infrastructure.
 
 You may also want to specify `contacts` in the [server configuration](#http-server-settings).
+
+## Administration
+
+Here is what you can do using the administrative actions provided by EpiLink: 
+
+- [Get information about a user](Api.md#get-adminuseruserid)
+- [Get a user's true identity](Api.md#post-adminidrequest)
+- [Ban a user](Api.md#post-adminbanmsfthash), [get previous bans](Api.md#get-adminbanmsfthash) and [revoke them](Api.md#post-adminbanmsfthashbanidrevoke)
+
+!> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
+
+### Bans
+
+Bans are simple: a banned user will not get any role from EpiLink. That's all!
+
+- A user is banned if they have at least one active ban 
+- Bans can have an expiration date, after which they will no longer count towards a user being "banned" (i.e. they will no longer be considered active bans)
+- Bans can also be manually revoked before their expiration date. A revoked ban no longer counts towards a user being "banned" (i.e. they will no longer be considered active bans)
+
+!> EpiLink does not automatically refresh the roles of a banned user whose ban has expired. They will have to have their roles refreshed in another way, e.g. by leaving and re-joining the server, changing whether their ID is kept in the system or not, etc.
+
+### ID Access
+
+**Any ID access done through the API may lead to a notification on the user's side**, depending on your [privacy configuration](#privacy-configuration).
+
+An ID access allows you to get a user's identity while also notifying them for more transparency. Note that while you can disable the ID access notifications (i.e. the Discord DMs), the users will always see every ID access from their profile page.
