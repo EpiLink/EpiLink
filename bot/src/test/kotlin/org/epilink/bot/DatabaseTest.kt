@@ -65,13 +65,14 @@ class DatabaseTest : KoinBaseTest(
     }
 
     @Test
-    fun `Test indefinitely banned Microsoft user cannot create account`() {
+    fun `Test banned Microsoft user cannot create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
             coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
-            coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns null
-            })
+            coEvery { getBansFor(hey) } returns listOf(mockk())
+        }
+        mockHere<LinkBanLogic> {
+            every { isBanActive(any()) } returns true
         }
         mockHere<Rulebook> {
             every { validator } returns { true }
@@ -80,43 +81,6 @@ class DatabaseTest : KoinBaseTest(
             val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("banned"), "Reason should contain word banned")
-        }
-    }
-
-    @Test
-    fun `Test temporarily banned Microsoft user cannot create account`() {
-        val hey = "hey".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
-            coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns Instant.now().plus(Duration.ofDays(1))
-            })
-        }
-        mockHere<Rulebook> {
-            every { validator } returns { true }
-        }
-        test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
-            assertTrue(adv is Disallowed, "Creation should be disallowed")
-            assertTrue(adv.reason.contains("banned"), "Reason should contain word banned")
-        }
-    }
-
-    @Test
-    fun `Test temporarily banned Microsoft user with ban expired can create account`() {
-        val hey = "hey".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
-            coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns Instant.now().minusSeconds(1)
-            })
-        }
-        mockHere<Rulebook> {
-            every { validator } returns { true }
-        }
-        test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
-            assertTrue(adv is Allowed)
         }
     }
 
@@ -202,9 +166,10 @@ class DatabaseTest : KoinBaseTest(
     fun `Test indefinitely banned user cannot join servers`() {
         val hey = "tested".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns null
-            })
+            coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "HELLO THERE" })
+        }
+        mockHere<LinkBanLogic> {
+            every { isBanActive(any()) } returns true
         }
         test {
             val adv = canUserJoinServers(mockk {
@@ -212,37 +177,7 @@ class DatabaseTest : KoinBaseTest(
                 every { discordId } returns "banneduid"
             })
             assertTrue(adv is Disallowed, "Expected disallowed")
-        }
-    }
-
-    @Test
-    fun `Test actively banned user cannot join servers`() {
-        val hey = "tested".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns Instant.now().plus(Duration.ofDays(1))
-            })
-        }
-        test {
-            val adv = canUserJoinServers(mockk {
-                every { msftIdHash } returns hey
-                every { discordId } returns "banneduid"
-            })
-            assertTrue(adv is Disallowed, "Expected disallowed")
-        }
-    }
-
-    @Test
-    fun `Test expired ban on user can join servers`() {
-        val hey = "tested".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(hey) } returns listOf(mockk {
-                every { expiresOn } returns Instant.now().minusSeconds(1)
-            })
-        }
-        test {
-            val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
-            assertEquals(Allowed, adv, "Expected allowed")
+            assertTrue(adv.reason.contains("HELLO THERE"), "Expected ban reason to be present")
         }
     }
 
@@ -279,14 +214,12 @@ class DatabaseTest : KoinBaseTest(
             )
         }
 
-        val sd = get<LinkServerDatabase>()
-
         // Test with human identity disclosed
         mockHere<LinkPrivacy> {
             every { shouldDiscloseIdentity(any()) } returns true
         }
-        runBlocking {
-            val al = sd.getIdAccessLogs("userid")
+        test {
+            val al = getIdAccessLogs("userid")
             assertTrue(al.manualAuthorsDisclosed)
             assertEquals(2, al.accesses.size)
             assertTrue(IdAccess(false, "The Admin Of Things", "The reason", inst.toString()) in al.accesses)
@@ -315,14 +248,13 @@ class DatabaseTest : KoinBaseTest(
             )
         }
 
-        val sd = get<LinkServerDatabase>()
         // Test without human identity disclosed
         mockHere<LinkPrivacy> {
             every { shouldDiscloseIdentity(false) } returns false
             every { shouldDiscloseIdentity(true) } returns true
         }
-        runBlocking {
-            val al = sd.getIdAccessLogs("userid")
+        test {
+            val al = getIdAccessLogs("userid")
             assertFalse(al.manualAuthorsDisclosed)
             assertEquals(2, al.accesses.size)
             assertTrue(IdAccess(false, null, "The reason", inst.toString()) in al.accesses)
@@ -356,10 +288,9 @@ class DatabaseTest : KoinBaseTest(
                 every { msftIdHash } returns originalHash
             }
         }
-        val sd = get<LinkServerDatabase>()
-        runBlocking {
+        test {
             val exc = assertFailsWith<LinkEndpointException> {
-                sd.relinkMicrosoftIdentity("userid", "this doesn't matter", "That is definitely not okay")
+                relinkMicrosoftIdentity("userid", "this doesn't matter", "That is definitely not okay")
             }
             assertEquals(112, exc.errorCode.code)
             assertTrue(exc.isEndUserAtFault)
@@ -378,9 +309,8 @@ class DatabaseTest : KoinBaseTest(
             }
             coEvery { recordNewIdentity("userid", "mynewemail@email.com") } just runs
         }
-        val sd = get<LinkServerDatabase>()
-        runBlocking {
-            sd.relinkMicrosoftIdentity("userid", "mynewemail@email.com", id)
+        test {
+            relinkMicrosoftIdentity("userid", "mynewemail@email.com", id)
         }
         coVerify { df.recordNewIdentity("userid", "mynewemail@email.com") }
     }
@@ -391,10 +321,9 @@ class DatabaseTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable("userid") } returns false
         }
-        val sd = get<LinkServerDatabase>()
-        runBlocking {
+        test {
             val exc = assertFailsWith<LinkEndpointException> {
-                sd.deleteUserIdentity("userid")
+                deleteUserIdentity("userid")
             }
             assertEquals(111, exc.errorCode.code)
             assertTrue(exc.isEndUserAtFault)
@@ -408,9 +337,8 @@ class DatabaseTest : KoinBaseTest(
             coEvery { isUserIdentifiable("userid") } returns true
             coEvery { eraseIdentity("userid") } just runs
         }
-        val sd = get<LinkServerDatabase>()
-        runBlocking {
-            sd.deleteUserIdentity("userid")
+        test {
+            deleteUserIdentity("userid")
         }
         coVerify { df.eraseIdentity("userid") }
     }

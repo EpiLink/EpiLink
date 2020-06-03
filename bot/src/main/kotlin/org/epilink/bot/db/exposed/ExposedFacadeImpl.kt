@@ -63,7 +63,12 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
 
     override suspend fun getUser(discordId: String): LinkUser? =
         newSuspendedTransaction(db = db) {
-            ExposedUser.find { ExposedUsers.discordId eq discordId }.firstOrNull()
+            ExposedUser.find(ExposedUsers.discordId eq discordId).firstOrNull()
+        }
+
+    override suspend fun getUserFromMsftIdHash(msftIdHash: ByteArray): LinkUser? =
+        newSuspendedTransaction(db = db) {
+            ExposedUser.find(ExposedUsers.msftIdHash eq msftIdHash).firstOrNull()
         }
 
     override suspend fun doesUserExist(discordId: String): Boolean =
@@ -76,9 +81,31 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             ExposedUser.count(ExposedUsers.msftIdHash eq hash) > 0
         }
 
+    override suspend fun recordBan(
+        target: ByteArray,
+        until: Instant?,
+        author: String,
+        reason: String
+    ): LinkBan =
+        newSuspendedTransaction(db = db) {
+            ExposedBan.new {
+                msftIdHash = target
+                expiresOn = until
+                issued = Instant.now()
+                this.author = author
+                this.reason = reason
+                revoked = false
+            }
+        }
+
     override suspend fun getBansFor(hash: ByteArray): List<LinkBan> =
         newSuspendedTransaction(db = db) {
             ExposedBan.find(ExposedBans.msftIdHash eq hash).toList()
+        }
+
+    override suspend fun getBan(banId: Int): LinkBan? =
+        newSuspendedTransaction(db = db) {
+            ExposedBan.findById(banId)
         }
 
     @OptIn(UsesTrueIdentity::class)
@@ -103,6 +130,13 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             }
             u
         }
+
+    override suspend fun revokeBan(banId: Int) {
+        newSuspendedTransaction(db = db) {
+            val ban = ExposedBan[banId]
+            ban.revoked = true
+        }
+    }
 
     @UsesTrueIdentity
     override suspend fun isUserIdentifiable(discordId: String): Boolean {
@@ -232,18 +266,27 @@ private object ExposedBans : IntIdTable("Bans") {
      * their account (i.e. delete the row of that user in the [ExposedUsers] table)
      * while still maintaining the information that this Microsoft ID is banned.
      */
-    var msftIdHash = binary("msftIdHash", 64)
+    val msftIdHash = binary("msftIdHash", 64)
 
     /**
      * Null if this is a definitive ban, the expiration date if this is a
      * temporary ban.
      */
-    var expiresOn = timestamp("expiresOn").nullable()
+    val expiresOn = timestamp("expiresOn").nullable()
 
     /**
      * The time at which the ban was issued
      */
-    var issued = timestamp("issued")
+    val issued = timestamp("issued")
+
+    /*
+     * True if the ban is revoked and should be ignored, false otherwise
+     */
+    val revoked = bool("revoked")
+
+    val author = varchar("author", 40)
+
+    val reason = varchar("reason", 2000)
 }
 
 /**
@@ -255,6 +298,9 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
     companion object : IntEntityClass<ExposedBan>(
         ExposedBans
     )
+
+    override val banId
+        get() = id.value
 
     /**
      * The SHA256 hash of the Microsoft ID of the banned user.
@@ -274,6 +320,12 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
      * The time at which the ban was created
      */
     override var issued by ExposedBans.issued
+
+    override var revoked by ExposedBans.revoked
+
+    override var author by ExposedBans.author
+
+    override var reason by ExposedBans.reason
 }
 
 /**
@@ -291,7 +343,7 @@ private object ExposedUsers : IntIdTable("Users") {
     /**
      * The SHA256 hash of the User's Microsoft ID
      */
-    val msftIdHash = binary("msftIdHash", 64)
+    val msftIdHash = binary("msftIdHash", 64).uniqueIndex()
 
     /**
      * The creation date of the user's account

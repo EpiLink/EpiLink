@@ -4,7 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] (0.3.0)
+
+### Added
+
+* Added administration endpoints (and its documentation) ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Added banning abilities ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+    * **BREAKING CHANGE:** The Bans table of the database was improved significantly: delete it (you could not ban people anyway) and EpiLink will re-create it for you.
+* Added manual ID access ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Added retrieving additional information about users ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+
+
+### Changed
+
+* Refactored the back-end APIs ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+
+### Fixed
+
+* Re-added the server(s) name(s) in the "could not authenticate you" Discord embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Fixed an extra newline in an embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Fixed some Discord crashes called by the client deciding that it does not want to exist ([#161](https://github.com/EpiLink/EpiLink/pull/161)) 
 
 ## [0.2.0] - 2020-05-05
 

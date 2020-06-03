@@ -13,13 +13,10 @@ import org.epilink.bot.CacheClient
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.isMonitored
+import org.epilink.bot.db.*
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
-import org.epilink.bot.db.Disallowed
-import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.debug
 import org.koin.core.KoinComponent
 import org.koin.core.get
@@ -83,8 +80,12 @@ interface LinkRoleManager {
      * user.
      *
      * This function returns immediately and the operation is ran in a separate coroutine scope.
+     *
+     * @param discordId The ID of the person whose roles should be reset and re-determined
+     * @param tellUserIfFailed True if the user should be notified in case of a failure, false if such failure should
+     * be silent
      */
-    fun invalidateAllRoles(discordId: String): Job
+    fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean = false): Job
 
     /**
      * Get the role list for a user. The user may have an EpiLink or not, the user may be banned or not.
@@ -96,12 +97,15 @@ interface LinkRoleManager {
      * @param rulesInfo Rules alongside the guilds that request the use of such rules
      * @param tellUserIfFailed If true, the user is warned if he is banned via a Discord DM. If false, the role
      * update is stopped silently.
+     * @param guildIds The IDs of the guilds where the roles are needed. Only used for displaying guild names to the
+     * user in case of an error notification.
      */
     @OptIn(UsesTrueIdentity::class)
     suspend fun getRolesForUser(
         userId: String,
         rulesInfo: Collection<RuleWithRequestingGuilds>,
-        tellUserIfFailed: Boolean
+        tellUserIfFailed: Boolean,
+        guildIds: Collection<String>
     ): Set<String>
 }
 
@@ -115,6 +119,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val config: LinkDiscordConfig by inject()
     private val rulebook: Rulebook by inject()
     private val facade: LinkDiscordClientFacade by inject()
+    private val idAccessor: LinkIdAccessor by inject()
     private val ruleMediator: RuleMediator by lazy {
         get<CacheClient>().newRuleMediator("el_rc_")
     }
@@ -122,6 +127,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         logger.error("Uncaught exception in role manager launched coroutine", ex)
     })
 
+    // TODO Add some tests for this function. Its individual components are tested but the whole *apparently* isn't
     override suspend fun updateRolesOnGuilds(
         discordId: String,
         guilds: Collection<String>,
@@ -135,7 +141,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         val rules = getRulesRelevantForGuilds(*whereConnected.toTypedArray())
         logger.debug { "Updating ${discordId}'s roles requires calling the rules ${rules.joinToString(", ") { it.rule.name }}" }
         // Compute the roles
-        val roles = getRolesForUser(discordId, rules, tellUserIfFailed)
+        val roles = getRolesForUser(discordId, rules, tellUserIfFailed, guilds)
         logger.debug {
             "Computed EpiLink roles for $discordId for guilds ${whereConnected.joinToString(", ")}:" +
                     roles.joinToString(", ")
@@ -158,10 +164,10 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             updateRolesOnGuilds(memberId, listOf(guildId), true)
     }
 
-    override fun invalidateAllRoles(discordId: String): Job =
+    override fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean): Job =
         scope.launch {
             ruleMediator.invalidateCache(discordId)
-            updateRolesOnGuilds(discordId, facade.getGuilds(), true)
+            updateRolesOnGuilds(discordId, facade.getGuilds(), tellUserIfFailed)
         }
 
     override suspend fun getRulesRelevantForGuilds(
@@ -218,7 +224,8 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     override suspend fun getRolesForUser(
         userId: String,
         rulesInfo: Collection<RuleWithRequestingGuilds>,
-        tellUserIfFailed: Boolean
+        tellUserIfFailed: Boolean,
+        guildIds: Collection<String>
     ): Set<String> {
         // Get the user. If the user is unknown, return an empty set: they should not have any role
         val dbUser = database.getUser(userId)
@@ -230,7 +237,12 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             adv is Disallowed -> {
                 // Disallowed user
                 if (tellUserIfFailed)
-                    facade.sendDirectMessage(userId, messages.getCouldNotJoinEmbed("any server at all", adv.reason))
+                    facade.sendDirectMessage(
+                        userId,
+                        // See the other SimplifiableCallChain in this file for explanations
+                        @Suppress("SimplifiableCallChain")
+                        messages.getCouldNotJoinEmbed(guildIds.map { facade.getGuildName(it) }.joinToString(", "), adv.reason)
+                    )
                 setOf<String>().also { logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" } }
             }
             // At this point the user is known and allowed
@@ -302,20 +314,17 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             "Identity required for strong rules (Discord user ${dbUser.discordId}, rules " +
                     strongIdRulesInfo.joinToString(", ") { it.rule.name } + ")"
         }
-        val author = "EpiLink Discord Bot"
         // IntelliJ wants to put facade.getGuildName in joinToString which is not possible because joinToString is not
         // inline-able and we need coroutines here
         @Suppress("SimplifiableCallChain")
-        val reason =
-            "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
+        return idAccessor.accessIdentity(
+            targetId = dbUser.discordId,
+            automated = true,
+            author = "EpiLink Discord Bot",
+            reason = "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
                     strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().map { facade.getGuildName(it) }
                         .joinToString(", ")
-        val id = database.accessIdentity(dbUser, true, author, reason)
-        messages.getIdentityAccessEmbed(true, author, reason)?.let {
-            facade.sendDirectMessage(dbUser.discordId, it)
-        }
-        return id
-
+        )
     }
 }
 

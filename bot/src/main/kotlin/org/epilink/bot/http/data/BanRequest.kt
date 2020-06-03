@@ -6,29 +6,11 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-@file:Suppress("KDocMissingDocumentation")
-
 package org.epilink.bot.http.data
 
 // See the Api.md documentation file for more information
-data class IdAccessLogs(
-    val manualAuthorsDisclosed: Boolean,
-    val accesses: List<IdAccess>
-)
-
-data class IdAccess(
-    val automated: Boolean,
-    val author: String?,
+@Suppress("KDocMissingDocumentation")
+data class BanRequest(
     val reason: String,
-    val timestamp: String
-)
-
-data class IdRequest(
-    val target: String,
-    val reason: String
-)
-
-data class IdRequestResult(
-    val target: String,
-    val identity: String
+    val expiresOn: String?
 )

@@ -28,6 +28,11 @@ interface LinkDatabaseFacade {
     suspend fun getUser(discordId: String): LinkUser?
 
     /**
+     * Returns the user with the given Microsoft ID hash, or null if no such user exists
+     */
+    suspend fun getUserFromMsftIdHash(msftIdHash: ByteArray): LinkUser?
+
+    /**
      * Checks if a user exists with the given Discord ID.
      */
     suspend fun doesUserExist(discordId: String): Boolean
@@ -41,6 +46,21 @@ interface LinkDatabaseFacade {
      * Get the list of bans associated with the given Microsoft ID hash.
      */
     suspend fun getBansFor(hash: ByteArray): List<LinkBan>
+
+    /**
+     * Gets a ban with the given ban ID, or null if no such ban exists
+     */
+    suspend fun getBan(banId: Int): LinkBan?
+
+    /**
+     * Record a new ban against a user.
+     */
+    suspend fun recordBan(target: ByteArray, until: Instant?, author: String, reason: String) : LinkBan
+
+    /**
+     * Mark a ban as revoked. Does nothing if the ban was already revoked.
+     */
+    suspend fun revokeBan(banId: Int)
 
     /**
      * Create a user in the database using the given registration session's information, without any check on the data's

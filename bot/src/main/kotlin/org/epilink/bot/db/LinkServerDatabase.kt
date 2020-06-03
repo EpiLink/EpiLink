@@ -40,6 +40,8 @@ interface LinkServerDatabase {
     /**
      * Checks whether a user should be able to join a server (i.e. not banned, no irregularities)
      *
+     * At present, the only reason for a known user to be denied joining servers is if they are banned.
+     *
      * @return a database advisory with a end-user friendly reason.
      */
     suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory
@@ -53,7 +55,8 @@ interface LinkServerDatabase {
     suspend fun isUserIdentifiable(discordId: String): Boolean
 
     /**
-     * Retrieve the identity of a user. This access is logged within the system and the user is notified.
+     * Retrieve the identity of a user. This access is logged within the system but the user is not notified.
+     * Notification should be handled by using the Discord classes.
      */
     @UsesTrueIdentity
     suspend fun accessIdentity(
@@ -125,6 +128,8 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
 
     private val rulebook: Rulebook by inject()
 
+    private val banLogic: LinkBanLogic by inject()
+
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     override suspend fun createUser(
         discordId: String,
@@ -156,14 +161,6 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
     override suspend fun getUser(discordId: String): LinkUser? =
         facade.getUser(discordId)
 
-    /**
-     * Checks whether a ban is currently active or not
-     */
-    private fun LinkBan.isActive(): Boolean {
-        val expiry = expiresOn
-        return /* Ban does not expire */ expiry == null || /* Ban has not expired */ expiry.isAfter(Instant.now())
-    }
-
     override suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory {
         return if (facade.doesUserExist(discordId))
             Disallowed("This Discord account already exists")
@@ -179,7 +176,7 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
             return Disallowed("This e-mail address was rejected. Are you sure you are using the correct Microsoft account?")
         }
         val b = facade.getBansFor(hash)
-        if (b.any { it.isActive() }) {
+        if (b.any { banLogic.isBanActive(it) }) {
             return Disallowed("This Microsoft account is banned")
         }
         return Allowed
@@ -198,9 +195,10 @@ internal class LinkServerDatabaseImpl : LinkServerDatabase, KoinComponent {
     }
 
     override suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory {
-        if (facade.getBansFor(dbUser.msftIdHash).any { it.isActive() }) {
-            logger.debug { "Active bans found for user ${dbUser.discordId}" }
-            return Disallowed("You are banned from joining any server at the moment.")
+        val activeBan = facade.getBansFor(dbUser.msftIdHash).firstOrNull { banLogic.isBanActive(it) }
+        if (activeBan != null) {
+            logger.debug { "Active ban found for user ${dbUser.discordId} (with reason ${activeBan.reason})." }
+            return Disallowed("You are banned from joining any server at the moment. (Ban reason: ${activeBan.reason})")
         }
         return Allowed
     }

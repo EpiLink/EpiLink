@@ -35,6 +35,11 @@ interface LinkUser {
  */
 interface LinkBan {
     /**
+     * Opaque identifier for this ban
+     */
+    val banId: Int
+
+    /**
      * The banned user's Microsoft ID SHA-256 hash
      */
     val msftIdHash: ByteArray
@@ -48,6 +53,23 @@ interface LinkBan {
      * The time at which the ban was created
      */
     val issued: Instant
+
+    /**
+     * True if the ban is revoked and should be ignored, false otherwise
+     */
+    val revoked: Boolean
+
+    /**
+     * The name (or email address) of the person who created the ban.
+     *
+     * This value is only here for administrative purposes and is not displayed to the user
+     */
+    val author: String
+
+    /**
+     * The human-readable reason for the ban. May be displayed to the user.
+     */
+    val reason: String
 }
 
 /**

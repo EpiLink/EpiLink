@@ -55,7 +55,11 @@ data class LinkConfiguration(
     /**
      * Legal configuration, with ToS and privacy policy configs
      */
-    val legal: LinkLegalConfiguration = LinkLegalConfiguration()
+    val legal: LinkLegalConfiguration = LinkLegalConfiguration(),
+    /**
+     * List of administrators (by Discord ID)
+     */
+    val admins: List<String> = listOf()
 )
 
 /**
@@ -380,7 +384,7 @@ fun LinkTokens.check(): List<ConfigReportElement> {
         report += ConfigError(true, "discordToken was left with its default value: please provide a bot token!")
     }
     if (msftOAuthClientId == "...") {
-        report += ConfigError(true, "msftOauthCliientId was left with its default value: please provide a client ID!")
+        report += ConfigError(true, "msftOauthClientId was left with its default value: please provide a client ID!")
     }
     if (msftOAuthSecret == "...") {
         report += ConfigError(true, "msftOAuthSecret was left with its default value: please provide a secret!")

@@ -11,24 +11,16 @@
 package org.epilink.bot.http.data
 
 // See the Api.md documentation file for more information
-data class IdAccessLogs(
-    val manualAuthorsDisclosed: Boolean,
-    val accesses: List<IdAccess>
-)
-
-data class IdAccess(
-    val automated: Boolean,
-    val author: String?,
+data class BanInfo(
+    val id: Int,
+    val revoked: Boolean,
+    val author: String,
     val reason: String,
-    val timestamp: String
+    val issuedAt: String,
+    val expiresOn: String?
 )
 
-data class IdRequest(
-    val target: String,
-    val reason: String
-)
-
-data class IdRequestResult(
-    val target: String,
-    val identity: String
+data class UserBans(
+    val banned: Boolean,
+    val bans: List<BanInfo>
 )

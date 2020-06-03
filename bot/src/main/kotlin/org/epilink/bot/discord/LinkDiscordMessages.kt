@@ -67,8 +67,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
             title = ":closed_lock_with_key: Authentication required for $guildName",
             description =
                 """
-                **Welcome to $guildName**. Access to this server is restricted. Please log in using the link
-                below to get full access to the server's channels.
+                **Welcome to $guildName**. Access to this server is restricted. Please log in using the link below to get full access to the server's channels.
                 """.trimIndent(),
             fields = run {
                 val ml = mutableListOf<DiscordEmbedField>()

@@ -70,6 +70,8 @@ dependencies {
     testImplementation "org.koin:koin-test:2.1.5"
     testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
     testImplementation "io.ktor:ktor-client-mock-jvm:$ktorVersion"
+    // see https://github.com/mockk/mockk/issues/397#issuecomment-570799334
+    testRuntimeOnly "net.bytebuddy:byte-buddy:1.10.10"
 }
 
 test {
