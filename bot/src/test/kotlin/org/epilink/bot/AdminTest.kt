@@ -82,7 +82,7 @@ class AdminTest : KoinBaseTest(
             coEvery { getUser("userid") } returns u
             coEvery { isUserIdentifiable(u) } returns true
         }
-        val lia = mockHere<LinkIdAccessor> {
+        val lia = mockHere<LinkIdManager> {
             coEvery {
                 accessIdentity(u, false, "admin.name@email", "thisismyreason")
             } returns "trueidentity@othermail"
@@ -415,7 +415,7 @@ class AdminTest : KoinBaseTest(
         val bm = mockHere<LinkBanManager> {
             coEvery { ban(msftHashStr, instant, "author identity", "This is my reason") } returns ban
         }
-        mockHere<LinkIdAccessor> {
+        mockHere<LinkIdManager> {
             coEvery {
                 accessIdentity(match { it.discordId == "adminid" }, true, any(), any())
             } returns "author identity"

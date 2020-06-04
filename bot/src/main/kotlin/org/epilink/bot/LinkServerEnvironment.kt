@@ -54,7 +54,7 @@ class LinkServerEnvironment(
         // Admin list
         single(named("admins")) { cfg.admins }
         // "Glue" thing that calls everything required when accessing an identity
-        single<LinkIdAccessor> { LinkIdAccessorImpl() }
+        single<LinkIdManager> { LinkIdManagerImpl() }
         // Ban-related logic (isActive...)
         single<LinkBanLogic> { LinkBanLogicImpl() }
         // Permission checks (e.g. check if a user can create an account)

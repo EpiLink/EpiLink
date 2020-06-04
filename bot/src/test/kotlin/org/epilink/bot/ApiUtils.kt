@@ -23,7 +23,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.db.LinkIdAccessor
+import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.RuleMediator
@@ -119,7 +119,7 @@ internal fun KoinTest.setupSession(
         }
     }
     if (trueIdentity != null) {
-        softMockHere<LinkIdAccessor> {
+        softMockHere<LinkIdManager> {
             coEvery { accessIdentity(u, any(), any(), any()) } returns trueIdentity
         }
     }

@@ -340,7 +340,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     fun `Test get roles, with rules, identifiable`() {
         val user: LinkUser = mockk { every { discordId } returns "userid" }
-        val lia = mockHere<LinkIdAccessor> {
+        val lia = mockHere<LinkIdManager> {
             coEvery { accessIdentity(user, any(), any(), any()) } returns "email@@"
         }
         mockHere<LinkDatabaseFacade> {

@@ -45,7 +45,7 @@ interface LinkAdminApi {
 internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val sessionChecks: LinkSessionChecks by inject()
     private val dbf: LinkDatabaseFacade by inject()
-    private val idAccessor: LinkIdAccessor by inject()
+    private val idManager: LinkIdManager by inject()
     private val banLogic: LinkBanLogic by inject()
     private val banManager: LinkBanManager by inject()
 
@@ -78,13 +78,13 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     call.respond(BadRequest, TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
-                    val adminTid = idAccessor.accessIdentity(
+                    val adminTid = idManager.accessIdentity(
                         admin,
                         true,
                         "EpiLink Admin Service",
                         "You requested another user's identity: your identity was retrieved for logging purposes."
                     )
-                    val userTid = idAccessor.accessIdentity(target, false, adminTid, request.reason)
+                    val userTid = idManager.accessIdentity(target, false, adminTid, request.reason)
                     call.respond(ApiSuccessResponse(data = IdRequestResult(request.target, userTid)))
                 }
             }
@@ -128,7 +128,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     call.respond(BadRequest, InvalidInstant.toResponse("Invalid expiry timestamp."))
                 } else {
                     val admin = call.admin
-                    val identity = idAccessor.accessIdentity(
+                    val identity = idManager.accessIdentity(
                         admin,
                         true,
                         "EpiLink Admin Service",

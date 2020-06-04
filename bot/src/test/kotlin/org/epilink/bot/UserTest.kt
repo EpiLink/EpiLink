@@ -20,7 +20,7 @@ import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.db.LinkIdAccessor
+import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
@@ -119,7 +119,7 @@ class UserTest : KoinBaseTest(
     fun `Test user access logs retrieval`() {
         val inst1 = Instant.now() - Duration.ofHours(1)
         val inst2 = Instant.now() - Duration.ofHours(10)
-        mockHere<LinkIdAccessor> {
+        mockHere<LinkIdManager> {
             coEvery { getIdAccessLogs(match { it.discordId == "discordid" }) } returns IdAccessLogs(
                 manualAuthorsDisclosed = false,
                 accesses = listOf(
@@ -174,7 +174,7 @@ class UserTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false
         }
-        val ida = mockHere<LinkIdAccessor> {
+        val ida = mockHere<LinkIdManager> {
             coEvery { relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId") } just runs
         }
         withTestEpiLink {
@@ -238,7 +238,7 @@ class UserTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false
         }
-        mockHere<LinkIdAccessor> {
+        mockHere<LinkIdManager> {
             coEvery {
                 relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
             } throws LinkEndpointException(
@@ -289,7 +289,7 @@ class UserTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns true
         }
-        val ida = mockHere<LinkIdAccessor> {
+        val ida = mockHere<LinkIdManager> {
             coEvery { deleteUserIdentity(match { it.discordId == "userid" }) } just runs
         }
         val rm = mockHere<LinkRoleManager> {

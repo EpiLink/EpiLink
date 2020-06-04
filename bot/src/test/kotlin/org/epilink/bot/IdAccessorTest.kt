@@ -24,7 +24,7 @@ import kotlin.test.*
 
 class IdAccessorTest : KoinBaseTest(
     module {
-        single<LinkIdAccessor> { LinkIdAccessorImpl() }
+        single<LinkIdManager> { LinkIdManagerImpl() }
     }
 ) {
     @OptIn(UsesTrueIdentity::class)
@@ -223,7 +223,7 @@ class IdAccessorTest : KoinBaseTest(
         }
     }
 
-    private fun <R> test(block: suspend LinkIdAccessor.() -> R) =
+    private fun <R> test(block: suspend LinkIdManager.() -> R) =
         runBlocking {
             block(get())
         }

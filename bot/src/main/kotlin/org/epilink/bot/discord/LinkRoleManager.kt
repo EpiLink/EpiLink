@@ -118,7 +118,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val config: LinkDiscordConfig by inject()
     private val rulebook: Rulebook by inject()
     private val facade: LinkDiscordClientFacade by inject()
-    private val idAccessor: LinkIdAccessor by inject()
+    private val idManager: LinkIdManager by inject()
     private val dbFacade: LinkDatabaseFacade by inject()
     private val perms: LinkPermissionChecks by inject()
     private val ruleMediator: RuleMediator by lazy {
@@ -318,7 +318,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         // IntelliJ wants to put facade.getGuildName in joinToString which is not possible because joinToString is not
         // inline-able and we need coroutines here
         @Suppress("SimplifiableCallChain")
-        return idAccessor.accessIdentity(
+        return idManager.accessIdentity(
             user = dbUser,
             automated = true,
             author = "EpiLink Discord Bot",

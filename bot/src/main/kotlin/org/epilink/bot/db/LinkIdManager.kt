@@ -28,8 +28,7 @@ import java.security.MessageDigest
 /**
  * Component that implements ID accessing logic
  */
-// TODO rename to LinkIdManager
-interface LinkIdAccessor {
+interface LinkIdManager {
     /**
      * Access the identity of the target.
      *
@@ -82,7 +81,7 @@ interface LinkIdAccessor {
     suspend fun deleteUserIdentity(user: LinkUser)
 }
 
-internal class LinkIdAccessorImpl : LinkIdAccessor, KoinComponent {
+internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.idaccessor")
     private val facade: LinkDatabaseFacade by inject()
     private val messages: LinkDiscordMessages by inject()
