@@ -16,10 +16,12 @@ import io.ktor.response.respond
 import io.ktor.sessions.clear
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
+import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import org.epilink.bot.LinkException
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toErrorData
@@ -63,7 +65,8 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
 
     override suspend fun verifyUser(context: PipelineContext<Unit, ApplicationCall>): Boolean = with(context) {
         val session = call.sessions.get<ConnectedSession>()
-        if (session == null || dbFacade.getUser(session.discordId) == null /* see #121 */) {
+        val user = session?.let { dbFacade.getUser(session.discordId) }
+        if (user == null) {
             call.sessions.clear<ConnectedSession>()
             logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
             call.respond(
@@ -72,14 +75,17 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
             )
             finish()
             false
-        } else true
+        } else {
+            call.attributes.put(userObjAttribute, user)
+            true
+        }
     }
 
     @OptIn(UsesTrueIdentity::class) // Checks if the admin is identifiable
     override suspend fun verifyAdmin(context: PipelineContext<Unit, ApplicationCall>): Boolean = with(context) {
-        val session = call.sessions.get<ConnectedSession>()
+        val user = call.attributes.getOrNull(userObjAttribute)
             ?: throw LinkException("Call verifyUser before verifyAdmin!")
-        if (session.discordId !in admins) {
+        if (user.discordId !in admins) {
             // Not an admin
             call.respond(
                 HttpStatusCode.Unauthorized,
@@ -87,7 +93,7 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
             )
             finish()
             false
-        } else if (!dbFacade.isUserIdentifiable(dbFacade.getUser(session.discordId)!!)) {
+        } else if (!dbFacade.isUserIdentifiable(user)) {
             // Admin but not identifiable
             call.respond(
                 HttpStatusCode.Unauthorized,
@@ -98,7 +104,16 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
             finish()
             false
         } else {
+            call.attributes.put(adminObjAttribute, user)
             true
         }
     }
 }
+
+internal val userObjAttribute = AttributeKey<LinkUser>("EpiLinkUserObject")
+val ApplicationCall.user: LinkUser
+    get() = this.attributes[userObjAttribute]
+
+internal val adminObjAttribute = AttributeKey<LinkUser>("EpiLinkAdminObject")
+val ApplicationCall.admin: LinkUser
+    get() = this.attributes[adminObjAttribute]

@@ -20,7 +20,7 @@ compileKotlin {
 
 compileTestKotlin {
     kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-XXLanguage:+NewInference"]
 }
 
 application {
