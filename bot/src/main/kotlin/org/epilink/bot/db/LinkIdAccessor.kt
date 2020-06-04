@@ -29,12 +29,11 @@ import java.security.MessageDigest
  * Component that implements ID accessing logic
  */
 // TODO rename to LinkIdManager
-// TODO replace targetId by a LinkUser object
 interface LinkIdAccessor {
     /**
      * Access the identity of the target.
      *
-     * @param targetId The Discord ID of the person whose identity should be retrieved
+     * @param user The user whose identity should be retrieved
      * @param automated True if this action is done automatically, false if it is made from an admin's request
      * @param author The person who requested the identity. May be displayed to the user depending on the server's
      * privacy settings.
@@ -43,13 +42,13 @@ interface LinkIdAccessor {
      * @throws LinkException if the user is not identifiable (i.e. does not have their identity stored in the database)
      */
     @UsesTrueIdentity
-    suspend fun accessIdentity(targetId: String, automated: Boolean, author: String, reason: String): String
+    suspend fun accessIdentity(user: LinkUser, automated: Boolean, author: String, reason: String): String
 
 
     /**
      * Get the identity access logs as an [IdAccessLogs] object, ready to be sent.
      */
-    suspend fun getIdAccessLogs(discordId: String): IdAccessLogs
+    suspend fun getIdAccessLogs(user: LinkUser): IdAccessLogs
 
     /**
      * Record the identity of the user with the given discordId, using the given email. The ID hash given must be the
@@ -63,24 +62,24 @@ interface LinkIdAccessor {
      *
      * If all goes well, the user then has a true identity created for them.
      *
-     * @param discordId The Discord ID of the user of whom we want to relink the identity
+     * @param user The user of whom we want to relink the identity
      * @param email The new e-mail address
      * @param associatedMsftId The Microsoft ID (not hashed) associated with the new e-mail address
      * @throws LinkEndpointException If the identity of the user is already known, or if the given new ID does not
      * match the previous one
      */
     @UsesTrueIdentity
-    suspend fun relinkMicrosoftIdentity(discordId: String, email: String, associatedMsftId: String)
+    suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String)
 
     /**
      * Delete the identity of the user with the given Discord ID from the database, or throw a [LinkEndpointException]
      * if no such identity exists.
      *
-     * @param discordId The Discord ID of the user whose identity we should remove
+     * @param user The user whose identity we should remove
      * @throws LinkEndpointException If the user does not have any identity recorded in the first place.
      */
     @UsesTrueIdentity
-    suspend fun deleteUserIdentity(discordId: String)
+    suspend fun deleteUserIdentity(user: LinkUser)
 }
 
 internal class LinkIdAccessorImpl : LinkIdAccessor, KoinComponent {
@@ -92,54 +91,49 @@ internal class LinkIdAccessorImpl : LinkIdAccessor, KoinComponent {
 
 
     @UsesTrueIdentity
-    override suspend fun accessIdentity(targetId: String, automated: Boolean, author: String, reason: String): String {
+    override suspend fun accessIdentity(user: LinkUser, automated: Boolean, author: String, reason: String): String {
         // TODO replace all the exceptions with a distinct return value (sealed class or something)
         //      This should probably be done in the facade implementation itself though
-        val user = facade.getUser(targetId) ?: throw LinkException("User does not exist")
         if (!facade.isUserIdentifiable(user)) {
             throw LinkException("User is not identifiable")
         }
         val embed = messages.getIdentityAccessEmbed(automated, author, reason)
         if (embed != null)
-            discordSender.sendDirectMessageLater(targetId, embed)
+            discordSender.sendDirectMessageLater(user.discordId, embed)
         return facade.getUserEmailWithAccessLog(user, automated, author, reason)
     }
 
     @UsesTrueIdentity
-    override suspend fun relinkMicrosoftIdentity(discordId: String, email: String, associatedMsftId: String) {
-        val u = facade.getUser(discordId) ?: throw LinkException("User not found: $discordId")
-        if (facade.isUserIdentifiable(u)) {
+    override suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String) {
+        if (facade.isUserIdentifiable(user)) {
             throw LinkEndpointException(IdentityAlreadyKnown, "Cannot update identity, it is already known", true)
         }
-        val knownHash = u.msftIdHash
+        val knownHash = user.msftIdHash
         val newHash = associatedMsftId.hashSha256()
         if (!knownHash.contentEquals(newHash)) {
             throw LinkEndpointException(NewIdentityDoesNotMatch, isEndUserAtFault = true)
         }
-        facade.recordNewIdentity(u, email)
+        facade.recordNewIdentity(user, email)
     }
 
-    override suspend fun getIdAccessLogs(discordId: String): IdAccessLogs {
-        val u = facade.getUser(discordId) ?: throw LinkException("User not found: $discordId")
-        return IdAccessLogs(
+    override suspend fun getIdAccessLogs(user: LinkUser): IdAccessLogs =
+        IdAccessLogs(
             manualAuthorsDisclosed = privacy.shouldDiscloseIdentity(false),
-            accesses = facade.getIdentityAccessesFor(u).map { a ->
+            accesses = facade.getIdentityAccessesFor(user).map { a ->
                 IdAccess(
                     a.automated,
                     a.authorName.takeIf { privacy.shouldDiscloseIdentity(a.automated) },
                     a.reason,
                     a.timestamp.toString()
                 )
-            }.also { logger.debug { "Acquired access logs for $discordId" } }
+            }.also { logger.debug { "Acquired access logs for ${user.discordId}" } }
         )
-    }
 
     @UsesTrueIdentity
-    override suspend fun deleteUserIdentity(discordId: String) {
-        val u = facade.getUser(discordId) ?: throw LinkException("User not found: $discordId")
-        if (!facade.isUserIdentifiable(u))
+    override suspend fun deleteUserIdentity(user: LinkUser) {
+        if (!facade.isUserIdentifiable(user))
             throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
-        facade.eraseIdentity(u)
+        facade.eraseIdentity(user)
     }
 }
 

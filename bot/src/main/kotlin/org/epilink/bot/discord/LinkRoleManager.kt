@@ -319,7 +319,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         // inline-able and we need coroutines here
         @Suppress("SimplifiableCallChain")
         return idAccessor.accessIdentity(
-            targetId = dbUser.discordId,
+            user = dbUser,
             automated = true,
             author = "EpiLink Discord Bot",
             reason = "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +

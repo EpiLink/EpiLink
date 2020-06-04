@@ -17,16 +17,16 @@ import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
-import org.epilink.bot.http.*
+import org.epilink.bot.http.LinkBackEnd
+import org.epilink.bot.http.LinkBackEndImpl
+import org.epilink.bot.http.LinkSessionChecks
+import org.epilink.bot.http.adminObjAttribute
 import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkAdminApiImpl
-import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.get
@@ -77,17 +77,17 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test manual identity request on identifiable`() {
         declare(named("admins")) { listOf("adminid") }
-        val u = mockk<LinkUser>()
+        val u = mockk<LinkUser> { every { discordId } returns "discordId" }
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
             coEvery { isUserIdentifiable(u) } returns true
         }
         val lia = mockHere<LinkIdAccessor> {
             coEvery {
-                accessIdentity("userid", false, "admin.name@email", "thisismyreason")
+                accessIdentity(u, false, "admin.name@email", "thisismyreason")
             } returns "trueidentity@othermail"
             coEvery {
-                accessIdentity("adminid", true, any(), match { it.contains("another user") })
+                accessIdentity(match { it.discordId == "adminid" }, true, any(), match { it.contains("another user") })
             } returns "admin.name@email"
         }
         withTestEpiLink {
@@ -106,8 +106,8 @@ class AdminTest : KoinBaseTest(
             coVerify {
                 sessionChecks.verifyUser(any())
                 sessionChecks.verifyAdmin(any())
-                lia.accessIdentity("userid", false, "admin.name@email", "thisismyreason")
-                lia.accessIdentity("adminid", true, any(), match { it.contains("another user") })
+                lia.accessIdentity(u, false, "admin.name@email", "thisismyreason")
+                lia.accessIdentity(any(), true, any(), match { it.contains("another user") })
             }
         }
     }
@@ -139,7 +139,7 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test manual identity request on unidentifiable target`() {
         declare(named("admins")) { listOf("adminid") }
-        val u = mockk<LinkUser>()
+        val u = mockk<LinkUser> { every { discordId } returns "userid" }
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
             coEvery { isUserIdentifiable(u) } returns false
@@ -209,7 +209,7 @@ class AdminTest : KoinBaseTest(
         declare(named("admins")) { listOf("adminid") }
         val targetMock = mockk<LinkUser> {
             every { discordId } returns "targetid"
-            every { msftIdHash } returns kotlin.byteArrayOf(1, 2, 3)
+            every { msftIdHash } returns byteArrayOf(1, 2, 3)
             every { creationDate } returns instant
         }
         mockHere<LinkDatabaseFacade> {
@@ -243,7 +243,15 @@ class AdminTest : KoinBaseTest(
         val msftHashStr = Base64.getUrlEncoder().encodeToString(msftHash)
         val now = Instant.now()
         val bans = listOf(
-            BanImpl(0, msftHash, now - Duration.ofSeconds(10), now - Duration.ofDays(1), true, "Yeet", "You got gnomed"),
+            BanImpl(
+                0,
+                msftHash,
+                now - Duration.ofSeconds(10),
+                now - Duration.ofDays(1),
+                true,
+                "Yeet",
+                "You got gnomed"
+            ),
             BanImpl(1, msftHash, null, now - Duration.ofDays(3), false, "Oops", "Tinkie winkiiiie")
         )
         mockHere<LinkDatabaseFacade> {
@@ -408,7 +416,9 @@ class AdminTest : KoinBaseTest(
             coEvery { ban(msftHashStr, instant, "author identity", "This is my reason") } returns ban
         }
         mockHere<LinkIdAccessor> {
-            coEvery { accessIdentity("adminid", true, any(), any()) } returns "author identity"
+            coEvery {
+                accessIdentity(match { it.discordId == "adminid" }, true, any(), any())
+            } returns "author identity"
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")

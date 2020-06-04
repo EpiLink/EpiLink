@@ -341,7 +341,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
     fun `Test get roles, with rules, identifiable`() {
         val user: LinkUser = mockk { every { discordId } returns "userid" }
         val lia = mockHere<LinkIdAccessor> {
-            coEvery { accessIdentity("userid", any(), any(), any()) } returns "email@@"
+            coEvery { accessIdentity(user, any(), any(), any()) } returns "email@@"
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
@@ -387,7 +387,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
                 roles
             )
         }
-        coVerify { lia.accessIdentity("userid", any(), any(), any()) }
+        coVerify { lia.accessIdentity(user, any(), any(), any()) }
     }
 
     @Test

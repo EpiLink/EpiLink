@@ -86,7 +86,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 logger.debug { "Generating access logs for ${user.discordId}" }
                 call.respond(
                     HttpStatusCode.OK,
-                    ApiSuccessResponse(data = idAccessor.getIdAccessLogs(user.discordId))
+                    ApiSuccessResponse(data = idAccessor.getIdAccessLogs(user))
                 )
             }
 
@@ -110,7 +110,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                     throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyKnown, isEndUserAtFault = true)
                 }
                 val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
-                idAccessor.relinkMicrosoftIdentity(user.discordId, userInfo.email, userInfo.guid)
+                idAccessor.relinkMicrosoftIdentity(user, userInfo.email, userInfo.guid)
                 roleManager.invalidateAllRoles(user.discordId, true)
                 call.respond(apiSuccess("Successfully relinked Microsoft account"))
             }
@@ -120,7 +120,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
             delete("identity") {
                 val user = call.user
                 if (db.isUserIdentifiable(user)) {
-                    idAccessor.deleteUserIdentity(user.discordId)
+                    idAccessor.deleteUserIdentity(user)
                     roleManager.invalidateAllRoles(user.discordId)
                     call.respond(apiSuccess("Successfully deleted identity"))
                 } else {

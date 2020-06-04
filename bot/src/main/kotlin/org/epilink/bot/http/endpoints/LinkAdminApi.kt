@@ -79,12 +79,12 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 else -> {
                     // Get the identity of the admin
                     val adminTid = idAccessor.accessIdentity(
-                        admin.discordId,
+                        admin,
                         true,
                         "EpiLink Admin Service",
                         "You requested another user's identity: your identity was retrieved for logging purposes."
                     )
-                    val userTid = idAccessor.accessIdentity(request.target, false, adminTid, request.reason)
+                    val userTid = idAccessor.accessIdentity(target, false, adminTid, request.reason)
                     call.respond(ApiSuccessResponse(data = IdRequestResult(request.target, userTid)))
                 }
             }
@@ -129,7 +129,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 } else {
                     val admin = call.admin
                     val identity = idAccessor.accessIdentity(
-                        admin.discordId,
+                        admin,
                         true,
                         "EpiLink Admin Service",
                         "You requested a ban on someone else: your identity was retrieved for logging purposes."
