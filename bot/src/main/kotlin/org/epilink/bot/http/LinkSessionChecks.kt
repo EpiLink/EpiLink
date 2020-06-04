@@ -87,7 +87,7 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
             )
             finish()
             false
-        } else if (!dbFacade.isUserIdentifiable(session.discordId)) {
+        } else if (!dbFacade.isUserIdentifiable(dbFacade.getUser(session.discordId)!!)) {
             // Admin but not identifiable
             call.respond(
                 HttpStatusCode.Unauthorized,

@@ -80,7 +80,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
             when {
                 target == null ->
                     call.respond(BadRequest, InvalidAdminRequest.toResponse("Target does not exist"))
-                !dbf.isUserIdentifiable(request.target) ->
+                !dbf.isUserIdentifiable(target) ->
                     call.respond(BadRequest, TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
@@ -104,7 +104,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
             if (user == null) {
                 call.respond(NotFound, TargetUserDoesNotExist.toResponse())
             } else {
-                val identifiable = dbf.isUserIdentifiable(targetId)
+                val identifiable = dbf.isUserIdentifiable(user)
                 val info = RegisteredUserInfo(
                     targetId,
                     user.msftIdHash.encodeUrlSafeBase64(),

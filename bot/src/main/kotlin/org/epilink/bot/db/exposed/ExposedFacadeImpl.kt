@@ -139,27 +139,27 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     }
 
     @UsesTrueIdentity
-    override suspend fun isUserIdentifiable(discordId: String): Boolean {
-        val user = getUser(discordId) as? ExposedUser ?: throw LinkException("Unknown user $discordId")
+    override suspend fun isUserIdentifiable(user: LinkUser): Boolean {
+        val exUser = user.asExposed()
         return newSuspendedTransaction(db = db) {
-            user.trueIdentity != null
+            exUser.trueIdentity != null
         }
     }
 
     @UsesTrueIdentity
     override suspend fun getUserEmailWithAccessLog(
-        discordId: String,
+        user: LinkUser,
         automated: Boolean,
         author: String,
         reason: String
     ): String {
-        val user = getUser(discordId) as? ExposedUser ?: throw LinkException("Unknown user $discordId")
+        val exUser = user.asExposed()
         return newSuspendedTransaction(db = db) {
             val identity =
-                user.trueIdentity?.email ?: throw LinkException("Cannot get true identity of user $discordId")
+                exUser.trueIdentity?.email ?: throw LinkException("Cannot get true identity of user ${exUser.discordId}")
             // Record the identity access
             ExposedIdentityAccess.new {
-                target = user.id
+                target = exUser.id
                 authorName = author
                 this.automated = automated
                 this.reason = reason
@@ -169,30 +169,29 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         }
     }
 
-    override suspend fun getIdentityAccessesFor(discordId: String): Collection<LinkIdentityAccess> {
-        val user = getUser(discordId) as? ExposedUser ?: throw LinkException("Unknown user $discordId")
+    override suspend fun getIdentityAccessesFor(user: LinkUser): Collection<LinkIdentityAccess> {
+        val exUser = user.asExposed()
         return newSuspendedTransaction {
-            ExposedIdentityAccess.find(ExposedIdentityAccesses.target eq user.id).toList()
+            ExposedIdentityAccess.find(ExposedIdentityAccesses.target eq exUser.id).toList()
         }
     }
 
     @UsesTrueIdentity
-    override suspend fun recordNewIdentity(discordId: String, newEmail: String) {
-        val u = getUser(discordId) as? ExposedUser ?: throw LinkException("Unknown user $discordId")
+    override suspend fun recordNewIdentity(user: LinkUser, newEmail: String) {
+        val exUser = user.asExposed()
         newSuspendedTransaction {
             ExposedTrueIdentity.new {
-                user = u
+                this.user = exUser
                 email = newEmail
             }
         }
     }
 
     @UsesTrueIdentity
-    override suspend fun eraseIdentity(discordId: String) {
+    override suspend fun eraseIdentity(user: LinkUser) {
+        val exUser = user.asExposed()
         newSuspendedTransaction {
-            ExposedUser.find(ExposedUsers.discordId eq discordId)
-                .single()
-                .trueIdentity!! // We don't care about error cases, callers are responsible for checks
+            exUser.trueIdentity!! // We don't care about error cases, callers are responsible for checks
                 .delete()
         }
     }
@@ -392,6 +391,9 @@ class ExposedUser(id: EntityID<Int>) : IntEntity(id), LinkUser {
     @UsesTrueIdentity
     val trueIdentity by ExposedTrueIdentity optionalBackReferencedOn ExposedTrueIdentities.user
 }
+
+private fun LinkUser.asExposed(): ExposedUser =
+    this as? ExposedUser ?: error("Unexpected LinkUser is not from the exposed facade")
 
 /**
  * Database table for identity accesses

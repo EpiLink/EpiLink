@@ -306,7 +306,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         @OptIn(UsesTrueIdentity::class)
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
-            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { isUserIdentifiable(user) } returns false
         }
         mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
@@ -324,7 +324,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         @OptIn(UsesTrueIdentity::class)
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
-            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { isUserIdentifiable(user) } returns true
         }
         mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
@@ -345,7 +345,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
-            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { isUserIdentifiable(user) } returns true
         }
         mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
@@ -396,7 +396,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         @OptIn(UsesTrueIdentity::class)
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
-            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { isUserIdentifiable(user) } returns false
         }
         mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed

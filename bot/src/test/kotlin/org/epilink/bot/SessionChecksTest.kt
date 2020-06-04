@@ -19,6 +19,7 @@ import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.http.ApiErrorResponse
 import org.epilink.bot.http.LinkSessionChecks
@@ -196,8 +197,10 @@ class SessionChecksTest : KoinBaseTest(
             every { context } returns call
             every { finish() } just runs
         }
+        val adminUser = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("adminid") } returns false
+            coEvery { getUser("adminid") } returns adminUser
+            coEvery { isUserIdentifiable(adminUser) } returns false
         }
         declare(named("admins")) { listOf("adminid") }
         runBlocking {
@@ -220,8 +223,10 @@ class SessionChecksTest : KoinBaseTest(
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
+        val adminUser = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("adminid") } returns true
+            coEvery { getUser("adminid") } returns adminUser
+            coEvery { isUserIdentifiable(adminUser) } returns true
         }
         declare(named("admins")) { listOf("adminid") }
         runBlocking {

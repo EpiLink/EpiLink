@@ -54,7 +54,7 @@ class UserTest : KoinBaseTest(
     fun `Test user endpoint when identifiable`() {
         withTestEpiLink {
             mockHere<LinkDatabaseFacade> {
-                coEvery { isUserIdentifiable("myDiscordId") } returns true
+                coEvery { isUserIdentifiable(any()) } returns true
             }
             val sid = setupSession(
                 sessionStorage,
@@ -82,7 +82,7 @@ class UserTest : KoinBaseTest(
     fun `Test user endpoint when not identifiable`() {
         withTestEpiLink {
             mockHere<LinkDatabaseFacade> {
-                coEvery { isUserIdentifiable("myDiscordId") } returns false
+                coEvery { isUserIdentifiable(any()) } returns false
             }
             val sid = setupSession(
                 sessionStorage,
@@ -162,7 +162,7 @@ class UserTest : KoinBaseTest(
             every { invalidateAllRoles("userid", true) } returns mockk()
         }
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { isUserIdentifiable(any()) } returns false
         }
         val ida = mockHere<LinkIdAccessor> {
             coEvery { relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") } just runs
@@ -195,7 +195,7 @@ class UserTest : KoinBaseTest(
             coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
         }
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { isUserIdentifiable(any()) } returns true
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
@@ -226,7 +226,7 @@ class UserTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
         }
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { isUserIdentifiable(any()) } returns false
         }
         mockHere<LinkIdAccessor> {
             coEvery { relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") } throws LinkEndpointException(
@@ -255,7 +255,7 @@ class UserTest : KoinBaseTest(
     @Test
     fun `Test user identity deletion when no identity exists`() {
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { isUserIdentifiable(any()) } returns false
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid")
@@ -274,8 +274,8 @@ class UserTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test user identity deletion success`() {
-        val sd = mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns true
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(any()) } returns true
         }
         val ida = mockHere<LinkIdAccessor> {
             coEvery { deleteUserIdentity("userid") } just runs

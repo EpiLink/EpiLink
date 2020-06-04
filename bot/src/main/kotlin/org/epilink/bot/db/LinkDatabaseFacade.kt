@@ -89,39 +89,34 @@ interface LinkDatabaseFacade {
      * records the identity of its `keepIdentity` is true. This function should only be used in cases where the user
      * already exists but does not have his identity recorded in the database
      *
-     * @param discordId The Discord ID the new e-mail address should be associated to
+     * @param user The user who the new e-mail address should be associated to
      * @param newEmail The e-mail address to associate with the Discord ID
      */
-    suspend fun recordNewIdentity(discordId: String, newEmail: String)
+    suspend fun recordNewIdentity(user: LinkUser, newEmail: String)
 
     /**
      * Erase the identity of the given user. This function does not perform any checks on the given parameters.
      *
-     * @param discordId The Discord ID of the user whose identity should be erased.
+     * @param user The user whose identity should be erased.
      */
-    suspend fun eraseIdentity(discordId: String)
+    suspend fun eraseIdentity(user: LinkUser)
 
     /**
      * Checks whether the given Discord ID has its identity linked to it.
-     *
-     * @throws LinkException Thrown if no user exists with the given Discord ID
      */
     @UsesTrueIdentity
-    suspend fun isUserIdentifiable(discordId: String): Boolean
+    suspend fun isUserIdentifiable(user: LinkUser): Boolean
 
     /**
      * Retrieves the identity for the given Discord ID.
      *
-     * @throws LinkException Thrown if no user exists with the given Discord ID or if the user does not have his
-     * identity recorded in the database
+     * @throws LinkException If the user does not have his identity recorded in the database
      */
     @UsesTrueIdentity
-    suspend fun getUserEmailWithAccessLog(discordId: String, automated: Boolean, author: String, reason: String): String
+    suspend fun getUserEmailWithAccessLog(user: LinkUser, automated: Boolean, author: String, reason: String): String
 
     /**
      * Retrieve all of the identity accesses where the target has the given Discord ID
-     *
-     * @throws LinkException Thrown if no user exists with the given Discord ID
      */
-    suspend fun getIdentityAccessesFor(discordId: String): Collection<LinkIdentityAccess>
+    suspend fun getIdentityAccessesFor(user: LinkUser): Collection<LinkIdentityAccess>
 }

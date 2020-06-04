@@ -33,8 +33,8 @@ class IdAccessorTest : KoinBaseTest(
         val u = mockk<LinkUser>()
         val dbf = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("targetid") } returns u
-            coEvery { isUserIdentifiable("targetid") } returns true
-            coEvery { getUserEmailWithAccessLog("targetid", false, "authorrr", "reasonnn") } returns "identity"
+            coEvery { isUserIdentifiable(u) } returns true
+            coEvery { getUserEmailWithAccessLog(u, false, "authorrr", "reasonnn") } returns "identity"
         }
         val embed = mockk<DiscordEmbed>()
         val dms = mockHere<LinkDiscordMessageSender> {
@@ -50,7 +50,7 @@ class IdAccessorTest : KoinBaseTest(
         coVerify {
             dm.getIdentityAccessEmbed(false, "authorrr", "reasonnn")
             dms.sendDirectMessageLater("targetid", embed)
-            dbf.getUserEmailWithAccessLog("targetid", false, "authorrr", "reasonnn")
+            dbf.getUserEmailWithAccessLog(u, false, "authorrr", "reasonnn")
         }
     }
 
@@ -71,9 +71,10 @@ class IdAccessorTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test automated id access user is not identifiable`() {
+        val u = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("targetid") } returns mockk()
-            coEvery { isUserIdentifiable("targetid") } returns false
+            coEvery { getUser("targetid") } returns u
+            coEvery { isUserIdentifiable(u) } returns false
         }
         test {
             val exc = assertFailsWith<LinkException> {
@@ -86,8 +87,10 @@ class IdAccessorTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test relink fails on user already identifiable`() {
+        val user = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { getUser("userid") } returns user
+            coEvery { isUserIdentifiable(user) } returns true
         }
         test {
             val exc = assertFailsWith<LinkEndpointException> {
@@ -102,11 +105,12 @@ class IdAccessorTest : KoinBaseTest(
     @Test
     fun `Test relink fails on ID mismatch`() {
         val originalHash = "That doesn't look right".sha256()
+        val u = mockk<LinkUser> {
+            every { msftIdHash } returns originalHash
+        }
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns false
-            coEvery { getUser("userid") } returns mockk {
-                every { msftIdHash } returns originalHash
-            }
+            coEvery { isUserIdentifiable(u) } returns false
+            coEvery { getUser("userid") } returns u
         }
         test {
             val exc = assertFailsWith<LinkEndpointException> {
@@ -122,25 +126,28 @@ class IdAccessorTest : KoinBaseTest(
     fun `Test relink success`() {
         val id = "This looks quite alright"
         val hash = id.sha256()
+        val u =mockk<LinkUser> {
+            every { msftIdHash } returns hash
+        }
         val df = mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns false
-            coEvery { getUser("userid") } returns mockk {
-                every { msftIdHash } returns hash
-            }
-            coEvery { recordNewIdentity("userid", "mynewemail@email.com") } just runs
+            coEvery { getUser("userid") } returns u
+            coEvery { isUserIdentifiable(u) } returns false
+            coEvery { recordNewIdentity(u, "mynewemail@email.com") } just runs
         }
         test {
             relinkMicrosoftIdentity("userid", "mynewemail@email.com", id)
         }
-        coVerify { df.recordNewIdentity("userid", "mynewemail@email.com") }
+        coVerify { df.recordNewIdentity(u, "mynewemail@email.com") }
     }
 
 
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test identity removal with no identity in the first place`() {
+        val u = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { getUser("userid") } returns u
+            coEvery { isUserIdentifiable(u) } returns false
         }
         test {
             val exc = assertFailsWith<LinkEndpointException> {
@@ -154,22 +161,26 @@ class IdAccessorTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test identity removal success`() {
+        val u = mockk<LinkUser>()
         val df = mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable("userid") } returns true
-            coEvery { eraseIdentity("userid") } just runs
+            coEvery { getUser("userid") } returns u
+            coEvery { isUserIdentifiable(u) } returns true
+            coEvery { eraseIdentity(u) } just runs
         }
         test {
             deleteUserIdentity("userid")
         }
-        coVerify { df.eraseIdentity("userid") }
+        coVerify { df.eraseIdentity(u) }
     }
 
     @Test
     fun `Test export access logs`() {
         val inst = Instant.now() - Duration.ofHours(5)
         val inst2 = Instant.now() - Duration.ofDays(10)
+        val u = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
-            coEvery { getIdentityAccessesFor("userid") } returns listOf(
+            coEvery { getUser("userid") } returns u
+            coEvery { getIdentityAccessesFor(u) } returns listOf(
                 mockk {
                     every { authorName } returns "The Admin Of Things"
                     every { automated } returns false
@@ -202,8 +213,10 @@ class IdAccessorTest : KoinBaseTest(
     fun `Test export access logs with concealed human identity requester`() {
         val inst = Instant.now() - Duration.ofHours(5)
         val inst2 = Instant.now() - Duration.ofDays(10)
+        val u = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
-            coEvery { getIdentityAccessesFor("userid") } returns listOf(
+            coEvery { getUser("userid") } returns u
+            coEvery { getIdentityAccessesFor(u) } returns listOf(
                 mockk {
                     every { authorName } returns "The Admin Of Things"
                     every { automated } returns false

@@ -248,7 +248,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             }
             // At this point the user is known and allowed
             else -> {
-                val identifiable = dbFacade.isUserIdentifiable(userId)
+                val identifiable = dbFacade.isUserIdentifiable(dbUser)
                 val baseSet = getBaseRoleSetForKnown(identifiable)
                 if (rulesInfo.isEmpty())
                     baseSet

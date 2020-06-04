@@ -29,6 +29,7 @@ import java.security.MessageDigest
  * Component that implements ID accessing logic
  */
 // TODO rename to LinkIdManager
+// TODO replace targetId by a LinkUser object
 interface LinkIdAccessor {
     /**
      * Access the identity of the target.
@@ -94,34 +95,35 @@ internal class LinkIdAccessorImpl : LinkIdAccessor, KoinComponent {
     override suspend fun accessIdentity(targetId: String, automated: Boolean, author: String, reason: String): String {
         // TODO replace all the exceptions with a distinct return value (sealed class or something)
         //      This should probably be done in the facade implementation itself though
-        facade.getUser(targetId) ?: throw LinkException("User does not exist")
-        if (!facade.isUserIdentifiable(targetId)) {
+        val user = facade.getUser(targetId) ?: throw LinkException("User does not exist")
+        if (!facade.isUserIdentifiable(user)) {
             throw LinkException("User is not identifiable")
         }
         val embed = messages.getIdentityAccessEmbed(automated, author, reason)
         if (embed != null)
             discordSender.sendDirectMessageLater(targetId, embed)
-        return facade.getUserEmailWithAccessLog(targetId, automated, author, reason)
+        return facade.getUserEmailWithAccessLog(user, automated, author, reason)
     }
 
     @UsesTrueIdentity
     override suspend fun relinkMicrosoftIdentity(discordId: String, email: String, associatedMsftId: String) {
-        if (facade.isUserIdentifiable(discordId)) {
+        val u = facade.getUser(discordId) ?: throw LinkException("User not found: $discordId")
+        if (facade.isUserIdentifiable(u)) {
             throw LinkEndpointException(IdentityAlreadyKnown, "Cannot update identity, it is already known", true)
         }
-        val u = facade.getUser(discordId) ?: throw LinkException("User not found: $discordId")
         val knownHash = u.msftIdHash
         val newHash = associatedMsftId.hashSha256()
         if (!knownHash.contentEquals(newHash)) {
             throw LinkEndpointException(NewIdentityDoesNotMatch, isEndUserAtFault = true)
         }
-        facade.recordNewIdentity(discordId, email)
+        facade.recordNewIdentity(u, email)
     }
 
-    override suspend fun getIdAccessLogs(discordId: String): IdAccessLogs =
-        IdAccessLogs(
+    override suspend fun getIdAccessLogs(discordId: String): IdAccessLogs {
+        val u = facade.getUser(discordId) ?: throw LinkException("User not found: $discordId")
+        return IdAccessLogs(
             manualAuthorsDisclosed = privacy.shouldDiscloseIdentity(false),
-            accesses = facade.getIdentityAccessesFor(discordId).map { a ->
+            accesses = facade.getIdentityAccessesFor(u).map { a ->
                 IdAccess(
                     a.automated,
                     a.authorName.takeIf { privacy.shouldDiscloseIdentity(a.automated) },
@@ -130,12 +132,14 @@ internal class LinkIdAccessorImpl : LinkIdAccessor, KoinComponent {
                 )
             }.also { logger.debug { "Acquired access logs for $discordId" } }
         )
+    }
 
     @UsesTrueIdentity
     override suspend fun deleteUserIdentity(discordId: String) {
-        if (!facade.isUserIdentifiable(discordId))
+        val u = facade.getUser(discordId) ?: throw LinkException("User not found: $discordId")
+        if (!facade.isUserIdentifiable(u))
             throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
-        facade.eraseIdentity(discordId)
+        facade.eraseIdentity(u)
     }
 }
 

@@ -76,7 +76,7 @@ class AdminTest : KoinBaseTest(
         val u = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
-            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { isUserIdentifiable(u) } returns true
         }
         val lia = mockHere<LinkIdAccessor> {
             coEvery {
@@ -138,7 +138,7 @@ class AdminTest : KoinBaseTest(
         val u = mockk<LinkUser>()
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
-            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { isUserIdentifiable(u) } returns false
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid", trueIdentity = "admin.name@email")
@@ -203,13 +203,14 @@ class AdminTest : KoinBaseTest(
     fun `Test user info request success`() {
         val instant = Instant.now() - Duration.ofHours(19)
         declare(named("admins")) { listOf("adminid") }
+        val targetMock = mockk<LinkUser> {
+            every { discordId } returns "targetid"
+            every { msftIdHash } returns kotlin.byteArrayOf(1, 2, 3)
+            every { creationDate } returns instant
+        }
         mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("targetid") } returns mockk {
-                every { discordId } returns "targetid"
-                every { msftIdHash } returns byteArrayOf(1, 2, 3)
-                every { creationDate } returns instant
-            }
-            coEvery { isUserIdentifiable("targetid") } returns true
+            coEvery { getUser("targetid") } returns targetMock
+            coEvery { isUserIdentifiable(targetMock) } returns true
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")

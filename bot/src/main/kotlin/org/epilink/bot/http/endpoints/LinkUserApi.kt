@@ -58,6 +58,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
     private val sessionChecks: LinkSessionChecks by inject()
     private val idAccessor: LinkIdAccessor by inject()
+    // TODO rename to dbFacade
     private val db: LinkDatabaseFacade by inject()
 
     override fun install(route: Route) {
@@ -75,7 +76,8 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
             get {
                 val session = call.sessions.get<ConnectedSession>()!!
                 logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
-                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation()))
+                val user = db.getUser(session.discordId)!!
+                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation(user)))
             }
 
             @ApiEndpoint("GET /api/v1/user/idaccesslogs")
@@ -105,7 +107,8 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                     "User ${session.discordId} (${session.discordUsername}) has asked for a relink with authcode ${auth.code}."
                 }
                 val microsoftToken = microsoftBackEnd.getMicrosoftToken(auth.code, auth.redirectUri)
-                if (db.isUserIdentifiable(session.discordId)) {
+                val user = db.getUser(session.discordId)!!
+                if (db.isUserIdentifiable(user)) {
                     throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyKnown, isEndUserAtFault = true)
                 }
                 val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
@@ -118,7 +121,8 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
             @OptIn(UsesTrueIdentity::class)
             delete("identity") {
                 val session = call.sessions.get<ConnectedSession>()!!
-                if (db.isUserIdentifiable(session.discordId)) {
+                val user = db.getUser(session.discordId)!!
+                if (db.isUserIdentifiable(user)) {
                     idAccessor.deleteUserIdentity(session.discordId)
                     roleManager.invalidateAllRoles(session.discordId)
                     call.respond(apiSuccess("Successfully deleted identity"))
@@ -144,6 +148,6 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     }
 
     @UsesTrueIdentity
-    private suspend fun ConnectedSession.toUserInformation() =
-        UserInformation(discordId, discordUsername, discordAvatar, db.isUserIdentifiable(discordId))
+    private suspend fun ConnectedSession.toUserInformation(user: LinkUser) =
+        UserInformation(discordId, discordUsername, discordAvatar, db.isUserIdentifiable(user))
 }

@@ -106,7 +106,7 @@ internal fun KoinTest.setupSession(
     softMockHere<LinkDatabaseFacade> {
         coEvery { getUser(discId) } returns u
         if (trueIdentity != null) {
-            coEvery { isUserIdentifiable(discId) } returns true
+            coEvery { isUserIdentifiable(u) } returns true
         }
     }
     if (trueIdentity != null) {
