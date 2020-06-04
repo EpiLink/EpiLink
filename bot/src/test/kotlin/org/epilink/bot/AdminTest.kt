@@ -8,6 +8,7 @@
  */
 package org.epilink.bot
 
+import io.ktor.application.ApplicationCall
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
@@ -16,17 +17,16 @@ import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
+import io.ktor.sessions.get
+import io.ktor.sessions.sessions
+import io.ktor.util.pipeline.PipelineContext
+import io.mockk.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
-import org.epilink.bot.http.LinkBackEnd
-import org.epilink.bot.http.LinkBackEndImpl
-import org.epilink.bot.http.LinkSessionChecks
+import org.epilink.bot.http.*
 import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkAdminApiImpl
+import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.get
@@ -55,8 +55,12 @@ class AdminTest : KoinBaseTest(
         single<LinkBackEnd> { LinkBackEndImpl() }
         single<LinkSessionChecks> {
             mockk {
+                val slot = slot<PipelineContext<Unit, ApplicationCall>>()
                 coEvery { verifyUser(any()) } returns true
-                coEvery { verifyAdmin(any()) } returns true
+                coEvery { verifyAdmin(capture(slot)) } coAnswers {
+                    injectUserIntoAttributes(slot, adminObjAttribute)
+                    true
+                }
             }
         }
     }

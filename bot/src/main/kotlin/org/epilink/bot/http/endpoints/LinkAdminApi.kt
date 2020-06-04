@@ -19,17 +19,11 @@ import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.route
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
-import org.epilink.bot.http.ApiEndpoint
-import org.epilink.bot.http.ApiSuccessResponse
-import org.epilink.bot.http.LinkSessionChecks
-import org.epilink.bot.http.apiSuccess
+import org.epilink.bot.http.*
 import org.epilink.bot.http.data.*
-import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
@@ -75,7 +69,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 call.respond(BadRequest, IncompleteAdminRequest.toResponse("Missing reason"))
                 return@post
             }
-            val session = call.sessions.get<ConnectedSession>()!! // Already validated by interception
+            val admin = call.admin
             val target = dbf.getUser(request.target)
             when {
                 target == null ->
@@ -85,7 +79,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 else -> {
                     // Get the identity of the admin
                     val adminTid = idAccessor.accessIdentity(
-                        session.discordId,
+                        admin.discordId,
                         true,
                         "EpiLink Admin Service",
                         "You requested another user's identity: your identity was retrieved for logging purposes."
@@ -133,9 +127,9 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 if (expiry == null && request.expiresOn != null) {
                     call.respond(BadRequest, InvalidInstant.toResponse("Invalid expiry timestamp."))
                 } else {
-                    val session = call.sessions.get<ConnectedSession>()!!
+                    val admin = call.admin
                     val identity = idAccessor.accessIdentity(
-                        session.discordId,
+                        admin.discordId,
                         true,
                         "EpiLink Admin Service",
                         "You requested a ban on someone else: your identity was retrieved for logging purposes."

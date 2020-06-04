@@ -8,12 +8,15 @@
  */
 package org.epilink.bot
 
+import io.ktor.application.ApplicationCall
 import io.ktor.sessions.SessionStorage
 import io.ktor.sessions.defaultSessionSerializer
+import io.ktor.sessions.get
+import io.ktor.sessions.sessions
+import io.ktor.util.AttributeKey
 import io.ktor.util.KtorExperimentalAPI
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
+import io.ktor.util.pipeline.PipelineContext
+import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.db.LinkDatabaseFacade
@@ -23,7 +26,11 @@ import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
+import org.epilink.bot.http.user
+import org.epilink.bot.http.userObjAttribute
+import org.koin.core.scope.Scope
 import org.koin.test.KoinTest
+import org.koin.test.get
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -125,4 +132,15 @@ internal fun KoinTest.setupSession(
     // Put that in our test session storage
     runBlocking { sessionStorage.write(id, data) }
     return id
+}
+
+suspend fun Scope.injectUserIntoAttributes(
+    slot: CapturingSlot<PipelineContext<Unit, ApplicationCall>>,
+    attribute: AttributeKey<LinkUser>
+) {
+    val call = slot.captured.context
+    call.attributes.put(
+        attribute,
+        get<LinkDatabaseFacade>().getUser(call.sessions.get<ConnectedSession>()!!.discordId)!!
+    )
 }

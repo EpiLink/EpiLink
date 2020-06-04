@@ -8,6 +8,7 @@
  */
 package org.epilink.bot
 
+import io.ktor.application.ApplicationCall
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.routing.routing
@@ -16,6 +17,7 @@ import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
+import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkIdAccessor
@@ -38,7 +40,15 @@ class UserTest : KoinBaseTest(
     module {
         single<LinkUserApi> { LinkUserApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }
-        single<LinkSessionChecks> { mockk { coEvery { verifyUser(any()) } returns true } }
+        single<LinkSessionChecks> {
+            mockk {
+                val slot = slot<PipelineContext<Unit, ApplicationCall>>()
+                coEvery { verifyUser(capture(slot)) } coAnswers {
+                    injectUserIntoAttributes(slot, userObjAttribute)
+                    true
+                }
+            }
+        }
     }
 ) {
     override fun additionalModule(): Module? = module {
