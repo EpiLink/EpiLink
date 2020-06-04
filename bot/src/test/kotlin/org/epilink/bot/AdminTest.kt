@@ -74,7 +74,7 @@ class AdminTest : KoinBaseTest(
     fun `Test manual identity request on identifiable`() {
         declare(named("admins")) { listOf("adminid") }
         val u = mockk<LinkUser>()
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
             coEvery { isUserIdentifiable("userid") } returns true
         }
@@ -111,7 +111,7 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test manual identity request on unknown target`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
         withTestEpiLink {
@@ -120,7 +120,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"userid","reason":"thisismyreason"}""")
             }.apply {
-                assertStatus(HttpStatusCode.BadRequest)
+                assertStatus(BadRequest)
                 val err = fromJson<ApiError>(response)
                 assertEquals(400, err.data.code)
             }
@@ -136,7 +136,7 @@ class AdminTest : KoinBaseTest(
     fun `Test manual identity request on unidentifiable target`() {
         declare(named("admins")) { listOf("adminid") }
         val u = mockk<LinkUser>()
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
             coEvery { isUserIdentifiable("userid") } returns false
         }
@@ -146,7 +146,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"userid","reason":"thisismyreason"}""")
             }.apply {
-                assertStatus(HttpStatusCode.BadRequest)
+                assertStatus(BadRequest)
                 val err = fromJson<ApiError>(response)
                 assertEquals(430, err.data.code)
             }
@@ -167,7 +167,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"userid","reason":""}""")
             }.apply {
-                assertStatus(HttpStatusCode.BadRequest)
+                assertStatus(BadRequest)
                 val err = fromJson<ApiError>(response)
                 assertEquals(401, err.data.code)
             }
@@ -182,7 +182,7 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test user info request user does not exist`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("targetid") } returns null
         }
         withTestEpiLink {
@@ -203,7 +203,7 @@ class AdminTest : KoinBaseTest(
     fun `Test user info request success`() {
         val instant = Instant.now() - Duration.ofHours(19)
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("targetid") } returns mockk {
                 every { discordId } returns "targetid"
                 every { msftIdHash } returns byteArrayOf(1, 2, 3)

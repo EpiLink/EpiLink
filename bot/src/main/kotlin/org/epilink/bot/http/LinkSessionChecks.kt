@@ -19,7 +19,7 @@ import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import org.epilink.bot.LinkException
 import org.epilink.bot.StandardErrorCodes
-import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toErrorData
@@ -58,14 +58,12 @@ interface LinkSessionChecks {
 
 internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.sessioncheck")
-
-    private val db: LinkServerDatabase by inject()
-
     private val admins: List<String> by inject(named("admins"))
+    private val dbFacade: LinkDatabaseFacade by inject()
 
     override suspend fun verifyUser(context: PipelineContext<Unit, ApplicationCall>): Boolean = with(context) {
         val session = call.sessions.get<ConnectedSession>()
-        if (session == null || db.getUser(session.discordId) == null /* see #121 */) {
+        if (session == null || dbFacade.getUser(session.discordId) == null /* see #121 */) {
             call.sessions.clear<ConnectedSession>()
             logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
             call.respond(
@@ -89,7 +87,7 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
             )
             finish()
             false
-        } else if (!db.isUserIdentifiable(session.discordId)) {
+        } else if (!dbFacade.isUserIdentifiable(session.discordId)) {
             // Admin but not identifiable
             call.respond(
                 HttpStatusCode.Unauthorized,

@@ -50,7 +50,6 @@ interface LinkAdminApi {
 
 internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val sessionChecks: LinkSessionChecks by inject()
-    private val db: LinkServerDatabase by inject()
     private val dbf: LinkDatabaseFacade by inject()
     private val idAccessor: LinkIdAccessor by inject()
     private val banLogic: LinkBanLogic by inject()
@@ -77,11 +76,11 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 return@post
             }
             val session = call.sessions.get<ConnectedSession>()!! // Already validated by interception
-            val target = db.getUser(request.target)
+            val target = dbf.getUser(request.target)
             when {
                 target == null ->
                     call.respond(BadRequest, InvalidAdminRequest.toResponse("Target does not exist"))
-                !db.isUserIdentifiable(request.target) ->
+                !dbf.isUserIdentifiable(request.target) ->
                     call.respond(BadRequest, TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
@@ -101,11 +100,11 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
         @OptIn(UsesTrueIdentity::class)
         get("user/{targetId}") {
             val targetId = call.parameters["targetId"]!!
-            val user = db.getUser(targetId)
+            val user = dbf.getUser(targetId)
             if (user == null) {
                 call.respond(NotFound, TargetUserDoesNotExist.toResponse())
             } else {
-                val identifiable = db.isUserIdentifiable(targetId)
+                val identifiable = dbf.isUserIdentifiable(targetId)
                 val info = RegisteredUserInfo(
                     targetId,
                     user.msftIdHash.encodeUrlSafeBase64(),

@@ -8,15 +8,27 @@
  */
 package org.epilink.bot.db
 
+import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkException
+import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.StandardErrorCodes.IdentityAlreadyKnown
+import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
+import org.epilink.bot.config.LinkPrivacy
+import org.epilink.bot.debug
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessages
+import org.epilink.bot.http.data.IdAccess
+import org.epilink.bot.http.data.IdAccessLogs
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 
 /**
  * Component that implements ID accessing logic
  */
+// TODO rename to LinkIdManager
 interface LinkIdAccessor {
     /**
      * Access the identity of the target.
@@ -31,23 +43,106 @@ interface LinkIdAccessor {
      */
     @UsesTrueIdentity
     suspend fun accessIdentity(targetId: String, automated: Boolean, author: String, reason: String): String
+
+
+    /**
+     * Get the identity access logs as an [IdAccessLogs] object, ready to be sent.
+     */
+    suspend fun getIdAccessLogs(discordId: String): IdAccessLogs
+
+    /**
+     * Record the identity of the user with the given discordId, using the given email. The ID hash given must be the
+     * hash associated with the new e-mail address.
+     *
+     * This function checks if the user already has their identity recorded in the database, in which case this function
+     * throws a [LinkEndpointException] with error [IdentityAlreadyKnown].
+     *
+     * This function also checks whether the Microsoft ID we remember for them matches the new one. If not, this
+     * function throws a [LinkEndpointException] with error [NewIdentityDoesNotMatch].
+     *
+     * If all goes well, the user then has a true identity created for them.
+     *
+     * @param discordId The Discord ID of the user of whom we want to relink the identity
+     * @param email The new e-mail address
+     * @param associatedMsftId The Microsoft ID (not hashed) associated with the new e-mail address
+     * @throws LinkEndpointException If the identity of the user is already known, or if the given new ID does not
+     * match the previous one
+     */
+    @UsesTrueIdentity
+    suspend fun relinkMicrosoftIdentity(discordId: String, email: String, associatedMsftId: String)
+
+    /**
+     * Delete the identity of the user with the given Discord ID from the database, or throw a [LinkEndpointException]
+     * if no such identity exists.
+     *
+     * @param discordId The Discord ID of the user whose identity we should remove
+     * @throws LinkEndpointException If the user does not have any identity recorded in the first place.
+     */
+    @UsesTrueIdentity
+    suspend fun deleteUserIdentity(discordId: String)
 }
 
 internal class LinkIdAccessorImpl : LinkIdAccessor, KoinComponent {
-    private val db: LinkServerDatabase by inject()
+    private val logger = LoggerFactory.getLogger("epilink.idaccessor")
+    private val facade: LinkDatabaseFacade by inject()
     private val messages: LinkDiscordMessages by inject()
     private val discordSender: LinkDiscordMessageSender by inject()
+    private val privacy: LinkPrivacy by inject()
+
 
     @UsesTrueIdentity
     override suspend fun accessIdentity(targetId: String, automated: Boolean, author: String, reason: String): String {
         // TODO replace all the exceptions with a distinct return value (sealed class or something)
-        val u = db.getUser(targetId) ?: throw LinkException("User does not exist")
-        if (!db.isUserIdentifiable(targetId)) {
+        //      This should probably be done in the facade implementation itself though
+        facade.getUser(targetId) ?: throw LinkException("User does not exist")
+        if (!facade.isUserIdentifiable(targetId)) {
             throw LinkException("User is not identifiable")
         }
         val embed = messages.getIdentityAccessEmbed(automated, author, reason)
         if (embed != null)
             discordSender.sendDirectMessageLater(targetId, embed)
-        return db.accessIdentity(u, automated, author, reason)
+        return facade.getUserEmailWithAccessLog(targetId, automated, author, reason)
+    }
+
+    @UsesTrueIdentity
+    override suspend fun relinkMicrosoftIdentity(discordId: String, email: String, associatedMsftId: String) {
+        if (facade.isUserIdentifiable(discordId)) {
+            throw LinkEndpointException(IdentityAlreadyKnown, "Cannot update identity, it is already known", true)
+        }
+        val u = facade.getUser(discordId) ?: throw LinkException("User not found: $discordId")
+        val knownHash = u.msftIdHash
+        val newHash = associatedMsftId.hashSha256()
+        if (!knownHash.contentEquals(newHash)) {
+            throw LinkEndpointException(NewIdentityDoesNotMatch, isEndUserAtFault = true)
+        }
+        facade.recordNewIdentity(discordId, email)
+    }
+
+    override suspend fun getIdAccessLogs(discordId: String): IdAccessLogs =
+        IdAccessLogs(
+            manualAuthorsDisclosed = privacy.shouldDiscloseIdentity(false),
+            accesses = facade.getIdentityAccessesFor(discordId).map { a ->
+                IdAccess(
+                    a.automated,
+                    a.authorName.takeIf { privacy.shouldDiscloseIdentity(a.automated) },
+                    a.reason,
+                    a.timestamp.toString()
+                )
+            }.also { logger.debug { "Acquired access logs for $discordId" } }
+        )
+
+    @UsesTrueIdentity
+    override suspend fun deleteUserIdentity(discordId: String) {
+        if (!facade.isUserIdentifiable(discordId))
+            throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+        facade.eraseIdentity(discordId)
     }
 }
+
+/**
+ * Utility function for hashing a String using the SHA-256 algorithm. The String is first converted to a byte array
+ * using the UTF-8 charset.
+ */
+// TODO replace by common util func
+private fun String.hashSha256(): ByteArray =
+    MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))

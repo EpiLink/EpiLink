@@ -21,9 +21,7 @@ import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes
-import org.epilink.bot.db.LinkServerDatabase
-import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.db.*
 import org.epilink.bot.debug
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
@@ -56,14 +54,11 @@ interface LinkUserApi {
 
 internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.user")
-
-    private val db: LinkServerDatabase by inject()
-
     private val roleManager: LinkRoleManager by inject()
-
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
-
     private val sessionChecks: LinkSessionChecks by inject()
+    private val idAccessor: LinkIdAccessor by inject()
+    private val db: LinkDatabaseFacade by inject()
 
     override fun install(route: Route) {
         with(route) { user() }
@@ -88,7 +83,10 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 val session = call.sessions.get<ConnectedSession>()!!
                 logger.info("Generating access logs for a user")
                 logger.debug { "Generating access logs for ${session.discordId} (${session.discordUsername})" }
-                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = db.getIdAccessLogs(session.discordId)))
+                call.respond(
+                    HttpStatusCode.OK,
+                    ApiSuccessResponse(data = idAccessor.getIdAccessLogs(session.discordId))
+                )
             }
 
             @ApiEndpoint("POST /api/v1/user/logout")
@@ -111,7 +109,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                     throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyKnown, isEndUserAtFault = true)
                 }
                 val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
-                db.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
+                idAccessor.relinkMicrosoftIdentity(session.discordId, userInfo.email, userInfo.guid)
                 roleManager.invalidateAllRoles(session.discordId, true)
                 call.respond(apiSuccess("Successfully relinked Microsoft account"))
             }
@@ -121,7 +119,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
             delete("identity") {
                 val session = call.sessions.get<ConnectedSession>()!!
                 if (db.isUserIdentifiable(session.discordId)) {
-                    db.deleteUserIdentity(session.discordId)
+                    idAccessor.deleteUserIdentity(session.discordId)
                     roleManager.invalidateAllRoles(session.discordId)
                     call.respond(apiSuccess("Successfully deleted identity"))
                 } else {

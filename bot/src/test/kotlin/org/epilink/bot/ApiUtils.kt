@@ -16,11 +16,10 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
+import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkIdAccessor
-import org.epilink.bot.db.LinkServerDatabase
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
-import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -104,7 +103,7 @@ internal fun KoinTest.setupSession(
         every { msftIdHash } returns msIdHash
         every { creationDate } returns created
     }
-    softMockHere<LinkServerDatabase> {
+    softMockHere<LinkDatabaseFacade> {
         coEvery { getUser(discId) } returns u
         if (trueIdentity != null) {
             coEvery { isUserIdentifiable(discId) } returns true

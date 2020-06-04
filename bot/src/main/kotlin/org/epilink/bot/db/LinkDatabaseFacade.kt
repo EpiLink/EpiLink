@@ -16,7 +16,7 @@ import java.time.Instant
  * The database facade is the interface that is used to communicate with the database.
  */
 interface LinkDatabaseFacade {
-
+    // TODO Make anything that internally calls getUser depend on a LinkUser instead
     /**
      * Starts the database and creates required elements
      */
