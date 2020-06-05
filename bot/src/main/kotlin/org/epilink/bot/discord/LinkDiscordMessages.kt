@@ -14,6 +14,9 @@ import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * The Discord bot interface that generates embeds for various instances
@@ -40,11 +43,17 @@ interface LinkDiscordMessages {
      * @param reason The reason behind this identity access
      */
     fun getIdentityAccessEmbed(automated: Boolean, author: String, reason: String): DiscordEmbed?
+
+    /**
+     * Get the ban notification embed, or null if privacy settings have ban notifications disabled.
+     */
+    fun getBanNotification(banReason: String, banExpiry: Instant?): DiscordEmbed?
 }
 
 private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
 private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/unknownuser256.png"
 private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/idnotify256.png"
+private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/ban256.png"
 
 private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
 
@@ -130,7 +139,38 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
             )
         } else return null
     }
+
+    override fun getBanNotification(banReason: String, banExpiry: Instant?): DiscordEmbed? =
+        if (privacyConfig.notifyBans) {
+            DiscordEmbed(
+                title = ":no_entry_sign: You have been banned",
+                description = "You have been banned on EpiLink. All of your roles have been removed. For more" +
+                        " information, please contact an administrator.",
+                fields = listOf(
+                    DiscordEmbedField("Reason", banReason),
+                    DiscordEmbedField(
+                        "Expires on",
+                        banExpiry?.let { "Expires on ${it.getDate()} at ${it.getTime()} (UTC+0)" }
+                            ?: "This ban does not expire."
+                    )
+                ),
+                color = "#d40000",
+                thumbnail = banLogoUrl,
+                footer = poweredByEpiLink
+            )
+        } else {
+            null
+        }
+
 }
+
+private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+private fun Instant.getDate(): String =
+    DateTimeFormatter.ISO_LOCAL_DATE.format(this.atOffset(ZoneOffset.UTC))
+
+private fun Instant.getTime(): String =
+    timeFormatter.format(this.atOffset(ZoneOffset.UTC))
 
 /**
  * Retrieve the configuration for a given guild, or throw an error if such a configuration could not be found.

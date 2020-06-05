@@ -274,7 +274,13 @@ data class LinkPrivacy(
     /**
      * True if the name of the person who requested the identity access should be disclosed.
      */
-    val discloseHumanRequesterIdentity: Boolean = false
+    val discloseHumanRequesterIdentity: Boolean = false,
+    /**
+     * True if a ban should trigger a notification, false otherwise.
+     *
+     * Bans will not send a notification if banning someone who is not known.
+     */
+    val notifyBans: Boolean = true
 ) {
     /**
      * Whether an access should be notified, based on this object's configuration
