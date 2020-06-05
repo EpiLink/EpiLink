@@ -42,6 +42,12 @@ interface LinkDiscordMessages {
     fun getIdentityAccessEmbed(automated: Boolean, author: String, reason: String): DiscordEmbed?
 }
 
+private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
+private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
+private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/idnotify256.png"
+
+private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
+
 internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     private val config: LinkDiscordConfig by inject()
 
@@ -52,10 +58,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
             title = ":x: Could not authenticate on $guildName",
             description = "Failed to authenticate you on $guildName. Please contact an administrator if you think that should not be happening.",
             fields = listOf(DiscordEmbedField("Reason", reason, true)),
-            footer = DiscordEmbedFooter(
-                "Powered by EpiLink",
-                "https://cdn.discordapp.com/attachments/680809657740427300/680811402172301348/epilink3g.png"
-            ),
+            footer = poweredByEpiLink,
             color = "red"
         )
 
@@ -66,7 +69,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
         return guildConfig.welcomeEmbed ?: DiscordEmbed(
             title = ":closed_lock_with_key: Authentication required for $guildName",
             description =
-                """
+            """
                 **Welcome to $guildName**. Access to this server is restricted. Please log in using the link below to get full access to the server's channels.
                 """.trimIndent(),
             fields = run {
@@ -80,11 +83,8 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
                 )
                 ml
             },
-            thumbnail = "https://cdn.discordapp.com/attachments/680809657740427300/696412896472727562/whoareyou.png",
-            footer = DiscordEmbedFooter(
-                "Powered by EpiLink",
-                "https://cdn.discordapp.com/attachments/680809657740427300/680811402172301348/epilink3g.png"
-            ),
+            thumbnail = unknownUserLogoUrl,
+            footer = poweredByEpiLink,
             color = "#3771c8"
         )
     }
@@ -125,11 +125,8 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
                     }
                 ),
                 color = "#ff6600",
-                thumbnail = "https://media.discordapp.net/attachments/680809657740427300/696411621320425572/idnotify.png",
-                footer = DiscordEmbedFooter(
-                    "Powered by EpiLink",
-                    "https://cdn.discordapp.com/attachments/680809657740427300/680811402172301348/epilink3g.png"
-                )
+                thumbnail = idNotifyLogoUrl,
+                footer = poweredByEpiLink
             )
         } else return null
     }
