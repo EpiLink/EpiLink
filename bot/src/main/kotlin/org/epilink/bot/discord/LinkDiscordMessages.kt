@@ -43,7 +43,7 @@ interface LinkDiscordMessages {
 }
 
 private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
-private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
+private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/unknownuser256.png"
 private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/idnotify256.png"
 
 private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
