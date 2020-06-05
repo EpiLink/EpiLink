@@ -50,13 +50,19 @@ internal class LinkBanManagerImpl : LinkBanManager, KoinComponent {
     private val dbf: LinkDatabaseFacade by inject()
     private val roleManager: LinkRoleManager by inject()
     private val banLogic: LinkBanLogic by inject()
+    private val messages: LinkDiscordMessages by inject()
+    private val sender: LinkDiscordMessageSender by inject()
 
     override suspend fun ban(msftHashBase64: String, expiresOn: Instant?, author: String, reason: String): LinkBan {
         val actualHash = Base64.getUrlDecoder().decode(msftHashBase64)
         val ban = dbf.recordBan(actualHash, expiresOn, author, reason)
         val user = dbf.getUserFromMsftIdHash(actualHash)
-        if (user != null)
+        if (user != null) {
             roleManager.invalidateAllRoles(user.discordId)
+            messages.getBanNotification(reason, expiresOn)?.let {
+                sender.sendDirectMessageLater(user.discordId, it)
+            }
+        }
         return ban
     }
 
