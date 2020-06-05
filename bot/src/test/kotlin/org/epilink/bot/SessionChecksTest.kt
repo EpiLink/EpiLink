@@ -15,15 +15,19 @@ import io.ktor.response.ApplicationResponse
 import io.ktor.response.ApplicationSendPipeline
 import io.ktor.sessions.CurrentSession
 import io.ktor.sessions.sessions
+import io.ktor.util.AttributeKey
+import io.ktor.util.Attributes
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.http.ApiErrorResponse
 import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.LinkSessionChecksImpl
 import org.epilink.bot.http.sessions.ConnectedSession
+import org.epilink.bot.http.userObjAttribute
 import org.koin.core.get
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -82,7 +86,7 @@ class SessionChecksTest : KoinBaseTest(
     )
 
     /**
-     * Sets up necessary components for a mocked ApplicationCall to receive a response, and returns the obejcts that
+     * Sets up necessary components for a mocked ApplicationCall to receive a response, and returns the objects that
      * were mocked in order to do this.
      */
     private fun mockResponse(mockedCall: ApplicationCall): MockedResponse {
@@ -134,7 +138,7 @@ class SessionChecksTest : KoinBaseTest(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
         runBlocking {
@@ -154,20 +158,27 @@ class SessionChecksTest : KoinBaseTest(
     @Test
     fun `Test user verification user exists`() {
         val (call, _) = setupMockedSession(ConnectedSession("userid", "username", null))
+        val attr = mockk<Attributes> {
+            every { put(any(), any()) } just runs
+        }
+        every { call.attributes } returns attr
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
-        mockHere<LinkServerDatabase> {
-            coEvery { getUser("userid") } returns mockk()
+        val u = mockk<LinkUser>()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getUser("userid") } returns u
         }
         runBlocking {
             assertTrue(get<LinkSessionChecks>().verifyUser(context))
         }
+        verify { attr.put(match { it.name.contains("User") }, u) }
     }
 
     @Test
     fun `Test admin, not an admin`() {
         val (call, _) = setupMockedSession(ConnectedSession("userid", "username", null))
+        mockUserAttributes("userid", call)
         val mr = mockResponse(call)
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
@@ -191,13 +202,14 @@ class SessionChecksTest : KoinBaseTest(
     @Test
     fun `Test admin, admin but not identifiable`() {
         val (call, _) = setupMockedSession(ConnectedSession("adminid", "username", null))
+        val (_, u) = mockUserAttributes("adminid", call)
         val mr = mockResponse(call)
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<LinkServerDatabase> {
-            coEvery { isUserIdentifiable("adminid") } returns false
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(u) } returns false
         }
         declare(named("admins")) { listOf("adminid") }
         runBlocking {
@@ -217,15 +229,29 @@ class SessionChecksTest : KoinBaseTest(
     @Test
     fun `Test admin when correct`() {
         val (call, _) = setupMockedSession(ConnectedSession("adminid", "username", null))
+        val (attr, u) = mockUserAttributes("adminid", call)
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
-        mockHere<LinkServerDatabase> {
-            coEvery { isUserIdentifiable("adminid") } returns true
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(u) } returns true
         }
         declare(named("admins")) { listOf("adminid") }
         runBlocking {
             assertTrue(get<LinkSessionChecks>().verifyAdmin(context))
         }
+        verify { attr.put(match { it.name.contains("Admin") }, u) }
+    }
+
+    private fun mockUserAttributes(discordId: String, mockedCall: ApplicationCall): Pair<Attributes, LinkUser> {
+        val u = mockk<LinkUser> {
+            every { this@mockk.discordId } returns discordId
+        }
+        val attributes = mockk<Attributes> {
+            every { put(any(), any()) } just runs
+            every { getOrNull(userObjAttribute) } returns u
+        }
+        every { mockedCall.attributes } returns attributes
+        return attributes to u
     }
 }

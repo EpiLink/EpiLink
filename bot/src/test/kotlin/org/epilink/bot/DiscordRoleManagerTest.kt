@@ -34,8 +34,10 @@ class DiscordRoleManagerTest : KoinBaseTest(
     @Test
     fun `Test role update for disallowed user`() {
         val user: LinkUser = mockk()
-        val sd = mockHere<LinkServerDatabase> {
+        val sd = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
+        }
+        val pc = mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason")
         }
         val dcf = mockHere<LinkDiscordClientFacade> {
@@ -51,7 +53,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             rm.getRolesForUser("userid", mockk(), true, listOf("Hello"))
         }
         coVerifyAll {
-            sd.canUserJoinServers(any())
+            pc.canUserJoinServers(any())
             dcf.sendDirectMessage("userid", any())
             dcf.getGuildName("Hello")
             sd.getUser("userid")
@@ -87,7 +89,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             )
         }
         val mockem = mockk<DiscordEmbed>()
-        val db = mockHere<LinkServerDatabase> {
+        val db = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("jacques") } returns null
         }
         val dm = mockHere<LinkDiscordMessages> {
@@ -120,7 +122,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
                 )
             )
         }
-        val db = mockHere<LinkServerDatabase> {
+        val db = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("jacques") } returns null
         }
         val dm = mockHere<LinkDiscordMessages> {
@@ -150,7 +152,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             )
         }
         val usermock: LinkUser = mockk()
-        val db = mockHere<LinkServerDatabase> {
+        val db = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("jacques") } returns usermock
         }
         val rm = declare { spyk(LinkRoleManagerImpl()) }
@@ -247,7 +249,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
 
     @Test
     fun `Test get roles for unknown user`() {
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
         val rm = get<LinkRoleManager>()
@@ -260,8 +262,10 @@ class DiscordRoleManagerTest : KoinBaseTest(
     @Test
     fun `Test get roles for disallowed user, do not tell`() {
         val user: LinkUser = mockk()
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
+        }
+        mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason")
         }
         val rm = get<LinkRoleManager>()
@@ -274,8 +278,10 @@ class DiscordRoleManagerTest : KoinBaseTest(
     @Test
     fun `Test get roles for disallowed user, notify`() {
         val user: LinkUser = mockk()
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
+        }
+        mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason")
         }
         val embed: DiscordEmbed = mockk()
@@ -298,10 +304,12 @@ class DiscordRoleManagerTest : KoinBaseTest(
     fun `Test get roles, no rules, not identifiable`() {
         val user: LinkUser = mockk()
         @OptIn(UsesTrueIdentity::class)
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
+            coEvery { isUserIdentifiable(user) } returns false
+        }
+        mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
-            coEvery { isUserIdentifiable("userid") } returns false
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
@@ -314,10 +322,12 @@ class DiscordRoleManagerTest : KoinBaseTest(
     fun `Test get roles, no rules, identifiable`() {
         val user: LinkUser = mockk()
         @OptIn(UsesTrueIdentity::class)
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
+            coEvery { isUserIdentifiable(user) } returns true
+        }
+        mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
-            coEvery { isUserIdentifiable("userid") } returns true
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
@@ -330,13 +340,15 @@ class DiscordRoleManagerTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     fun `Test get roles, with rules, identifiable`() {
         val user: LinkUser = mockk { every { discordId } returns "userid" }
-        val lia = mockHere<LinkIdAccessor> {
-            coEvery { accessIdentity("userid", any(), any(), any()) } returns "email@@"
+        val lia = mockHere<LinkIdManager> {
+            coEvery { accessIdentity(user, any(), any(), any()) } returns "email@@"
         }
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
+            coEvery { isUserIdentifiable(user) } returns true
+        }
+        mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
-            coEvery { isUserIdentifiable("userid") } returns true
         }
         val dui = DiscordUserInfo("userid", "uname", "disc")
         mockHere<LinkDiscordClientFacade> {
@@ -375,17 +387,19 @@ class DiscordRoleManagerTest : KoinBaseTest(
                 roles
             )
         }
-        coVerify { lia.accessIdentity("userid", any(), any(), any()) }
+        coVerify { lia.accessIdentity(user, any(), any(), any()) }
     }
 
     @Test
     fun `Test get roles, with rules, not identifiable`() {
         val user: LinkUser = mockk { every { discordId } returns "userid" }
         @OptIn(UsesTrueIdentity::class)
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns user
+            coEvery { isUserIdentifiable(user) } returns false
+        }
+        mockHere<LinkPermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
-            coEvery { isUserIdentifiable("userid") } returns false
         }
         val dui = DiscordUserInfo("userid", "uname", "disc")
         mockHere<LinkDiscordClientFacade> {

@@ -114,12 +114,13 @@ interface LinkRoleManager {
  */
 internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.bot.roles")
-    private val database: LinkServerDatabase by inject()
     private val messages: LinkDiscordMessages by inject()
     private val config: LinkDiscordConfig by inject()
     private val rulebook: Rulebook by inject()
     private val facade: LinkDiscordClientFacade by inject()
-    private val idAccessor: LinkIdAccessor by inject()
+    private val idManager: LinkIdManager by inject()
+    private val dbFacade: LinkDatabaseFacade by inject()
+    private val perms: LinkPermissionChecks by inject()
     private val ruleMediator: RuleMediator by lazy {
         get<CacheClient>().newRuleMediator("el_rc_")
     }
@@ -157,7 +158,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             logger.debug { "Ignoring member $memberId joining unmonitored guild $guildId ($guildName)" }
             return // Ignore unmonitored guilds' join events
         }
-        val dbUser = database.getUser(memberId)
+        val dbUser = dbFacade.getUser(memberId)
         if (dbUser == null)
             messages.getGreetingsEmbed(guildId, guildName)?.let { facade.sendDirectMessage(memberId, it) }
         else
@@ -228,8 +229,8 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         guildIds: Collection<String>
     ): Set<String> {
         // Get the user. If the user is unknown, return an empty set: they should not have any role
-        val dbUser = database.getUser(userId)
-        val adv = dbUser?.let { database.canUserJoinServers(it) }
+        val dbUser = dbFacade.getUser(userId)
+        val adv = dbUser?.let { perms.canUserJoinServers(it) }
         return when {
             dbUser == null ->
                 // Unknown user
@@ -247,7 +248,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             }
             // At this point the user is known and allowed
             else -> {
-                val identifiable = database.isUserIdentifiable(userId)
+                val identifiable = dbFacade.isUserIdentifiable(dbUser)
                 val baseSet = getBaseRoleSetForKnown(identifiable)
                 if (rulesInfo.isEmpty())
                     baseSet
@@ -317,8 +318,8 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         // IntelliJ wants to put facade.getGuildName in joinToString which is not possible because joinToString is not
         // inline-able and we need coroutines here
         @Suppress("SimplifiableCallChain")
-        return idAccessor.accessIdentity(
-            targetId = dbUser.discordId,
+        return idManager.accessIdentity(
+            user = dbUser,
             automated = true,
             author = "EpiLink Discord Bot",
             reason = "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +

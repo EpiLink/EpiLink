@@ -8,27 +8,35 @@
  */
 package org.epilink.bot
 
+import io.ktor.application.ApplicationCall
 import io.ktor.sessions.SessionStorage
 import io.ktor.sessions.defaultSessionSerializer
+import io.ktor.sessions.get
+import io.ktor.sessions.sessions
+import io.ktor.util.AttributeKey
 import io.ktor.util.KtorExperimentalAPI
+import io.ktor.util.pipeline.PipelineContext
+import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
-import org.epilink.bot.db.LinkIdAccessor
-import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
-import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
+import org.koin.core.scope.Scope
 import org.koin.test.KoinTest
 import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.Map
+import kotlin.collections.set
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -104,15 +112,15 @@ internal fun KoinTest.setupSession(
         every { msftIdHash } returns msIdHash
         every { creationDate } returns created
     }
-    softMockHere<LinkServerDatabase> {
+    softMockHere<LinkDatabaseFacade> {
         coEvery { getUser(discId) } returns u
         if (trueIdentity != null) {
-            coEvery { isUserIdentifiable(discId) } returns true
+            coEvery { isUserIdentifiable(u) } returns true
         }
     }
     if (trueIdentity != null) {
-        softMockHere<LinkIdAccessor> {
-            coEvery { accessIdentity(discId, any(), any(), any()) } returns trueIdentity
+        softMockHere<LinkIdManager> {
+            coEvery { accessIdentity(u, any(), any(), any()) } returns trueIdentity
         }
     }
     // Generate an ID
@@ -126,4 +134,15 @@ internal fun KoinTest.setupSession(
     // Put that in our test session storage
     runBlocking { sessionStorage.write(id, data) }
     return id
+}
+
+suspend fun Scope.injectUserIntoAttributes(
+    slot: CapturingSlot<PipelineContext<Unit, ApplicationCall>>,
+    attribute: AttributeKey<LinkUser>
+) {
+    val call = slot.captured.context
+    call.attributes.put(
+        attribute,
+        get<LinkDatabaseFacade>().getUser(call.sessions.get<ConnectedSession>()!!.discordId)!!
+    )
 }

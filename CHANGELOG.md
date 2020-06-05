@@ -17,10 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+* Refactored `LinkServerDatabase` so much that it doesn't exist anymore ([#165](https://github.com/EpiLink/EpiLink/pull/165))
 * Refactored the back-end APIs ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 
 ### Fixed
 
+* Reduced the amount of calls to `getUser`, resulting in better performance with fewer calls to the DB ([#165](https://github.com/EpiLink/EpiLink/pull/165)).
 * Re-added the server(s) name(s) in the "could not authenticate you" Discord embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Fixed an extra newline in an embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Fixed some Discord crashes called by the client deciding that it does not want to exist ([#161](https://github.com/EpiLink/EpiLink/pull/161)) 

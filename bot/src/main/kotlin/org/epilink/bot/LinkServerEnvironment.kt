@@ -48,17 +48,19 @@ class LinkServerEnvironment(
         single { this@LinkServerEnvironment }
         // Facade between EpiLink and the actual database
         single<LinkDatabaseFacade> { SQLiteExposedFacadeImpl(cfg.db) }
-        // Higher level database functionality
-        single<LinkServerDatabase> { LinkServerDatabaseImpl() }
         // Cache-based features
         @Suppress("RemoveExplicitTypeArguments")
         single<CacheClient> { cfg.redis?.let { LinkRedisClient(it) } ?: MemoryCacheClient() }
         // Admin list
         single(named("admins")) { cfg.admins }
         // "Glue" thing that calls everything required when accessing an identity
-        single<LinkIdAccessor> { LinkIdAccessorImpl() }
+        single<LinkIdManager> { LinkIdManagerImpl() }
         // Ban-related logic (isActive...)
         single<LinkBanLogic> { LinkBanLogicImpl() }
+        // Permission checks (e.g. check if a user can create an account)
+        single<LinkPermissionChecks> { LinkPermissionChecksImpl() }
+        // User creation logic
+        single<LinkUserCreator> { LinkUserCreatorImpl() }
     }
 
     /**

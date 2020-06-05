@@ -8,6 +8,7 @@
  */
 package org.epilink.bot
 
+import io.ktor.application.ApplicationCall
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
@@ -16,15 +17,14 @@ import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
+import io.ktor.util.pipeline.PipelineContext
+import io.mockk.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkSessionChecks
+import org.epilink.bot.http.adminObjAttribute
 import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkAdminApiImpl
 import org.koin.core.qualifier.named
@@ -55,8 +55,12 @@ class AdminTest : KoinBaseTest(
         single<LinkBackEnd> { LinkBackEndImpl() }
         single<LinkSessionChecks> {
             mockk {
+                val slot = slot<PipelineContext<Unit, ApplicationCall>>()
                 coEvery { verifyUser(any()) } returns true
-                coEvery { verifyAdmin(any()) } returns true
+                coEvery { verifyAdmin(capture(slot)) } coAnswers {
+                    injectUserIntoAttributes(slot, adminObjAttribute)
+                    true
+                }
             }
         }
     }
@@ -73,17 +77,17 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test manual identity request on identifiable`() {
         declare(named("admins")) { listOf("adminid") }
-        val u = mockk<LinkUser>()
-        mockHere<LinkServerDatabase> {
+        val u = mockk<LinkUser> { every { discordId } returns "discordId" }
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
-            coEvery { isUserIdentifiable("userid") } returns true
+            coEvery { isUserIdentifiable(u) } returns true
         }
-        val lia = mockHere<LinkIdAccessor> {
+        val lia = mockHere<LinkIdManager> {
             coEvery {
-                accessIdentity("userid", false, "admin.name@email", "thisismyreason")
+                accessIdentity(u, false, "admin.name@email", "thisismyreason")
             } returns "trueidentity@othermail"
             coEvery {
-                accessIdentity("adminid", true, any(), match { it.contains("another user") })
+                accessIdentity(match { it.discordId == "adminid" }, true, any(), match { it.contains("another user") })
             } returns "admin.name@email"
         }
         withTestEpiLink {
@@ -102,8 +106,8 @@ class AdminTest : KoinBaseTest(
             coVerify {
                 sessionChecks.verifyUser(any())
                 sessionChecks.verifyAdmin(any())
-                lia.accessIdentity("userid", false, "admin.name@email", "thisismyreason")
-                lia.accessIdentity("adminid", true, any(), match { it.contains("another user") })
+                lia.accessIdentity(u, false, "admin.name@email", "thisismyreason")
+                lia.accessIdentity(any(), true, any(), match { it.contains("another user") })
             }
         }
     }
@@ -111,7 +115,7 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test manual identity request on unknown target`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
         withTestEpiLink {
@@ -120,7 +124,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"userid","reason":"thisismyreason"}""")
             }.apply {
-                assertStatus(HttpStatusCode.BadRequest)
+                assertStatus(BadRequest)
                 val err = fromJson<ApiError>(response)
                 assertEquals(400, err.data.code)
             }
@@ -135,10 +139,10 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test manual identity request on unidentifiable target`() {
         declare(named("admins")) { listOf("adminid") }
-        val u = mockk<LinkUser>()
-        mockHere<LinkServerDatabase> {
+        val u = mockk<LinkUser> { every { discordId } returns "userid" }
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
-            coEvery { isUserIdentifiable("userid") } returns false
+            coEvery { isUserIdentifiable(u) } returns false
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid", trueIdentity = "admin.name@email")
@@ -146,7 +150,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"userid","reason":"thisismyreason"}""")
             }.apply {
-                assertStatus(HttpStatusCode.BadRequest)
+                assertStatus(BadRequest)
                 val err = fromJson<ApiError>(response)
                 assertEquals(430, err.data.code)
             }
@@ -167,7 +171,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"userid","reason":""}""")
             }.apply {
-                assertStatus(HttpStatusCode.BadRequest)
+                assertStatus(BadRequest)
                 val err = fromJson<ApiError>(response)
                 assertEquals(401, err.data.code)
             }
@@ -182,7 +186,7 @@ class AdminTest : KoinBaseTest(
     @Test
     fun `Test user info request user does not exist`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkServerDatabase> {
+        mockHere<LinkDatabaseFacade> {
             coEvery { getUser("targetid") } returns null
         }
         withTestEpiLink {
@@ -203,13 +207,14 @@ class AdminTest : KoinBaseTest(
     fun `Test user info request success`() {
         val instant = Instant.now() - Duration.ofHours(19)
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkServerDatabase> {
-            coEvery { getUser("targetid") } returns mockk {
-                every { discordId } returns "targetid"
-                every { msftIdHash } returns byteArrayOf(1, 2, 3)
-                every { creationDate } returns instant
-            }
-            coEvery { isUserIdentifiable("targetid") } returns true
+        val targetMock = mockk<LinkUser> {
+            every { discordId } returns "targetid"
+            every { msftIdHash } returns byteArrayOf(1, 2, 3)
+            every { creationDate } returns instant
+        }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getUser("targetid") } returns targetMock
+            coEvery { isUserIdentifiable(targetMock) } returns true
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
@@ -238,7 +243,15 @@ class AdminTest : KoinBaseTest(
         val msftHashStr = Base64.getUrlEncoder().encodeToString(msftHash)
         val now = Instant.now()
         val bans = listOf(
-            BanImpl(0, msftHash, now - Duration.ofSeconds(10), now - Duration.ofDays(1), true, "Yeet", "You got gnomed"),
+            BanImpl(
+                0,
+                msftHash,
+                now - Duration.ofSeconds(10),
+                now - Duration.ofDays(1),
+                true,
+                "Yeet",
+                "You got gnomed"
+            ),
             BanImpl(1, msftHash, null, now - Duration.ofDays(3), false, "Oops", "Tinkie winkiiiie")
         )
         mockHere<LinkDatabaseFacade> {
@@ -402,8 +415,10 @@ class AdminTest : KoinBaseTest(
         val bm = mockHere<LinkBanManager> {
             coEvery { ban(msftHashStr, instant, "author identity", "This is my reason") } returns ban
         }
-        mockHere<LinkIdAccessor> {
-            coEvery { accessIdentity("adminid", true, any(), any()) } returns "author identity"
+        mockHere<LinkIdManager> {
+            coEvery {
+                accessIdentity(match { it.discordId == "adminid" }, true, any(), any())
+            } returns "author identity"
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")

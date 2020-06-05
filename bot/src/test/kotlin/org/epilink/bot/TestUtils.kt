@@ -70,8 +70,12 @@ fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
     assertEquals(status, actual, "Expected status $status, but got $actual instead")
 }
 
-inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T =
-    declare { mockk(block = body) }
+inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T {
+    if (getKoin().getOrNull<T>() != null) {
+        error("Duplicate definition for ${T::class}. Use softMockHere or combine the definitions.")
+    }
+    return declare { mockk(block = body) }
+}
 
 /**
  * Similar to mockHere, but if an instance of T is already injected, apply the initializer to it instead of

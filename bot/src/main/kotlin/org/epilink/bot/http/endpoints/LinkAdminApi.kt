@@ -19,17 +19,11 @@ import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.route
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
-import org.epilink.bot.http.ApiEndpoint
-import org.epilink.bot.http.ApiSuccessResponse
-import org.epilink.bot.http.LinkSessionChecks
-import org.epilink.bot.http.apiSuccess
+import org.epilink.bot.http.*
 import org.epilink.bot.http.data.*
-import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
@@ -50,9 +44,8 @@ interface LinkAdminApi {
 
 internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val sessionChecks: LinkSessionChecks by inject()
-    private val db: LinkServerDatabase by inject()
     private val dbf: LinkDatabaseFacade by inject()
-    private val idAccessor: LinkIdAccessor by inject()
+    private val idManager: LinkIdManager by inject()
     private val banLogic: LinkBanLogic by inject()
     private val banManager: LinkBanManager by inject()
 
@@ -76,22 +69,22 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 call.respond(BadRequest, IncompleteAdminRequest.toResponse("Missing reason"))
                 return@post
             }
-            val session = call.sessions.get<ConnectedSession>()!! // Already validated by interception
-            val target = db.getUser(request.target)
+            val admin = call.admin
+            val target = dbf.getUser(request.target)
             when {
                 target == null ->
                     call.respond(BadRequest, InvalidAdminRequest.toResponse("Target does not exist"))
-                !db.isUserIdentifiable(request.target) ->
+                !dbf.isUserIdentifiable(target) ->
                     call.respond(BadRequest, TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
-                    val adminTid = idAccessor.accessIdentity(
-                        session.discordId,
+                    val adminTid = idManager.accessIdentity(
+                        admin,
                         true,
                         "EpiLink Admin Service",
                         "You requested another user's identity: your identity was retrieved for logging purposes."
                     )
-                    val userTid = idAccessor.accessIdentity(request.target, false, adminTid, request.reason)
+                    val userTid = idManager.accessIdentity(target, false, adminTid, request.reason)
                     call.respond(ApiSuccessResponse(data = IdRequestResult(request.target, userTid)))
                 }
             }
@@ -101,11 +94,11 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
         @OptIn(UsesTrueIdentity::class)
         get("user/{targetId}") {
             val targetId = call.parameters["targetId"]!!
-            val user = db.getUser(targetId)
+            val user = dbf.getUser(targetId)
             if (user == null) {
                 call.respond(NotFound, TargetUserDoesNotExist.toResponse())
             } else {
-                val identifiable = db.isUserIdentifiable(targetId)
+                val identifiable = dbf.isUserIdentifiable(user)
                 val info = RegisteredUserInfo(
                     targetId,
                     user.msftIdHash.encodeUrlSafeBase64(),
@@ -134,9 +127,9 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 if (expiry == null && request.expiresOn != null) {
                     call.respond(BadRequest, InvalidInstant.toResponse("Invalid expiry timestamp."))
                 } else {
-                    val session = call.sessions.get<ConnectedSession>()!!
-                    val identity = idAccessor.accessIdentity(
-                        session.discordId,
+                    val admin = call.admin
+                    val identity = idManager.accessIdentity(
+                        admin,
                         true,
                         "EpiLink Admin Service",
                         "You requested a ban on someone else: your identity was retrieved for logging purposes."

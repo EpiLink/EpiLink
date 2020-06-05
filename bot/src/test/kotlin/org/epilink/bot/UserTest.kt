@@ -8,6 +8,7 @@
  */
 package org.epilink.bot
 
+import io.ktor.application.ApplicationCall
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.routing.routing
@@ -16,8 +17,10 @@ import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
+import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
-import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
@@ -37,7 +40,15 @@ class UserTest : KoinBaseTest(
     module {
         single<LinkUserApi> { LinkUserApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }
-        single<LinkSessionChecks> { mockk { coEvery { verifyUser(any()) } returns true } }
+        single<LinkSessionChecks> {
+            mockk {
+                val slot = slot<PipelineContext<Unit, ApplicationCall>>()
+                coEvery { verifyUser(capture(slot)) } coAnswers {
+                    injectUserIntoAttributes(slot, userObjAttribute)
+                    true
+                }
+            }
+        }
     }
 ) {
     override fun additionalModule(): Module? = module {
@@ -52,8 +63,8 @@ class UserTest : KoinBaseTest(
     @Test
     fun `Test user endpoint when identifiable`() {
         withTestEpiLink {
-            mockHere<LinkServerDatabase> {
-                coEvery { isUserIdentifiable("myDiscordId") } returns true
+            mockHere<LinkDatabaseFacade> {
+                coEvery { isUserIdentifiable(any()) } returns true
             }
             val sid = setupSession(
                 sessionStorage,
@@ -80,8 +91,8 @@ class UserTest : KoinBaseTest(
     @Test
     fun `Test user endpoint when not identifiable`() {
         withTestEpiLink {
-            mockHere<LinkServerDatabase> {
-                coEvery { isUserIdentifiable("myDiscordId") } returns false
+            mockHere<LinkDatabaseFacade> {
+                coEvery { isUserIdentifiable(any()) } returns false
             }
             val sid = setupSession(
                 sessionStorage,
@@ -108,8 +119,8 @@ class UserTest : KoinBaseTest(
     fun `Test user access logs retrieval`() {
         val inst1 = Instant.now() - Duration.ofHours(1)
         val inst2 = Instant.now() - Duration.ofHours(10)
-        mockHere<LinkServerDatabase> {
-            coEvery { getIdAccessLogs("discordid") } returns IdAccessLogs(
+        mockHere<LinkIdManager> {
+            coEvery { getIdAccessLogs(match { it.discordId == "discordid" }) } returns IdAccessLogs(
                 manualAuthorsDisclosed = false,
                 accesses = listOf(
                     IdAccess(true, "Robot Robot Robot", "Yes", inst1.toString()),
@@ -160,9 +171,11 @@ class UserTest : KoinBaseTest(
         val rm = mockHere<LinkRoleManager> {
             every { invalidateAllRoles("userid", true) } returns mockk()
         }
-        val sd = mockHere<LinkServerDatabase> {
-            coEvery { isUserIdentifiable("userid") } returns false
-            coEvery { relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") } just runs
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(any()) } returns false
+        }
+        val ida = mockHere<LinkIdManager> {
+            coEvery { relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId") } just runs
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
@@ -178,7 +191,7 @@ class UserTest : KoinBaseTest(
         }
         coVerify {
             rm.invalidateAllRoles(any(), true)
-            sd.relinkMicrosoftIdentity("userid", email, "MyMicrosoftId")
+            ida.relinkMicrosoftIdentity(any(), email, "MyMicrosoftId")
             sessionChecks.verifyUser(any())
         }
     }
@@ -191,8 +204,8 @@ class UserTest : KoinBaseTest(
         val mbe = mockHere<LinkMicrosoftBackEnd> {
             coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
         }
-        mockHere<LinkServerDatabase> {
-            coEvery { isUserIdentifiable("userid") } returns true
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(any()) } returns true
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
@@ -222,9 +235,13 @@ class UserTest : KoinBaseTest(
             coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
             coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
         }
-        mockHere<LinkServerDatabase> {
-            coEvery { isUserIdentifiable("userid") } returns false
-            coEvery { relinkMicrosoftIdentity("userid", email, "MyMicrosoftId") } throws LinkEndpointException(
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(any()) } returns false
+        }
+        mockHere<LinkIdManager> {
+            coEvery {
+                relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
+            } throws LinkEndpointException(
                 object : LinkErrorCode {
                     override val code = 98765
                     override val description = "Strange error WeirdChamp"
@@ -249,8 +266,8 @@ class UserTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test user identity deletion when no identity exists`() {
-        mockHere<LinkServerDatabase> {
-            coEvery { isUserIdentifiable("userid") } returns false
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(any()) } returns false
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid")
@@ -269,9 +286,11 @@ class UserTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test user identity deletion success`() {
-        val sd = mockHere<LinkServerDatabase> {
-            coEvery { isUserIdentifiable("userid") } returns true
-            coEvery { deleteUserIdentity("userid") } just runs
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(any()) } returns true
+        }
+        val ida = mockHere<LinkIdManager> {
+            coEvery { deleteUserIdentity(match { it.discordId == "userid" }) } just runs
         }
         val rm = mockHere<LinkRoleManager> {
             every { invalidateAllRoles("userid") } returns mockk()
@@ -287,7 +306,7 @@ class UserTest : KoinBaseTest(
             }
         }
         coVerify {
-            sd.deleteUserIdentity("userid")
+            ida.deleteUserIdentity(any())
             rm.invalidateAllRoles(any())
             sessionChecks.verifyUser(any())
         }

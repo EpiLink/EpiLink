@@ -10,8 +10,8 @@ package org.epilink.bot.http.endpoints
 
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
-import io.ktor.http.HttpStatusCode
 import io.ktor.features.ContentTransformationException
+import io.ktor.http.HttpStatusCode
 import io.ktor.request.header
 import io.ktor.request.receive
 import io.ktor.response.respond
@@ -19,7 +19,9 @@ import io.ktor.routing.*
 import io.ktor.sessions.*
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.db.Disallowed
-import org.epilink.bot.db.LinkServerDatabase
+import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.LinkPermissionChecks
+import org.epilink.bot.db.LinkUserCreator
 import org.epilink.bot.debug
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
@@ -48,16 +50,13 @@ interface LinkRegistrationApi {
 
 internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.registration")
-
     private val discordBackEnd: LinkDiscordBackEnd by inject()
-
     private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
-
-    private val db: LinkServerDatabase by inject()
-
     private val roleManager: LinkRoleManager by inject()
-
     private val userApi: LinkUserApi by inject()
+    private val userCreator: LinkUserCreator by inject()
+    private val perms: LinkPermissionChecks by inject()
+    private val dbFacade: LinkDatabaseFacade by inject()
 
     override fun install(route: Route) {
         with(route) { registration() }
@@ -114,7 +113,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                         logger.debug { "Completing registration session for $regSessionId" }
                         val options: AdditionalRegistrationOptions =
                             call.receiveCatching() ?: return@post
-                        val u = db.createUser(discordId, microsoftUid, email, options.keepIdentity)
+                        val u = userCreator.createUser(discordId, microsoftUid, email, options.keepIdentity)
                         roleManager.invalidateAllRoles(u.discordId, true)
                         with(userApi) { loginAs(call, u, discordUsername, discordAvatarUrl) }
                         logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
@@ -161,7 +160,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
         // Get information
         val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
         logger.debug { "Processing Microsoft info for registration for $id ($email)" }
-        val adv = db.isMicrosoftUserAllowedToCreateAccount(id, email)
+        val adv = perms.isMicrosoftUserAllowedToCreateAccount(id, email)
         if (adv is Disallowed) {
             logger.debug { "Microsoft user $id ($email) is not allowed to create an account: " + adv.reason }
             call.respond(
@@ -196,7 +195,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
         // Get information
         val (id, username, avatarUrl) = discordBackEnd.getDiscordInfo(token)
         logger.debug { "Processing Discord info for registration for $id ($username)" }
-        val user = db.getUser(id)
+        val user = dbFacade.getUser(id)
         if (user != null) {
             logger.debug { "User already exists: logging in" }
             with(userApi) { loginAs(call, user, username, avatarUrl) }
@@ -207,7 +206,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                 )
             )
         } else {
-            val adv = db.isDiscordUserAllowedToCreateAccount(id)
+            val adv = perms.isDiscordUserAllowedToCreateAccount(id)
             if (adv is Disallowed) {
                 logger.debug { "Discord user $id cannot create account: " + adv.reason }
                 call.respond(
