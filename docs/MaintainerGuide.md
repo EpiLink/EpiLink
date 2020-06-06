@@ -315,6 +315,7 @@ privacy:
   notifyAutomatedAccess: true
   notifyHumanAccess: true
   discloseHumanRequesterIdentity: false
+  notifyBans: true
 ```
 
 This section determines how EpiLink should react when some privacy-related events occur.
@@ -324,6 +325,7 @@ This entire section is optional. If omitted, all of its parameters take the defa
 * `notifyAutomatedAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed automatically (e.g. to refresh rules). The identity of the requester is always disclosed (e.g. "EpiLink Discord bot"), and the message clarifies that this access was done automatically.
 * `notifyHumanAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed by a human (manual identity request). The identity of the requester may or may not be disclosed depending on the value of `discloseHumanRequesterIdentity`.
 * `discloseHumanRequesterIdentity` *(optional, false by default)*: If true, the private message sent when a human manual identity request occurs also indicates *who* initiated the request. If false, the private message does not contain that information. This value is unused when `notifyHumanAccess` is false.
+* `notifyBans` *(optional, true by default)*: If true, banning someone will send them a notification (this is done only if they are a known user). If false, banning someone never sends any notification to said user. *(since version 0.3.0)*
 
 ### Legal configuration
 
@@ -360,6 +362,8 @@ Seek legal advice if you do not know what to put in the terms of services or the
 You may also want to specify `contacts` in the [server configuration](#http-server-settings).
 
 ## Administration
+
+?> Administrative actions are only available in version 0.3.0 and up
 
 Here is what you can do using the administrative actions provided by EpiLink: 
 
