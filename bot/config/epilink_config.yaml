@@ -82,6 +82,8 @@ tokens:
   # ID Prompt text disclaimer
   # identityPromptText: <p>My text...</p>
 
+# You can also add a "privacy:" section to enable/disable some notifications. See the maintainer guide for more details.
+
 # Configuration for everything related to handling Discord servers
 # When something is optional, you can omit it entirely.
 # When something is nullable, you can replace its value by ~ to indicate that the value is unknown.

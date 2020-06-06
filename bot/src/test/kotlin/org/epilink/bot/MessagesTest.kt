@@ -17,6 +17,8 @@ import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.discord.LinkDiscordMessagesImpl
 import org.koin.dsl.module
 import org.koin.test.get
+import java.time.Duration
+import java.time.Instant
 import kotlin.test.*
 
 class MessagesTest : KoinBaseTest(
@@ -140,5 +142,29 @@ class MessagesTest : KoinBaseTest(
         assertFalse(embed.description!!.contains("TestAuthor"))
         assertTrue(embed.fields.any { it.value.contains("TestReason") })
         assertTrue(embed.fields.any { it.name.contains("need help") })
+    }
+
+    @Test
+    fun `Test disabled ban notification`() {
+        mockHere<LinkPrivacy> {
+            every { notifyBans } returns false
+        }
+        val dm = get<LinkDiscordMessages>()
+        val embed = dm.getBanNotification("Hello", Instant.now() + Duration.ofHours(230))
+        assertNull(embed)
+    }
+
+    @Test
+    fun `Test ban notification`() {
+        mockHere<LinkPrivacy> {
+            every { notifyBans } returns true
+        }
+        val dm = get<LinkDiscordMessages>()
+        val embed = dm.getBanNotification("You are now banned, RIP.", Instant.parse("2020-02-03T13:37:01.02Z"))
+        assertNotNull(embed)
+        assertEquals("Reason", embed.fields[0].name)
+        assertEquals("You are now banned, RIP.", embed.fields[0].value)
+        assertEquals("Expires on", embed.fields[1].name)
+        assertEquals("Expires on 2020-02-03 at 13:37 (UTC+0)", embed.fields[1].value)
     }
 }

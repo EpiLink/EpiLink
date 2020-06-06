@@ -11,9 +11,7 @@ package org.epilink.bot
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.*
-import org.epilink.bot.discord.LinkBanManager
-import org.epilink.bot.discord.LinkBanManagerImpl
-import org.epilink.bot.discord.LinkRoleManager
+import org.epilink.bot.discord.*
 import org.koin.core.get
 import org.koin.dsl.module
 import java.util.*
@@ -32,12 +30,19 @@ class BanManagerTest : KoinBaseTest(
             every { discordId } returns "targetid"
         }
         val ban = mockk<LinkBan>()
+        val embed = mockk<DiscordEmbed>()
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { recordBan(idHash, null, "the_author", "the description") } returns ban
             coEvery { getUserFromMsftIdHash(any()) } returns u
         }
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRoles("targetid") } returns mockk()
+        }
+        mockHere<LinkDiscordMessages> {
+            every { getBanNotification("the description", null) } returns embed
+        }
+        val dms = mockHere<LinkDiscordMessageSender> {
+            every { sendDirectMessageLater("targetid", embed) } returns mockk()
         }
         test {
             val realBan = ban(idHashStr, null, "the_author", "the description")
@@ -46,6 +51,7 @@ class BanManagerTest : KoinBaseTest(
         coVerify {
             df.recordBan(idHash, null, "the_author", "the description")
             rm.invalidateAllRoles("targetid")
+            dms.sendDirectMessageLater("targetid", embed)
         }
     }
 
