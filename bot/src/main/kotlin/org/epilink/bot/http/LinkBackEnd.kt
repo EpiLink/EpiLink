@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.http
 
+import guru.zoroark.ratelimit.RateLimit
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
@@ -22,7 +23,6 @@ import io.ktor.sessions.Sessions
 import io.ktor.sessions.header
 import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.CacheClient
-import org.epilink.bot.LinkException
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes.UnknownError
 import org.epilink.bot.http.endpoints.LinkAdminApi
@@ -31,7 +31,6 @@ import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
-import org.epilink.bot.ratelimiting.RateLimiting
 import org.epilink.bot.toApiResponse
 import org.epilink.bot.toErrorData
 import org.koin.core.KoinComponent
@@ -107,7 +106,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             )
         }
 
-        install(RateLimiting)
+        install(RateLimit)
     }
 
     override fun Route.installErrorHandling() {

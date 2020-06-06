@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.http.endpoints
 
+import guru.zoroark.ratelimit.rateLimited
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.features.ContentTransformationException
@@ -30,7 +31,6 @@ import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.RegistrationContinuation
 import org.epilink.bot.http.data.RegistrationInformation
 import org.epilink.bot.http.sessions.RegisterSession
-import org.epilink.bot.ratelimiting.rateLimited
 import org.epilink.bot.toErrorData
 import org.koin.core.KoinComponent
 import org.koin.core.inject

@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.http.endpoints
 
+import guru.zoroark.ratelimit.rateLimited
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
@@ -29,7 +30,6 @@ import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.UserInformation
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
-import org.epilink.bot.ratelimiting.rateLimited
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
