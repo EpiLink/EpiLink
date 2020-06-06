@@ -8,6 +8,7 @@
  */
 package org.epilink.bot
 
+import guru.zoroark.ratelimit.RateLimit
 import io.ktor.application.Application
 import io.ktor.application.featureOrNull
 import io.ktor.features.ContentNegotiation
@@ -26,7 +27,6 @@ import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkUserApi
-import org.epilink.bot.ratelimiting.RateLimiting
 import org.koin.core.get
 import org.koin.dsl.module
 import org.koin.test.mock.declare
@@ -48,7 +48,7 @@ class BackEndTest : KoinBaseTest(
         }) {
             assertNotNull(application.featureOrNull(ContentNegotiation))
             assertNotNull(application.featureOrNull(Sessions))
-            assertNotNull(application.featureOrNull(RateLimiting))
+            assertNotNull(application.featureOrNull(RateLimit))
         }
     }
 
