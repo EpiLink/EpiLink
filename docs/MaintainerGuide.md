@@ -10,7 +10,8 @@ Go through all of these steps before going public:
 - [Configure it](#configuration) using the [sample configuration](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml) as a template
 - Make sure everything works
 - Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
-- [Set the reverse proxy headers configuration](#http-server-settings)
+- [Make sure your reverse proxy configuration is secure](https://docs.zoroark.guru/#/ktor-rate-limit/usage?id=reverse-proxies-and-ip-address-spoofing), specifically the part about overriding the headers the clients send.
+- [Set the reverse proxy headers configuration](#http-server-settings) in EpiLink's configuration
 - Make sure everything still works
 
 After doing all that, you will be good to go! Read on to learn how to do all of these things!
