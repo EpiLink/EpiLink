@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.http.endpoints
 
+import guru.zoroark.ratelimit.rateLimited
 import io.ktor.application.call
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -24,7 +25,6 @@ import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.LinkDiscordBackEnd
 import org.epilink.bot.http.LinkMicrosoftBackEnd
 import org.epilink.bot.http.data.InstanceInformation
-import org.epilink.bot.ratelimiting.rateLimited
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import java.time.Duration

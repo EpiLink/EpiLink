@@ -9,6 +9,7 @@ plugins {
 repositories {
     mavenCentral()
     jcenter()
+    maven { url 'https://jitpack.io' }
 }
 
 version = "0.2.0"
@@ -62,6 +63,8 @@ dependencies {
     implementation "org.koin:koin-logger-slf4j:2.1.5"
 
     implementation "io.lettuce:lettuce-core:5.2.2.RELEASE"
+
+    implementation 'guru.zoroark:ktor-rate-limit:v0.0.1'
 
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"

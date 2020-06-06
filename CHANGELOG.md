@@ -16,12 +16,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added manual ID access ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added retrieving additional information about users ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 
-
 ### Changed
 
 * Use logos from the GitHub repository instead of Discord's CDN in embeds ([#167](https://github.com/EpiLink/EpiLink/pull/167))
 * Refactored `LinkServerDatabase` so much that it doesn't exist anymore ([#165](https://github.com/EpiLink/EpiLink/pull/165))
 * Refactored the back-end APIs ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+
+### Removed
+
+* Removed rate limiting code from this codebase. It is known available as a separate, reusable library, [ktor-rate-limit](https://github.com/utybo/ktor-rate-limit). ([#172](https://github.com/EpiLink/EpiLink/pull/172))
 
 ### Fixed
 
