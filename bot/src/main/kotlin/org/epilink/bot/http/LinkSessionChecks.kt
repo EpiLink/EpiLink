@@ -111,9 +111,17 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
 }
 
 internal val userObjAttribute = AttributeKey<LinkUser>("EpiLinkUserObject")
+
+/**
+ * Retrieve the user. You must have previously called [LinkSessionChecks.verifyUser] in the pipeline.
+ */
 val ApplicationCall.user: LinkUser
     get() = this.attributes[userObjAttribute]
 
 internal val adminObjAttribute = AttributeKey<LinkUser>("EpiLinkAdminObject")
+
+/**
+ * Retrieve the admin. You must have previously called [LinkSessionChecks.verifyAdmin] in the pipeline.
+ */
 val ApplicationCall.admin: LinkUser
     get() = this.attributes[adminObjAttribute]

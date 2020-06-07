@@ -14,11 +14,37 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 import java.time.Instant
 
+/**
+ * Component that generates human-readable reports on someone's information that is stored in the database.
+ */
 interface LinkGdprReport {
+    /**
+     * Generate a full report that contains everything this component can generate
+     */
     suspend fun getFullReport(user: LinkUser, requester: String): String
+
+    /**
+     * Generate a report on the user's information (Discord ID, Microsoft ID hash, creation timestamp)
+     */
     fun getUserInfoReport(user: LinkUser): String
+
+    /**
+     * Generate a report on the user's true identity. Generates an ID access request that is disclosed as manual, with
+     * [requester] as the author.
+     *
+     * This should be called before [getIdentityAccessesReport] since this generates an additional ID access.
+     */
     suspend fun getTrueIdentityReport(user: LinkUser, requester: String): String
+
+    /**
+     * Generate a report on the user's bans. It also indicates which ban are revoked, expired or active.
+     */
     suspend fun getBanReport(user: LinkUser): String
+
+    /**
+     * Generate a report on the user's identity accesses. This includes the name of human requester following the
+     * privacy config.
+     */
     suspend fun getIdentityAccessesReport(user: LinkUser): String
 }
 

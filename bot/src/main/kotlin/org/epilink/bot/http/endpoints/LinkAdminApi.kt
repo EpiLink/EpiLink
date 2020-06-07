@@ -21,7 +21,6 @@ import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.route
-import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
@@ -192,9 +191,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     "Your identity was retrieved for logging purposes because you requested a GDPR report on someone."
                 )
                 val report = gdprReport.getFullReport(target, adminId)
-                call.respond(
-                    TextContent(report, ContentType.parse("text/markdown"), OK)
-                ) // TODO move the parse out of here
+                call.respond(TextContent(report, ContentType.Text.Markdown, OK))
             }
         }
     }
@@ -205,3 +202,12 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private fun ByteArray.encodeUrlSafeBase64() =
         Base64.getUrlEncoder().encodeToString(this)
 }
+
+private val markdownContentType = ContentType("text", "markdown")
+
+/**
+ * Markdown (text/markdown) content type
+ */
+@Suppress("unused")
+val ContentType.Text.Markdown: ContentType
+    get() = markdownContentType
