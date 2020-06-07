@@ -10,15 +10,18 @@ package org.epilink.bot.http.endpoints
 
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
+import io.ktor.http.content.TextContent
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.route
+import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
@@ -48,6 +51,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val idManager: LinkIdManager by inject()
     private val banLogic: LinkBanLogic by inject()
     private val banManager: LinkBanManager by inject()
+    private val gdprReport: LinkGdprReport by inject()
 
     override fun install(route: Route) {
         with(route) { admin() }
@@ -171,6 +175,19 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                         call.respond(OK, apiSuccess("Ban revoked."))
                     }
                 }
+            }
+        }
+
+        get("gdprreport/{targetId}") {
+            val targetId = call.parameters["targetId"]!!
+            val target = dbf.getUser(targetId)
+            if (target == null) {
+                call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+            } else {
+                val report = gdprReport.getFullReport(target)
+                call.respond(
+                    TextContent(report, ContentType.parse("text/markdown"), OK)
+                ) // TODO move the parse out of here
             }
         }
     }

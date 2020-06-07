@@ -61,6 +61,8 @@ class LinkServerEnvironment(
         single<LinkPermissionChecks> { LinkPermissionChecksImpl() }
         // User creation logic
         single<LinkUserCreator> { LinkUserCreatorImpl() }
+        // GDPR report generation utility
+        single<LinkGdprReport> { LinkGdprReportImpl() }
     }
 
     /**

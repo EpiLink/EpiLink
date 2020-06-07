@@ -10,11 +10,12 @@ package org.epilink.bot
 
 import io.ktor.application.ApplicationCall
 import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
+import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
+import io.ktor.server.testing.contentType
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ktor.util.pipeline.PipelineContext
@@ -34,10 +35,7 @@ import org.koin.test.mock.declare
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.*
 
 private class BanImpl(
     override val banId: Int,
@@ -195,7 +193,7 @@ class AdminTest : KoinBaseTest(
                 addHeader("SessionId", sid)
                 setJsonBody("""{"target":"targetid","reason":""}""")
             }.apply {
-                assertStatus(HttpStatusCode.NotFound)
+                assertStatus(NotFound)
                 val info = fromJson<ApiError>(response)
                 assertEquals(402, info.data.code)
             }
@@ -352,7 +350,7 @@ class AdminTest : KoinBaseTest(
             handleRequest(HttpMethod.Get, "/api/v1/admin/ban/sqdfhj/0") {
                 addHeader("SessionId", sid)
             }.apply {
-                assertStatus(HttpStatusCode.NotFound)
+                assertStatus(NotFound)
                 val info = fromJson<ApiError>(response)
                 val data = info.data
                 assertEquals(403, data.code)
@@ -371,7 +369,7 @@ class AdminTest : KoinBaseTest(
             handleRequest(HttpMethod.Get, "/api/v1/admin/ban/sqdfhj/33333") {
                 addHeader("SessionId", sid)
             }.apply {
-                assertStatus(HttpStatusCode.NotFound)
+                assertStatus(NotFound)
                 val info = fromJson<ApiError>(response)
                 val data = info.data
                 assertEquals(403, data.code)
@@ -458,6 +456,46 @@ class AdminTest : KoinBaseTest(
                 val info = fromJson<ApiError>(response)
                 assertEquals("Invalid expiry timestamp.", info.message)
                 assertEquals(404, info.data.code)
+            }
+        }
+    }
+
+    @Test
+    fun `Test generating a GDPR report`() {
+        declare(named("admins")) { listOf("adminid") }
+        val u = mockk<LinkUser>()
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getUser("userid") } returns u
+        }
+        mockHere<LinkGdprReport> {
+            coEvery { getFullReport(u) } returns "C'est la merguez, merguez partie !"
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/gdprreport/userid") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(OK)
+                assertEquals("text/markdown", response.contentType().toString())
+                assertEquals("C'est la merguez, merguez partie !", response.content)
+            }
+        }
+    }
+
+    @Test
+    fun `Test generating a GDPR report on non-existant user`() {
+        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getUser(any()) } returns null
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/gdprreport/yeeeet") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(NotFound)
+                val data = fromJson<ApiError>(response)
+                assertEquals(402, data.data.code)
             }
         }
     }
