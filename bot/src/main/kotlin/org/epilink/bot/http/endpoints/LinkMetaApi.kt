@@ -12,11 +12,15 @@ import guru.zoroark.ratelimit.rateLimited
 import io.ktor.application.call
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.HttpStatusCode.Companion.OK
+import io.ktor.http.content.ByteArrayContent
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.route
+import org.epilink.bot.LegalText
 import org.epilink.bot.LinkLegalTexts
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkWebServerConfiguration
@@ -67,12 +71,12 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
 
                 @ApiEndpoint("GET /api/v1/meta/tos")
                 get("tos") {
-                    call.respond(HttpStatusCode.OK, TextContent(legal.tosText, ContentType.Text.Html))
+                    call.respond(legal.termsOfServices.asResponseContent())
                 }
 
                 @ApiEndpoint("GET /api/v1/meta/privacy")
                 get("privacy") {
-                    call.respond(HttpStatusCode.OK, TextContent(legal.policyText, ContentType.Text.Html))
+                    call.respond(legal.privacyPolicy.asResponseContent())
                 }
             }
         }
@@ -92,3 +96,9 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
             contacts = wsCfg.contacts
         )
 }
+
+private fun LegalText.asResponseContent(): OutgoingContent.ByteArrayContent =
+    when(this) {
+        is LegalText.Pdf -> ByteArrayContent(data, ContentType.Application.Pdf, OK)
+        is LegalText.Html -> TextContent(text, ContentType.Text.Html, OK)
+    }
