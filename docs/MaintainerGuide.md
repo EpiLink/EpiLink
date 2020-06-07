@@ -6,7 +6,7 @@ This page will guide you through the configuration of a working EpiLink instance
 
 Go through all of these steps before going public:
 
-- Get EpiLink (and all of the [required stuff](#deployment-methods))
+- Get EpiLink (and all of the [required stuff](#deployment))
 - [Configure it](#configuration) using the [sample configuration](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml) as a template
 - Make sure everything works
 - Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
@@ -371,6 +371,7 @@ Here is what you can do using the administrative actions provided by EpiLink:
 - [Get information about a user](Api.md#get-adminuseruserid)
 - [Get a user's true identity](Api.md#post-adminidrequest)
 - [Ban a user](Api.md#post-adminbanmsfthash), [get previous bans](Api.md#get-adminbanmsfthash) and [revoke them](Api.md#post-adminbanmsfthashbanidrevoke)
+- [Generate a GDPR report about a user](Api.md#get-admingdprreporttargetid)
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
 
@@ -389,3 +390,7 @@ Bans are simple: a banned user will not get any role from EpiLink. That's all!
 **Any ID access done through the API may lead to a notification on the user's side**, depending on your [privacy configuration](#privacy-configuration).
 
 An ID access allows you to get a user's identity while also notifying them for more transparency. Note that while you can disable the ID access notifications (i.e. the Discord DMs), the users will always see every ID access from their profile page.
+
+### GDPR Report
+
+You can generate a GDPR report using [the `/admin/gdprreport/{discordid}` endpoint](Api.md#get-admingdprreporttargetid). Note that these reports also include the identity of the person, and thus generate a manual identity access report.

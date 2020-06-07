@@ -665,6 +665,6 @@ GET /admin/ban/{targetId}
 
 Where `targetId` is the Discord ID of the person you want to generate a GDPR report about.
 
-> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly. `Content-Type: text/markdown`
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns a Markdown document directly. `Content-Type: text/markdown`
 
 Returns the report directly as a Markdown document. May also return an API error in case the Discord ID is invalid. Generates an ID access request (which is included in the report) in order to add the user's identity in the report.
