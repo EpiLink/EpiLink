@@ -460,6 +460,7 @@ class AdminTest : KoinBaseTest(
         }
     }
 
+    @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test generating a GDPR report`() {
         declare(named("admins")) { listOf("adminid") }
@@ -467,8 +468,13 @@ class AdminTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
         }
+        mockHere<LinkIdManager> {
+            coEvery {
+                accessIdentity(match { it.discordId == "adminid" }, true, any(), any())
+            } returns "admin@admin.admin"
+        }
         mockHere<LinkGdprReport> {
-            coEvery { getFullReport(u) } returns "C'est la merguez, merguez partie !"
+            coEvery { getFullReport(u, "admin@admin.admin") } returns "C'est la merguez, merguez partie !"
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")

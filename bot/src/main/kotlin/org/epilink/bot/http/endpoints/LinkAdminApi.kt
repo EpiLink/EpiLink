@@ -178,13 +178,20 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
             }
         }
 
+        @OptIn(UsesTrueIdentity::class)
         get("gdprreport/{targetId}") {
             val targetId = call.parameters["targetId"]!!
             val target = dbf.getUser(targetId)
             if (target == null) {
                 call.respond(NotFound, TargetUserDoesNotExist.toResponse())
             } else {
-                val report = gdprReport.getFullReport(target)
+                val adminId = idManager.accessIdentity(
+                    call.admin,
+                    true,
+                    "EpiLink Admin Service",
+                    "Your identity was retrieved for logging purposes because you requested a GDPR report on someone."
+                )
+                val report = gdprReport.getFullReport(target, adminId)
                 call.respond(
                     TextContent(report, ContentType.parse("text/markdown"), OK)
                 ) // TODO move the parse out of here

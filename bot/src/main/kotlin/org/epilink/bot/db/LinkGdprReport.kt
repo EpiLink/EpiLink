@@ -15,9 +15,9 @@ import org.koin.core.inject
 import java.time.Instant
 
 interface LinkGdprReport {
-    suspend fun getFullReport(user: LinkUser): String
+    suspend fun getFullReport(user: LinkUser, requester: String): String
     fun getUserInfoReport(user: LinkUser): String
-    suspend fun getTrueIdentityReport(user: LinkUser): String
+    suspend fun getTrueIdentityReport(user: LinkUser, requester: String): String
     suspend fun getBanReport(user: LinkUser): String
     suspend fun getIdentityAccessesReport(user: LinkUser): String
 }
@@ -29,7 +29,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
     private val privacy: LinkPrivacy by inject()
     private val env: LinkServerEnvironment by inject()
 
-    override suspend fun getFullReport(user: LinkUser): String =
+    override suspend fun getFullReport(user: LinkUser, requester: String): String =
         """
         |# ${env.name} GDPR report for user ${user.discordId}
         |
@@ -39,7 +39,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         |
         |${getUserInfoReport(user)}
         |
-        |${getTrueIdentityReport(user)}
+        |${getTrueIdentityReport(user, requester)}
         |
         |${getBanReport(user)}
         |
@@ -66,13 +66,13 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         java.util.Base64.getUrlEncoder().encodeToString(this)
 
     @OptIn(UsesTrueIdentity::class) // Reports true identity, so huh, yeah
-    override suspend fun getTrueIdentityReport(user: LinkUser): String = with(user) {
+    override suspend fun getTrueIdentityReport(user: LinkUser, requester: String): String = with(user) {
         if (dbf.isUserIdentifiable(this)) {
             val identity = idManager.accessIdentity(
                 this,
-                true,
-                "EpiLink GDPR Report Service",
-                "Your identity was retrieved in order to generate a GDPR report."
+                false,
+                requester,
+                "(via EpiLink GDPR Report Service) Your identity was retrieved in order to generate a GDPR report."
             )
             """
             ## Identity information
