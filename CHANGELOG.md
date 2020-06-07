@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+* Added GDPR report generation ([#173](https://github.com/EpiLink/EpiLink/pull/173))
 * Added ban notifications ([#168](https://github.com/EpiLink/EpiLink/pull/168))
 * Added administration endpoints (and its documentation) ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added banning abilities ([#161](https://github.com/EpiLink/EpiLink/pull/161))
