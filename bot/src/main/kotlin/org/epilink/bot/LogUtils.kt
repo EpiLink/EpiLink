@@ -14,7 +14,7 @@ import org.slf4j.Logger
  * Send a lazily constructed debug message only if debug logging is enabled
  */
 inline fun Logger.debug(lazyMsg: () -> String) {
-    if(isDebugEnabled) {
+    if (isDebugEnabled) {
         debug(lazyMsg())
     }
 }
@@ -23,7 +23,7 @@ inline fun Logger.debug(lazyMsg: () -> String) {
  * Send a lazily constructed debug message only if debug logging is enabled
  */
 inline fun Logger.debug(ex: Throwable, lazyMsg: () -> String) {
-    if(isDebugEnabled) {
+    if (isDebugEnabled) {
         debug(lazyMsg(), ex)
     }
 }
@@ -32,7 +32,7 @@ inline fun Logger.debug(ex: Throwable, lazyMsg: () -> String) {
  * Send a lazily constructed trace message only if trace logging is enabled
  */
 inline fun Logger.trace(lazyMsg: () -> String) {
-    if(isTraceEnabled) {
+    if (isTraceEnabled) {
         trace(lazyMsg())
     }
 }
@@ -41,7 +41,7 @@ inline fun Logger.trace(lazyMsg: () -> String) {
  * Send the given info message if debug is disabled, or the given debug message if debug is enabled
  */
 inline fun Logger.infoOrDebug(infoMessage: String, lazyDebugMsg: () -> String) {
-    if(isDebugEnabled) {
+    if (isDebugEnabled) {
         debug(lazyDebugMsg())
     } else {
         info(infoMessage)

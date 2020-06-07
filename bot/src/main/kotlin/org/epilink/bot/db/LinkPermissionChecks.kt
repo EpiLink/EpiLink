@@ -13,9 +13,10 @@ import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 
+/**
+ * Component for checking permissions (e.g. is a discord user allowed to create an account)
+ */
 interface LinkPermissionChecks {
     /**
      * Checks whether an account with the given Discord user ID would be allowed to create an account.
@@ -73,11 +74,3 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
         return Allowed
     }
 }
-
-/**
- * Utility function for hashing a String using the SHA-256 algorithm. The String is first converted to a byte array
- * using the UTF-8 charset.
- */
-// TODO replace by common util func
-private fun String.hashSha256(): ByteArray =
-    MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))

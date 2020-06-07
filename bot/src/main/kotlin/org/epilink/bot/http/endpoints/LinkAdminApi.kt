@@ -10,9 +10,11 @@ package org.epilink.bot.http.endpoints
 
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
+import io.ktor.http.content.TextContent
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
@@ -48,6 +50,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val idManager: LinkIdManager by inject()
     private val banLogic: LinkBanLogic by inject()
     private val banManager: LinkBanManager by inject()
+    private val gdprReport: LinkGdprReport by inject()
 
     override fun install(route: Route) {
         with(route) { admin() }
@@ -173,6 +176,24 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 }
             }
         }
+
+        @OptIn(UsesTrueIdentity::class)
+        get("gdprreport/{targetId}") {
+            val targetId = call.parameters["targetId"]!!
+            val target = dbf.getUser(targetId)
+            if (target == null) {
+                call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+            } else {
+                val adminId = idManager.accessIdentity(
+                    call.admin,
+                    true,
+                    "EpiLink Admin Service",
+                    "Your identity was retrieved for logging purposes because you requested a GDPR report on someone."
+                )
+                val report = gdprReport.getFullReport(target, adminId)
+                call.respond(TextContent(report, ContentType.Text.Markdown, OK))
+            }
+        }
     }
 
     private fun LinkBan.toBanInfo(): BanInfo =
@@ -181,3 +202,12 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private fun ByteArray.encodeUrlSafeBase64() =
         Base64.getUrlEncoder().encodeToString(this)
 }
+
+private val markdownContentType = ContentType("text", "markdown")
+
+/**
+ * Markdown (text/markdown) content type
+ */
+@Suppress("unused")
+val ContentType.Text.Markdown: ContentType
+    get() = markdownContentType

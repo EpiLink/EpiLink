@@ -22,8 +22,6 @@ import org.epilink.bot.http.data.IdAccessLogs
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 
 /**
  * Component that implements ID accessing logic
@@ -135,11 +133,3 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
         facade.eraseIdentity(user)
     }
 }
-
-/**
- * Utility function for hashing a String using the SHA-256 algorithm. The String is first converted to a byte array
- * using the UTF-8 charset.
- */
-// TODO replace by common util func
-private fun String.hashSha256(): ByteArray =
-    MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))

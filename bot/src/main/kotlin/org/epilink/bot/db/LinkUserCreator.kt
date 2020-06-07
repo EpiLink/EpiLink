@@ -15,10 +15,11 @@ import org.epilink.bot.infoOrDebug
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.time.Instant
 
+/**
+ * Component for creating a user.
+ */
 interface LinkUserCreator {
     /**
      * Create a user in the database with all of the given parameters
@@ -78,11 +79,3 @@ private inline infix fun DatabaseAdvisory.and(lazyOther: () -> DatabaseAdvisory)
         is Disallowed -> this
         Allowed -> lazyOther()
     }
-
-/**
- * Utility function for hashing a String using the SHA-256 algorithm. The String is first converted to a byte array
- * using the UTF-8 charset.
- */
-// TODO replace by common util func
-private fun String.hashSha256(): ByteArray =
-    MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))
