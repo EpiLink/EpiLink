@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+* Added PDF support for ToS and Privacy Policy documents ([#175](https://github.com/EpiLink/EpiLink/pull/175))
 * Added GDPR report generation ([#173](https://github.com/EpiLink/EpiLink/pull/173))
 * Added ban notifications ([#168](https://github.com/EpiLink/EpiLink/pull/168))
 * Added administration endpoints (and its documentation) ([#161](https://github.com/EpiLink/EpiLink/pull/161))
@@ -29,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
+* Fixed the ToS being served on both ToS and PP pages ([#175](https://github.com/EpiLink/EpiLink/pull/175))
 * Reduced the amount of calls to `getUser`, resulting in better performance with fewer calls to the DB ([#165](https://github.com/EpiLink/EpiLink/pull/165)).
 * Re-added the server(s) name(s) in the "could not authenticate you" Discord embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Fixed an extra newline in an embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
