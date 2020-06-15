@@ -43,7 +43,7 @@ export default {
 
             const req = await request('GET', '/meta/privacy', null, true);
             const isPdf = req.headers.get('Content-Type') === 'application/pdf';
-            commit('setPrivacyPolicy', {'textContent': isPdf ? null : await req.text(), 'pdfContent': isPdf ? await req.blob() : null, 'url': req.url});
+            commit('setPrivacyPolicy', {'textContent': isPdf ? null : await req.text(), 'pdfContent': isPdf ? URL.createObjectURL(await req.blob()) : null, 'url': req.url});
         }
     }
 };
