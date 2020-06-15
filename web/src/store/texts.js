@@ -26,24 +26,28 @@ export default {
         }
     },
     actions: {
-        async fetchTermsOfService({ state, commit }) {
+        async fetchTermsOfService({ state, commit, dispatch }) {
             if (state.termsOfService) {
                 return;
             }
-
-            const req = await request('GET', '/meta/tos', null, true);
-            const isPdf = req.headers.get('Content-Type') === 'application/pdf';
-            commit('setTermsOfService', {'textContent': isPdf ? null : await req.text(), 'pdfContent': isPdf ? URL.createObjectURL(await req.blob()) : null, 'url': req.url});
+            commit('setTermsOfService', await dispatch('fetchText', 'tos'));
         },
 
-        async fetchPrivacyPolicy({ state, commit }) {
+        async fetchPrivacyPolicy({ state, commit, dispatch }) {
             if (state.privacyPolicy) {
                 return;
             }
+            commit('setPrivacyPolicy', await dispatch('fetchText', 'privacy'));
+        },
 
-            const req = await request('GET', '/meta/privacy', null, true);
+        async fetchText(_, requestUrl) {
+            const req = await request('GET', `/meta/${requestUrl}`, null, true);
             const isPdf = req.headers.get('Content-Type') === 'application/pdf';
-            commit('setPrivacyPolicy', {'textContent': isPdf ? null : await req.text(), 'pdfContent': isPdf ? URL.createObjectURL(await req.blob()) : null, 'url': req.url});
+            return {
+                textContent: !isPdf && await req.text(),
+                pdfContent: isPdf && URL.createObjectURL(await req.blob()),
+                url: req.url
+            };
         }
     }
 };
