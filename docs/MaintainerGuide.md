@@ -350,10 +350,10 @@ legal:
 
 This section provides the legal documents EpiLink will show to the users. More specifically, this section contains the terms of services, the privacy policy (both either as a string or as a path to the file) and the identity prompt text.
 
-All three options **are HTML**. Use them to format your text with lists and other things. They are not full HTML documents, rather just HTML fragments that will be thrown in the front-end.
+All three options **are HTML**, but files also support PDFs. Use them to format your text with lists and other things. Any HTML content is not a full HTML document, rather just HTML fragments that will be thrown in the front-end. PDF files will be served as-is to the front-end, with an additional download link.
 
-* `tos`/`tosFile`: The terms of services, either directly written in the config file (`tos`), or as a path relative to the configuration file's location (`tosFile`)
-* `policy`/`policyFile`: The privacy policy, either directly written in the config file (`policy`), or as a path relative to the configuration file's location (`policyFile`)
+* `tos`/`tosFile`: The terms of services, either directly written in the config file (`tos`), or as a path relative to the configuration file's location (`tosFile`). `tos` is inline HTML, `tosFile` can be either a file containing inline HMTL or a PDF file.
+* `policy`/`policyFile`: The privacy policy, either directly written in the config file (`policy`), or as a path relative to the configuration file's location (`policyFile`). `policy` is inline HTML, `policyFile` can be either a file containing inline HMTL or a PDF file.
 * `identityPromptText`: The text that is shown below the "Remember who I am" checkbox in the registration page. This should describe in a few words what the user should expect to happen if they check (or uncheck) the box. You can also put "See the privacy policy for more details". This is also HTML.
 
 All options are optional, but you should fill them in regardless. Not filling them in results in a warning in the start-up logs. Filling both an in-config option *and* its file-based counterpart will result in an error, similar to `rulebook`/`rulebookFile`.

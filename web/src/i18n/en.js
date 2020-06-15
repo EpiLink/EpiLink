@@ -99,5 +99,9 @@ export default {
         discord: 'Connection to Discord',
         microsoft: 'Connection to Microsoft',
         settings: 'Settings review'
+    },
+
+    meta: {
+        downloadPdf: 'Download this PDF file'
     }
 };
