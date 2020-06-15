@@ -31,7 +31,9 @@ export default {
                 return;
             }
 
-            commit('setTermsOfService', await request('/meta/tos'));
+            const req = await request('GET', '/meta/tos', null, true);
+            const isPdf = req.headers.get('Content-Type') === 'application/pdf';
+            commit('setTermsOfService', {'textContent': isPdf ? null : await req.text(), 'pdfContent': isPdf ? URL.createObjectURL(await req.blob()) : null, 'url': req.url});
         },
 
         async fetchPrivacyPolicy({ state, commit }) {
@@ -39,7 +41,9 @@ export default {
                 return;
             }
 
-            commit('setPrivacyPolicy', await request('/meta/privacy'));
+            const req = await request('GET', '/meta/privacy', null, true);
+            const isPdf = req.headers.get('Content-Type') === 'application/pdf';
+            commit('setPrivacyPolicy', {'textContent': isPdf ? null : await req.text(), 'pdfContent': isPdf ? await req.blob() : null, 'url': req.url});
         }
     }
 };
