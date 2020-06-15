@@ -22,7 +22,7 @@
                 <p class="text" v-html="contentText"/>
             </div>
             <div class="pdf-things" v-if="content && contentPdf" :key="2">
-                <p><a :href="contentPdf" v-html="$t('meta.downloadPdf')">Download this PDF file</a></p>
+                <p><a :href="contentPdf" v-html="$t('meta.downloadPdf')" target="_blank"></a></p>
                 <iframe :src="contentPdf"></iframe>
             </div>
         </transition>
