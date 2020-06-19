@@ -39,6 +39,14 @@ interface LinkDiscordClientFacade {
     suspend fun sendDirectMessage(discordId: String, embed: DiscordEmbed)
 
     /**
+     * Send a message to a channel
+     *
+     * @param channelId The ID of the channel where the message should be sent
+     * @param embed The embed to send to the channel
+     */
+    suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed)
+
+    /**
      * Get the guilds the bot is connected to, no matter whether they are monitored or not.
      *
      * @return A list of the IDs of ALL the guilds the bot is connected to.

@@ -48,6 +48,31 @@ interface LinkDiscordMessages {
      * Get the ban notification embed, or null if privacy settings have ban notifications disabled.
      */
     fun getBanNotification(banReason: String, banExpiry: Instant?): DiscordEmbed?
+
+    /**
+     * Embed for replying to a command where the sender is not an admin
+     */
+    fun getNotAnAdminCommandReply(): DiscordEmbed
+
+    /**
+     * Embed for replying to a command where the sender is not registered
+     */
+    fun getNotRegisteredCommandReply(): DiscordEmbed
+
+    /**
+     * Embed for replying to a command where the sender does not have their identity stored
+     */
+    fun getAdminWithNoIdentityCommandReply(): DiscordEmbed
+
+    /**
+     * Embed for replying to a command where the server is not monitored
+     */
+    fun getServerNotMonitoredCommandReply(): DiscordEmbed
+
+    /**
+     * Embed for an invalid command name in a valid command.
+     */
+    fun getInvalidCommandReply(commandName: String): DiscordEmbed
 }
 
 private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
@@ -162,6 +187,35 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
             null
         }
 
+    override fun getNotAnAdminCommandReply(): DiscordEmbed = DiscordEmbed(
+        title = ":x: Not an administrator",
+        description = "You are not allowed to do that because you are not an administrator.",
+        footer = poweredByEpiLink
+    )
+
+    override fun getNotRegisteredCommandReply(): DiscordEmbed = DiscordEmbed(
+        title = ":x: Not registered",
+        description = "Although you are known as an administrator, you do not have an EpiLink account on this instance. Please create one and try again.",
+        footer = poweredByEpiLink
+    )
+
+    override fun getAdminWithNoIdentityCommandReply(): DiscordEmbed = DiscordEmbed(
+        title = ":x: Identity not recorded",
+        description = "Although you are a registered administrator, your identity is not recorded in the database. Please enable the Remember my identity option in your user panel and try again.",
+        footer = poweredByEpiLink
+    )
+
+    override fun getServerNotMonitoredCommandReply(): DiscordEmbed = DiscordEmbed(
+        title = ":x: Unmonitored server",
+        description = "This server is not monitored by EpiLink. Configure it in the EpiLink configuration file and try again.",
+        footer = poweredByEpiLink
+    )
+
+    override fun getInvalidCommandReply(commandName: String): DiscordEmbed = DiscordEmbed(
+        title = ":x: Invalid command '$commandName'",
+        description = "The command name '$commandName' does not exist.",
+        footer = poweredByEpiLink
+    )
 }
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
