@@ -20,15 +20,12 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import org.epilink.bot.LinkException
 import org.epilink.bot.StandardErrorCodes
-import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.db.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toErrorData
 import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
-import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
 
 /**
@@ -60,8 +57,8 @@ interface LinkSessionChecks {
 
 internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.sessioncheck")
-    private val admins: List<String> by inject(named("admins"))
     private val dbFacade: LinkDatabaseFacade by inject()
+    private val permission: LinkPermissionChecks by inject()
 
     override suspend fun verifyUser(context: PipelineContext<Unit, ApplicationCall>): Boolean = with(context) {
         val session = call.sessions.get<ConnectedSession>()
@@ -85,27 +82,29 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
     override suspend fun verifyAdmin(context: PipelineContext<Unit, ApplicationCall>): Boolean = with(context) {
         val user = call.attributes.getOrNull(userObjAttribute)
             ?: throw LinkException("Call verifyUser before verifyAdmin!")
-        if (user.discordId !in admins) {
-            // Not an admin
-            call.respond(
-                HttpStatusCode.Unauthorized,
-                StandardErrorCodes.InsufficientPermissions.toResponse("Insufficient permissions")
-            )
-            finish()
-            false
-        } else if (!dbFacade.isUserIdentifiable(user)) {
-            // Admin but not identifiable
-            call.respond(
-                HttpStatusCode.Unauthorized,
-                StandardErrorCodes.InsufficientPermissions.toResponse(
-                    "You need to have your identity recorded to perform administrative tasks"
+        when (permission.canPerformAdminActions(user)) {
+            AdminStatus.NotAdmin -> {
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    StandardErrorCodes.InsufficientPermissions.toResponse("Insufficient permissions")
                 )
-            )
-            finish()
-            false
-        } else {
-            call.attributes.put(adminObjAttribute, user)
-            true
+                finish()
+                false
+            }
+            AdminStatus.AdminNotIdentifiable -> {
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    StandardErrorCodes.InsufficientPermissions.toResponse(
+                        "You need to have your identity recorded to perform administrative tasks"
+                    )
+                )
+                finish()
+                false
+            }
+            AdminStatus.Admin -> {
+                call.attributes.put(adminObjAttribute, user)
+                true
+            }
         }
     }
 }
