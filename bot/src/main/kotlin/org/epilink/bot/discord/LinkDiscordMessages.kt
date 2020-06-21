@@ -73,7 +73,15 @@ interface LinkDiscordMessages {
      * Embed for an invalid command name in a valid command.
      */
     fun getInvalidCommandReply(commandName: String): DiscordEmbed
+
+    /**
+     * Embed for an invalid target given in a command body.
+     */
     fun getWrongTargetCommandReply(target: String): DiscordEmbed
+
+    /**
+     * Generic embed for a successful command result.
+     */
     fun getSuccessCommandReply(message: String): DiscordEmbed
 }
 
@@ -221,7 +229,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
 
     override fun getWrongTargetCommandReply(target: String): DiscordEmbed = DiscordEmbed(
         title = ":x: Invalid target",
-        description = "The target you specified (${target.replace('@', '=')}) is invalid.",
+        description = "The target you specified ($target, `$target`) is invalid.",
         footer = poweredByEpiLink
     )
 

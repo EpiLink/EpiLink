@@ -37,56 +37,88 @@ interface LinkDiscordCommands {
 /**
  * Indication on whether a message should be accepted or not
  */
-sealed class MessageAcceptStatus(val shouldAccept: Boolean) {
+sealed class MessageAcceptStatus {
     /**
      * The message is not a command and should therefore not be accepted. Should be silent.
      */
-    object NotACommand : MessageAcceptStatus(false)
+    object NotACommand : MessageAcceptStatus()
 
     /**
      * The sender is not an admin and the message should therefore not be accepted.
      */
-    object NotAdmin : MessageAcceptStatus(false)
+    object NotAdmin : MessageAcceptStatus()
 
     /**
      * The sender is not registered and the message should therefore not be accepted
      */
-    object NotRegistered : MessageAcceptStatus(false)
+    object NotRegistered : MessageAcceptStatus()
 
     /**
      * The sender is an admin but does not have their identity recorded and the message should therefore not be accepted
      */
-    object AdminNoIdentity : MessageAcceptStatus(false)
+    object AdminNoIdentity : MessageAcceptStatus()
 
     /**
      * The server the message was sent on is not monitored and the message should therefore not be accepted.
      */
-    object ServerNotMonitored : MessageAcceptStatus(false)
+    object ServerNotMonitored : MessageAcceptStatus()
 
     /**
      * The message should be accepted.
      *
      * @property user The sender, as a [LinkUser] database object.
      */
-    class Accept(val user: LinkUser) : MessageAcceptStatus(true)
+    class Accept(val user: LinkUser) : MessageAcceptStatus()
 }
 
 /**
  * Context given for a command.
  */
 class CommandContext(
+    /**
+     * The full command message. Contains the prefix and the command name
+     */
     val fullCommand: String,
+    /**
+     * The body of the command: that is, the command message without the prefix and command name.
+     *
+     * For example, if the full command is `"e!hello world hi"`, commandBody would be `"world hi"`.
+     */
     val commandBody: String,
+
+    /**
+     * The "sender", the user who sent the command.
+     */
     val sender: LinkUser,
+
+    /**
+     * The ID of the channel where the message was sent.
+     */
     val channelId: String,
-    val serverId: String
+
+    /**
+     * The ID of the guild where the message was sent.
+     */
+    val guildId: String
 )
 
 /**
  * An EpiLink Discord command.
  */
-class Command(val name: String, val action: suspend CommandContext.() -> Unit)
+class Command(
+    /**
+     * The name of the command
+     */
+    val name: String,
+    /**
+     * The action, which is just a lambda that is ran when the command is launched.
+     */
+    val action: suspend CommandContext.() -> Unit
+)
 
+/**
+ * Launch a command with the given parameters. See [CommandContext] for more details on what is what.
+ */
 suspend fun Command.process(
     fullCommand: String,
     commandBody: String,
@@ -104,33 +136,52 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()
     private val roleManager: LinkRoleManager by inject()
+    private val targetResolver: LinkDiscordTargets by inject()
+
     private val commands = listOf<Command>(
         Command("update") {
-            // Update a single person for now
-            val target = Regex("""<@!?(\d+)>""").matchEntire(commandBody)
-            if (target == null) {
+            val parsedTarget = targetResolver.parseDiscordTarget(commandBody)
+            if (parsedTarget is TargetParseResult.Error) {
                 client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
             } else {
-                val targetId = target.groups[1]!!.value
-                roleManager.invalidateAllRoles(targetId)
-                client.sendChannelMessage(
-                    channelId,
-                    msg.getSuccessCommandReply("Updating the target's roles globally. This may take some time.")
-                )
-
+                when (val target =
+                    targetResolver.resolveDiscordTarget(parsedTarget as TargetParseResult.Success, guildId)) {
+                    is TargetResult.User -> {
+                        // TODO add logging
+                        roleManager.invalidateAllRoles(target.id)
+                        client.sendChannelMessage(
+                            channelId,
+                            msg.getSuccessCommandReply("Updating the target's roles globally. This may take some time.")
+                        )
+                    }
+                    is TargetResult.Role -> {
+                        // TODO add logging
+                        val toUpdate = client.getMembersWithRole(target.id, guildId)
+                        toUpdate.forEach { roleManager.invalidateAllRoles(it) }
+                        client.sendChannelMessage(
+                            channelId,
+                            msg.getSuccessCommandReply("Updating members with role ${target.id} (${toUpdate.size} total) globally. This may take some time.")
+                        )
+                    }
+                    TargetResult.Everyone -> {
+                        // TODO add logging
+                        val toUpdate = client.getMembers(guildId)
+                        toUpdate.forEach { roleManager.invalidateAllRoles(it) }
+                        client.sendChannelMessage(
+                            channelId,
+                            msg.getSuccessCommandReply("Updating everyone present on this server (${toUpdate.size} total) globally. This may take some time.")
+                        )
+                    }
+                    is TargetResult.RoleNotFound -> {
+                        client.sendChannelMessage(
+                            channelId,
+                            msg.getWrongTargetCommandReply(commandBody)
+                        )
+                    }
+                }
             }
         }
     ).associateBy { it.name }
-
-    /*
-     User selector:
-     - Ping someone <@userid> (special Discord mention format)
-     - Ping a role <@&roleid> (special Discord mention format)
-     - By user id userid
-     - By role name |rolename
-     - By role id /roleid
-     - Everyone !everyone
-     */
 
     override suspend fun handleMessage(message: String, senderId: String, channelId: String, serverId: String) {
         when (val a = shouldAcceptMessage(message, senderId, serverId)) {
@@ -175,6 +226,4 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
             Admin -> Accept(user)
         }
     }
-
-
 }

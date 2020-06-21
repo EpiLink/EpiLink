@@ -67,7 +67,8 @@ internal class LinkDiscord4JFacadeImpl(
     }
 
     override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed) {
-        val channel = client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? TextChannel ?: error("Not a text channel")
+        val channel =
+            client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? TextChannel ?: error("Not a text channel")
         channel.createEmbed { it.from(embed) }.awaitSingle()
     }
 
@@ -158,6 +159,33 @@ internal class LinkDiscord4JFacadeImpl(
             user.discriminator
         ).also { logger.debug { "Received $it" } }
     }
+
+    override suspend fun getRoleIdByName(roleName: String, guildId: String): String? {
+        val guild = client.getGuildById(Snowflake.of(guildId)).awaitSingle()
+        val foundRole = guild.roles.filter { it.name == roleName }.awaitFirstOrNull()
+        return foundRole?.id?.asString()
+    }
+
+    // TODO handle when role ID does not exist
+    override suspend fun getMembersWithRole(roleId: String, guildId: String): List<String> {
+        val guild = client.getGuildById(Snowflake.of(guildId)).awaitSingle()
+        val members = guild.members.collectList().awaitSingle()
+        val roleSnowflake = Snowflake.of(roleId)
+        return coroutineScope {
+            members.map { m ->
+                async {
+                    if (m.roles.any { it.id == roleSnowflake }.awaitSingle())
+                        m.id.asString()
+                    else
+                        null
+                }
+            }.awaitAll().filterNotNull()
+        }
+    }
+
+    override suspend fun getMembers(guildId: String): List<String> =
+        client.getGuildById(Snowflake.of(guildId)).awaitSingle()
+            .members.map { it.id.asString() }.collectList().awaitSingle()
 
     /**
      * Generates an invite link for the bot and returns it

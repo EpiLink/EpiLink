@@ -97,6 +97,21 @@ interface LinkDiscordClientFacade {
      * @return A [DiscordUserInfo] object giving information on the user
      */
     suspend fun getDiscordUserInfo(discordId: String): DiscordUserInfo
+
+    /**
+     * Retrieve a role's ID from a specific guild by searching with the role's name.
+     */
+    suspend fun getRoleIdByName(roleName: String, guildId: String): String?
+
+    /**
+     * Retrieve a list of members that have the given role.
+     */
+    suspend fun getMembersWithRole(roleId: String, guildId: String): List<String>
+
+    /**
+     * Retrieve a list of all of the members in a guild.
+     */
+    suspend fun getMembers(guildId: String): List<String>
 }
 
 /**

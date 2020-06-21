@@ -86,6 +86,7 @@ class LinkServerEnvironment(
         single<LinkDiscordMessageSender> { LinkDiscordMessageSenderImpl() }
         single<LinkBanManager> { LinkBanManagerImpl() }
         single<LinkDiscordCommands> { LinkDiscordCommandsImpl() }
+        single<LinkDiscordTargets> { LinkDiscordTargetsImpl() }
     }
 
     /**
