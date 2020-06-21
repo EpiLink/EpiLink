@@ -73,6 +73,8 @@ interface LinkDiscordMessages {
      * Embed for an invalid command name in a valid command.
      */
     fun getInvalidCommandReply(commandName: String): DiscordEmbed
+    fun getWrongTargetCommandReply(target: String): DiscordEmbed
+    fun getSuccessCommandReply(message: String): DiscordEmbed
 }
 
 private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
@@ -214,6 +216,18 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     override fun getInvalidCommandReply(commandName: String): DiscordEmbed = DiscordEmbed(
         title = ":x: Invalid command '$commandName'",
         description = "The command name '$commandName' does not exist.",
+        footer = poweredByEpiLink
+    )
+
+    override fun getWrongTargetCommandReply(target: String): DiscordEmbed = DiscordEmbed(
+        title = ":x: Invalid target",
+        description = "The target you specified (${target.replace('@', '=')}) is invalid.",
+        footer = poweredByEpiLink
+    )
+
+    override fun getSuccessCommandReply(message: String): DiscordEmbed = DiscordEmbed(
+        title = ":white_check_mark: Success",
+        description = message,
         footer = poweredByEpiLink
     )
 }

@@ -74,15 +74,27 @@ sealed class MessageAcceptStatus(val shouldAccept: Boolean) {
 /**
  * Context given for a command.
  */
-class CommandContext(val message: String, val sender: LinkUser, val channelId: String, val serverId: String)
+class CommandContext(
+    val fullCommand: String,
+    val commandBody: String,
+    val sender: LinkUser,
+    val channelId: String,
+    val serverId: String
+)
 
 /**
  * An EpiLink Discord command.
  */
 class Command(val name: String, val action: suspend CommandContext.() -> Unit)
 
-suspend fun Command.process(message: String, sender: LinkUser, channelId: String, serverId: String) =
-    this.action(CommandContext(message, sender, channelId, serverId))
+suspend fun Command.process(
+    fullCommand: String,
+    commandBody: String,
+    sender: LinkUser,
+    channelId: String,
+    serverId: String
+) =
+    this.action(CommandContext(fullCommand, commandBody, sender, channelId, serverId))
 
 internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
     private val discordCfg: LinkDiscordConfig by inject()
@@ -91,8 +103,34 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
     private val permission: LinkPermissionChecks by inject()
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()
+    private val roleManager: LinkRoleManager by inject()
+    private val commands = listOf<Command>(
+        Command("update") {
+            // Update a single person for now
+            val target = Regex("""<@!?(\d+)>""").matchEntire(commandBody)
+            if (target == null) {
+                client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
+            } else {
+                val targetId = target.groups[1]!!.value
+                roleManager.invalidateAllRoles(targetId)
+                client.sendChannelMessage(
+                    channelId,
+                    msg.getSuccessCommandReply("Updating the target's roles globally. This may take some time.")
+                )
 
-    private val commands = listOf<Command>().associateBy { it.name }
+            }
+        }
+    ).associateBy { it.name }
+
+    /*
+     User selector:
+     - Ping someone <@userid> (special Discord mention format)
+     - Ping a role <@&roleid> (special Discord mention format)
+     - By user id userid
+     - By role name |rolename
+     - By role id /roleid
+     - Everyone !everyone
+     */
 
     override suspend fun handleMessage(message: String, senderId: String, channelId: String, serverId: String) {
         when (val a = shouldAcceptMessage(message, senderId, serverId)) {
@@ -115,7 +153,7 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
                     client.sendChannelMessage(channelId, msg.getInvalidCommandReply(commandName))
                     return
                 }
-                command.process(message, a.user, channelId, serverId)
+                command.process(message, if (result.size == 1) "" else result[1], a.user, channelId, serverId)
             }
         }
     }
