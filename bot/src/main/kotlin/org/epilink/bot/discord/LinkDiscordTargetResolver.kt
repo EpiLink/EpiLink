@@ -6,11 +6,11 @@ import org.koin.core.inject
 
 /*
  User selector:
- - Ping someone <@userid> (special Discord mention format)
- - Ping a role <@&roleid> (special Discord mention format)
- - By user id userid
- - By role name |rolename
- - By role id /roleid
+ - Ping someone <@userId> (special Discord mention format)
+ - Ping a role <@&roleId> (special Discord mention format)
+ - By user id userId
+ - By role name |roleName
+ - By role id /roleId
  - Everyone !everyone
  */
 

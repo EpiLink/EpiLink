@@ -80,7 +80,7 @@ class CommandContext(
     /**
      * The full command message. Contains the prefix and the command name
      */
-    val fullCommand: String,
+    @Suppress("unused") val fullCommand: String,
     /**
      * The body of the command: that is, the command message without the prefix and command name.
      *

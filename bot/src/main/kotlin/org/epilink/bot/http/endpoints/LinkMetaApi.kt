@@ -11,7 +11,6 @@ package org.epilink.bot.http.endpoints
 import guru.zoroark.ratelimit.rateLimited
 import io.ktor.application.call
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
