@@ -38,6 +38,11 @@ interface LinkPermissionChecks {
      */
     suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory
 
+    /**
+     * Checks whether a user can perform an admin action or not.
+     *
+     * @return a [AdminStatus] that describes the ability for the user to perform admin actions.
+     */
     @UsesTrueIdentity
     suspend fun canPerformAdminActions(dbUser: LinkUser): AdminStatus
 }

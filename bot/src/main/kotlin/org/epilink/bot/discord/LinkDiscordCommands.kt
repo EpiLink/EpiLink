@@ -16,10 +16,12 @@ import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkPermissionChecks
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.debug
 import org.epilink.bot.discord.MessageAcceptStatus.*
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.koin.core.qualifier.named
+import org.slf4j.LoggerFactory
 
 /**
  * Component for receiving and handling Discord commands
@@ -129,6 +131,8 @@ suspend fun Command.process(
     this.action(CommandContext(fullCommand, commandBody, sender, channelId, serverId))
 
 internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
+    private val logger = LoggerFactory.getLogger("epilink.discord.cmd")
+
     private val discordCfg: LinkDiscordConfig by inject()
     private val admins: List<String> by inject(named("admins"))
     private val db: LinkDatabaseFacade by inject()
@@ -138,48 +142,39 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
     private val roleManager: LinkRoleManager by inject()
     private val targetResolver: LinkDiscordTargets by inject()
 
-    private val commands = listOf<Command>(
+    private val commands = listOf(
         Command("update") {
             val parsedTarget = targetResolver.parseDiscordTarget(commandBody)
             if (parsedTarget is TargetParseResult.Error) {
                 client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
-            } else {
-                when (val target =
-                    targetResolver.resolveDiscordTarget(parsedTarget as TargetParseResult.Success, guildId)) {
-                    is TargetResult.User -> {
-                        // TODO add logging
-                        roleManager.invalidateAllRoles(target.id)
-                        client.sendChannelMessage(
-                            channelId,
-                            msg.getSuccessCommandReply("Updating the target's roles globally. This may take some time.")
-                        )
-                    }
-                    is TargetResult.Role -> {
-                        // TODO add logging
-                        val toUpdate = client.getMembersWithRole(target.id, guildId)
-                        toUpdate.forEach { roleManager.invalidateAllRoles(it) }
-                        client.sendChannelMessage(
-                            channelId,
-                            msg.getSuccessCommandReply("Updating members with role ${target.id} (${toUpdate.size} total) globally. This may take some time.")
-                        )
-                    }
-                    TargetResult.Everyone -> {
-                        // TODO add logging
-                        val toUpdate = client.getMembers(guildId)
-                        toUpdate.forEach { roleManager.invalidateAllRoles(it) }
-                        client.sendChannelMessage(
-                            channelId,
-                            msg.getSuccessCommandReply("Updating everyone present on this server (${toUpdate.size} total) globally. This may take some time.")
-                        )
-                    }
-                    is TargetResult.RoleNotFound -> {
-                        client.sendChannelMessage(
-                            channelId,
-                            msg.getWrongTargetCommandReply(commandBody)
-                        )
+                return@Command
+            }
+            val target = targetResolver.resolveDiscordTarget(parsedTarget as TargetParseResult.Success, guildId)
+            val (toInvalidate, message) = when (target) {
+                is TargetResult.User -> {
+                    logger.debug { "Updating ${target.id}'s roles globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
+                    listOf(target.id) to "Updating the target's roles globally. This may take some time."
+                }
+                is TargetResult.Role -> {
+                    logger.debug { "Updating everyone with role ${target.id} globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
+                    client.getMembersWithRole(target.id, guildId).let {
+                        it to "Updating members with role ${target.id} (${it.size} total) globally. This may take some time."
                     }
                 }
+                TargetResult.Everyone -> {
+                    logger.debug { "Updating everyone on server $guildId globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
+                    client.getMembers(guildId).let {
+                        it to "Updating everyone present on this server (${it.size} total) globally. This may take some time."
+                    }
+                }
+                is TargetResult.RoleNotFound -> {
+                    logger.debug { "Attempted update on invalid target $commandBody (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
+                    client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
+                    return@Command
+                }
             }
+            toInvalidate.forEach { roleManager.invalidateAllRoles(it, false) }
+            client.sendChannelMessage(channelId, msg.getSuccessCommandReply(message))
         }
     ).associateBy { it.name }
 
