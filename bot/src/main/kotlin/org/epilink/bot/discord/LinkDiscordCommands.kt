@@ -16,12 +16,11 @@ import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkPermissionChecks
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
-import org.epilink.bot.debug
 import org.epilink.bot.discord.MessageAcceptStatus.*
 import org.koin.core.KoinComponent
+import org.koin.core.get
 import org.koin.core.inject
 import org.koin.core.qualifier.named
-import org.slf4j.LoggerFactory
 
 /**
  * Component for receiving and handling Discord commands
@@ -107,16 +106,17 @@ class CommandContext(
 /**
  * An EpiLink Discord command.
  */
-class Command(
+interface Command {
     /**
      * The name of the command
      */
-    val name: String,
+    val name: String
+
     /**
-     * The action, which is just a lambda that is ran when the command is launched.
+     * Run the command
      */
-    val action: suspend CommandContext.() -> Unit
-)
+    suspend fun CommandContext.run()
+}
 
 /**
  * Launch a command with the given parameters. See [CommandContext] for more details on what is what.
@@ -128,55 +128,21 @@ suspend fun Command.process(
     channelId: String,
     serverId: String
 ) =
-    this.action(CommandContext(fullCommand, commandBody, sender, channelId, serverId))
+    with(CommandContext(fullCommand, commandBody, sender, channelId, serverId)) {
+        run()
+    }
 
 internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
-    private val logger = LoggerFactory.getLogger("epilink.discord.cmd")
-
     private val discordCfg: LinkDiscordConfig by inject()
     private val admins: List<String> by inject(named("admins"))
     private val db: LinkDatabaseFacade by inject()
     private val permission: LinkPermissionChecks by inject()
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()
-    private val roleManager: LinkRoleManager by inject()
-    private val targetResolver: LinkDiscordTargets by inject()
 
-    private val commands = listOf(
-        Command("update") {
-            val parsedTarget = targetResolver.parseDiscordTarget(commandBody)
-            if (parsedTarget is TargetParseResult.Error) {
-                client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
-                return@Command
-            }
-            val target = targetResolver.resolveDiscordTarget(parsedTarget as TargetParseResult.Success, guildId)
-            val (toInvalidate, message) = when (target) {
-                is TargetResult.User -> {
-                    logger.debug { "Updating ${target.id}'s roles globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
-                    listOf(target.id) to "Updating the target's roles globally. This may take some time."
-                }
-                is TargetResult.Role -> {
-                    logger.debug { "Updating everyone with role ${target.id} globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
-                    client.getMembersWithRole(target.id, guildId).let {
-                        it to "Updating members with role ${target.id} (${it.size} total) globally. This may take some time."
-                    }
-                }
-                TargetResult.Everyone -> {
-                    logger.debug { "Updating everyone on server $guildId globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
-                    client.getMembers(guildId).let {
-                        it to "Updating everyone present on this server (${it.size} total) globally. This may take some time."
-                    }
-                }
-                is TargetResult.RoleNotFound -> {
-                    logger.debug { "Attempted update on invalid target $commandBody (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
-                    client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
-                    return@Command
-                }
-            }
-            toInvalidate.forEach { roleManager.invalidateAllRoles(it, false) }
-            client.sendChannelMessage(channelId, msg.getSuccessCommandReply(message))
-        }
-    ).associateBy { it.name }
+    private val commands by lazy {
+        get<List<Command>>(named("discord.commands")).associateBy { it.name }
+    }
 
     override suspend fun handleMessage(message: String, senderId: String, channelId: String, serverId: String) {
         when (val a = shouldAcceptMessage(message, senderId, serverId)) {
