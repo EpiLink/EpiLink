@@ -42,5 +42,6 @@
 
     #description {
         font-size: 25px;
+        text-align: center;
     }
 </style>

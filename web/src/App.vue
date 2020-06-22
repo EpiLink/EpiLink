@@ -317,6 +317,10 @@
         &.opened {
             background-color: rgba(0, 0, 0, .6);
         }
+
+        &:not(.opened) {
+            pointer-events: none;
+        }
     }
 
     #sidebar {
@@ -394,6 +398,16 @@
                 #logo {
                     margin-left: 9px;
                 }
+            }
+        }
+    }
+
+    @media screen and (max-width: 450px) {
+        #main-view #content {
+            &, #loading, #content-wrapper > div {
+                height: calc(100vh - #{$footer-height} - 30px);
+                max-height: 400px;
+                width: calc(100vw - 35px);
             }
         }
     }

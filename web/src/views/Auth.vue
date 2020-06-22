@@ -124,6 +124,8 @@
         }
 
         .subtitle {
+            text-align: center;
+
             margin-top: 35px;
             font-size: 17px;
         }

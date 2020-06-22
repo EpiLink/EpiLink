@@ -31,6 +31,7 @@
         mounted() {
             if (!window.opener) {
                 this.$router.push({ name: 'home' });
+                this.status = true;
                 return;
             }
 
@@ -127,5 +128,17 @@
         margin-bottom: 0;
 
         height: 50px;
+    }
+
+    @media screen and (max-width: 450px) {
+        #text {
+            margin-top: 50px;
+        }
+    }
+
+    @media screen and (max-width: 350px) {
+        #text {
+            font-size: 28px;
+        }
     }
 </style>
