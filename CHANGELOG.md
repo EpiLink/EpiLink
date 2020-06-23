@@ -8,12 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+* Added Discord commands ([#178](https://github.com/EpiLink/EpiLink/pull/178))
 * Added PDF support for ToS and Privacy Policy documents ([#175](https://github.com/EpiLink/EpiLink/pull/175))
 * Added GDPR report generation ([#173](https://github.com/EpiLink/EpiLink/pull/173))
 * Added ban notifications ([#168](https://github.com/EpiLink/EpiLink/pull/168))
 * Added administration endpoints (and its documentation) ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added banning abilities ([#161](https://github.com/EpiLink/EpiLink/pull/161))
-    * **BREAKING CHANGE:** The Bans table of the database was improved significantly: delete it (you could not ban people anyway) and EpiLink will re-create it for you.
+    * **BREAKING CHANGE:** The Bans table of the database was improved significantly in a non-backwards-compatible way: delete it (you could not ban people before anyways) and EpiLink will re-create it for you.
     * Note: While banning logic has been in place for a while, there was no way of creating or revoking a ban. This adds banning and revoking abilities.
 * Added manual ID access ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added retrieving additional information about users ([#161](https://github.com/EpiLink/EpiLink/pull/161))
