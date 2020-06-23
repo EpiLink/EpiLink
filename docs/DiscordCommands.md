@@ -36,7 +36,7 @@ The `update` command can be used to refresh the roles of a single user or multip
 The syntax is:
 
 ```
-e!update <user>
+update <user>
 ```
 
-Where `<user>` is a [user target](#user-target).
+Where `<user>` is a [user target](#user-target). Note that you must prepend the command with the prefix: this would give `e!update <user>` if you're using the default prefix.
