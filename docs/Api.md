@@ -182,14 +182,16 @@ Returns information about this instance, as a [InstanceInformation](#instanceinf
 GET /api/v1/meta/tos
 ```
 
-> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly. `Content-Type: text/html`
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML or a PDF file directly. `Content-Type: text/html` or `Content-Type: application/pdf`
 
-Returns the terms of services of this instance, as inline HTML.
+Returns the terms of services of this instance, as inline HTML or as a PDF.
 
 Example:
 ```html
 <p>My terms of services are the best terms of services!</p>
 ```
+
+(or a PDF file's contents)
 
 ### GET /meta/privacy
 
@@ -199,14 +201,16 @@ Example:
 GET /api/v1/meta/privacy
 ```
 
-> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly. `Content-Type: text/html`
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly or a PDF file. `Content-Type: text/html` or `Content-Type: application/pdf`
 
-Returns the privacy policy of this instance, as inline HTML.
+Returns the privacy policy of this instance, as inline HTML or as a PDF.
 
 Example:
 ```html
 <p>My privacy policy is very private!</p>
 ```
+
+(or a PDF file's contents)
 
 ## Registration (/register)
 

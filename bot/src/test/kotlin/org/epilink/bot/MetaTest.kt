@@ -10,16 +10,13 @@ package org.epilink.bot
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.contentType
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.runs
 import org.epilink.bot.config.LinkContactInformation
 import org.epilink.bot.config.LinkFooterUrl
 import org.epilink.bot.config.LinkWebServerConfiguration
@@ -29,7 +26,6 @@ import org.epilink.bot.http.LinkDiscordBackEnd
 import org.epilink.bot.http.LinkMicrosoftBackEnd
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkMetaApiImpl
-import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.koin.dsl.module
 import org.koin.test.get
 import kotlin.test.Test
@@ -71,7 +67,7 @@ class MetaTest : KoinBaseTest(
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/info")
-            call.assertStatus(HttpStatusCode.OK)
+            call.assertStatus(OK)
             val data = fromJson<ApiSuccess>(call.response).data
             assertNotNull(data)
             assertEquals("EpiLink Test Instance", data["title"])
@@ -94,11 +90,11 @@ class MetaTest : KoinBaseTest(
     fun `Test ToS retrieval`() {
         val tos = "<p>ABCDEFG</p>"
         mockHere<LinkLegalTexts> {
-            every { tosText } returns tos
+            every { termsOfServices } returns LegalText.Html(tos)
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/tos")
-            call.assertStatus(HttpStatusCode.OK)
+            call.assertStatus(OK)
             assertEquals(ContentType.Text.Html, call.response.contentType())
             val data = call.response.content
             assertEquals(tos, data)
@@ -106,17 +102,49 @@ class MetaTest : KoinBaseTest(
     }
 
     @Test
+    fun `Test ToS PDF retrieval`() {
+        val tos = byteArrayOf(1, 2, 3)
+        mockHere<LinkLegalTexts> {
+            every { termsOfServices } returns LegalText.Pdf(tos)
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/tos")
+            call.assertStatus(OK)
+            assertEquals(ContentType.Application.Pdf, call.response.contentType())
+            val data = call.response.byteContent
+            assertNotNull(data)
+            assertTrue(tos.contentEquals(data))
+        }
+    }
+
+    @Test
     fun `Test PP retrieval`() {
         val pp = "<p>Privacy policyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</p>"
         mockHere<LinkLegalTexts> {
-            every { policyText } returns pp
+            every { privacyPolicy } returns LegalText.Html(pp)
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/privacy")
-            call.assertStatus(HttpStatusCode.OK)
+            call.assertStatus(OK)
             assertEquals(ContentType.Text.Html, call.response.contentType())
             val data = call.response.content
             assertEquals(pp, data)
+        }
+    }
+
+    @Test
+    fun `Test PP PDF retrieval`() {
+        val pp = byteArrayOf(1, 2, 3)
+        mockHere<LinkLegalTexts> {
+            every { privacyPolicy } returns LegalText.Pdf(pp)
+        }
+        withTestEpiLink {
+            val call = handleRequest(HttpMethod.Get, "/api/v1/meta/privacy")
+            call.assertStatus(OK)
+            assertEquals(ContentType.Application.Pdf, call.response.contentType())
+            val data = call.response.byteContent
+            assertNotNull(data)
+            assertTrue(pp.contentEquals(data))
         }
     }
 

@@ -103,5 +103,9 @@ export default {
         discord: 'Connexion à Discord',
         microsoft: 'Connexion à Microsoft',
         settings: 'Validation des paramètres'
+    },
+
+    meta: {
+        downloadPdf: 'Télécharger ce fichier PDF'
     }
 };
