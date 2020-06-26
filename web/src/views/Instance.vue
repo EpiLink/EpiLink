@@ -45,7 +45,7 @@
         computed: mapState({
             title: s => s.meta.title,
             logo: s => s.meta.logo,
-            people: s => [{ name: 'Adrien Navratil', email: 'zbeub@zzz.fr' }]
+            people: s => s.meta.contacts
         })
     }
 </script>
