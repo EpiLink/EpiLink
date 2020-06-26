@@ -122,7 +122,7 @@
         },
         methods: {
             load() {
-                if (!this.redirected) {
+                if (!window.opener) {
                     this.$store.dispatch('load').catch(err => this.error = err);
                 }
             },
@@ -182,11 +182,12 @@
             }
 
             &, #content-wrapper > div:not(.fade-enter-active):not(.fade-leave-active) {
-                transition: width 0.5s;
+                transition: width 0.5s, max-width 0.5s;
             }
 
             &.expanded, &.expanded > #content-wrapper > div {
                 width: 1000px;
+                max-width: 1000px;
             }
 
             #loading {
@@ -216,6 +217,8 @@
         animation: footer-pop 0.25s 0.3s ease 1 both;
 
         #left-footer {
+            max-width: 95vw;
+
             #menu {
                 display: none;
                 cursor: pointer;
@@ -285,6 +288,10 @@
                 font-size: 21px;
 
                 color: #C01616;
+
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
 
                 &:hover {
                     text-decoration: underline;
@@ -402,12 +409,21 @@
         }
     }
 
-    @media screen and (max-width: 450px) {
+    @media screen and (max-width: $height-wrap-breakpoint) {
         #main-view #content {
             &, #loading, #content-wrapper > div {
                 height: calc(100vh - #{$footer-height} - 30px);
                 max-height: 400px;
                 width: calc(100vw - 35px);
+            }
+        }
+    }
+
+    @media screen and (max-width: $expanded-breakpoint) {
+        #main-view #content {
+            &.expanded, &.expanded > #content-wrapper > div {
+                width: calc(100vw - 50px);
+                max-width: $content-width;
             }
         }
     }

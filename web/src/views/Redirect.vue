@@ -29,12 +29,6 @@
         components: { LinkCheck },
 
         mounted() {
-            if (!window.opener) {
-                this.$router.push({ name: 'home' });
-                this.status = true;
-                return;
-            }
-
             const service = this.$route.params.service;
             const query = window.location.search;
 
@@ -57,6 +51,11 @@
             this.status = true;
 
             setTimeout(() => {
+                if (!window.opener) {
+                    this.$router.push({ name: 'auth', query: { code }});
+                    return;
+                }
+
                 window.opener.postMessage({ code });
                 window.close();
             }, 1250);
@@ -130,7 +129,7 @@
         height: 50px;
     }
 
-    @media screen and (max-width: 450px) {
+    @media screen and (max-width: $height-wrap-breakpoint) {
         #text {
             margin-top: 50px;
         }

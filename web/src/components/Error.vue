@@ -41,8 +41,6 @@
 
         padding: 0 25px;
         box-sizing: border-box;
-
-        height: $content-height;
     }
 
     .title {

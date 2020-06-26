@@ -12,8 +12,8 @@
     <div id="auth">
         <transition name="fade" mode="out-in">
             <div class="auth-dialog" v-if="!fetching" :key="0">
-                <h1 class="title" v-html="$t('auth.waiting.title')" />
-                <span class="subtitle" v-html="$t('auth.waiting.description')" />
+                <h1 class="title" v-html="$t(`auth.${mobile ? 'redirecting' : 'waiting'}.title`)" />
+                <span class="subtitle" v-html="$t(`auth.${mobile ? 'redirecting' : 'waiting'}.description`)" />
 
                 <link-loading />
             </div>
@@ -32,6 +32,7 @@
 
 <script>
     import { getRedirectURI } from '../api';
+
     import LinkError          from '../components/Error';
     import LinkLoading        from '../components/Loading';
 
@@ -40,7 +41,14 @@
         components: { LinkError, LinkLoading },
 
         mounted() {
+            const code = this.$route.query.code;
+            if (code) {
+                this.onMessage({ origin: window.origin, data: { code } });
+                return;
+            }
+
             window.addEventListener('message', this.onMessage);
+
             this.closeListener = setInterval(() => {
                 const popup = this.$store.state.popup;
                 if (popup && popup.closed) {
@@ -62,7 +70,8 @@
             return {
                 closeListener: null,
                 fetching: false,
-                error: null
+                error: null,
+                mobile: navigator.userAgent.includes('obil')
             }
         },
         methods: {

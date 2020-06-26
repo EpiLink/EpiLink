@@ -56,6 +56,7 @@
 </script>
 
 <style lang="scss" scoped>
+    @import '../styles/vars';
     @import '../styles/fonts';
 
     #home {
@@ -120,7 +121,7 @@
         }
     }
 
-    @media screen and (max-width: 450px) {
+    @media screen and (max-width: $height-wrap-breakpoint) {
         #home {
             padding: 30px;
         }
