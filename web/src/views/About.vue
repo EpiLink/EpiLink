@@ -158,4 +158,94 @@
             }
         }
     }
+
+    @media screen and (max-width: 535px) {
+        #authors-section {
+            .title {
+                margin-bottom: 0;
+            }
+
+            #authors {
+                flex-direction: column;
+
+                padding: 0 20px;
+
+                .author {
+                    flex-direction: row;
+                    justify-content: center;
+                    margin-top: 7px;
+
+                    .avatar {
+                        height: 45px;
+                    }
+
+                    .name {
+                        flex-grow: 1;
+
+                        font-size: 16px;
+
+                        margin-left: 10px;
+                        margin-top: 0;
+                    }
+
+                    .role {
+                        font-size: 14px;
+                    }
+                }
+            }
+        }
+    }
+
+    @media screen and (max-width: 425px) {
+        #authors-section {
+            .title {
+                font-size: 21px;
+            }
+
+            #authors {
+                padding: 0 11px;
+
+                .author {
+                    .avatar {
+                        height: 30px;
+                    }
+
+                    .name {
+                        font-size: 13px;
+                    }
+
+                    .role {
+                        font-size: 11px;
+                    }
+                }
+            }
+        }
+    }
+
+    @media screen and (max-width: 365px) {
+        #banner {
+            #logo {
+                width: 65px;
+            }
+
+            .title {
+                font-size: 46px;
+            }
+        }
+
+        #disclaimer {
+            font-size: 14px;
+        }
+
+        #button-container #sources {
+            width: 175px;
+            padding: 9px 10px;
+
+            font-size: 15px;
+
+            #github {
+                height: 22px;
+            }
+        }
+    }
 </style>

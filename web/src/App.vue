@@ -427,4 +427,10 @@
             }
         }
     }
+
+    @media screen and (max-width: 400px) {
+        #footer #left-footer #logout {
+            font-size: 18px;
+        }
+    }
 </style>
