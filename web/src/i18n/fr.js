@@ -15,6 +15,10 @@ export default {
         discord: 'Se connecter via Discord'
     },
     auth: {
+        redirecting: {
+            title: 'Redirection',
+            description: 'Redirection vers le service en cours...'
+        },
         waiting: {
             title: 'En attente',
             description: 'En attente de la confirmation dans la fenêtre séparée...'

@@ -33,13 +33,17 @@
 </script>
 
 <style lang="scss" scoped>
+    @import '../styles/vars';
+
     #success {
         display: flex;
         justify-content: space-evenly;
         align-items: center;
         flex-direction: column;
 
-        padding: 20px 45px;
+        padding: 20px 45px 0;
+
+        overflow-y: auto;
     }
 
     #message {
@@ -56,5 +60,18 @@
 
     #profile {
         text-decoration: underline;
+        padding-bottom: 20px;
+    }
+
+    @media screen and (max-width: 415px) {
+        #success {
+            padding: 20px 30px 0;
+        }
+    }
+
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        #success {
+            justify-content: normal;
+        }
     }
 </style>
