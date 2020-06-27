@@ -38,7 +38,8 @@
 </script>
 
 <style lang="scss" scoped>
-    @import '../styles/fonts';
+    @import '../styles/vars';
+    @import 'src/styles/mixins';
 
     .user {
         display: flex;
@@ -69,5 +70,17 @@
     .email {
         font-size: 18px;
         font-style: italic;
+    }
+
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        .avatar {
+            width: 116px;
+            height: 116px;
+        }
+
+        .username {
+            font-size: 26px;
+            margin-top: 10px;
+        }
     }
 </style>

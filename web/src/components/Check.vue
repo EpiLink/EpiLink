@@ -31,6 +31,8 @@
         border-radius: 50%;
 
         background-color: lighten($primary-color, 4.5%);
+
+        flex-shrink: 0;
     }
 
     .check {

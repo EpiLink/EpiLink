@@ -30,6 +30,7 @@
 
         <div id="footer" v-if="!redirected">
             <div id="left-footer">
+                <img id="menu" src="../assets/menu.svg" @click="sidebar = !sidebar" />
                 <router-link id="home-button" to="/">
                     <img id="logo" src="../assets/logo.svg" />
                     <span id="title">EpiLink</span>
@@ -45,10 +46,20 @@
                 </template>
             </div>
             <ul id="navigation">
-                <li class="navigation-item" v-for="r of routes">
-                    <router-link v-if="r.route" :to="{ name: r.route }" v-html="$t(`layout.navigation.${r.route}`)" />
-                    <a v-if="r.url" :href="r.url" target="_blank">{{ r.name }}</a>
-                </li>
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
+            </ul>
+        </div>
+
+        <div id="sidebar-shadow" :class="{ opened: sidebar }" @click="sidebar = false" />
+
+        <div id="sidebar" :class="{ opened: sidebar }">
+            <div id="header">
+                <img id="side-logo" src="../assets/logo.svg" />
+                EpiLink
+            </div>
+
+            <ul id="side-navigation">
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
             </ul>
         </div>
     </div>
@@ -59,17 +70,19 @@
 
     import LinkError   from './components/Error';
     import LinkLoading from './components/Loading';
+    import LinkRoute from "./components/Route";
 
     export default {
         name: 'link-app',
-        components: { LinkError, LinkLoading },
+        components: { LinkRoute, LinkError, LinkLoading },
 
         mounted() {
             this.load();
         },
         data() {
             return {
-                error: null
+                error: null,
+                sidebar: false
             };
         },
         computed: {
@@ -109,7 +122,7 @@
         },
         methods: {
             load() {
-                if (!this.redirected) {
+                if (!window.opener) {
                     this.$store.dispatch('load').catch(err => this.error = err);
                 }
             },
@@ -121,6 +134,11 @@
             retry() {
                 this.error = null;
                 this.load();
+            }
+        },
+        watch: {
+            '$route.name'() {
+                this.sidebar = false;
             }
         }
     }
@@ -156,18 +174,20 @@
             animation: fade 0.25s 0.3s ease 1 both;
 
             &, #loading, #content-wrapper > div {
-                width: $content-width;
+                width: calc(100vw - 50px);
+                max-width: $content-width;
                 height: $content-height;
 
                 box-sizing: border-box;
             }
 
             &, #content-wrapper > div:not(.fade-enter-active):not(.fade-leave-active) {
-                transition: width 0.5s;
+                transition: width 0.5s, max-width 0.5s;
             }
 
             &.expanded, &.expanded > #content-wrapper > div {
                 width: 1000px;
+                max-width: 1000px;
             }
 
             #loading {
@@ -197,6 +217,13 @@
         animation: footer-pop 0.25s 0.3s ease 1 both;
 
         #left-footer {
+            max-width: 95vw;
+
+            #menu {
+                display: none;
+                cursor: pointer;
+            }
+
             #home-button {
                 display: contents;
             }
@@ -243,6 +270,7 @@
             }
 
             #instance {
+                @include ellipsis();
                 font-size: 18px;
             }
 
@@ -262,6 +290,8 @@
 
                 color: #C01616;
 
+                @include ellipsis();
+
                 &:hover {
                     text-decoration: underline;
                 }
@@ -272,8 +302,79 @@
             @include lato(600);
             list-style: none;
 
-            .navigation-item {
+            .route {
                 margin-right: 20px;
+            }
+        }
+    }
+
+    #sidebar, #sidebar-shadow {
+        position: absolute;
+        top: 0;
+        left: 0;
+
+        height: calc(100vh - #{$footer-height});
+    }
+
+    #sidebar-shadow {
+        width: 100vw;
+        transition: background-color .4s;
+
+        &.opened {
+            background-color: rgba(0, 0, 0, .6);
+        }
+
+        &:not(.opened) {
+            pointer-events: none;
+        }
+    }
+
+    #sidebar {
+        width: $sidebar-width;
+
+        background-color: white;
+        color: black;
+
+        box-sizing: border-box;
+        padding-left: 20px;
+
+        box-shadow: inset rgba(17, 17, 17, 0.35) 10px -3px 9px 3px, rgba(17, 17, 17, 0.45) 0px -10px 7px 3px;
+
+        transform: translateX(-$sidebar-width);
+        transition: transform .4s;
+
+        &.opened {
+            transform: translateX(-20px);
+        }
+
+        #header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            margin-top: 25px;
+
+            font-size: 24px;
+            font-weight: 600;
+
+            #side-logo {
+                width: 45px;
+                margin-right: 15px;
+
+                border-radius: 4px;
+            }
+        }
+
+        #side-navigation {
+            @include lato(600);
+            list-style: none;
+
+            margin-top: 35px;
+            padding-left: 25px;
+
+            .route {
+                margin-top: 12px;
+                font-size: 18px;
             }
         }
     }
@@ -285,6 +386,54 @@
 
         100% {
             transform: translateY(0);
+        }
+    }
+
+    @media screen and (max-width: 1000px) {
+        #footer {
+            #navigation, #instance-separator, #left-footer #home-button {
+                display: none;
+            }
+
+            #left-footer {
+                #menu {
+                    display: inline-block;
+                    margin-left: 7px;
+                }
+
+                #logo-instance {
+                    margin-left: 9px;
+                }
+
+                #instance {
+                    font-weight: 600;
+                }
+            }
+        }
+    }
+
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        #main-view #content {
+            &, #loading, #content-wrapper > div {
+                height: calc(100vh - #{$footer-height} - 30px);
+                max-height: 400px;
+                width: calc(100vw - 35px);
+            }
+        }
+    }
+
+    @media screen and (max-width: $expanded-breakpoint) {
+        #main-view #content {
+            &.expanded, &.expanded > #content-wrapper > div {
+                width: calc(100vw - 50px);
+                max-width: $content-width;
+            }
+        }
+    }
+
+    @media screen and (max-width: 400px) {
+        #footer #left-footer #logout {
+            font-size: 18px;
         }
     }
 </style>

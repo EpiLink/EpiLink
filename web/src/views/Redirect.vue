@@ -29,11 +29,6 @@
         components: { LinkCheck },
 
         mounted() {
-            if (!window.opener) {
-                this.$router.push({ name: 'home' });
-                return;
-            }
-
             const service = this.$route.params.service;
             const query = window.location.search;
 
@@ -56,6 +51,11 @@
             this.status = true;
 
             setTimeout(() => {
+                if (!window.opener) {
+                    this.$router.push({ name: 'auth', query: { code }});
+                    return;
+                }
+
                 window.opener.postMessage({ code });
                 window.close();
             }, 1250);
@@ -69,7 +69,7 @@
 </script>
 
 <style lang="scss" scoped>
-    @import '../styles/fonts';
+    @import 'src/styles/mixins';
     @import '../styles/vars';
 
     #redirect {
@@ -127,5 +127,17 @@
         margin-bottom: 0;
 
         height: 50px;
+    }
+
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        #text {
+            margin-top: 50px;
+        }
+    }
+
+    @media screen and (max-width: 350px) {
+        #text {
+            font-size: 28px;
+        }
     }
 </style>

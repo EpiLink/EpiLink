@@ -18,7 +18,8 @@ export default (to, from, next) => {
 
     const isAuthRoute = path === '/' || path === '/microsoft' || path === '/settings';
     const authAuthorized = (path === '/auth/discord' && fromPath === '/') ||
-        (path === '/auth/microsoft' && (fromPath === '/microsoft' || fromPath === '/profile'));
+        (path === '/auth/microsoft' && (fromPath === '/microsoft' || fromPath === '/profile')) ||
+        (path.startsWith('/auth/') && fromPath.startsWith('/redirect'));
 
     if (isAuthRoute || (path.startsWith('/auth/') && !authAuthorized) || (path === '/success' && fromPath !== '/settings')) {
         if (!user || !user.username) {

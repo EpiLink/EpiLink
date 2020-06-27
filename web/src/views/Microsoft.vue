@@ -71,7 +71,8 @@
 </script>
 
 <style lang="scss" scoped>
-    @import '../styles/fonts';
+    @import '../styles/vars';
+    @import 'src/styles/mixins';
 
     #microsoft {
         display: flex;
@@ -116,6 +117,37 @@
         #text {
             @include lato();
             font-size: 17px;
+        }
+    }
+
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        #stepper {
+            margin-top: 15px;
+        }
+
+        #login {
+            margin-top: 15px;
+
+            padding: 9px 18px;
+
+            #icon {
+                width: 19px;
+                height: 19px;
+            }
+
+            #text {
+                font-size: 16px;
+            }
+        }
+    }
+
+    @media screen and (max-height: 455px) {
+        #stepper {
+            margin-top: 10px;
+        }
+
+        #login {
+            margin-top: 10px;
         }
     }
 </style>

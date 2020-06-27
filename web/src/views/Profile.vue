@@ -44,7 +44,7 @@
                             <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check')) }}</p>
                         </link-option>
 
-                        <link-button :enabled="saveEmail !== wasChecked" @action="submit">
+                        <link-button id="submit" :enabled="saveEmail !== wasChecked" @action="submit">
                             {{ saveEmail && !wasChecked ? $t('microsoft.connect') : $t('profile.save') }}
                         </link-button>
                     </div>
@@ -60,6 +60,7 @@
 
 <script>
     import { mapState }  from 'vuex';
+
     import { openPopup } from '../api';
 
     import LinkButton  from '../components/Button';
@@ -156,6 +157,8 @@
 </script>
 
 <style lang="scss" scoped>
+    @import '../styles/vars';
+
     #profile {
         display: flex;
     }
@@ -216,6 +219,8 @@
             display: flex;
             flex-direction: column;
 
+            min-width: 250px;
+
             .access {
                 padding: 10px;
 
@@ -254,6 +259,38 @@
             justify-content: space-evenly;
 
             flex: 1;
+        }
+    }
+
+    @media screen and (max-width: $expanded-breakpoint) {
+        #profile-wrapper {
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        #left {
+            min-height: 400px;
+        }
+
+        #left {
+            padding-bottom: 0;
+        }
+
+        #right {
+            padding-top: 0;
+        }
+    }
+
+    @media screen and (max-width: 475px) {
+        #submit {
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        #right {
+            padding: 20px;
+
+            justify-content: normal;
         }
     }
 </style>
