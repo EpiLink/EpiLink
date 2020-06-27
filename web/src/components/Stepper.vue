@@ -144,10 +144,7 @@
 
             .name {
                 font-size: 18px;
-
-                text-overflow: ellipsis;
-                overflow: hidden;
-                white-space: nowrap;
+                @include ellipsis();
             }
         }
     }

@@ -46,7 +46,7 @@
                 </template>
             </div>
             <ul id="navigation">
-                <link-route class="navigation-item" v-for="r of routes" :r="r" />
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
             </ul>
         </div>
 
@@ -54,12 +54,12 @@
 
         <div id="sidebar" :class="{ opened: sidebar }">
             <div id="header">
-                <img id="side-logo" v-if="instanceLogo" :src="instanceLogo" />
-                {{ instance || 'EpiLink' }}
+                <img id="side-logo" src="../assets/logo.svg" />
+                EpiLink
             </div>
 
             <ul id="side-navigation">
-                <link-route class="navigation-item" v-for="r of routes" :r="r" />
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
             </ul>
         </div>
     </div>
@@ -289,9 +289,7 @@
 
                 color: #C01616;
 
-                text-overflow: ellipsis;
-                overflow: hidden;
-                white-space: nowrap;
+                @include ellipsis();
 
                 &:hover {
                     text-decoration: underline;
@@ -359,7 +357,7 @@
             font-weight: 600;
 
             #side-logo {
-                width: 50px;
+                width: 45px;
                 margin-right: 15px;
 
                 border-radius: 4px;
@@ -392,7 +390,7 @@
 
     @media screen and (max-width: 1000px) {
         #footer {
-            #navigation, #instance-separator, #instance {
+            #navigation, #instance-separator, #left-footer #home-button {
                 display: none;
             }
 
@@ -402,8 +400,12 @@
                     margin-left: 7px;
                 }
 
-                #logo {
+                #logo-instance {
                     margin-left: 9px;
+                }
+
+                #instance {
+                    font-weight: 600;
                 }
             }
         }

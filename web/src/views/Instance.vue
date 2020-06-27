@@ -77,13 +77,10 @@
         }
 
         .title {
+            @include ellipsis();
             font-size: 40px;
 
             margin: 0;
-
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
         }
     }
 
