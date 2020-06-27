@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+* Updated the logo ([#181](https://github.com/EpiLink/EpiLink/pull/181))
 * Use logos from the GitHub repository instead of Discord's CDN in embeds ([#167](https://github.com/EpiLink/EpiLink/pull/167))
 * Refactored `LinkServerDatabase` so much that it doesn't exist anymore ([#165](https://github.com/EpiLink/EpiLink/pull/165))
 * Refactored the back-end APIs ([#161](https://github.com/EpiLink/EpiLink/pull/161))
