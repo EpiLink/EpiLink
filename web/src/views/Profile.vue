@@ -268,7 +268,7 @@
             overflow-y: auto;
         }
 
-        #left, #right {
+        #left {
             min-height: 400px;
         }
 
