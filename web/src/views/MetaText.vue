@@ -86,6 +86,8 @@
     }
 
     .title {
+        max-width: calc(100% - 20px);
+
         margin-bottom: 10px;
 
         font-size: 30px;
@@ -135,6 +137,12 @@
         iframe {
             width: 100%;
             flex-grow: 1;
+        }
+    }
+
+    @media screen and (max-width: 500px) {
+        .title {
+            font-size: 26px;
         }
     }
 </style>
