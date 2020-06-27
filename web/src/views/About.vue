@@ -211,7 +211,7 @@
                     }
 
                     .name {
-                        font-size: 13px;
+                        font-size: 14px;
                     }
 
                     .role {
@@ -246,6 +246,10 @@
             #github {
                 height: 22px;
             }
+        }
+
+        #authors-section #authors .author .name {
+            font-size: 13px;
         }
     }
 </style>
