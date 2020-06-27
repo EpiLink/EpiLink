@@ -51,7 +51,8 @@
 </script>
 
 <style lang="scss" scoped>
-    @import '../styles/fonts';
+    @import '../styles/vars';
+    @import 'src/styles/mixins';
 
     #instance {
         padding: 32px;
@@ -139,6 +140,19 @@
         }
     }
 
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        #legal-links {
+            margin-top: 10px;
+        }
+
+        #contacts {
+            list-style: none;
+            padding: 0;
+
+            font-size: 14px;
+        }
+    }
+
     @media screen and (max-width: 425px) {
         #banner .title {
             font-size: 32px;
@@ -157,11 +171,13 @@
         #powered #about .title {
             font-size: 21px;
         }
-    }
 
-    @media screen and (max-width: 375px) {
-        #contact-description, #contacts {
+        #contact-description {
             font-size: 14px;
+        }
+
+        #contacts {
+            font-size: 12px;
         }
     }
 </style>

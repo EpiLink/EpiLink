@@ -69,7 +69,7 @@
 </script>
 
 <style lang="scss" scoped>
-    @import '../styles/fonts';
+    @import 'src/styles/mixins';
     @import '../styles/vars';
 
     #redirect {

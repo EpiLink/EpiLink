@@ -105,7 +105,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-    @import '../styles/fonts';
+    @import 'src/styles/mixins';
 
     #settings {
         display: flex;
