@@ -270,6 +270,7 @@
             }
 
             #instance {
+                @include ellipsis();
                 font-size: 18px;
             }
 
