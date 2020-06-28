@@ -364,7 +364,7 @@ You may also want to specify `contacts` in the [server configuration](#http-serv
 
 ## Administration
 
-?> Administrative actions are only available in version 0.3.0 and up
+?> Administrative actions are only available since version 0.3.0
 
 Here is what you can do using the administrative actions provided by EpiLink: 
 

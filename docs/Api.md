@@ -495,6 +495,8 @@ Upon success, triggers a role update.
 
 ## Administrative endpoints /admin
 
+?> Since version 0.3.0
+
 All endpoints are checked: the caller must have admins permissions (by specifying the caller's Discord ID as an "admin") *and* be identifiable.
 
 ### Objects
@@ -557,7 +559,14 @@ All endpoints are checked: the caller must have admins permissions (by specifyin
 }
 ```
 
-TODO: document this
+Information on a single ban.
+
+* `id` The ban's ID
+* `revoked` True if the ban was manually revoked, false otherwise
+* `author` The author of the ban (human-readable)
+* `reason` The (human-readable) reason for the ban
+* `issuedAt` The timestamp (ISO 8601) for when the ban was issued
+* `expiresOn` The timestamp (ISO 8601) at which the ban expires, or null if the ban does not expire 
 
 #### BanRequest
 
@@ -568,7 +577,10 @@ TODO: document this
 }
 ```
 
-TODO: document this
+Contains additional information used when banning someone.
+
+* `reason` The reason for the ban
+* `expiresOn` The expiry timestamp (ISO 8601) for the ban, or null if the ban does not expire.
 
 ### POST /admin/idrequest
 
