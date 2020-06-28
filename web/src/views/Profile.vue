@@ -290,7 +290,7 @@
         #right {
             padding: 20px;
 
-            justify-content: normal;
+            display: block;
         }
     }
 </style>

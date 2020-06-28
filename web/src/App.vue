@@ -155,6 +155,7 @@
 
         width: 100vw;
         height: 100vh;
+        height: -webkit-fill-available;
     }
 
     #main-view {
@@ -313,7 +314,7 @@
         top: 0;
         left: 0;
 
-        height: calc(100vh - #{$footer-height});
+        height: calc(100% - #{$footer-height});
     }
 
     #sidebar-shadow {
@@ -415,7 +416,7 @@
     @media screen and (max-width: $height-wrap-breakpoint) {
         #main-view #content {
             &, #loading, #content-wrapper > div {
-                height: calc(100vh - #{$footer-height} - 30px);
+                height: calc(100% - #{$footer-height} - 30px);
                 max-height: 400px;
                 width: calc(100vw - 35px);
             }

@@ -161,6 +161,10 @@
             overflow-y: auto;
         }
 
+        #right {
+            display: block;
+        }
+
         .user {
             margin-top: 17px;
         }
