@@ -20,4 +20,4 @@ fi
 
 echo
 
-bin/epilink-backend $ARGS $CONFIG_PATH
+EPILINK_BACKEND_OPTS=-Djdk.tls.client.protocols=TLSv1,TLSv1.1,TLSv1.2 $EPILINK_BACKEND_OPTS bin/epilink-backend $ARGS $CONFIG_PATH
