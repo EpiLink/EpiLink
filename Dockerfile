@@ -23,7 +23,7 @@ RUN mv epilink-backend-*/* /tmp/epilink-final
 
 
 # Reseting the image build with a JLink-prepared Alpine Linux
-FROM adoptopenjdk/openjdk13:alpine-jre
+FROM adoptopenjdk/openjdk11:alpine-jre
 
 ENV USER epilink
 ENV LINK_ROOT /var/run/epilink
