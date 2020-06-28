@@ -6,11 +6,12 @@ This page will guide you through the configuration of a working EpiLink instance
 
 Go through all of these steps before going public:
 
-- Get EpiLink (and all of the [required stuff](#deployment-methods))
+- Get EpiLink (and all of the [required stuff](#deployment))
 - [Configure it](#configuration) using the [sample configuration](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml) as a template
 - Make sure everything works
 - Place EpiLink behind a reverse proxy and enable HTTPS through your reverse proxy
-- [Set the reverse proxy headers configuration](#http-server-settings)
+- [Make sure your reverse proxy configuration is secure](https://docs.zoroark.guru/#/ktor-rate-limit/usage?id=reverse-proxies-and-ip-address-spoofing), specifically the part about overriding the headers the clients send.
+- [Set the reverse proxy headers configuration](#http-server-settings) in EpiLink's configuration
 - Make sure everything still works
 
 After doing all that, you will be good to go! Read on to learn how to do all of these things!
@@ -59,6 +60,7 @@ use any name you like.
 name: My EpiLink Instance
 db: epilink.db
 redis: "redis://localhost:6379"
+admins: [] # optional
 ```
 
 * `name`: This is the name of your instance. This name is public and should describe your instance. For example "MyAmazingOrg Account Checker".
@@ -68,6 +70,10 @@ redis: "redis://localhost:6379"
 * `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion), `el_reg_` (EpiLink REGistration) and `el_rc_` (EpiLink Rule Cache) prefixes for all of its keys. 
 
 ?> This value can also be `~` to use an in-memory storage, but this is **not recommended** and should only be used for development purposes. Values are never cleared from the memory when using in-memory storage, resulting in leaks everywhere. Keys are not timed out either, nor are they saved in-between runs, so really only use that when you want to test or develop on EpiLink.
+
+* `admins` *(optional, empty list by default)*: A list of Discord IDs of the administrators of this instance. *(since version 0.3.0)*
+
+!> Be mindful of who you decide is an administrator! Administrators have access to critical tools.
 
 ### HTTP Server Settings
 
@@ -310,6 +316,7 @@ privacy:
   notifyAutomatedAccess: true
   notifyHumanAccess: true
   discloseHumanRequesterIdentity: false
+  notifyBans: true
 ```
 
 This section determines how EpiLink should react when some privacy-related events occur.
@@ -319,6 +326,7 @@ This entire section is optional. If omitted, all of its parameters take the defa
 * `notifyAutomatedAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed automatically (e.g. to refresh rules). The identity of the requester is always disclosed (e.g. "EpiLink Discord bot"), and the message clarifies that this access was done automatically.
 * `notifyHumanAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed by a human (manual identity request). The identity of the requester may or may not be disclosed depending on the value of `discloseHumanRequesterIdentity`.
 * `discloseHumanRequesterIdentity` *(optional, false by default)*: If true, the private message sent when a human manual identity request occurs also indicates *who* initiated the request. If false, the private message does not contain that information. This value is unused when `notifyHumanAccess` is false.
+* `notifyBans` *(optional, true by default)*: If true, banning someone will send them a notification (this is done only if they are a known user). If false, banning someone never sends any notification to said user. *(since version 0.3.0)*
 
 ### Legal configuration
 
@@ -342,10 +350,10 @@ legal:
 
 This section provides the legal documents EpiLink will show to the users. More specifically, this section contains the terms of services, the privacy policy (both either as a string or as a path to the file) and the identity prompt text.
 
-All three options **are HTML**. Use them to format your text with lists and other things. They are not full HTML documents, rather just HTML fragments that will be thrown in the front-end.
+All three options **are HTML**, but files also support PDFs. Use them to format your text with lists and other things. Any HTML content is not a full HTML document, rather just HTML fragments that will be thrown in the front-end. PDF files will be served as-is to the front-end, with an additional download link.
 
-* `tos`/`tosFile`: The terms of services, either directly written in the config file (`tos`), or as a path relative to the configuration file's location (`tosFile`)
-* `policy`/`policyFile`: The privacy policy, either directly written in the config file (`policy`), or as a path relative to the configuration file's location (`policyFile`)
+* `tos`/`tosFile`: The terms of services, either directly written in the config file (`tos`), or as a path relative to the configuration file's location (`tosFile`). `tos` is inline HTML, `tosFile` can be either a file containing inline HMTL or a PDF file.
+* `policy`/`policyFile`: The privacy policy, either directly written in the config file (`policy`), or as a path relative to the configuration file's location (`policyFile`). `policy` is inline HTML, `policyFile` can be either a file containing inline HMTL or a PDF file.
 * `identityPromptText`: The text that is shown below the "Remember who I am" checkbox in the registration page. This should describe in a few words what the user should expect to happen if they check (or uncheck) the box. You can also put "See the privacy policy for more details". This is also HTML.
 
 All options are optional, but you should fill them in regardless. Not filling them in results in a warning in the start-up logs. Filling both an in-config option *and* its file-based counterpart will result in an error, similar to `rulebook`/`rulebookFile`.
@@ -353,3 +361,36 @@ All options are optional, but you should fill them in regardless. Not filling th
 Seek legal advice if you do not know what to put in the terms of services or the privacy policy. These may not even be required if you are using EpiLink as part of an intranet infrastructure.
 
 You may also want to specify `contacts` in the [server configuration](#http-server-settings).
+
+## Administration
+
+?> Administrative actions are only available since version 0.3.0
+
+Here is what you can do using the administrative actions provided by EpiLink: 
+
+- [Get information about a user](Api.md#get-adminuseruserid)
+- [Get a user's true identity](Api.md#post-adminidrequest)
+- [Ban a user](Api.md#post-adminbanmsfthash), [get previous bans](Api.md#get-adminbanmsfthash) and [revoke them](Api.md#post-adminbanmsfthashbanidrevoke)
+- [Generate a GDPR report about a user](Api.md#get-admingdprreporttargetid)
+
+!> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
+
+### Bans
+
+Bans are simple: a banned user will not get any role from EpiLink. That's all!
+
+- A user is banned if they have at least one active ban 
+- Bans can have an expiration date, after which they will no longer count towards a user being "banned" (i.e. they will no longer be considered active bans)
+- Bans can also be manually revoked before their expiration date. A revoked ban no longer counts towards a user being "banned" (i.e. they will no longer be considered active bans)
+
+!> EpiLink does not automatically refresh the roles of a banned user whose ban has expired. They will have to have their roles refreshed in another way, e.g. by leaving and re-joining the server, changing whether their ID is kept in the system or not, etc.
+
+### ID Access
+
+**Any ID access done through the API may lead to a notification on the user's side**, depending on your [privacy configuration](#privacy-configuration).
+
+An ID access allows you to get a user's identity while also notifying them for more transparency. Note that while you can disable the ID access notifications (i.e. the Discord DMs), the users will always see every ID access from their profile page.
+
+### GDPR Report
+
+You can generate a GDPR report using [the `/admin/gdprreport/{discordid}` endpoint](Api.md#get-admingdprreporttargetid). Note that these reports also include the identity of the person, and thus generate a manual identity access report.

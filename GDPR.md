@@ -1,5 +1,7 @@
 # GDPR information
 
+!> **These are not terms of services, nor is it a privacy policy.** Please refer to your instance's ToS or privacy policy for the terms that apply to you.
+
 ## Foreword
 
 ?> **This file is intended for maintainers, not users!** Users, the instance you use may have been modified by the instance's maintainers, who may have added features or disabled some components. Please refer to their privacy policy for the official information.

@@ -94,6 +94,18 @@ These are general codes that can be encountered.
 | 300 | You need authentication to be able to access this resource |
 | 301 | You do not have the permission to do that (i.e. you are logged in but can't do that) |
 
+### 4xx codes
+
+These are codes that can be encountered in the administration APIs only. (These are not HTTP errors!)
+
+| Code | Description |
+|:----:| ----------- |
+| 400 | Invalid admin request |
+| 401 | Incomplete admin request |
+| 402 | Invalid request: (target) user does not exist |
+| 403 | Invalid or incoherent ID |
+| 404 | Invalid Instant (date+hour) format |
+| 430 | Attempted to get the identity of a non-identifiable user |
 
 ### 9xx codes
 
@@ -170,14 +182,16 @@ Returns information about this instance, as a [InstanceInformation](#instanceinf
 GET /api/v1/meta/tos
 ```
 
-> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly. `Content-Type: text/html`
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML or a PDF file directly. `Content-Type: text/html` or `Content-Type: application/pdf`
 
-Returns the terms of services of this instance, as inline HTML.
+Returns the terms of services of this instance, as inline HTML or as a PDF.
 
 Example:
 ```html
 <p>My terms of services are the best terms of services!</p>
 ```
+
+(or a PDF file's contents)
 
 ### GET /meta/privacy
 
@@ -187,14 +201,16 @@ Example:
 GET /api/v1/meta/privacy
 ```
 
-> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly. `Content-Type: text/html`
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns inline HTML directly or a PDF file. `Content-Type: text/html` or `Content-Type: application/pdf`
 
-Returns the privacy policy of this instance, as inline HTML.
+Returns the privacy policy of this instance, as inline HTML or as a PDF.
 
 Example:
 ```html
 <p>My privacy policy is very private!</p>
 ```
+
+(or a PDF file's contents)
 
 ## Registration (/register)
 
@@ -230,8 +246,8 @@ This object provides information on the current registration process' status and
 ```json5
 {
   "discordUsername": "example#1234", // nullable
-  "discordAvatarUrl": "https://discordapi.example/myavatar.png" // nullable
-  "email": "email@example.com", // nullable
+  "discordAvatarUrl": "https://discordapi.example/myavatar.png", // nullable
+  "email": "email@example.com" // nullable
 }
 ```
 
@@ -476,3 +492,195 @@ Returns a classic success [API response](#apiresponse) if successful (with HTTP 
 Error code 111 (identity already unknown) is relevant here. [See all error codes](#error-codes).
 
 Upon success, triggers a role update.
+
+## Administrative endpoints /admin
+
+?> Since version 0.3.0
+
+All endpoints are checked: the caller must have admins permissions (by specifying the caller's Discord ID as an "admin") *and* be identifiable.
+
+### Objects
+
+#### IdRequest
+
+```json5
+{
+  "target": "...", // Discord ID of the targeted user
+  "reason": "..." // Reason that will be notified to the user
+}
+```
+
+#### IdRequestResult
+
+```json5
+{
+  "target": "...", // Discord ID of the user
+  "identity": "..." // Identity of the user
+}
+```
+
+#### RegisteredUserInformation
+
+```json5
+{
+  "discordId": "...",
+  "msftIdHash": "...", 
+  "created": "...",
+  "identifiable": true
+}
+```
+
+- `discordId`: The Discord ID of the user (which you most probably already know)
+- `msftIdHash`: The Microsoft ID hash of the user (URL-safe Base64)
+- `created`: A ISO-8601 Instant of when the account was created, always in UTC (the `Z` at the end).
+- `identifiable`: True or false, whether the user can be identified through an ID access or not.
+
+#### UserBans
+
+```json5
+{
+  "banned": true, // or false, tells whether any ban is currently active
+  "bans": [ // Possibly empty array of BanInfo objects
+    //...
+  ]
+}
+```
+
+#### BanInfo
+
+```json5
+{
+  "id": 0,
+  "revoked": false, // or true,
+  "author": "...",
+  "reason": "...",
+  "issuedAt": "...",
+  "expiresOn": "...", // nullable
+}
+```
+
+Information on a single ban.
+
+* `id` The ban's ID
+* `revoked` True if the ban was manually revoked, false otherwise
+* `author` The author of the ban (human-readable)
+* `reason` The (human-readable) reason for the ban
+* `issuedAt` The timestamp (ISO 8601) for when the ban was issued
+* `expiresOn` The timestamp (ISO 8601) at which the ban expires, or null if the ban does not expire 
+
+#### BanRequest
+
+```json5
+{
+  "reason": "...",
+  "expiresOn": "..." // nullable
+}
+```
+
+Contains additional information used when banning someone.
+
+* `reason` The reason for the ban
+* `expiresOn` The expiry timestamp (ISO 8601) for the ban, or null if the ban does not expire.
+
+### POST /admin/idrequest
+
+**Request the identity of a user.** This will notify the "target" user (following the instance's privacy settings).
+
+```http request
+POST /api/v1/admin/idrequest
+SessionId: abcdef1234 # mandatory
+Content-Type: application/json # mandatory
+```
+
+The request body is an [IdRequest](#idrequest) JSON object.
+
+Returns a [IdRequestResult](#idrequestresult) upon success. [Error code 430](#4xx-codes) is relevant here.
+
+### GET /admin/user/{userid}
+
+**Retrieve user information.** This is different from the `/user` endpoint.
+
+```http request
+GET /api/v1/admin/user/{targetid}
+SessionId: abcdef1234 # mandatory
+```
+
+Where `{targetid}` is the Discord ID of the person. 
+
+This endpoint returns a [RegisteredUserInfo](#registereduserinformation) about the target user.
+
+### GET /admin/ban/{msftHash}
+
+**Get the bans of a user using their Microsoft ID hash.**
+
+```http request
+GET /admin/ban/{msftHash}
+```
+
+Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid).
+
+Returns a [UserBans](#userbans) object.
+
+### GET /admin/ban/{msftHash}/{banId}
+
+**Get a single ban of a specific user**
+
+```http request
+GET /admin/ban/{msftHash}/{banId}
+```
+
+Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid) and `{banId}` is the ID of the specific ban that needs to be retrieved.
+
+If any of the following is true:
+
+* No ban exists with the given ban ID
+* The ban ID is incorrect (not properly formatted)
+* The ban exists but does not correspond to the given `msftHash`
+
+A 404 (if the ban does not exist or does not correspond to the `msftHash) or 400 (if the ID is not formatted properly, i.e. not an integer number) error is returned with [error code 403](#4xx-codes).
+
+Returns a [BanInfo](#baninfo) object.
+
+### POST /admin/ban/{msftHash}/{banId}/revoke
+
+**Revoke a ban**
+
+```http request
+POST /admin/ban/{msftHash}/{banId}/revoke
+```
+
+Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid) and `{banId}` is the ID of the specific ban that needs to be retrieved.
+
+Revokes the ban, making it effectively ignored. If the ban was active before being revoked, the user's roles are re-evaluated.
+
+May return a 400 HTTP error with error code 403 if the ID does not make sense (similar to what [the GET does](#get-adminbanmsfthashbanid)).
+
+### POST /admin/ban/{msftHash}
+
+**Ban someone.**
+
+```http request
+POST /admin/ban/{msftHash}
+SessionId: abcdef12345 # mandatory
+Content-Type: application/json # mandatory
+```
+
+The request body is a [BanRequest](#banrequest) object.
+
+Should the ban request have an invalid expiry date, the request is ignored and an HTTP 400 error with [error code 404](#4xx-codes) is returned.
+
+Returns the newly created ban as a [BanInfo](#baninfo) object.
+
+### GET /admin/gdprreport/{targetId}
+
+**Generate a GDPR report about the target.**
+
+```http request
+GET /admin/ban/{targetId}
+```
+
+Where `targetId` is the Discord ID of the person you want to generate a GDPR report about.
+
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns a Markdown document directly. `Content-Type: text/markdown`
+
+Returns the report directly as a Markdown document. May also return an API error in case the Discord ID is invalid. Generates an ID access request (which is included in the report) in order to add the user's identity in the report.
