@@ -4,7 +4,40 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2020-06-29
+
+### Added
+
+* Added PDF support for ToS and Privacy Policy documents ([#175](https://github.com/EpiLink/EpiLink/pull/175))
+* Added GDPR report generation ([#173](https://github.com/EpiLink/EpiLink/pull/173))
+* Added ban notifications ([#168](https://github.com/EpiLink/EpiLink/pull/168))
+* Added administration endpoints (and its documentation) ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Added banning abilities ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+    * **BREAKING CHANGE:** The Bans table of the database was improved significantly: delete it (you could not ban people anyway) and EpiLink will re-create it for you.
+    * Note: While banning logic has been in place for a while, there was no way of creating or revoking a ban. This adds banning and revoking abilities.
+* Added manual ID access ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Added retrieving additional information about users ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Added full mobile / small screens support ([#180](https://github.com/EpiLink/EpiLink/pull/180))
+* On meta text pages, the back button now works when accessing the page by its URL ([#170](https://github.com/EpiLink/EpiLink/issues/170))
+
+### Changed
+
+* Updated the logo ([#181](https://github.com/EpiLink/EpiLink/pull/181))
+* Use logos from the GitHub repository instead of Discord's CDN in embeds ([#167](https://github.com/EpiLink/EpiLink/pull/167))
+* Refactored `LinkServerDatabase` so much that it doesn't exist anymore ([#165](https://github.com/EpiLink/EpiLink/pull/165))
+* Refactored the back-end APIs ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+
+### Removed
+
+* Removed rate limiting code from this codebase. It is known available as a separate, reusable library, [ktor-rate-limit](https://github.com/utybo/ktor-rate-limit). ([#172](https://github.com/EpiLink/EpiLink/pull/172))
+
+### Fixed
+
+* Fixed the ToS being served on both ToS and PP pages ([#175](https://github.com/EpiLink/EpiLink/pull/175))
+* Reduced the amount of calls to `getUser`, resulting in better performance with fewer calls to the DB ([#165](https://github.com/EpiLink/EpiLink/pull/165)).
+* Re-added the server(s) name(s) in the "could not authenticate you" Discord embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Fixed an extra newline in an embed ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Fixed some Discord crashes called by the client deciding that it does not want to exist ([#161](https://github.com/EpiLink/EpiLink/pull/161)) 
 
 ## [0.2.0] - 2020-05-05
 
@@ -102,7 +135,8 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.2.0...dev
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.3.0...dev
+[0.3.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.3.0
 [0.2.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.2.0
 [0.1.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.1.1
 [0.1.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.1

@@ -21,10 +21,14 @@ export function getRedirectURI(service) {
 }
 
 export function openPopup(title, service, stub) {
+    const url = `${stub}&redirect_uri=${getRedirectURI(service)}`;
+    if (navigator.userAgent.includes('obil')) {
+        window.location.href = url;
+        return;
+    }
+
     const width = 650, height = 750;
     const x = screen.width / 2 - width / 2, y = screen.height / 2 - height / 2 - 65;
-
-    const url = `${stub}&redirect_uri=${getRedirectURI(service)}`;
     const options = `menubar=no, status=no, scrollbars=no, menubar=no, width=${width}, height=${height}, top=${y}, left=${x}`;
 
     return window.open(url,`EpiLink - ${title}`, options);
@@ -48,10 +52,11 @@ export function isPermanentSession() {
  * @param method (optional) The request method (GET, POST, or DELETE)
  * @param path The request path, without /api/v1, starting with a slash (example '/meta/info')
  * @param body (optional) The request body object that will be encoded in JSON
+ * @param returnRawResponse (optional) True if the raw response should be returned instead of the returned JSON object.
  *
  * @returns {Promise<Object>} A Promise that resolves with the request result data, or fails with the request error message
  */
-export default async function(method, path, body) {
+export default async function(method, path, body, returnRawResponse = false) {
     if (!body && typeof path !== 'string') {
         // [path, body?]
         body = path;
@@ -77,6 +82,9 @@ export default async function(method, path, body) {
     }
 
     const result = await fetch(BACKEND_URL + path, params);
+    if (returnRawResponse) {
+        return result;
+    }
     const text = await result.text();
     if (!text) {
         console.warn(`API returned an empty response during request '${method} ${path}'`);

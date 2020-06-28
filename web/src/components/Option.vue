@@ -42,6 +42,8 @@
 </script>
 
 <style lang="scss">
+    @import '../styles/vars';
+
     .option {
         display: flex;
 
@@ -86,6 +88,16 @@
 
         .notice {
             color: #57BD57;
+        }
+    }
+
+    @media screen and (max-width: 450px) {
+        .text {
+            font-size: 15px;
+
+            .title {
+                font-size: 18px;
+            }
         }
     }
 </style>

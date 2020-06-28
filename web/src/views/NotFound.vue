@@ -22,7 +22,7 @@
 </script>
 
 <style lang="scss" scoped>
-    @import '../styles/fonts';
+    @import 'src/styles/mixins';
 
     #not-found {
         display: flex;
@@ -42,5 +42,6 @@
 
     #description {
         font-size: 25px;
+        text-align: center;
     }
 </style>

@@ -14,6 +14,9 @@ import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * The Discord bot interface that generates embeds for various instances
@@ -40,7 +43,19 @@ interface LinkDiscordMessages {
      * @param reason The reason behind this identity access
      */
     fun getIdentityAccessEmbed(automated: Boolean, author: String, reason: String): DiscordEmbed?
+
+    /**
+     * Get the ban notification embed, or null if privacy settings have ban notifications disabled.
+     */
+    fun getBanNotification(banReason: String, banExpiry: Instant?): DiscordEmbed?
 }
+
+private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
+private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/unknownuser256.png"
+private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/idnotify256.png"
+private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/ban256.png"
+
+private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
 
 internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     private val config: LinkDiscordConfig by inject()
@@ -52,10 +67,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
             title = ":x: Could not authenticate on $guildName",
             description = "Failed to authenticate you on $guildName. Please contact an administrator if you think that should not be happening.",
             fields = listOf(DiscordEmbedField("Reason", reason, true)),
-            footer = DiscordEmbedFooter(
-                "Powered by EpiLink",
-                "https://cdn.discordapp.com/attachments/680809657740427300/680811402172301348/epilink3g.png"
-            ),
+            footer = poweredByEpiLink,
             color = "red"
         )
 
@@ -66,9 +78,8 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
         return guildConfig.welcomeEmbed ?: DiscordEmbed(
             title = ":closed_lock_with_key: Authentication required for $guildName",
             description =
-                """
-                **Welcome to $guildName**. Access to this server is restricted. Please log in using the link
-                below to get full access to the server's channels.
+            """
+                **Welcome to $guildName**. Access to this server is restricted. Please log in using the link below to get full access to the server's channels.
                 """.trimIndent(),
             fields = run {
                 val ml = mutableListOf<DiscordEmbedField>()
@@ -81,11 +92,8 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
                 )
                 ml
             },
-            thumbnail = "https://cdn.discordapp.com/attachments/680809657740427300/696412896472727562/whoareyou.png",
-            footer = DiscordEmbedFooter(
-                "Powered by EpiLink",
-                "https://cdn.discordapp.com/attachments/680809657740427300/680811402172301348/epilink3g.png"
-            ),
+            thumbnail = unknownUserLogoUrl,
+            footer = poweredByEpiLink,
             color = "#3771c8"
         )
     }
@@ -126,15 +134,43 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
                     }
                 ),
                 color = "#ff6600",
-                thumbnail = "https://media.discordapp.net/attachments/680809657740427300/696411621320425572/idnotify.png",
-                footer = DiscordEmbedFooter(
-                    "Powered by EpiLink",
-                    "https://cdn.discordapp.com/attachments/680809657740427300/680811402172301348/epilink3g.png"
-                )
+                thumbnail = idNotifyLogoUrl,
+                footer = poweredByEpiLink
             )
         } else return null
     }
+
+    override fun getBanNotification(banReason: String, banExpiry: Instant?): DiscordEmbed? =
+        if (privacyConfig.notifyBans) {
+            DiscordEmbed(
+                title = ":no_entry_sign: You have been banned",
+                description = "You have been banned on EpiLink. All of your roles have been removed. For more" +
+                        " information, please contact an administrator.",
+                fields = listOf(
+                    DiscordEmbedField("Reason", banReason),
+                    DiscordEmbedField(
+                        "Expires on",
+                        banExpiry?.let { "Expires on ${it.getDate()} at ${it.getTime()} (UTC+0)" }
+                            ?: "This ban does not expire."
+                    )
+                ),
+                color = "#d40000",
+                thumbnail = banLogoUrl,
+                footer = poweredByEpiLink
+            )
+        } else {
+            null
+        }
+
 }
+
+private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+private fun Instant.getDate(): String =
+    DateTimeFormatter.ISO_LOCAL_DATE.format(this.atOffset(ZoneOffset.UTC))
+
+private fun Instant.getTime(): String =
+    timeFormatter.format(this.atOffset(ZoneOffset.UTC))
 
 /**
  * Retrieve the configuration for a given guild, or throw an error if such a configuration could not be found.

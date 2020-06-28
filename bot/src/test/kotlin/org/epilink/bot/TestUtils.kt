@@ -18,7 +18,9 @@ import io.ktor.http.Url
 import io.ktor.http.fullPath
 import io.ktor.http.hostWithPort
 import io.ktor.server.testing.TestApplicationCall
+import io.ktor.server.testing.TestApplicationRequest
 import io.ktor.server.testing.TestApplicationResponse
+import io.ktor.server.testing.setBody
 import io.mockk.mockk
 import org.epilink.bot.config.*
 import org.koin.test.KoinTest
@@ -64,11 +66,25 @@ fun KoinTest.declareClientHandler(onlyMatchUrl: String? = null, handler: MockReq
     }
 
 fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
-    assertEquals(status, this.response.status())
+    val actual = this.response.status()
+    assertEquals(status, actual, "Expected status $status, but got $actual instead")
 }
 
-inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T =
-    declare { mockk(block = body) }
+inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T {
+    if (getKoin().getOrNull<T>() != null) {
+        error("Duplicate definition for ${T::class}. Use softMockHere or combine the definitions.")
+    }
+    return declare { mockk(block = body) }
+}
+
+/**
+ * Similar to mockHere, but if an instance of T is already injected, apply the initializer to it instead of
+ * replacing it
+ */
+inline fun <reified T : Any> KoinTest.softMockHere(crossinline initializer: T.() -> Unit): T {
+    val injected = getKoin().getOrNull<T>()
+    return injected?.apply(initializer) ?: mockHere(initializer)
+}
 
 fun Map<String, Any?>.getString(key: String): String =
     this.getValue(key) as String
@@ -87,4 +103,9 @@ inline fun <reified T> fromJson(response: TestApplicationResponse): T {
 
 fun String.sha256(): ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))
+}
+
+fun TestApplicationRequest.setJsonBody(json: String) {
+    addHeader("Content-Type", "application/json")
+    setBody(json)
 }

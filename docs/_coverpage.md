@@ -1,6 +1,6 @@
 ![logo](logo.svg)
 
-# EpiLink <small>0.2.0</small>
+# EpiLink <small>0.3.0</small>
 
 > Link Discord and Microsoft accounts together
 

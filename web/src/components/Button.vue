@@ -31,7 +31,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-    @import '../styles/fonts';
+    @import 'src/styles/mixins';
 
     .button-container {
         text-align: center;
@@ -60,6 +60,13 @@
             &:hover {
                 background-color: darken($primary-color, 3.5%);
             }
+        }
+    }
+
+    @media screen and (max-width: 375px) {
+        .link {
+            font-size: 18px;
+            padding: 8px 40px;
         }
     }
 </style>

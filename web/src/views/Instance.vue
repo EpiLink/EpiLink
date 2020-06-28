@@ -21,7 +21,7 @@
         <div id="contact">
             <h2 id="contact-info">{{ $t('instance.contactTitle') }}</h2>
             <p id="contact-description">{{ $t('instance.contactDesc') }}</p>
-            <ul>
+            <ul id="contacts">
                 <li v-for="p of people">
                     {{ p.name }} (<a :href="'mailto:' + p.email">{{ p.email }}</a>)
                 </li>
@@ -38,32 +38,33 @@
 </template>
 
 <script>
+    import { mapState } from "vuex";
+
     export default {
         name: "link-instance",
-        computed: {
-            title() {
-                return this.$store.state.meta.title
-            },
-            logo() {
-                return this.$store.state.meta.logo
-            },
-            people() {
-                return this.$store.state.meta.contacts
-            }
-        }
+        computed: mapState({
+            title: s => s.meta.title,
+            logo: s => s.meta.logo,
+            people: s => s.meta.contacts
+        })
     }
 </script>
 
 <style lang="scss" scoped>
-    @import '../styles/app';
+    @import '../styles/vars';
+    @import 'src/styles/mixins';
+
     #instance {
         padding: 32px;
+
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
 
     #banner {
+        width: 100%;
+
         display: flex;
         align-self: center;
         justify-content: center;
@@ -77,13 +78,16 @@
         }
 
         .title {
+            @include ellipsis();
             font-size: 40px;
+
             margin: 0;
         }
     }
 
     #powered {
         align-self: center;
+
         #about {
             display: contents;
         }
@@ -109,8 +113,10 @@
 
     #legal-links {
         width: 100%;
+
         display: flex;
         justify-content: center;
+        align-items: center;
 
         .link {
             flex: 1 0;
@@ -124,7 +130,6 @@
         flex-direction: column;
         justify-content: center;
 
-
         #contact-info {
             margin-top: 0;
             margin-bottom: 0;
@@ -135,4 +140,44 @@
         }
     }
 
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        #legal-links {
+            margin-top: 10px;
+        }
+
+        #contacts {
+            list-style: none;
+            padding: 0;
+
+            font-size: 14px;
+        }
+    }
+
+    @media screen and (max-width: 425px) {
+        #banner .title {
+            font-size: 32px;
+        }
+    }
+
+    @media screen and (max-width: 375px) {
+        #instance {
+            padding: 32px 25px;
+        }
+
+        #contact-info {
+            font-size: 20px;
+        }
+
+        #powered #about .title {
+            font-size: 21px;
+        }
+
+        #contact-description {
+            font-size: 14px;
+        }
+
+        #contacts {
+            font-size: 12px;
+        }
+    }
 </style>

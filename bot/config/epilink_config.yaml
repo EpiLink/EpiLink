@@ -42,6 +42,11 @@ db: epilink.db
 # Format: https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax
 redis: "redis://localhost:6379"
 
+# List of administrators (Discord IDs of the administrator)
+# For example admins: [12354, 987234, 12341]
+# /!\ Administrators have a lot of power over the application, be careful with who you trust!
+admins: []
+
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
 # environment values.
@@ -76,6 +81,8 @@ tokens:
 
   # ID Prompt text disclaimer
   # identityPromptText: <p>My text...</p>
+
+# You can also add a "privacy:" section to enable/disable some notifications. See the maintainer guide for more details.
 
 # Configuration for everything related to handling Discord servers
 # When something is optional, you can omit it entirely.

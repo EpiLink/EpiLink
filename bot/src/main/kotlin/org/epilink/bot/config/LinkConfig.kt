@@ -55,7 +55,11 @@ data class LinkConfiguration(
     /**
      * Legal configuration, with ToS and privacy policy configs
      */
-    val legal: LinkLegalConfiguration = LinkLegalConfiguration()
+    val legal: LinkLegalConfiguration = LinkLegalConfiguration(),
+    /**
+     * List of administrators (by Discord ID)
+     */
+    val admins: List<String> = listOf()
 )
 
 /**
@@ -270,7 +274,13 @@ data class LinkPrivacy(
     /**
      * True if the name of the person who requested the identity access should be disclosed.
      */
-    val discloseHumanRequesterIdentity: Boolean = false
+    val discloseHumanRequesterIdentity: Boolean = false,
+    /**
+     * True if a ban should trigger a notification, false otherwise.
+     *
+     * Bans will not send a notification if banning someone who is not known.
+     */
+    val notifyBans: Boolean = true
 ) {
     /**
      * Whether an access should be notified, based on this object's configuration
@@ -380,7 +390,7 @@ fun LinkTokens.check(): List<ConfigReportElement> {
         report += ConfigError(true, "discordToken was left with its default value: please provide a bot token!")
     }
     if (msftOAuthClientId == "...") {
-        report += ConfigError(true, "msftOauthCliientId was left with its default value: please provide a client ID!")
+        report += ConfigError(true, "msftOauthClientId was left with its default value: please provide a client ID!")
     }
     if (msftOAuthSecret == "...") {
         report += ConfigError(true, "msftOAuthSecret was left with its default value: please provide a secret!")

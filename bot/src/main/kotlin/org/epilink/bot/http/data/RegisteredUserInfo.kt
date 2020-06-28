@@ -6,9 +6,13 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-@import url('https://use.typekit.net/qvu5xru.css');
+package org.epilink.bot.http.data
 
-@mixin lato($weight: 400) {
-  font-family: 'Lato', 'Arial', sans-serif;
-  font-weight: $weight;
-}
+// See the Api.md documentation file for more information
+@Suppress("KDocMissingDocumentation")
+data class RegisteredUserInfo(
+    val discordId: String,
+    val msftIdHash: String,
+    val created: String,
+    val identifiable: Boolean
+)

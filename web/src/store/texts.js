@@ -26,20 +26,28 @@ export default {
         }
     },
     actions: {
-        async fetchTermsOfService({ state, commit }) {
+        async fetchTermsOfService({ state, commit, dispatch }) {
             if (state.termsOfService) {
                 return;
             }
-
-            commit('setTermsOfService', await request('/meta/tos'));
+            commit('setTermsOfService', await dispatch('fetchText', 'tos'));
         },
 
-        async fetchPrivacyPolicy({ state, commit }) {
+        async fetchPrivacyPolicy({ state, commit, dispatch }) {
             if (state.privacyPolicy) {
                 return;
             }
+            commit('setPrivacyPolicy', await dispatch('fetchText', 'privacy'));
+        },
 
-            commit('setPrivacyPolicy', await request('/meta/privacy'));
+        async fetchText(_, requestUrl) {
+            const req = await request('GET', `/meta/${requestUrl}`, null, true);
+            const isPdf = req.headers.get('Content-Type') === 'application/pdf';
+            return {
+                textContent: !isPdf && await req.text(),
+                pdfContent: isPdf && URL.createObjectURL(await req.blob()),
+                url: req.url
+            };
         }
     }
 };

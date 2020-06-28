@@ -11,17 +11,21 @@
 <template>
     <div class="meta-text">
         <h1 class="title" :class="{ overflow: title.length > 30 }">
-            <a @click="$router.back()"><img class="back-icon" src="../../assets/back.svg" /></a>
+            <a @click="back()"><img class="back-icon" src="../../assets/back.svg" /></a>
             {{ title | capitalize }}
         </h1>
-        <a class="back" @click="$router.back()" v-html="$t('back')" />
+        <a class="back" @click="back()" v-html="$t('back')" />
 
-        <div class="text-content">
-            <transition name="fade" mode="out-in">
-                <link-loading v-if="!content" :key="0" />
-                <p class="text" v-if="content" v-html="content" :key="2" />
-            </transition>
-        </div>
+        <transition name="fade" mode="out-in">
+            <link-loading v-if="!content" :key="0" />
+            <div class="text-content" v-if="content && contentText" :key="2">
+                <p class="text" v-html="contentText"/>
+            </div>
+            <div class="pdf-things" v-if="content && contentPdf" :key="2">
+                <p><a :href="contentPdf" v-html="$t('meta.downloadPdf')" target="_blank"></a></p>
+                <iframe :src="contentPdf"></iframe>
+            </div>
+        </transition>
     </div>
 </template>
 
@@ -40,6 +44,17 @@
                 title: this.$t(`settings.${this.$route.name === 'privacy' ? 'policy' : 'terms'}`)
             };
         },
+        methods: {
+            back() {
+                if (!history) {
+                    this.$router.back();
+                } else if (history.length > 2) {
+                    history.back();
+                } else {
+                    this.$router.push({ name: 'home' });
+                }
+            }
+        },
         filters: {
             capitalize(str) {
                 if (!str) {
@@ -50,9 +65,18 @@
             }
         },
         computed: {
+            isPrivacyPolicy() {
+                return this.$route.name === 'privacy';
+            },
             content() {
                 const prop = this.isPrivacyPolicy ? 'privacyPolicy' : 'termsOfService';
                 return this.$store.state.texts[prop];
+            },
+            contentText() {
+                return this.content.textContent;
+            },
+            contentPdf() {
+                return this.content.pdfContent;
             }
         }
     }
@@ -73,6 +97,8 @@
     }
 
     .title {
+        max-width: calc(100% - 20px);
+
         margin-bottom: 10px;
 
         font-size: 30px;
@@ -104,6 +130,30 @@
 
         .text {
             text-align: center;
+        }
+    }
+
+    .pdf-things {
+        display: flex;
+        flex-direction: column;
+        min-width: 100%;
+        height: 100%;
+
+        p {
+            text-align: center;
+        }
+        a {
+            text-decoration: underline;
+        }
+        iframe {
+            width: 100%;
+            flex-grow: 1;
+        }
+    }
+
+    @media screen and (max-width: 500px) {
+        .title {
+            font-size: 26px;
         }
     }
 </style>

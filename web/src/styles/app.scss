@@ -6,7 +6,8 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-@import 'fonts';
+@import url('https://use.typekit.net/qvu5xru.css');
+@import 'mixins';
 
 html, body {
   margin: 0;
@@ -17,7 +18,7 @@ body {
   @include lato;
 
   min-width: 100vw;
-  min-height: 100vh;
+  // min-height: 100vh;
 
   display: inline-block;
 

@@ -22,3 +22,13 @@ data class IdAccess(
     val reason: String,
     val timestamp: String
 )
+
+data class IdRequest(
+    val target: String,
+    val reason: String
+)
+
+data class IdRequestResult(
+    val target: String,
+    val identity: String
+)

@@ -33,6 +33,12 @@ interface CacheClient {
     fun newSessionStorage(prefix: String): SessionStorage
 }
 
+/**
+ * A Cache client based entirely on memory. Must only be used for development purposes.
+ *
+ * - Rule caching is disabled ([NoCacheRuleMediator])
+ * - Sessions are stored in-memory.
+ */
 class MemoryCacheClient : CacheClient {
     override suspend fun start() {
         // Does nothing

@@ -10,7 +10,6 @@ package org.epilink.bot.http
 
 import io.ktor.application.install
 import io.ktor.features.ForwardedHeaderSupport
-import io.ktor.features.HttpsRedirect
 import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
@@ -57,7 +56,9 @@ internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
                 .also { logger.debug { "'X-Forwarded-*' header support installed." } }
         }
         logger.debug("Installing EpiLink API")
-        with(backend) { epilinkApiModule() }
+        with(backend) {
+            epilinkApiModule()
+        }
         logger.debug("Installing EpiLink front-end handler")
         with(frontEndHandler) { install() }
     }

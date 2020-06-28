@@ -8,6 +8,7 @@
  */
 $primary-color: #37C837;
 
+$sidebar-width: 80vw;
 $footer-height: 45px;
 
 $content-width: 500px;
@@ -15,3 +16,7 @@ $content-height: $content-width;
 
 $expanded-content-width: $content-width * 2;
 $expanded-content-height: $content-width;
+
+$height-wrap-breakpoint: 450px;
+$expanded-breakpoint: 1050px;
+$stepper-breakpoint: 415px;

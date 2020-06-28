@@ -15,6 +15,10 @@ export default {
         discord: 'Log in with Discord'
     },
     auth: {
+        redirecting: {
+            title: 'Redirecting',
+            description: 'Waiting for redirection to the external service...'
+        },
         waiting: {
             title: 'Waiting',
             description: 'Waiting for confirmation in the separate window...'
@@ -99,5 +103,9 @@ export default {
         discord: 'Connection to Discord',
         microsoft: 'Connection to Microsoft',
         settings: 'Settings review'
+    },
+
+    meta: {
+        downloadPdf: 'Download this PDF file'
     }
 };
