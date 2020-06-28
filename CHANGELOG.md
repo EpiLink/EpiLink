@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added manual ID access ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added retrieving additional information about users ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added full mobile / small screens support ([#180](https://github.com/EpiLink/EpiLink/pull/180))
+* On meta text pages, the back button now works when accessing the page by its URL ([#170](https://github.com/EpiLink/EpiLink/issues/170))
 
 ### Changed
 
