@@ -438,7 +438,7 @@
         }
     }
 
-    @media screen and (max-height: 450px) {
+    @media screen and (max-height: 475px) {
         #main-view #content {
             &, #loading, #content-wrapper > div {
                 height: 375px;
