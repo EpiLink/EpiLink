@@ -437,4 +437,13 @@
             font-size: 18px;
         }
     }
+
+    @media screen and (max-height: 450px) {
+        #main-view #content {
+            &, #loading, #content-wrapper > div {
+                height: 375px;
+                max-height: 375px;
+            }
+        }
+    }
 </style>
