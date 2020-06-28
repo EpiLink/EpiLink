@@ -8,7 +8,8 @@
   },
   "scripts": {
     "serve": "vue-cli-service serve",
-    "prod": "vue-cli-service build"
+    "prod": "vue-cli-service build",
+    "prod-netlify": "vue-cli-service build --dest ./prod"
   },
   "dependencies": {
     "core-js": "^3.6.5",
