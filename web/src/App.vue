@@ -78,6 +78,11 @@
 
         mounted() {
             this.load();
+
+            window.addEventListener('resize', () => {
+                document.querySelector("body").style.height = document.querySelector("#app").style.height = window.innerHeight + "px";
+                document.querySelector("#sidebar").style.height = document.querySelector("#sidebar-shadow").style.height = (window.innerHeight - 45) + "px";
+            });
         },
         data() {
             return {
