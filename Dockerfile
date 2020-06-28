@@ -34,6 +34,7 @@ RUN jlink \
 
 
 # Reseting the image build with a JLink-prepared Alpine Linux
+# See https://github.com/Litarvan/docker-jlink-alpine
 FROM litarvan/alpine-jlink:3.12
 
 ENV USER epilink
