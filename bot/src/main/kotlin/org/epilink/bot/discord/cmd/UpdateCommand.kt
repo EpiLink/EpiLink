@@ -15,6 +15,9 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
 
+/**
+ * Implementation of an update command, which can be used to invalidate roles of members.
+ */
 class UpdateCommand : Command, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.discord.cmd.update")
     private val roleManager: LinkRoleManager by inject()

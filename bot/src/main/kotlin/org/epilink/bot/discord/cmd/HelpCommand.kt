@@ -15,6 +15,9 @@ import org.epilink.bot.discord.LinkDiscordMessages
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
+/**
+ * Implementation for the help command
+ */
 class HelpCommand : Command, KoinComponent {
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()

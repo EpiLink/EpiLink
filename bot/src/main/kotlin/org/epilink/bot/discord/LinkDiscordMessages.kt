@@ -84,6 +84,9 @@ interface LinkDiscordMessages {
      */
     fun getSuccessCommandReply(message: String): DiscordEmbed
 
+    /**
+     * Embed for the help message. Simply shows the URL to the documentation
+     */
     fun getHelpMessage(): DiscordEmbed
 }
 
