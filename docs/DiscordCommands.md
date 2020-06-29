@@ -42,3 +42,7 @@ update <user>
 ```
 
 Where `<user>` is a [user target](#user-target). Note that you must prepend the command with the prefix: this would give `e!update <user>` if you're using the default prefix.
+
+### help
+
+The `help` commands displays a help message that redirects you to this very page. It takes no arguments, so simply call it with `e!help`. Replace `e!` with your the prefix you set in the configuration. The default prefix is `e!`.
