@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.discord.cmd
 
+import org.epilink.bot.db.LinkUser
 import org.epilink.bot.debug
 import org.epilink.bot.discord.*
 import org.koin.core.KoinComponent
@@ -24,7 +25,13 @@ class UpdateCommand : Command, KoinComponent {
     override val name: String
         get() = "update"
 
-    override suspend fun CommandContext.run() {
+    override suspend fun run(
+        fullCommand: String,
+        commandBody: String,
+        sender: LinkUser,
+        channelId: String,
+        guildId: String
+    ) {
         val parsedTarget = targetResolver.parseDiscordTarget(commandBody)
         if (parsedTarget is TargetParseResult.Error) {
             client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))

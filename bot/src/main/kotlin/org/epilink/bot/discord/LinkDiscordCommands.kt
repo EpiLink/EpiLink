@@ -73,37 +73,6 @@ sealed class MessageAcceptStatus {
 }
 
 /**
- * Context given for a command.
- */
-class CommandContext(
-    /**
-     * The full command message. Contains the prefix and the command name
-     */
-    @Suppress("unused") val fullCommand: String,
-    /**
-     * The body of the command: that is, the command message without the prefix and command name.
-     *
-     * For example, if the full command is `"e!hello world hi"`, commandBody would be `"world hi"`.
-     */
-    val commandBody: String,
-
-    /**
-     * The "sender", the user who sent the command.
-     */
-    val sender: LinkUser,
-
-    /**
-     * The ID of the channel where the message was sent.
-     */
-    val channelId: String,
-
-    /**
-     * The ID of the guild where the message was sent.
-     */
-    val guildId: String
-)
-
-/**
  * An EpiLink Discord command.
  */
 interface Command {
@@ -114,23 +83,16 @@ interface Command {
 
     /**
      * Run the command
+     *
+     * @param fullCommand The full command message. Contains the prefix and the command name
+     * @param commandBody The body of the command: that is, the command message without the prefix and command name. For
+     * example, if the full command is `"e!hello world hi"`, commandBody would be `"world hi"`.
+     * @param sender The "sender", the user who sent the command.
+     * @param channelId The ID of the channel where the message was sent.
+     * @param guildId The ID of the guild where the message was sent.
      */
-    suspend fun CommandContext.run()
+    suspend fun run(fullCommand: String, commandBody: String, sender: LinkUser, channelId: String, guildId: String)
 }
-
-/**
- * Launch a command with the given parameters. See [CommandContext] for more details on what is what.
- */
-suspend fun Command.process(
-    fullCommand: String,
-    commandBody: String,
-    sender: LinkUser,
-    channelId: String,
-    serverId: String
-) =
-    with(CommandContext(fullCommand, commandBody, sender, channelId, serverId)) {
-        run()
-    }
 
 internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
     private val discordCfg: LinkDiscordConfig by inject()
@@ -165,7 +127,7 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
                     client.sendChannelMessage(channelId, msg.getInvalidCommandReply(commandName))
                     return
                 }
-                command.process(message, if (result.size == 1) "" else result[1], a.user, channelId, serverId)
+                command.run(message, if (result.size == 1) "" else result[1], a.user, channelId, serverId)
             }
         }
     }
@@ -174,12 +136,11 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
     private suspend fun shouldAcceptMessage(message: String, senderId: String, serverId: String): MessageAcceptStatus {
         if (!message.startsWith(discordCfg.commandsPrefix))
             return NotACommand
+        // Quick admin check (avoids checking the database for a user object for obviously-not-an-admin cases)
+        if (senderId !in admins)
+            return MessageAcceptStatus.NotAdmin
         if (!discordCfg.isMonitored(serverId))
             return ServerNotMonitored
-        // Quick admin check (avoids checking the database for a user object for obviously-not-an-admin cases)
-        if (senderId !in admins) {
-            return MessageAcceptStatus.NotAdmin
-        }
         val user = db.getUser(senderId) ?: return NotRegistered
         return when (permission.canPerformAdminActions(user)) {
             NotAdmin -> MessageAcceptStatus.NotAdmin
