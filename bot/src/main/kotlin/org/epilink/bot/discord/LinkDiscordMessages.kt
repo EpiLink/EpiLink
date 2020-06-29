@@ -83,12 +83,15 @@ interface LinkDiscordMessages {
      * Generic embed for a successful command result.
      */
     fun getSuccessCommandReply(message: String): DiscordEmbed
+
+    fun getHelpMessage(): DiscordEmbed
 }
 
 private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
 private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/unknownuser256.png"
 private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/idnotify256.png"
 private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/ban256.png"
+private const val commandsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands"
 
 private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
 
@@ -236,6 +239,14 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     override fun getSuccessCommandReply(message: String): DiscordEmbed = DiscordEmbed(
         title = ":white_check_mark: Success",
         description = message,
+        footer = poweredByEpiLink
+    )
+
+    override fun getHelpMessage(): DiscordEmbed = DiscordEmbed(
+        title = ":grey_question: EpiLink Help",
+        description = """
+            Hello there! Some administrative actions can be performed through Discord. For more information on the commands supported by EpiLink, see $commandsDocsUrl 
+        """.trimIndent(),
         footer = poweredByEpiLink
     )
 }
