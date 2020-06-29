@@ -92,6 +92,7 @@ private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLin
 private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/idnotify256.png"
 private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/ban256.png"
 private const val commandsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands"
+private const val targetsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands?id=user-target"
 
 private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
 
@@ -203,42 +204,50 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     override fun getNotAnAdminCommandReply(): DiscordEmbed = DiscordEmbed(
         title = ":x: Not an administrator",
         description = "You are not allowed to do that because you are not an administrator.",
+        color = "#8A0303",
         footer = poweredByEpiLink
     )
 
     override fun getNotRegisteredCommandReply(): DiscordEmbed = DiscordEmbed(
         title = ":x: Not registered",
         description = "Although you are known as an administrator, you do not have an EpiLink account on this instance. Please create one and try again.",
+        color = "#8A0303",
         footer = poweredByEpiLink
     )
 
     override fun getAdminWithNoIdentityCommandReply(): DiscordEmbed = DiscordEmbed(
         title = ":x: Identity not recorded",
         description = "Although you are a registered administrator, your identity is not recorded in the database. Please enable the Remember my identity option in your user panel and try again.",
+        color = "#8A0303",
         footer = poweredByEpiLink
     )
 
     override fun getServerNotMonitoredCommandReply(): DiscordEmbed = DiscordEmbed(
         title = ":x: Unmonitored server",
         description = "This server is not monitored by EpiLink. Configure it in the EpiLink configuration file and try again.",
+        color = "#8A0303",
         footer = poweredByEpiLink
     )
 
     override fun getInvalidCommandReply(commandName: String): DiscordEmbed = DiscordEmbed(
         title = ":x: Invalid command '$commandName'",
         description = "The command name '$commandName' does not exist.",
+        color = "#8A0303",
         footer = poweredByEpiLink
     )
 
     override fun getWrongTargetCommandReply(target: String): DiscordEmbed = DiscordEmbed(
         title = ":x: Invalid target",
         description = "The target you specified ($target, `$target`) is invalid.",
+        fields = listOf(DiscordEmbedField(":grey_question: Need help on targets?", "See $targetsDocsUrl for more information")),
+        color = "#8A0303",
         footer = poweredByEpiLink
     )
 
     override fun getSuccessCommandReply(message: String): DiscordEmbed = DiscordEmbed(
         title = ":white_check_mark: Success",
         description = message,
+        color = "#2B9B2B",
         footer = poweredByEpiLink
     )
 
@@ -247,6 +256,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
         description = """
             Hello there! Some administrative actions can be performed through Discord. For more information on the commands supported by EpiLink, see $commandsDocsUrl 
         """.trimIndent(),
+        color = "#CCD6DD",
         footer = poweredByEpiLink
     )
 }
