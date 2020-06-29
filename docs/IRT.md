@@ -10,7 +10,7 @@ To launch IRT, start EpiLink with the `-t` flag and provide a rulebook file inst
 $ epilink -t configurations/epilink.rule.kts
 -- EpiLink -- Interactive Rule Tester --
 (i) Loading rulebook, please wait...
-  (...)
+  (... snip ...)
 >>>
 ```
 
@@ -21,7 +21,8 @@ Prompts start with a `>>>`. From there, you can either run a command or a query.
 The following commands are available:
 
 * `exit`: Exits IRT and terminates the program.
-* `load`: Load a different rulebook and use it instead of the current one. Use it like this `load:path/to/my/rulebook.rule.kts`
+* `load:`: Load a different rulebook and use it instead of the current one. Use it like this `load:path/to/my/rulebook.rule.kts`
+* `validate:`: Test the e-mail validator defined in the rulebook against a specific e-mail address. Use it like this `validate:my.email@test.ie`
 
 ## Query
 
