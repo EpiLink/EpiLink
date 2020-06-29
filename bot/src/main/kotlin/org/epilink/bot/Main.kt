@@ -36,7 +36,7 @@ class CliArgs(parser: ArgParser) {
     /**
      * Path to the configuration file, w.r.t. the current working directory
      */
-    val config by parser.positional("path to the configuration file (or to the rulebook in RTM)")
+    val config by parser.positional("path to the configuration file (or to the rulebook in IRT)")
 
     /**
      * Interactive rule tester mode

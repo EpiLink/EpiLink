@@ -30,14 +30,14 @@ private val queryRegex = Regex("""(.+?)\[(\d+);(.+?);(\d{4})(?:;(.+?))?]""")
 /**
  * A simple rule testing program
  */
-fun ruleTester(rulebookFile: String) {
+fun ruleTester(rulebookFile: String) = runBlocking {
     println("-- EpiLink -- Interactive Rule Tester --")
     var rulebook = loadRulebook(rulebookFile) ?: Rulebook(mapOf()) { true }.also {
         println("<!> Failed to load the rulebook. An empty rulebook has been loaded instead.")
     }
     println("(?) Enter your query. Format: RuleName[discordId;discordUsername;discordDiscriminator;email]")
     println("    Enter exit to quit. Enter load: followed by a file path to load a new rulebook.")
-    println("    Help: https://epilink.zoroark.guru/...") // TODO
+    println("    Help: https://epilink.zoroark.guru/#/IRT")
     loop@ do {
         print(">>> ")
         val l = readLine() ?: exitProcess(0)
@@ -51,12 +51,33 @@ fun ruleTester(rulebookFile: String) {
     } while (true)
 }
 
-private fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (Rulebook?) -> Unit) {
+private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (Rulebook?) -> Unit) {
     // Exit command
     if (l == "exit") exitProcess(0)
     // Load command
     if (l.startsWith("load:")) {
         rulebookSetter(loadRulebook(l.substring(5)))
+        return
+    }
+    // E-mail validation command
+    if (l.startsWith("validate:")) {
+        val validator = rulebook.validator
+        if (validator == null) {
+            println("<!> No e-mail validator is defined in the rulebook")
+        } else {
+            print("(i) Running e-mail validator... ")
+            val result = runCatching { validator(l.substring(9)) }
+            result.fold(onSuccess = {
+                if (it) {
+                    println("OK, e-mail passes (returned true)")
+                } else {
+                    println("NOT OK, e-mail rejected (returned false)")
+                }
+            }, onFailure = {
+                println("error")
+                it.printStackTrace(System.out)
+            })
+        }
         return
     }
     // Actual query
@@ -75,21 +96,19 @@ private fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (Rulebook?
         return
     }
     print("(i) Running rule ${query.ruleName}... ")
-    runBlocking {
-        runCatching {
-            when(rule) {
-                is StrongIdentityRule -> rule.determineRoles(
-                    query.discordId,
-                    query.discordUsername,
-                    query.discordDiscriminator,
-                    query.email!!
-                )
-                is WeakIdentityRule -> rule.determineRoles(
-                    query.discordId,
-                    query.discordUsername,
-                    query.discordDiscriminator
-                )
-            }
+    runCatching {
+        when (rule) {
+            is StrongIdentityRule -> rule.determineRoles(
+                query.discordId,
+                query.discordUsername,
+                query.discordDiscriminator,
+                query.email!!
+            )
+            is WeakIdentityRule -> rule.determineRoles(
+                query.discordId,
+                query.discordUsername,
+                query.discordDiscriminator
+            )
         }
     }.fold(onSuccess = { result ->
         result.joinToString(", ").let { if (it.isEmpty()) "(nothing found)" else it }.let {
