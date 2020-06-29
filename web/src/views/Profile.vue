@@ -270,27 +270,19 @@
 
         #left {
             min-height: 400px;
-        }
 
-        #left {
             padding-bottom: 0;
-        }
-
-        #right {
-            padding-top: 0;
-        }
-    }
-
-    @media screen and (max-width: 475px) {
-        #submit {
-            margin-top: 25px;
-            margin-bottom: 20px;
         }
 
         #right {
             padding: 20px;
 
             display: block;
+        }
+
+        #submit {
+            margin-top: 25px;
+            margin-bottom: 20px;
         }
     }
 </style>

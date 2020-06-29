@@ -161,7 +161,7 @@
             overflow-y: auto;
         }
 
-        #right {
+        #left, #right, #settings-form {
             display: block;
         }
 
