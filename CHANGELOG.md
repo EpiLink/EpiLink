@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] (0.4.0)
+
+### Added
+
+* Added Discord commands ([#178](https://github.com/EpiLink/EpiLink/pull/178))
+
 ## [0.3.1] - 2020-06-29
 
 ### Changed
@@ -18,7 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-* Added Discord commands ([#178](https://github.com/EpiLink/EpiLink/pull/178))
 * Added PDF support for ToS and Privacy Policy documents ([#175](https://github.com/EpiLink/EpiLink/pull/175))
 * Added GDPR report generation ([#173](https://github.com/EpiLink/EpiLink/pull/173))
 * Added ban notifications ([#168](https://github.com/EpiLink/EpiLink/pull/168))
