@@ -51,21 +51,21 @@ sealed class TargetParseResult {
          *
          * @property id The ID of the targeted user
          */
-        class UserById(val id: String) : Success()
+        data class UserById(val id: String) : Success()
 
         /**
          * A parsed target for a role with a name
          *
          * @property name The name of the targeted role
          */
-        class RoleByName(val name: String) : Success()
+        data class RoleByName(val name: String) : Success()
 
         /**
          * A parsed target for a role with an ID
          *
          * @property id The ID of the targeted role
          */
-        class RoleById(val id: String) : Success()
+        data class RoleById(val id: String) : Success()
 
         /**
          * A parsed target for the "everyone" special value
@@ -88,14 +88,14 @@ sealed class TargetResult {
      *
      * @property id The ID of the targeted user
      */
-    class User(val id: String) : TargetResult()
+    data class User(val id: String) : TargetResult()
 
     /**
      * A role target (by id)
      *
      * @property id The ID of the targeted role
      */
-    class Role(val id: String) : TargetResult()
+    data class Role(val id: String) : TargetResult()
 
     /**
      * A special value that means "everyone"
@@ -107,13 +107,13 @@ sealed class TargetResult {
      *
      * @property name The name of the role that could not be resolved into an ID
      */
-    class RoleNotFound(val name: String) : TargetResult()
+    data class RoleNotFound(val name: String) : TargetResult()
 }
 
 internal class LinkDiscordTargetsImpl : LinkDiscordTargets, KoinComponent {
     private val discord: LinkDiscordClientFacade by inject()
 
-    private val angleBracketsPattern = Regex("""<@(?:(&)?|!?(\d+))>""")
+    private val angleBracketsPattern = Regex("""<@(?:(&)?|!?)(\d+)>""")
 
     override fun parseDiscordTarget(target: String): TargetParseResult {
         val angled = angleBracketsPattern.matchEntire(target)
