@@ -4,6 +4,7 @@
 
     - [📖 Maintainer Guide](MaintainerGuide.md)
     - [🎯 Rulebooks](Rulebooks.md)
+    - [🪁 Rule Tester](IRT.md)
     - [‍⚖ GDPR information](GDPR.md)
 
 - Hacking on EpiLink
