@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Use Discord bot assets from the master branch instead of the dev one ([#182](https://github.com/EpiLink/EpiLink/pull/182))
 
+### Fixed
+
+* Fixed the "Download this PDF file" not working because of ad-blockers. Serve the real URL instead of the pre-loaded blob. ([#190](https://github.com/EpiLink/EpiLink/issues/190))
+
 ## [0.3.1] - 2020-06-29
 
 ### Changed
