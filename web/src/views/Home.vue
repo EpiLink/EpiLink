@@ -56,7 +56,8 @@
 </script>
 
 <style lang="scss" scoped>
-    @import '../styles/fonts';
+    @import '../styles/vars';
+    @import 'src/styles/mixins';
 
     #home {
         display: flex;
@@ -117,6 +118,50 @@
         &:hover {
             background-color: lighten($color, 2.5%);
             cursor: pointer;
+        }
+    }
+
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        #home {
+            padding: 30px;
+        }
+
+        #logo {
+            width: 145px;
+            height: 145px;
+        }
+
+        #title {
+            font-size: 54px;
+        }
+
+        #discord {
+            width: 280px;
+            height: 50px;
+
+            font-size: 19px;
+        }
+    }
+
+    @media screen and (max-width: 375px) {
+        #logo {
+            width: 135px;
+            height: 135px;
+        }
+
+        #title {
+            font-size: 48px;
+        }
+
+        #discord {
+            width: 245px;
+            height: 40px;
+
+            font-size: 17px;
+
+            #discord-logo {
+                height: 25px;
+            }
         }
     }
 </style>

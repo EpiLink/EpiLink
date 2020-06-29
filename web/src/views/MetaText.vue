@@ -11,10 +11,10 @@
 <template>
     <div class="meta-text">
         <h1 class="title" :class="{ overflow: title.length > 30 }">
-            <a @click="$router.back()"><img class="back-icon" src="../../assets/back.svg" /></a>
+            <a @click="back()"><img class="back-icon" src="../../assets/back.svg" /></a>
             {{ title | capitalize }}
         </h1>
-        <a class="back" @click="$router.back()" v-html="$t('back')" />
+        <a class="back" @click="back()" v-html="$t('back')" />
 
         <transition name="fade" mode="out-in">
             <link-loading v-if="!content" :key="0" />
@@ -43,6 +43,17 @@
             return {
                 title: this.$t(`settings.${this.$route.name === 'privacy' ? 'policy' : 'terms'}`)
             };
+        },
+        methods: {
+            back() {
+                if (!history) {
+                    this.$router.back();
+                } else if (history.length > 2) {
+                    history.back();
+                } else {
+                    this.$router.push({ name: 'home' });
+                }
+            }
         },
         filters: {
             capitalize(str) {
@@ -86,6 +97,8 @@
     }
 
     .title {
+        max-width: calc(100% - 20px);
+
         margin-bottom: 10px;
 
         font-size: 30px;
@@ -135,6 +148,12 @@
         iframe {
             width: 100%;
             flex-grow: 1;
+        }
+    }
+
+    @media screen and (max-width: 500px) {
+        .title {
+            font-size: 26px;
         }
     }
 </style>

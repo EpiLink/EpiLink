@@ -4,7 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] (0.3.0)
+## [0.3.1] - 2020-06-29
+
+### Changed
+
+* Improved the profile page layout on small screens
+
+### Fixed
+
+* Fixed iOS layout glitch on the settings page
+
+## [0.3.0] - 2020-06-29
 
 ### Added
 
@@ -18,9 +28,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     * Note: While banning logic has been in place for a while, there was no way of creating or revoking a ban. This adds banning and revoking abilities.
 * Added manual ID access ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added retrieving additional information about users ([#161](https://github.com/EpiLink/EpiLink/pull/161))
+* Added full mobile / small screens support ([#180](https://github.com/EpiLink/EpiLink/pull/180))
+* On meta text pages, the back button now works when accessing the page by its URL ([#170](https://github.com/EpiLink/EpiLink/issues/170))
 
 ### Changed
 
+* Updated the logo ([#181](https://github.com/EpiLink/EpiLink/pull/181))
 * Use logos from the GitHub repository instead of Discord's CDN in embeds ([#167](https://github.com/EpiLink/EpiLink/pull/167))
 * Refactored `LinkServerDatabase` so much that it doesn't exist anymore ([#165](https://github.com/EpiLink/EpiLink/pull/165))
 * Refactored the back-end APIs ([#161](https://github.com/EpiLink/EpiLink/pull/161))
@@ -133,7 +146,9 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.2.0...dev
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.3.1...dev
+[0.3.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.3.1
+[0.3.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.3.0
 [0.2.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.2.0
 [0.1.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.1.1
 [0.1.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.1

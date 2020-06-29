@@ -6,9 +6,13 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-@import url('https://use.typekit.net/qvu5xru.css');
-
 @mixin lato($weight: 400) {
   font-family: 'Lato', 'Arial', sans-serif;
   font-weight: $weight;
+}
+
+@mixin ellipsis() {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
