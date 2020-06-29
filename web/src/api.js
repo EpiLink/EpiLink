@@ -101,7 +101,13 @@ export default async function(method, path, body, returnRawResponse = false) {
 
     if (!json.success) {
         console.error(`API returned an error during request '${method} ${path}' : '${json.message}'`);
-        throw json.message;
+        if (result.status === 429) {
+            // Handle the 429 status separately, as the message is not super clear (and there's no guarantee of there
+            // being a message in the first place)
+            throw "You are being rate-limited. Please try again in a few minutes."
+        } else {
+            throw json.message;
+        }
     }
 
     const checkSession = (type, header) => {
