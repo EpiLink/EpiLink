@@ -2,6 +2,8 @@
 
 This page describes the Discord commands that are available in EpiLink.
 
+?> Discord commands are available since version 0.4.0
+
 ## Prerequisites
 
 In order to be able to use commands, you must:
