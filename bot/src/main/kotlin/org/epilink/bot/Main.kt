@@ -38,7 +38,10 @@ class CliArgs(parser: ArgParser) {
      */
     val config by parser.positional("path to the configuration file (or to the rulebook in RTM)")
 
-    val rtm by parser.flagging("-t", "--test-rulebook", help = "Launch the Rulebook Test Mode. See the documentation for more details.")
+    /**
+     * Interactive rule tester mode
+     */
+    val irt by parser.flagging("-t", "--test-rulebook", help = "Launch the Interactive Rule Tester. See the documentation for more details.")
 
     /**
      * If present, enables debug info
@@ -67,7 +70,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
         )
     ).parseInto(::CliArgs)
 
-    if (cliArgs.rtm) {
+    if (cliArgs.irt) {
         ruleTester(cliArgs.config)
         return@mainBody
     }
