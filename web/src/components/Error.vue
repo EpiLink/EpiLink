@@ -42,7 +42,7 @@
         padding: 0 25px;
         box-sizing: border-box;
 
-        height: inherit;
+        height: 100%;
     }
 
     .title {

@@ -63,10 +63,17 @@
         }
     }
 
-    @media screen and (max-width: 375px) {
+    @media screen and (max-width: 450px) {
         .link {
             font-size: 18px;
-            padding: 8px 40px;
+            padding: 8px 25px;
+        }
+    }
+
+    @media screen and (max-width: 355px) {
+        .link {
+            font-size: 16px;
+            padding: 8px 10px;
         }
     }
 </style>
