@@ -4,8 +4,9 @@
 
     - [📖 Maintainer Guide](MaintainerGuide.md)
     - [🎯 Rulebooks](Rulebooks.md)
+    - [🪁 Rule Tester (IRT)](IRT.md)
     - [💎 Discord commands](DiscordCommands.md)
-    - [‍⚖ GDPR information](GDPR.md)
+    - [⚖ GDPR information](GDPR.md)
 
 - Hacking on EpiLink
 

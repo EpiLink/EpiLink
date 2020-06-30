@@ -36,7 +36,12 @@ class CliArgs(parser: ArgParser) {
     /**
      * Path to the configuration file, w.r.t. the current working directory
      */
-    val config by parser.positional("path to the configuration file")
+    val config by parser.positional("path to the configuration file (or to the rulebook in IRT)")
+
+    /**
+     * Interactive rule tester mode
+     */
+    val irt by parser.flagging("-t", "--test-rulebook", help = "Launch the Interactive Rule Tester. See the documentation for more details.")
 
     /**
      * If present, enables debug info
@@ -64,6 +69,11 @@ fun main(args: Array<String>) = mainBody("epilink") {
             """.trimIndent()
         )
     ).parseInto(::CliArgs)
+
+    if (cliArgs.irt) {
+        ruleTester(cliArgs.config)
+        return@mainBody
+    }
 
     if (cliArgs.verbose) {
         val ctx = LoggerFactory.getILoggerFactory() as LoggerContext

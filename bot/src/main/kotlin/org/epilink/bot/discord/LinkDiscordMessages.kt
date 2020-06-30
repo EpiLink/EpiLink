@@ -90,12 +90,12 @@ interface LinkDiscordMessages {
     fun getHelpMessage(): DiscordEmbed
 }
 
-private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
-private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/unknownuser256.png"
-private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/idnotify256.png"
-private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/ban256.png"
-private const val commandsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands"
+private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/epilink256.png"
+private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png"
+private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/idnotify256.png"
+private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/ban256.png"
 private const val targetsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands?id=user-target"
+private const val commandsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands"
 
 private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
 

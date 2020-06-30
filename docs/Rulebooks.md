@@ -1,28 +1,32 @@
 # Rulebooks
 
-## What are rulebooks?
+## Getting started
+
+### What are rulebooks?
 
 Rulebooks are small Kotlin scripts that implement custom rules for custom roles. They are intended to be used to gather information about a user (possibly using their real identity) and give them roles automatically. Rulebooks can also be used for additional checks on your end: for example, checking that someone's email matches some format you need. This is useful for making sure only users from a domain you trust can log in.
 
 An example is: I know that the user's email address is `ab@c.de`, and I want to automatically give them a "Manager" role depending on the reply of some web API that returns JSON. Using a rule, you can specify that the Manager role follows a "CheckStatus" rule, and implement the CheckStatus rule to send an HTTP GET request to your own API, check the JSON reply, and apply roles automatically based on this reply. 
 
-## Where should I put my rulebook?
+### Where should I put my rulebook?
 
 You can either put your rulebook directly in the configuration file, or in a separate file. The file extension for rulebooks is `.rule.kts` (e.g. your file could be named `epilink.rule.kts`).
 
-## Privacy
+See [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is. Note that `rulebook`/`rulebookFile` can only be specified in the `discord` section of the configuration file.
+
+### Privacy
 
 **Rules can potentially leak users' identity, and constitute a use of real identities that you should probably indicate in your privacy policy.** Retrieving roles automatically may also hinder the anonymity of your users with regards to other users (e.g. someone may be able to determine who someone is using their roles). This, of course, is not an issue if you do not care about the anonymity of your users.
 
 You should make these points clear to your users.
 
-## The Rulebook itself
+### Testing your rulebook
 
-First, see [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is. Note that `rulebook`/`rulebookFile` can only be specified in the `discord` section of the configuration file.
+You can test your rulebook using [IRT](IRT.md), the Interactive Rule Tester.
 
-This section will cover the basics of rulebooks. This assumes some knowledge of Kotlin.
+TL;DR, launch EpiLink with the `-t` flag and pass a rulebook file instead of a config file. EpiLink will launch in a special mode (IRT) which gives you a shell in which you can test your rulebook.
 
-### E-mail validation
+## E-mail validation
 
 You can use your rulebook to validate e-mail addresses. This is particularly useful if you want to use EpiLink across multiple domains (e.g. multiple Azure tenants, multiple schools, ...), but you still want to validate who can come in.
 
@@ -56,7 +60,7 @@ emailValidator { it.endsWith("@mydomain.fi") || it.endsWith("@otherdomain.org") 
 
 ?> The e-mail validator is ran during the registration process only, and does not generate any identity access notification, as it is part of the registration process, where such a use is logically expected.
 
-### Rule declaration
+## Rules
 
 ```kotlin
 "StartsWithA" {
@@ -157,9 +161,15 @@ discord:
 * EpiLink detects that `otherRole` is in the server (from the server's config), and that that role is determined by the custom *strong-identity* rule `OtherRule`. **This rule gets executed as part of the role refresh process ONLY IF Jake chose to keep his identity in the system.** This also generates an identity access, and the user may get notified depending on the [privacy configuration](MaintainerGuide.md#privacy-configuration). Otherwise, the rule is simply ignored and the role is not applied.
 * The role `third` is NOT in the server. Its rule is therefore not executed.
 
-### Helper functions
+### Reserved rule names
 
-Some functions are designed to help you if you want to perform network requests for processing rules. They are available in [this file](/bot/src/main/kotlin/org/epilink/bot/config/rulebook/QuickHttp.kt) and can directly be used anywhere you want in your rule.
+You must not use these rule names, as they may interfere with other functionality in EpiLink:
+
+* `_INDEX_`
+
+## Helper functions
+
+Some functions are designed to help you if you want to perform network requests for processing rules. They are available in [this file](https://github.com/EpiLink/EpiLink/blob/master/bot/src/main/kotlin/org/epilink/bot/rulebook/QuickHttp.kt) and can directly be used anywhere you want *in your rules*. These cannot be used for e-mail validation.
 
 For example, say we have some API at `https://myapi.com/api/endpoint?email=...` that requires basic auth and returns the following on a GET request:
 
@@ -201,7 +211,7 @@ You could write a rule that gives a role to `frenchDevs` like so (we assume that
 
 ?> The helper functions are very limited at the moment. You can use your own functions, or manually create Ktor clients, but this is not recommended. Instead, if you want to do something the current helper functions can't do, please [open an issue](https://github.com/EpiLink/EpiLink/issues) so that we can add it to EpiLink!
 
-### Rule caching
+## Rule caching
 
 Rules can do things that take a lot of time: contacting an API on the web, computing a prime number... In short: calling every rule every single time we want to use them costs us a lot of time and bandwidth. Fortunately, there is a way to declare rules that, if they were called recently, will remember the output and give the remembered output directly.
 
@@ -277,9 +287,3 @@ The cache of a specific user may become invalid in some specific cases, meaning 
 * The identity settings of the user change (loss or gain of identity)
 
 Cache invalidation always leads to a refresh of the roles of the user on all servers.
-
-### Reserved rule names
-
-You must not use these rule names, as they may interfere with other functionality in EpiLink:
-
-* `_INDEX_`

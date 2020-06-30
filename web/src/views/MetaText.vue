@@ -22,7 +22,7 @@
                 <p class="text" v-html="contentText"/>
             </div>
             <div class="pdf-things" v-if="content && contentPdf" :key="2">
-                <p><a :href="contentPdf" v-html="$t('meta.downloadPdf')" target="_blank"></a></p>
+                <p><a :href="contentUrl" v-html="$t('meta.downloadPdf')" target="_blank"></a></p>
                 <iframe :src="contentPdf"></iframe>
             </div>
         </transition>
@@ -71,6 +71,9 @@
             content() {
                 const prop = this.isPrivacyPolicy ? 'privacyPolicy' : 'termsOfService';
                 return this.$store.state.texts[prop];
+            },
+            contentUrl() {
+                return this.content.url
             },
             contentText() {
                 return this.content.textContent;
