@@ -20,6 +20,12 @@ See [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-
 
 You should make these points clear to your users.
 
+### Testing your rulebook
+
+You can test your rulebook using [IRT](IRT.md), the Interactive Rule Tester.
+
+TL;DR, launch EpiLink with the `-t` flag and pass a rulebook file instead of a config file. EpiLink will launch in a special mode (IRT) which gives you a shell in which you can test your rulebook.
+
 ## E-mail validation
 
 You can use your rulebook to validate e-mail addresses. This is particularly useful if you want to use EpiLink across multiple domains (e.g. multiple Azure tenants, multiple schools, ...), but you still want to validate who can come in.

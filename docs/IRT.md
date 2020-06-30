@@ -2,7 +2,7 @@
 
 ?> Available since version 0.4.0
 
-The EpiLink Interactive Rule Tester (IRT) is a special mode in which you can launch EpiLink. Instead of actually loading the server, it gives you a shell in which you can experiment with your rulebook to ensure that it works properly.
+The EpiLink Interactive Rule Tester (IRT) is a special mode in which you can launch EpiLink. Instead of actually loading the server, it gives you a shell in which you can experiment with your [rulebook](Rulebooks.md) to ensure that it works properly.
 
 To launch IRT, start EpiLink with the `-t` flag and provide a rulebook file instead of a config file. For example:
 
