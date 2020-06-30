@@ -16,7 +16,7 @@
         </div>
 
         <div id="button-container">
-            <a id="sources" href="https://github.com/Litarvan/EpiLink" target="_blank">
+            <a id="sources" href="https://github.com/EpiLink/EpiLink" target="_blank">
                 <img id="github" src="../../assets/github.png" />
                 {{ $t('about.sources') }}
             </a>

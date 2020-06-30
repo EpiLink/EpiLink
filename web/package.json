@@ -4,7 +4,7 @@
   "description": "EPITA Discord servers user linking tool",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Litarvan/EpiLink.git"
+    "url": "git+https://github.com/EpiLink/EpiLink.git"
   },
   "scripts": {
     "serve": "vue-cli-service serve",
