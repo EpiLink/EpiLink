@@ -166,7 +166,6 @@ internal class LinkDiscord4JFacadeImpl(
         return foundRole?.id?.asString()
     }
 
-    // TODO handle when role ID does not exist
     override suspend fun getMembersWithRole(roleId: String, guildId: String): List<String> {
         val guild = client.getGuildById(Snowflake.of(guildId)).awaitSingle()
         val members = guild.members.collectList().awaitSingle()
