@@ -74,6 +74,14 @@ tokens:
   # This can be "common" (allow everyone) or an ID specific to a company/school.
   msftTenant: common
 
+# Rulebook declaration
+# See the docs for more information
+#----#
+#rulebook: |
+#  "MyRule" { ... }
+# OR #
+#rulebookFile: myFile.rule.kts
+
 # Terms of services, etc. See the maintainer guide for more details.
 #legal:
   # Terms of services
@@ -102,14 +110,6 @@ discord:
 
   # The prefix to use for commands. e! by default.
   #commandsPrefix: "e!"
-
-  # Rulebook declaration
-  # See the docs for more information
-  #----#
-  #rulebook: |
-  #  "MyRule" { ... }
-  # OR #
-  #rulebookFile: myFile.rule.kts
 
   # See the documentation on custom roles for more details on this option. You can omit it if you do not need it.
   roles: []

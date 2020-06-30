@@ -95,17 +95,17 @@ fun main(args: Array<String>) = mainBody("epilink") {
         exitProcess(123)
     }
 
-    if (cfg.discord.rulebook != null && cfg.discord.rulebookFile != null) {
+    if (cfg.rulebook != null && cfg.rulebookFile != null) {
         logger.error("Your configuration defines both a rulebook and a rulebookFile: please only use one of those.")
         logger.info("Use rulebook if you are putting the rulebook code directly in the config file, or rulebookFile if you are putting the code in a separate file.")
         exitProcess(4)
     }
 
     val rulebook = runBlocking {
-        cfg.discord.rulebook?.let {
+        cfg.rulebook?.let {
             logger.info("Loading rulebook from configuration, this may take some time...")
             loadRules(it).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
-        } ?: cfg.discord.rulebookFile?.let { file ->
+        } ?: cfg.rulebookFile?.let { file ->
             withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
                 val path = cfgPath.parent.resolve(file)
                 logger.info("Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this may take some time...")

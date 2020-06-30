@@ -61,6 +61,11 @@ name: My EpiLink Instance
 db: epilink.db
 redis: "redis://localhost:6379"
 admins: [] # optional
+
+rulebook: |
+  ...
+# OR
+rulebookFile: ...
 ```
 
 * `name`: This is the name of your instance. This name is public and should describe your instance. For example "MyAmazingOrg Account Checker".
@@ -74,6 +79,28 @@ admins: [] # optional
 * `admins` *(optional, empty list by default)*: A list of Discord IDs of the administrators of this instance. *(since version 0.3.0)*
 
 !> Be mindful of who you decide is an administrator! Administrators have access to critical tools.
+
+#### Rulebook configuration
+
+```yaml
+rulebook: |
+  "MyBeautifulRule" {
+     ...
+  }
+
+# OR #
+
+rulebookFile: myFile.rule.kts
+```
+
+Custom roles can be determined using custom rules, and you can additionally validate e-mail addresses with rulebooks. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](Rulebooks.md).
+
+* You can use no rulebooks whatsoever: in this case, simply do not declare `rulebook` nor `rulebookFile`.
+* You can put the rulebook directly in the configuration file (using `rulebook`). In this case, do not declare `rulebookFile`
+* You can put the rulebook in a separate file (using `rulebookFile`). The value of `rulebookFile` is the path to the rulebook file **relative to the configuration file**. If the rulebook named `epilink.rule.kts` is located in the same folder as your config file, you can just use `rulebookFile: epilink.rule.kts`
+* Using *both* `rulebook` and `rulebookFile` at the same time will result in an error upon launching EpiLink.
+
+!> In case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, **all e-mail addresses will be treated as valid.** In other words, **if you use a general tenant as your Microsoft tenant instead of a specific one, use e-mail validation, otherwise untrusted parties may be authenticated via EpiLink!**
 
 ### HTTP Server Settings
 
@@ -179,12 +206,6 @@ discord:
   welomeUrl: ~
   commandsPrefix: ...
   roles: []
-
-  rulebook: |
-    ...
-  # OR
-  rulebookFile: ...
-
   servers:
     - id: ...
       ...
@@ -289,27 +310,6 @@ fields: # Optional
 
 Most of these should be familiar if you have ever used Discord embeds before. You can remove elements you do not use (those that are marked with `# Optional`).
 
-#### Rulebook configuration
-
-```yaml
-rulebook: |
-  "MyBeautifulRule" {
-     ...
-  }
-
-# OR #
-
-rulebookFile: myFile.rule.kts
-```
-
-Custom roles can be determined using custom rules, and you can additionally validate e-mail addresses with rulebooks. Here, we will only focus on where to put the rulebooks declaration. [For more information on rulebooks and on how to declare rules, click here.](Rulebooks.md).
-
-* You can use no rulebooks whatsoever: in this case, simply do not declare `rulebook` nor `rulebookFile`.
-* You can put the rulebook directly in the configuration file (using `rulebook`). In this case, do not declare `rulebookFile`
-* You can put the rulebook in a separate file (using `rulebookFile`). The value of `rulebookFile` is the path to the rulebook file **relative to the configuration file**. If the rulebook named `epilink.rule.kts` is located in the same folder as your config file, you can just use `rulebookFile: epilink.rule.kts`
-* Using *both* `rulebook` and `rulebookFile` at the same time will result in an error upon launching EpiLink.
-
-!> In case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, **all e-mail addresses will be treated as valid.** In other words, **if you use a general tenant as your Microsoft tenant instead of a specific one, use e-mail validation, otherwise untrusted parties may be authenticated via EpiLink!**
 
 ### Privacy configuration
 
