@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+* Moved rulebook settings to the root section instead of the Discord section ([#193](https://github.com/EpiLink/EpiLink/pull/193))
+    * **BREAKING CHANGE:** Move `rulebook` and `rulebookFile` options out of the Discord section. You can place it anywhere "in the root" (i.e. at the same level as the `redis` or `db` option)
 * Updated back-end dependencies
 * Use Discord bot assets from the master branch instead of the dev one ([#182](https://github.com/EpiLink/EpiLink/pull/182))
 * Changed the rate-limited message for a clearer one ([#188](https://github.com/EpiLink/EpiLink/issues/188))
