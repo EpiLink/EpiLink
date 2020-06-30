@@ -177,6 +177,7 @@ You should also add redirection URIs based on where the front-end is served. The
 ```yaml
 discord:
   welomeUrl: ~
+  commandsPrefix: ...
   roles: []
 
   rulebook: |
@@ -191,6 +192,7 @@ discord:
 ```
 
 * `welcomeUrl`: The URL the bot will send in the default welcome message. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can use a custom embed instead of the default one with `welcomeEmbed` in each server -- the `welcomeUrl` value is ignored for servers which use a custom welcome embed. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
+* `commandsPrefix` *(optional, `e!` by default)*: The command prefix that EpiLink should use for accepting commands from admins.
 * `roles` *(optional, empty list `[]` by default)*: A list of [custom roles specifications](#discord-custom-roles-configuration). You can omit it if you do not use custom roles.
 * `servers`: A list of [server configurations](#discord-server-configuration).
 

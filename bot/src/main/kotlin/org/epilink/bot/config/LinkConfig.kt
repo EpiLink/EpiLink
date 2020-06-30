@@ -191,7 +191,7 @@ data class LinkDiscordConfig(
     /**
      * The prefix for commands. "e!" by default.
      */
-    val commandsPrefix: String = "e!", // TODO add this in maintainer guide
+    val commandsPrefix: String = "e!",
     /**
      * The rule book, directly as Kotlin code. Mutually exclusive with [rulebookFile].
      */
