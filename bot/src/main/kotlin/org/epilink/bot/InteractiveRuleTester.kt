@@ -38,7 +38,7 @@ fun ruleTester(rulebookFile: String) = runBlocking {
     println("(?) Enter your query. Format: RuleName[discordId;discordUsername;discordDiscriminator;email]")
     println("    Enter exit to quit. Enter load: followed by a file path to load a new rulebook.")
     println("    Help: https://epilink.zoroark.guru/#/IRT")
-    loop@ do {
+    do {
         print(">>> ")
         val l = readLine() ?: exitProcess(0)
         handleLine(l, rulebook) {
