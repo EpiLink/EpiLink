@@ -116,8 +116,8 @@ internal class LinkDiscord4JFacadeImpl(
         logger.debug {
             """
             Role transaction for user $discordId in guild $guildId 
-                [+]    To add: ${toAdd.joinToString(", ").orIfEmpty("(none)")}
-                [-] To remove: ${toRemove.joinToString(", ").orIfEmpty("(none)")}
+                [+]    To add: ${toAdd.joinToString(", ").ifEmpty { "(none)" }}
+                [-] To remove: ${toRemove.joinToString(", ").ifEmpty { "(none)" }}
             """.trimIndent()
         }
         val member = client.getMemberById(
@@ -276,5 +276,3 @@ internal class LinkDiscord4JFacadeImpl(
         get() = this.errorResponse?.fields?.get("code")?.toString()
 
 }
-
-private fun String.orIfEmpty(other: String) = if (this.isEmpty()) other else this

@@ -111,7 +111,7 @@ private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (R
             )
         }
     }.fold(onSuccess = { result ->
-        result.joinToString(", ").let { if (it.isEmpty()) "(nothing found)" else it }.let {
+        result.joinToString(", ").ifEmpty { "(nothing found)" }.let {
             println("found roles: $it")
         }
     }, onFailure = { error ->
