@@ -20,19 +20,19 @@
                     </div>
 
                     <div id="loading" v-if="!redirected && !loaded && !error" :key="1">
-                        <link-loading />
+                        <link-loading/>
                     </div>
 
-                    <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2" />
+                    <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2"/>
                 </transition>
             </div>
         </div>
 
         <div id="footer" v-if="!redirected">
             <div id="left-footer">
-                <img id="menu" src="../assets/menu.svg" @click="sidebar = !sidebar" />
+                <img id="menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
                 <router-link id="home-button" to="/">
-                    <img id="logo" src="../assets/logo.svg" />
+                    <img id="logo" src="../assets/logo.svg"/>
                     <span id="title">EpiLink</span>
                 </router-link>
                 <template v-if="instance">
@@ -42,24 +42,25 @@
                 </template>
                 <template v-if="canLogout">
                     <div id="logout-separator"></div>
-                    <a id="logout" @click="logout">{{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout') }}</a>
+                    <a id="logout" @click="logout">{{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout')
+                        }}</a>
                 </template>
             </div>
             <ul id="navigation">
-                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name"/>
             </ul>
         </div>
 
-        <div id="sidebar-shadow" :class="{ opened: sidebar }" @click="sidebar = false" />
+        <div id="sidebar-shadow" :class="{ opened: sidebar }" @click="sidebar = false"/>
 
         <div id="sidebar" :class="{ opened: sidebar }">
             <div id="header">
-                <img id="side-logo" src="../assets/logo.svg" />
+                <img id="side-logo" src="../assets/logo.svg"/>
                 EpiLink
             </div>
 
             <ul id="side-navigation">
-                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name"/>
             </ul>
         </div>
     </div>
@@ -68,7 +69,7 @@
 <script>
     import { mapState } from 'vuex';
 
-    import LinkError   from './components/Error';
+    import LinkError from './components/Error';
     import LinkLoading from './components/Loading';
     import LinkRoute from "./components/Route";
 
@@ -79,10 +80,8 @@
         mounted() {
             this.load();
 
-            window.addEventListener('resize', () => {
-                document.querySelector("body").style.height = document.querySelector("#app").style.height = window.innerHeight + "px";
-                document.querySelector("#sidebar").style.height = document.querySelector("#sidebar-shadow").style.height = (window.innerHeight - 45) + "px";
-            });
+            window.addEventListener('resize', this.onResize);
+            this.onResize();
         },
         data() {
             return {
@@ -106,14 +105,14 @@
             routes() {
                 const meta = this.$store.state.meta;
                 const urls = meta && meta.footerUrls;
-                const instance = meta && [{ route: 'instance' }];
+                const instance = meta && [{route: 'instance'}];
 
                 return [
-                    { route: 'home' },
+                    {route: 'home'},
 
                     ...(urls || []),
                     ...(instance || []),
-                    { route: 'about' }
+                    {route: 'about'}
                 ];
             },
             instance() {
@@ -126,6 +125,15 @@
             }
         },
         methods: {
+            onResize() {
+                const [body, app, shadow, sidebar] = [
+                    ...document.querySelectorAll('body, #app'),
+                    ...document.querySelectorAll('#sidebar-shadow, #sidebar')
+                ].map(e => e.style);
+
+                body.height = app.height = `${window.innerHeight}px`;
+                sidebar.height = shadow.height = `${window.innerHeight - 45}px`;
+            },
             load() {
                 if (!window.opener) {
                     this.$store.dispatch('load').catch(err => this.error = err);
@@ -133,7 +141,7 @@
             },
             logout() {
                 this.$store.dispatch('logout').then(() => {
-                    this.$router.push({ name: 'home' });
+                    this.$router.push({name: 'home'});
                 });
             },
             retry() {
@@ -160,7 +168,6 @@
 
         width: 100vw;
         height: 100vh;
-        height: -webkit-fill-available;
     }
 
     #main-view {
