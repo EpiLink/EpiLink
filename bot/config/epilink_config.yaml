@@ -8,7 +8,10 @@
 #################################################################################################
 
 # Misconfigurations are always reported in the logs as WARN or ERROR.
-# This configuration contains a *lot* of comments. You can remove all of them to get a much cleaner and compact file.
+# This configuration sample contains a *lot* of comments. You can remove all of them to get a much cleaner and compact file.
+
+# Also check out the Maintainer's Guide for more information on everything!
+#    --> --> https://epilink.zoroark.guru/#/MaintainerGuide <-- <--
 
 # The name of the server. You can customize this if you want to.
 name: My EpiLink Instance
@@ -17,19 +20,25 @@ name: My EpiLink Instance
 server:
   # The port that should be used for the server.
   port: 9090
+
   # Either None, Forwarded or XForwarded depending on how you use your reverse proxy to transmit the remote host's
   # information
   # !!SWITCH TO THE CORRECT VALUE! FAILURE TO DO SO COULD LEAD TO SECURITY FLAWS!!
+  # !!Make sure your reverse proxy overrides values the client sends. See here for more info: !!
+  # --> --> https://docs.zoroark.guru/#/ktor-rate-limit/usage?id=reverse-proxies-and-ip-address-spoofing <-- <--
   # - None: No reverse proxy used, use the host's information directly
   # - XForwarded: Use the X-Forwarded-* headers to get information about the remote host
   # - Forwarded: Use the Forwarded standard header to get information about the remote host
   proxyType: None
+
   # The URL of the front-end, WITH a trailing slash /, or null if the URL is unknown
   # Leave as ~ if the front-end is bootstrapped (i.e. the front-end is served on the same server as the back-end)
   frontendUrl: ~
+
   # (Optional) Custom logo that will be displayed to the user. ~ means default, in which case it will show EpiLink's
   # logo
   logo: ~
+  
   # An optional list of custom footers that should be shown on the front-end
   footers: # optional
     - name: My Footer URL
@@ -90,6 +99,10 @@ tokens:
 discord:
   # The URL displayed as the log-in URL in the bot's default welcome messages (nullable)
   welcomeUrl: "https://my.amazing.welcome.page/hello"
+
+  # The prefix to use for commands. e! by default.
+  #commandsPrefix: "e!"
+
   # Rulebook declaration
   # See the docs for more information
   #----#
@@ -97,8 +110,13 @@ discord:
   #  "MyRule" { ... }
   # OR #
   #rulebookFile: myFile.rule.kts
+
   # See the documentation on custom roles for more details on this option. You can omit it if you do not need it.
   roles: []
+
+  # The list of servers where EpiLink should do its magic. Note that you must add the bot to these servers in order
+  # for all of this to work (an invite link is sent in the logs when starting EpiLink so you can add the bot to your
+  # servers)
   servers:
     - # Each server gets one entry here.
       # The Discord ID of the server
@@ -115,41 +133,51 @@ discord:
       # The embed to be displayed when the user first joins. If null, displays a default message.
       # (nullable, optional with null by default). You can remove this entire section if you don't need a custom embed.
       #welcomeEmbed:
+
         # ALL of the fields of an embed here are nullable and optional (null by default) unless otherwise noted
         # i.e. you can omit any of them if you don't need them
-        #---- The title of the embed
+
+        #The title of the embed
         #title: Welcome to my great server!
-        #---- The description (main content) of the embed
+
+        # The description (main content) of the embed
         #description: |
         #  This is an example embed, because I forgot to change the configuration file. Woops!
         #
         #  In the mean time, remember that life begins with an L and ends with an E. Yeah, I don't know what that is supposed to mean either.
-        #---- The URL that is accessed when clicking on the embed's title
+
+        # The URL that is accessed when clicking on the embed's title
         #url: "https://hello/world"
-        #---- A color, either with its name (only supports a few simple color names) or its hexadecimal code with a leading number sign: #ab12ef
+
+        # A color, either with its name (only supports a few simple color names) or its hexadecimal code with a leading number sign: #ab12ef
         #color: "#12eb99"
-        #---- The footer of the embed (small field at the bottom)
+
+        # The footer of the embed (small field at the bottom)
         #footer:
-          #---- The text displayed in the footer (mandatory if the footer is declared)
+          # The text displayed in the footer (mandatory if the footer is declared)
           #text: This is my footer
-          #---- The URL to an icon that is displayed in the footer
+          # The URL to an icon that is displayed in the footer
           #iconUrl: "https://my/amazing/image.png"
-        #---- URL to the image to display in the embed
+
+        # URL to the image to display in the embed
         #image: "https://my/great/stuff.png"
-        #---- URL to the thumbnail image of the embed
+
+        # URL to the thumbnail image of the embed
         #thumbnail: "https://my/great/thumbnail.png"
-        #---- Author information (displayed at the very top of the embed)
+
+        # Author information (displayed at the very top of the embed)
         #author:
-          #---- The name of the author (mandatory if the author is declared)
+          # The name of the author (mandatory if the author is declared)
           #name: My amazing bot
           # The URL to go to when clicking on the author's name
           #url: "https://my.bot.website/yes"
-          #---- The URL for the author's icon
+          # The URL for the author's icon
           #iconUrl: "https://amazing.url/image.png"
-        #---- A list of the fields of the embed
+
+        # A list of the fields of the embed
         #fields:
-          #---- One item per field. Name is the field's title and value is the field's content.
-          #---- Both are mandatory for each field.
+          # One item per field. Name is the field's title and value is the field's content.
+          # Both are mandatory for each field.
           #- name: My field
             #value: |
             #  This is the content of my field. How extraordinary.

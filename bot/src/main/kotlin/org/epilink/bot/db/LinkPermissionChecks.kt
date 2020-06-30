@@ -12,6 +12,7 @@ import org.epilink.bot.debug
 import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
 
 /**
@@ -36,6 +37,34 @@ interface LinkPermissionChecks {
      * @return a database advisory with a end-user friendly reason.
      */
     suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory
+
+    /**
+     * Checks whether a user can perform an admin action or not.
+     *
+     * @return a [AdminStatus] that describes the ability for the user to perform admin actions.
+     */
+    @UsesTrueIdentity
+    suspend fun canPerformAdminActions(dbUser: LinkUser): AdminStatus
+}
+
+/**
+ * Enum for the different possible outputs of [LinkPermissionChecks.canPerformAdminActions]
+ */
+enum class AdminStatus {
+    /**
+     * The user is not present in the admin list
+     */
+    NotAdmin,
+
+    /**
+     * The user is present in the admin list but is not identifiable
+     */
+    AdminNotIdentifiable,
+
+    /**
+     * The user is present in the admin and is identifiable
+     */
+    Admin
 }
 
 internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
@@ -43,6 +72,7 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
     private val facade: LinkDatabaseFacade by inject()
     private val rulebook: Rulebook by inject()
     private val banLogic: LinkBanLogic by inject()
+    private val admins: List<String> by inject(named("admins"))
 
     override suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory {
         return if (facade.doesUserExist(discordId))
@@ -73,4 +103,12 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
         }
         return Allowed
     }
+
+    @UsesTrueIdentity
+    override suspend fun canPerformAdminActions(dbUser: LinkUser): AdminStatus =
+        when {
+            dbUser.discordId !in admins -> AdminStatus.NotAdmin
+            !facade.isUserIdentifiable(dbUser) -> AdminStatus.AdminNotIdentifiable
+            else -> AdminStatus.Admin
+        }
 }

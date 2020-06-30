@@ -17,6 +17,8 @@ import org.epilink.bot.config.LinkConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.db.exposed.SQLiteExposedFacadeImpl
 import org.epilink.bot.discord.*
+import org.epilink.bot.discord.cmd.HelpCommand
+import org.epilink.bot.discord.cmd.UpdateCommand
 import org.epilink.bot.http.*
 import org.epilink.bot.http.endpoints.*
 import org.epilink.bot.rulebook.Rulebook
@@ -85,6 +87,9 @@ class LinkServerEnvironment(
         }
         single<LinkDiscordMessageSender> { LinkDiscordMessageSenderImpl() }
         single<LinkBanManager> { LinkBanManagerImpl() }
+        single<LinkDiscordCommands> { LinkDiscordCommandsImpl() }
+        single<LinkDiscordTargets> { LinkDiscordTargetsImpl() }
+        single<List<Command>>(named("discord.commands")) { listOf(UpdateCommand(), HelpCommand()) }
     }
 
     /**

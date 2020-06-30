@@ -15,7 +15,9 @@ import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.*
 import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.get
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import org.koin.test.mock.declare
 import kotlin.test.*
 
 class PermissionChecksTest : KoinBaseTest(
@@ -143,6 +145,45 @@ class PermissionChecksTest : KoinBaseTest(
         test {
             val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
             assertEquals(Allowed, adv, "Expected allowed")
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test admin not an admin check fails`() {
+        val user = mockk<LinkUser> { every { discordId } returns "discordIdNotAdmin"}
+        declare(named("admins")) { listOf("notme", "notyou") }
+        test {
+            val result = canPerformAdminActions(user)
+            assertEquals(AdminStatus.NotAdmin, result)
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test admin not identifiable check fails`() {
+        val user = mockk<LinkUser> { every { discordId } returns "notyou"}
+        declare(named("admins")) { listOf("notme", "notyou") }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(user) } returns false
+        }
+        test {
+            val result = canPerformAdminActions(user)
+            assertEquals(AdminStatus.AdminNotIdentifiable, result)
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test admin check success`() {
+        val user = mockk<LinkUser> { every { discordId } returns "notyou"}
+        declare(named("admins")) { listOf("notme", "notyou") }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(user) } returns true
+        }
+        test {
+            val result = canPerformAdminActions(user)
+            assertEquals(AdminStatus.Admin, result)
         }
     }
 
