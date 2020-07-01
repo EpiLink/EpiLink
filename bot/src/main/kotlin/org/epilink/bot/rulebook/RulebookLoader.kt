@@ -144,6 +144,10 @@ suspend fun loadRulesWithCache(path: Path, logger: Logger?): Rulebook = withCont
     loadRulesWithCache(shouldUseCache(path), { path.readScriptSource() }, logger)
 }
 
+/**
+ * Execute the rulebook script contained in the string or a cached rulebook script whose name is derived off of the
+ * cfgPath.
+ */
 suspend fun loadRulesWithCache(cfgPath: Path, rulebookString: String, logger: Logger?): Rulebook =
     withContext(Dispatchers.IO) {
         loadRulesWithCache(shouldUseCache(cfgPath), { rulebookString.toScriptSource() }, logger)
@@ -183,5 +187,8 @@ private suspend fun loadRulesWithCache(
     }
 }
 
+/**
+ * Read the file denoted by this path as a string and turn it into a ScriptSource file
+ */
 fun Path.readScriptSource(): SourceCode =
     Files.readString(this).toScriptSource(fileName.toString().replace('.', '_'))

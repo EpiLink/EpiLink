@@ -66,6 +66,8 @@ rulebook: |
   ...
 # OR
 rulebookFile: ...
+
+cacheRulebook: true
 ```
 
 * `name`: This is the name of your instance. This name is public and should describe your instance. For example "MyAmazingOrg Account Checker".
@@ -79,6 +81,10 @@ rulebookFile: ...
 * `admins` *(optional, empty list by default)*: A list of Discord IDs of the administrators of this instance. *(since version 0.3.0)*
 
 !> Be mindful of who you decide is an administrator! Administrators have access to critical tools.
+
+* `rulebook/rulebookFile`: see [below](#rulebook-configuration).
+
+* `cacheRulebook` *(optional, true by default)*: True to enable [rulebook caching](Rulebooks.md#rulebook-caching), false to disable it. *(since version 0.4.0)*
 
 #### Rulebook configuration
 
