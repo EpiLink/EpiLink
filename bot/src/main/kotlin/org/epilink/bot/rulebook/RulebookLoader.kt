@@ -10,6 +10,7 @@ package org.epilink.bot.rulebook
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.slf4j.Logger
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.nio.file.Files
@@ -17,11 +18,10 @@ import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.host.toScriptSource
-import kotlin.script.experimental.host.with
-import kotlin.script.experimental.jvm.*
+import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
 import kotlin.script.experimental.jvm.impl.KJvmCompiledScript
+import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
-import kotlin.script.experimental.jvmhost.JvmScriptCompiler
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
 
@@ -42,11 +42,15 @@ sealed class CacheAdvisory {
 
     /**
      * Read the cached file.
+     *
+     * @property cachePath The cache path to read from
      */
     class ReadCache(val cachePath: Path) : CacheAdvisory()
 
     /**
      * Write to the cached file. The file denoted by the [cachePath] may not exist.
+     *
+     * @property cachePath The cache path to write to
      */
     class WriteCache(val cachePath: Path) : CacheAdvisory()
 }
@@ -77,20 +81,20 @@ suspend fun shouldUseCache(originalFile: Path): CacheAdvisory = withContext(Disp
 }
 
 @Suppress("BlockingMethodInNonBlockingContext") // withContext(Dispatchers.IO) so we don't care
-suspend fun CompiledScript<*>.writeScriptTo(path: Path): Unit = withContext(Dispatchers.IO) {
+internal suspend fun CompiledScript<*>.writeScriptTo(path: Path): Unit = withContext(Dispatchers.IO) {
     ObjectOutputStream(Files.newOutputStream(path)).use { out ->
         out.writeObject(this@writeScriptTo)
     }
 }
 
 @Suppress("BlockingMethodInNonBlockingContext") // withContext(Dispatchers.IO) so we don't care
-suspend fun readScriptFrom(path: Path): CompiledScript<*> = withContext(Dispatchers.IO) {
+internal suspend fun readScriptFrom(path: Path): CompiledScript<*> = withContext(Dispatchers.IO) {
     ObjectInputStream(Files.newInputStream(path)).use { ins ->
         ins.readObject() as KJvmCompiledScript<*>
     }
 }
 
-suspend fun compileRules(source: SourceCode): CompiledScript<*> = withContext(Dispatchers.Default) {
+internal suspend fun compileRules(source: SourceCode): CompiledScript<*> = withContext(Dispatchers.Default) {
     val compileConfig = createJvmCompilationConfigurationFromTemplate<RulebookScript> {
         jvm {
             dependenciesFromCurrentContext(wholeClasspath = true)
@@ -104,7 +108,7 @@ suspend fun compileRules(source: SourceCode): CompiledScript<*> = withContext(Di
     }
 }
 
-suspend fun evaluateRules(from: CompiledScript<*>): Rulebook {
+internal suspend fun evaluateRules(from: CompiledScript<*>): Rulebook {
     val builder = RulebookBuilder()
     val evalConfig = createJvmEvaluationConfigurationFromTemplate<RulebookScript> {
         implicitReceivers(builder)
@@ -136,17 +140,32 @@ suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.De
     evaluateRules(script)
 }
 
-// TODO properly handle failures
-suspend fun loadRulesWithCache(path: Path): Rulebook = withContext(Dispatchers.IO) {
-    when(val adv = shouldUseCache(path)) {
-        is CacheAdvisory.DoNotCache -> loadRules(path.readScriptSource())
+/**
+ * Execute the rulebook script from the given source code or a cached rulebook script if such a cache is applicable and
+ * the original script predates the cached one.
+ */
+suspend fun loadRulesWithCache(path: Path, logger: Logger?): Rulebook = withContext(Dispatchers.IO) {
+    when (val adv = shouldUseCache(path)) {
+        is CacheAdvisory.DoNotCache -> {
+            logger?.warn("Caching was disabled automatically to avoid potential issues. Try deleting all files next to the rulebook file that have a file name ending in '__cached' ")
+            loadRules(path.readScriptSource())
+        }
         is CacheAdvisory.WriteCache -> {
             val compiled = compileRules(path.readScriptSource())
-            compiled.writeScriptTo(adv.cachePath)
+            logger?.info("Writing cache to ${adv.cachePath}. Next startup will be faster. You can disable caching by setting 'enableCache: false' in the configuration file.")
+            runCatching { compiled.writeScriptTo(adv.cachePath) }.onFailure {
+                logger?.error("Failed to write the rulebook cache to ${adv.cachePath}", it)
+            }
             evaluateRules(compiled)
         }
         is CacheAdvisory.ReadCache -> {
-            val compiled = readScriptFrom(adv.cachePath)
+            logger?.info("Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting 'enableCache: false' in the configuration file.")
+            val compiled = runCatching {
+                readScriptFrom(adv.cachePath)
+            }.getOrElse {
+                logger?.error("Failed to read cache, using the original rulebook file instead. Try deleting the cached file (${adv.cachePath}).", it)
+                compileRules(path.readScriptSource())
+            }
             evaluateRules(compiled)
         }
     }

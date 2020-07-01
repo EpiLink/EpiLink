@@ -43,7 +43,11 @@ class CliArgs(parser: ArgParser) {
     /**
      * Interactive rule tester mode
      */
-    val irt by parser.flagging("-t", "--test-rulebook", help = "Launch the Interactive Rule Tester. See the documentation for more details.")
+    val irt by parser.flagging(
+        "-t",
+        "--test-rulebook",
+        help = "Launch the Interactive Rule Tester. See the documentation for more details."
+    )
 
     /**
      * If present, enables debug info
@@ -103,15 +107,19 @@ fun main(args: Array<String>) = mainBody("epilink") {
         exitProcess(4)
     }
 
+    // TODO implement disabling caching
     val rulebook = runBlocking {
         cfg.rulebook?.let {
             logger.info("Loading rulebook from configuration, this may take some time...")
+            // TODO cache this one too
             loadRules(it).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
         } ?: cfg.rulebookFile?.let { file ->
             withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
                 val path = cfgPath.parent.resolve(file)
                 logger.info("Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this may take some time...")
-                loadRulesWithCache(path).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
+                loadRulesWithCache(path, LoggerFactory.getLogger("epilink.rulebookLoader")).also { rb ->
+                    logger.info("Rulebook loaded with ${rb.rules.size} rules.")
+                }
             }
         } ?: Rulebook(mapOf()) { true }
     }
