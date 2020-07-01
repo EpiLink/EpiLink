@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Added Discord commands ([#178](https://github.com/EpiLink/EpiLink/pull/178))
 * Added the Interactive Rule Tester (IRT) ([#191](https://github.com/EpiLink/EpiLink/pull/191))
+* Added Rulebook caching ([#195](https://github.com/EpiLink/EpiLink/pull/195))
 
 ### Changed
 
