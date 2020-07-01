@@ -21,6 +21,8 @@ import kotlinx.coroutines.withContext
 import org.epilink.bot.config.*
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.loadRules
+import org.epilink.bot.rulebook.loadRulesWithCache
+import org.epilink.bot.rulebook.readScriptSource
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -109,8 +111,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
             withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
                 val path = cfgPath.parent.resolve(file)
                 logger.info("Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this may take some time...")
-                val s = Files.readString(path)
-                loadRules(s).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
+                loadRulesWithCache(path).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
             }
         } ?: Rulebook(mapOf()) { true }
     }
