@@ -110,9 +110,11 @@ fun main(args: Array<String>) = mainBody("epilink") {
     // TODO implement disabling caching
     val rulebook = runBlocking {
         cfg.rulebook?.let {
-            logger.info("Loading rulebook from configuration, this may take some time...")
+            logger.info("Loading rulebook from configuration file, this may take some time...")
             // TODO cache this one too
-            loadRules(it).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
+            loadRulesWithCache(cfgPath, it, LoggerFactory.getLogger("epilink.rulebookLoader")).also { rb ->
+                logger.info("Rulebook loaded with ${rb.rules.size} rules.")
+            }
         } ?: cfg.rulebookFile?.let { file ->
             withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
                 val path = cfgPath.parent.resolve(file)

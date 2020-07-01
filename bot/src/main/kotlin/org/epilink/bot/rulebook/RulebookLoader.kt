@@ -65,18 +65,14 @@ suspend fun shouldUseCache(originalFile: Path): CacheAdvisory = withContext(Disp
         Files.isRegularFile(cachedFile) -> {
             val cachedAttributes = Files.readAttributes(cachedFile, BasicFileAttributes::class.java)
             val originalAttributes = Files.readAttributes(originalFile, BasicFileAttributes::class.java)
-            if (cachedAttributes.lastModifiedTime() < originalAttributes.lastAccessTime()) {
+            if (cachedAttributes.lastModifiedTime() < originalAttributes.lastModifiedTime()) {
                 CacheAdvisory.WriteCache(cachedFile)
             } else {
                 CacheAdvisory.ReadCache(cachedFile)
             }
         }
-        Files.notExists(cachedFile) -> {
-            CacheAdvisory.WriteCache(cachedFile)
-        }
-        else -> {
-            CacheAdvisory.DoNotCache
-        }
+        Files.notExists(cachedFile) -> CacheAdvisory.WriteCache(cachedFile)
+        else -> CacheAdvisory.DoNotCache
     }
 }
 
@@ -145,26 +141,42 @@ suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.De
  * the original script predates the cached one.
  */
 suspend fun loadRulesWithCache(path: Path, logger: Logger?): Rulebook = withContext(Dispatchers.IO) {
-    when (val adv = shouldUseCache(path)) {
+    loadRulesWithCache(shouldUseCache(path), { path.readScriptSource() }, logger)
+}
+
+suspend fun loadRulesWithCache(cfgPath: Path, rulebookString: String, logger: Logger?): Rulebook =
+    withContext(Dispatchers.IO) {
+        loadRulesWithCache(shouldUseCache(cfgPath), { rulebookString.toScriptSource() }, logger)
+    }
+
+private suspend fun loadRulesWithCache(
+    adv: CacheAdvisory,
+    source: suspend () -> SourceCode,
+    logger: Logger?
+): Rulebook {
+    return when (adv) {
         is CacheAdvisory.DoNotCache -> {
             logger?.warn("Caching was disabled automatically to avoid potential issues. Try deleting all files next to the rulebook file that have a file name ending in '__cached' ")
-            loadRules(path.readScriptSource())
+            loadRules(source())
         }
         is CacheAdvisory.WriteCache -> {
-            val compiled = compileRules(path.readScriptSource())
-            logger?.info("Writing cache to ${adv.cachePath}. Next startup will be faster. You can disable caching by setting 'enableCache: false' in the configuration file.")
+            val compiled = compileRules(source())
+            logger?.info("Writing cache to ${adv.cachePath}. Next startup will be faster. You can disable caching by setting 'cacheRulebook: false' in the configuration file.")
             runCatching { compiled.writeScriptTo(adv.cachePath) }.onFailure {
                 logger?.error("Failed to write the rulebook cache to ${adv.cachePath}", it)
             }
             evaluateRules(compiled)
         }
         is CacheAdvisory.ReadCache -> {
-            logger?.info("Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting 'enableCache: false' in the configuration file.")
+            logger?.info("Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting 'cacheRulebook: false' in the configuration file.")
             val compiled = runCatching {
                 readScriptFrom(adv.cachePath)
             }.getOrElse {
-                logger?.error("Failed to read cache, using the original rulebook file instead. Try deleting the cached file (${adv.cachePath}).", it)
-                compileRules(path.readScriptSource())
+                logger?.error(
+                    "Failed to read cache, using the original rulebook file instead. Try deleting the cached file (${adv.cachePath}).",
+                    it
+                )
+                compileRules(source())
             }
             evaluateRules(compiled)
         }
