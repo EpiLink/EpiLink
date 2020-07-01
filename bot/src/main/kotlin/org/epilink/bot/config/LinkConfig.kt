@@ -61,6 +61,11 @@ data class LinkConfiguration(
      */
     val rulebookFile: String? = null,
     /**
+     * True if the rulebook should be cached to avoid compiling it every time, false to re-compile it every time EpiLink
+     * is launched.
+     */
+    val cacheRulebook: Boolean = true,
+    /**
      * Legal configuration, with ToS and privacy policy configs
      */
     val legal: LinkLegalConfiguration = LinkLegalConfiguration(),

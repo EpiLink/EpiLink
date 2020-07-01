@@ -16,6 +16,8 @@ $ epilink -t configurations/epilink.rule.kts
 
 Prompts start with a `>>>`. From there, you can either run a command or a query. Press enter to confirm and execute the command or query.
 
+?> IRT never uses any cached rulebook, even if you enable them in the EpiLink config.
+
 ## Commands
 
 The following commands are available:

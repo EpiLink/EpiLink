@@ -21,9 +21,11 @@ import kotlinx.coroutines.withContext
 import org.epilink.bot.config.*
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.loadRules
+import org.epilink.bot.rulebook.loadRulesWithCache
+import org.epilink.bot.rulebook.readScriptSource
 import org.slf4j.LoggerFactory
-import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
@@ -41,7 +43,11 @@ class CliArgs(parser: ArgParser) {
     /**
      * Interactive rule tester mode
      */
-    val irt by parser.flagging("-t", "--test-rulebook", help = "Launch the Interactive Rule Tester. See the documentation for more details.")
+    val irt by parser.flagging(
+        "-t",
+        "--test-rulebook",
+        help = "Launch the Interactive Rule Tester. See the documentation for more details."
+    )
 
     /**
      * If present, enables debug info
@@ -101,19 +107,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
         exitProcess(4)
     }
 
-    val rulebook = runBlocking {
-        cfg.rulebook?.let {
-            logger.info("Loading rulebook from configuration, this may take some time...")
-            loadRules(it).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
-        } ?: cfg.rulebookFile?.let { file ->
-            withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
-                val path = cfgPath.parent.resolve(file)
-                logger.info("Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this may take some time...")
-                val s = Files.readString(path)
-                loadRules(s).also { rb -> logger.info("Rulebook loaded with ${rb.rules.size} rules.") }
-            }
-        } ?: Rulebook(mapOf()) { true }
-    }
+    val rulebook = runBlocking { loadRulebook(cfg, cfgPath, cfg.cacheRulebook) }
 
     logger.debug("Checking config...")
     checkConfig(cfg, rulebook, cliArgs)
@@ -149,4 +143,37 @@ private fun checkConfig(cfg: LinkConfiguration, rulebook: Rulebook, cliArgs: Cli
     if (shouldExit) {
         exitProcess(1)
     }
+}
+
+private suspend fun loadRulebook(cfg: LinkConfiguration, cfgPath: Path, enableCache: Boolean): Rulebook {
+    val rb = when {
+        cfg.rulebook != null -> cfg.rulebook.let {
+            logger.info("Loading rulebook from configuration file, this may take some time...")
+            if (enableCache) {
+                loadRulesWithCache(cfgPath, it, LoggerFactory.getLogger("epilink.rulebookLoader"))
+            } else {
+                loadRules(cfg.rulebook)
+            }
+        }
+        cfg.rulebookFile != null -> cfg.rulebookFile.let { file ->
+            withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
+                val path = cfgPath.parent.resolve(file)
+                @Suppress("BlockingMethodInNonBlockingContext")
+                logger.info("Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this may take some time...")
+                if (enableCache) {
+                    loadRulesWithCache(path, LoggerFactory.getLogger("epilink.rulebookLoader"))
+                } else {
+                    loadRules(path.readScriptSource())
+                }
+            }
+        }
+        else -> null
+    }
+    if (rb != null) {
+        if (!enableCache) {
+            logger.info("Rulebook caching is disabled, making startup slower. Set 'cacheRulebook' to 'true' in your config file to enable it.")
+        }
+        logger.info("Rulebook loaded with ${rb.rules.size} rules.")
+    }
+    return rb ?: Rulebook(mapOf()) { true }
 }

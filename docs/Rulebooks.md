@@ -26,6 +26,16 @@ You can test your rulebook using [IRT](IRT.md), the Interactive Rule Tester.
 
 TL;DR, launch EpiLink with the `-t` flag and pass a rulebook file instead of a config file. EpiLink will launch in a special mode (IRT) which gives you a shell in which you can test your rulebook.
 
+### Rulebook caching
+
+?> Not to be confused with [rule caching](#rule-caching). Rulebook caching is available since version 0.4.0
+
+Because rulebooks are Kotlin code, they need to be compiled before EpiLink can do anything with them. Compilation can take from 1 second to 15 seconds depending on your configuration. In order to avoid having to re-compile your rulebook every single time you start EpiLink, the compiled rulebook is *cached* and this cached, pre-compiled rulebook is used instead of the real one. If you change the real one, the cached rulebook gets invalidated and compilation happens again.
+
+Cached rulebooks are easy to spot: their file names end with `__cached`.
+
+Sometimes, caching can cause issues, especially if EpiLink cannot create file due to some permission issues. In this case, you can disable rulebook caching by setting `cacheRulebook: false` in the configuration file. If rulebook caching is disabled, the rulebook always gets compiled every time you start EpiLink.
+
 ## E-mail validation
 
 You can use your rulebook to validate e-mail addresses. This is particularly useful if you want to use EpiLink across multiple domains (e.g. multiple Azure tenants, multiple schools, ...), but you still want to validate who can come in.
@@ -212,6 +222,8 @@ You could write a rule that gives a role to `frenchDevs` like so (we assume that
 ?> The helper functions are very limited at the moment. You can use your own functions, or manually create Ktor clients, but this is not recommended. Instead, if you want to do something the current helper functions can't do, please [open an issue](https://github.com/EpiLink/EpiLink/issues) so that we can add it to EpiLink!
 
 ## Rule caching
+
+?> Not to be confused with [rulebook caching](#rulebook-caching)
 
 Rules can do things that take a lot of time: contacting an API on the web, computing a prime number... In short: calling every rule every single time we want to use them costs us a lot of time and bandwidth. Fortunately, there is a way to declare rules that, if they were called recently, will remember the output and give the remembered output directly.
 
