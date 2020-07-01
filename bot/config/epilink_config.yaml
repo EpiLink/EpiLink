@@ -82,6 +82,11 @@ tokens:
 # OR #
 #rulebookFile: myFile.rule.kts
 
+# EpiLink has to compile rulebooks in order to use them. If set to true, the compiled rulebook gets saved and is loaded
+# instead of the real one if nothing was changed in order to save time when starting EpiLink. If set to false, the
+# rulebook is compiled every time. True by default.
+# cacheRulebook: true
+
 # Terms of services, etc. See the maintainer guide for more details.
 #legal:
   # Terms of services
