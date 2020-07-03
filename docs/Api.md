@@ -676,7 +676,7 @@ Returns the newly created ban as a [BanInfo](#baninfo) object.
 **Generate a GDPR report about the target.**
 
 ```http request
-GET /admin/ban/{targetId}
+GET /admin/gdprreport/{targetId}
 ```
 
 Where `targetId` is the Discord ID of the person you want to generate a GDPR report about.
