@@ -11,7 +11,7 @@
 <template>
     <div id="app">
         <div id="main-view">
-            <div id="content" :class="{ 'expanded': expanded }">
+            <div id="content" :class="{ expanded }">
                 <transition name="fade" mode="out-in">
                     <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
                         <transition name="fade">
@@ -42,8 +42,9 @@
                 </template>
                 <template v-if="canLogout">
                     <div id="logout-separator"></div>
-                    <a id="logout" @click="logout">{{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout')
-                        }}</a>
+                    <a id="logout" @click="logout">
+                        {{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout') }}
+                    </a>
                 </template>
             </div>
             <ul id="navigation">
@@ -69,9 +70,9 @@
 <script>
     import { mapState } from 'vuex';
 
-    import LinkError from './components/Error';
+    import LinkError   from './components/Error';
     import LinkLoading from './components/Loading';
-    import LinkRoute from "./components/Route";
+    import LinkRoute   from "./components/Route";
 
     export default {
         name: 'link-app',

@@ -32,6 +32,7 @@
 
 <script>
     import { getRedirectURI } from '../api';
+    import { isMobile }       from '../util';
 
     import LinkError          from '../components/Error';
     import LinkLoading        from '../components/Loading';
@@ -71,7 +72,7 @@
                 closeListener: null,
                 fetching: false,
                 error: null,
-                mobile: navigator.userAgent.includes('obil')
+                mobile: isMobile()
             }
         },
         methods: {

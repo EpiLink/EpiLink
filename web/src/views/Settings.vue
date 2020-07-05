@@ -9,73 +9,63 @@
 
 -->
 <template>
-    <div id="settings">
-        <div id="settings-wrapper" :class="{ seen }">
-            <div id="left">
-                <link-user/>
-                <link-stepper step="3"/>
-            </div>
-
-            <div id="right">
-                <transition name="fade" mode="out-in">
-                    <div id="settings-form" v-if="!submitting" :key="0">
-                        <div id="options">
-                            <link-option v-model="saveEmail">
-                                <p class="title" v-html="$t('settings.remember')"/>
-                                <div class="id-prompt" v-html="idPrompt"/>
-                            </link-option>
-                            <link-option v-model="acceptConditions">
-                                <p class="title">
-                                    {{ $t('settings.iAcceptThe') }}
-                                    <router-link :to="{ name: 'tos' }" v-html="$t('settings.terms')"/>
-
-                                    {{ $t('settings.andThe') }}
-                                    <router-link :to="{ name: 'privacy' }" v-html="$t('settings.policy')"/>
-                                </p>
-                            </link-option>
-                        </div>
-
-                        <link-button id="submit" :enabled="acceptConditions" @action="submit">{{ $t('settings.link') }}
-                        </link-button>
-                    </div>
-
-                    <div id="submitting" v-if="submitting && !error" :key="1">
-                        <link-loading/>
-                    </div>
-
-                    <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2"/>
-                </transition>
-            </div>
+    <link-expanded-view id="settings">
+        <div id="left">
+            <link-user/>
+            <link-stepper step="3"/>
         </div>
-    </div>
+
+        <div id="right">
+            <transition name="fade" mode="out-in">
+                <div id="settings-form" v-if="!submitting" :key="0">
+                    <div id="options">
+                        <link-option v-model="saveEmail">
+                            <p class="title" v-html="$t('settings.remember')"/>
+                            <div class="id-prompt" v-html="idPrompt"/>
+                        </link-option>
+                        <link-option v-model="acceptConditions">
+                            <p class="title">
+                                {{ $t('settings.iAcceptThe') }}
+                                <router-link :to="{ name: 'tos' }" v-html="$t('settings.terms')"/>
+
+                                {{ $t('settings.andThe') }}
+                                <router-link :to="{ name: 'privacy' }" v-html="$t('settings.policy')"/>
+                            </p>
+                        </link-option>
+                    </div>
+
+                    <link-button id="submit" :enabled="acceptConditions" @action="submit">{{ $t('settings.link') }}
+                    </link-button>
+                </div>
+
+                <div id="submitting" v-if="submitting && !error" :key="1">
+                    <link-loading/>
+                </div>
+
+                <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2"/>
+            </transition>
+        </div>
+    </link-expanded-view>
 </template>
 
 <script>
-    import {mapState} from 'vuex';
+    import { mapState } from 'vuex';
 
-    import LinkButton from '../components/Button';
-    import LinkCheckbox from '../components/Checkbox';
-    import LinkError from '../components/Error';
-    import LinkLoading from '../components/Loading';
-    import LinkOption from '../components/Option';
-    import LinkStepper from '../components/Stepper';
-    import LinkUser from '../components/User';
+    import LinkExpandedView from '../components/ExpandedView';
+    import LinkButton       from '../components/Button';
+    import LinkCheckbox     from '../components/Checkbox';
+    import LinkError        from '../components/Error';
+    import LinkLoading      from '../components/Loading';
+    import LinkOption       from '../components/Option';
+    import LinkStepper      from '../components/Stepper';
+    import LinkUser         from '../components/User';
 
     export default {
         name: 'link-settings',
-        components: {LinkOption, LinkButton, LinkError, LinkLoading, LinkCheckbox, LinkUser, LinkStepper},
+        components: { LinkExpandedView, LinkOption, LinkButton, LinkError, LinkLoading, LinkCheckbox, LinkUser, LinkStepper },
 
-        mounted() {
-            setTimeout(() => this.$store.commit('setExpanded', true), 300);
-            setTimeout(() => this.seen = true, 700);
-        },
-        destroyed() {
-            this.seen = false;
-            setTimeout(() => this.$store.commit('setExpanded', false), 200);
-        },
         data() {
             return {
-                seen: false,
                 saveEmail: false,
                 acceptConditions: false,
                 submitting: false,
@@ -99,30 +89,13 @@
                 this.error = false;
             }
         },
-        computed: mapState({idPrompt: state => state.meta && state.meta.idPrompt})
+        computed: mapState({ idPrompt: state => state.meta && state.meta.idPrompt })
     }
 </script>
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-    @import 'src/styles/mixins';
-
-    #settings {
-        display: flex;
-    }
-
-    #settings-wrapper {
-        flex: 1;
-
-        opacity: 0;
-        transition: opacity .175s;
-
-        &.seen {
-            opacity: 1;
-        }
-
-        display: flex;
-    }
+    @import '../styles/mixins';
 
     #left, #right {
         flex: 0.5;

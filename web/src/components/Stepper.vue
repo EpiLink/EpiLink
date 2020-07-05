@@ -37,7 +37,7 @@
 </script>
 
 <style lang="scss" scoped>
-    @import 'src/styles/mixins';
+    @import '../styles/mixins';
     @import '../styles/vars';
 
     .step {

@@ -39,7 +39,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-    @import 'src/styles/mixins';
+    @import '../styles/mixins';
 
     .user {
         display: flex;

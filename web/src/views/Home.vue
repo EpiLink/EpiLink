@@ -57,7 +57,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-    @import 'src/styles/mixins';
+    @import '../styles/mixins';
 
     #home {
         display: flex;
