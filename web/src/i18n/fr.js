@@ -92,7 +92,9 @@ export default {
 
     error: {
         title: 'Erreur',
-        retry: 'Rééssayer'
+        retry: 'Rééssayer',
+        network: 'Impossible de contacter le serveur, veuillez vérifiez votre connexion. Le serveur est peut-être en maintenance.',
+        rateLimit: 'Vous avez été bloqués par le filtre anti-spam, veuillez réessayer dans quelques minutes.'
     },
 
     popups: {

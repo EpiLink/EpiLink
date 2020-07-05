@@ -92,7 +92,9 @@ export default {
 
     error: {
         title: 'Error',
-        retry: 'Retry'
+        retry: 'Retry',
+        network: 'Unable to reach the server, are we offline ? The server may be under maintenance.',
+        rateLimit: 'You are being rate-limited. Please try again in a few minutes.'
     },
 
     popups: {
