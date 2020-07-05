@@ -11,7 +11,7 @@
 <template>
     <div class="meta-text">
         <h1 class="title" :class="{ overflow: title.length > 30 }">
-            <a @click="back()"><img class="back-icon" src="../../assets/back.svg" /></a>
+            <a @click="back()"><img class="back-icon" :alt="$t('back')" src="../../assets/back.svg" /></a>
             {{ title | capitalize }}
         </h1>
         <a class="back" @click="back()" v-html="$t('back')" />

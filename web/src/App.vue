@@ -30,14 +30,14 @@
 
         <div id="footer" v-if="!redirected">
             <div id="left-footer">
-                <img id="menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
+                <img id="menu" alt="Menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
                 <router-link id="home-button" to="/">
-                    <img id="logo" src="../assets/logo.svg"/>
+                    <img id="logo" alt="Logo" src="../assets/logo.svg"/>
                     <span id="title">EpiLink</span>
                 </router-link>
                 <template v-if="instance">
                     <div id="instance-separator"></div>
-                    <img id="logo-instance" v-if="instanceLogo" :src="instanceLogo">
+                    <img id="logo-instance" alt="Logo (Instance)" v-if="instanceLogo" :src="instanceLogo">
                     <span id="instance">{{ instance }}</span>
                 </template>
                 <template v-if="canLogout">
@@ -56,7 +56,7 @@
 
         <div id="sidebar" :class="{ opened: sidebar }">
             <div id="header">
-                <img id="side-logo" src="../assets/logo.svg"/>
+                <img id="side-logo" alt="Logo" src="../assets/logo.svg"/>
                 EpiLink
             </div>
 

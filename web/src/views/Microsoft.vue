@@ -14,7 +14,7 @@
         <link-stepper id="stepper" step="2" />
 
         <button id="login" @click="login()">
-            <img id="icon" src="../../assets/ms_icon.svg" />
+            <img id="icon" :alt="$t('microsoft.connect')" src="../../assets/ms_icon.svg" />
             <span id="text" v-html="$t('microsoft.connect')" />
         </button>
     </div>
