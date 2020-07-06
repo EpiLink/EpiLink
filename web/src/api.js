@@ -50,7 +50,7 @@ export function isPermanentSession() {
  * The only required arguments is the 'path', any optional argument can be given
  *
  * Example : request('/auth/apply', { session obj }) is a valid call
- *navigator.u
+ *
  * @param method (optional) The request method (GET, POST, or DELETE)
  * @param path The request path, without /api/v1, starting with a slash (example '/meta/info')
  * @param body (optional) The request body object that will be encoded in JSON
