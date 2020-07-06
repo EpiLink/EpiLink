@@ -16,7 +16,7 @@
         </div>
 
         <div id="button-container">
-            <a id="sources" href="https://github.com/EpiLink/EpiLink" target="_blank">
+            <a id="sources" href="https://github.com/EpiLink/EpiLink" rel="noreferrer" target="_blank">
                 <img id="github" alt="GitHub" src="../../assets/github.png" />
                 {{ $t('about.sources') }}
             </a>
@@ -32,12 +32,12 @@
             <h2 class="title" v-html="$t('about.authors')" />
 
             <div id="authors">
-                <a class="author" href="https://github.com/utybo" target="_blank">
+                <a class="author" href="https://github.com/utybo" rel="noreferrer" target="_blank">
                     <img class="avatar" alt="Zoroark" src="../../assets/utybo.png" />
                     <span class="name">Matthieu 'Zoroark' Stombellini</span>
                     <span class="role">Back-end</span>
                 </a>
-                <a class="author" href="https://github.com/Litarvan" target="_blank">
+                <a class="author" href="https://github.com/Litarvan" rel="noreferrer" target="_blank">
                     <img class="avatar" alt="Litarvan" src="../../assets/litarvan.png" />
                     <span class="name">Adrien 'Litarvan' Navratil</span>
                     <span class="role">Front-end</span>

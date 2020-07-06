@@ -9,7 +9,7 @@
 
 -->
 <template>
-    <div class="meta-text">
+    <link-expanded-view class="meta-text">
         <h1 class="title" :class="{ overflow: title.length > 30 }">
             <a @click="back()"><img class="back-icon" :alt="$t('back')" src="../../assets/back.svg" /></a>
             {{ title | capitalize }}
@@ -22,19 +22,20 @@
                 <p class="text" v-html="contentText"/>
             </div>
             <div class="pdf-things" v-if="content && contentPdf" :key="2">
-                <p><a :href="contentUrl" v-html="$t('meta.downloadPdf')" target="_blank"></a></p>
+                <p><a :href="contentUrl" v-html="$t('meta.downloadPdf')" rel="noreferrer" target="_blank"></a></p>
                 <iframe :src="contentPdf"></iframe>
             </div>
         </transition>
-    </div>
+    </link-expanded-view>
 </template>
 
 <script>
-    import LinkLoading from '../components/Loading';
+    import LinkExpandedView from '../components/ExpandedView';
+    import LinkLoading      from '../components/Loading';
 
     export default {
         name: 'link-meta-text',
-        components: { LinkLoading },
+        components: { LinkExpandedView, LinkLoading },
 
         mounted() {
             this.$store.dispatch(this.isPrivacyPolicy ? 'fetchPrivacyPolicy' : 'fetchTermsOfService');
@@ -87,12 +88,6 @@
 
 <style lang="scss" scoped>
     .meta-text {
-        overflow: auto;
-
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-
         padding: 15px 20px;
         padding-bottom: 50px;
 
