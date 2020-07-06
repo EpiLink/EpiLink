@@ -75,7 +75,7 @@
                 return this.$store.state.texts[prop];
             },
             contentUrl() {
-                return this.content.url
+                return this.content.url;
             },
             contentText() {
                 return this.content.textContent;
