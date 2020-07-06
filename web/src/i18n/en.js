@@ -83,10 +83,17 @@ export default {
 
         navigation: {
             home: 'Home',
+            auth: 'Authentication',
+            redirect: 'Redirecting...',
+            microsoft: 'Connecting to Microsoft',
+            settings: 'Settings',
+            success: 'Success',
+            profile: 'Profile',
             tos: 'Terms of Services',
             privacy: 'Privacy',
             instance: 'Instance',
-            about: 'About'
+            about: 'About',
+            'not-found': 'Page not found'
         }
     },
 

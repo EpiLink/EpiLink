@@ -137,7 +137,9 @@
             },
             load() {
                 if (!window.opener) {
-                    this.$store.dispatch('load').catch(err => this.error = err);
+                    this.$store.dispatch('load')
+                        .then(_ => this.updateTitle())
+                        .catch(err => this.error = err);
                 }
             },
             logout() {
@@ -148,11 +150,15 @@
             retry() {
                 this.error = null;
                 this.load();
+            },
+            updateTitle() {
+                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${this.$t('layout.navigation.' + this.$route.name)}`;
             }
         },
         watch: {
             '$route.name'() {
                 this.sidebar = false;
+                this.updateTitle();
             }
         }
     }
