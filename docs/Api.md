@@ -671,7 +671,7 @@ Should the ban request have an invalid expiry date, the request is ignored and a
 
 Returns the newly created ban as a [BanInfo](#baninfo) object.
 
-### GET /admin/gdprreport/{targetId}
+### POST /admin/gdprreport/{targetId}
 
 **Generate a GDPR report about the target.**
 
