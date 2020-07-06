@@ -10,7 +10,7 @@
 -->
 <template>
     <div class="expanded-view">
-        <div class="expanded-wrapper" :class="{ hidden }">
+        <div class="expanded-wrapper" :class="{ column, hidden }">
             <slot></slot>
         </div>
     </div>
@@ -19,6 +19,7 @@
 <script>
     export default {
         name: 'link-expanded-view',
+        props: ['column'],
 
         mounted() {
             setTimeout(() => this.$store.commit('setExpanded', true), 300);
@@ -48,6 +49,11 @@
 
         display: flex;
         flex: 1;
+
+        &.column {
+            flex-direction: column;
+            align-items: center;
+        }
 
         &.hidden {
             animation-direction: reverse;

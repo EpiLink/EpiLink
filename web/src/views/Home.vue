@@ -81,7 +81,7 @@
     }
 
     #discord {
-        $color: #7289DA;
+        $color: #687BBD;
 
         color: white;
         background-color: $color;

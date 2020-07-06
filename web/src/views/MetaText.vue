@@ -9,7 +9,7 @@
 
 -->
 <template>
-    <link-expanded-view class="meta-text">
+    <link-expanded-view class="meta-text" :column="true">
         <h1 class="title" :class="{ overflow: title.length > 30 }">
             <a @click="back()"><img class="back-icon" :alt="$t('back')" src="../../assets/back.svg" /></a>
             {{ title | capitalize }}
@@ -18,6 +18,7 @@
 
         <transition name="fade" mode="out-in">
             <link-loading v-if="!content" :key="0" />
+
             <div class="text-content" v-if="content && contentText" :key="2">
                 <p class="text" v-html="contentText"/>
             </div>
@@ -119,6 +120,10 @@
         margin-bottom: 15px;
     }
 
+    .loading {
+        margin-top: 50px;
+    }
+
     .text-content {
         flex-grow: 1;
 
@@ -134,15 +139,18 @@
     .pdf-things {
         display: flex;
         flex-direction: column;
+
         min-width: 100%;
         height: 100%;
 
         p {
             text-align: center;
         }
+
         a {
             text-decoration: underline;
         }
+
         iframe {
             width: 100%;
             flex-grow: 1;
