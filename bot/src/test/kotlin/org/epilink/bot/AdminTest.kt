@@ -478,7 +478,7 @@ class AdminTest : KoinBaseTest(
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
-            handleRequest(HttpMethod.Get, "/api/v1/admin/gdprreport/userid") {
+            handleRequest(HttpMethod.Post, "/api/v1/admin/gdprreport/userid") {
                 addHeader("SessionId", sid)
             }.apply {
                 assertStatus(OK)
@@ -496,7 +496,7 @@ class AdminTest : KoinBaseTest(
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
-            handleRequest(HttpMethod.Get, "/api/v1/admin/gdprreport/yeeeet") {
+            handleRequest(HttpMethod.Post, "/api/v1/admin/gdprreport/yeeeet") {
                 addHeader("SessionId", sid)
             }.apply {
                 assertStatus(NotFound)

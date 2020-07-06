@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Updated back-end dependencies
 * Use Discord bot assets from the master branch instead of the dev one ([#182](https://github.com/EpiLink/EpiLink/pull/182))
 * Changed the rate-limited message for a clearer one ([#188](https://github.com/EpiLink/EpiLink/issues/188))
+* The `/api/v1/admin/gdprreport` is now a POST instead of a GET ([#196](https://github.com/EpiLink/EpiLink/issues/196))
 
 ### Fixed
 

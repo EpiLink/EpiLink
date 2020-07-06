@@ -676,10 +676,11 @@ Returns the newly created ban as a [BanInfo](#baninfo) object.
 **Generate a GDPR report about the target.**
 
 ```http request
-GET /admin/gdprreport/{targetId}
+POST /admin/gdprreport/{targetId}
+SessionId: abcdef12345 # mandatory
 ```
 
-Where `targetId` is the Discord ID of the person you want to generate a GDPR report about.
+Where `{targetId}` is the Discord ID of the person you want to generate a GDPR report about.
 
 > **DOES NOT RETURN AN API RESPONSE.** This endpoint returns a Markdown document directly. `Content-Type: text/markdown`
 
