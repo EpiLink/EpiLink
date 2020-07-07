@@ -24,7 +24,7 @@
             </div>
             <div class="pdf-things" v-if="content && contentPdf" :key="2">
                 <p><a :href="contentUrl" v-html="$t('meta.downloadPdf')" rel="noreferrer" target="_blank"></a></p>
-                <iframe :src="contentPdf"></iframe>
+                <iframe class="pdf-frame" :src="contentPdf"></iframe>
             </div>
         </transition>
     </link-expanded-view>
@@ -90,7 +90,7 @@
 <style lang="scss" scoped>
     .meta-text {
         padding: 15px 20px;
-        padding-bottom: 50px;
+        padding-bottom: 25px;
 
         box-sizing: border-box;
     }
@@ -145,15 +145,17 @@
 
         p {
             text-align: center;
+            margin-top: 0;
         }
 
         a {
             text-decoration: underline;
         }
 
-        iframe {
+        .pdf-frame {
             width: 100%;
             flex-grow: 1;
+            border: none;
         }
     }
 
