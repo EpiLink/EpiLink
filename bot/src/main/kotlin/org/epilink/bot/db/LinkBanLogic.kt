@@ -32,5 +32,4 @@ internal class LinkBanLogicImpl : KoinComponent, LinkBanLogic {
         val expiry = ban.expiresOn ?: return true
         return expiry.isAfter(Instant.now())
     }
-
 }

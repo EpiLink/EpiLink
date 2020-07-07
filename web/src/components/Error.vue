@@ -11,7 +11,7 @@
 <template>
     <div class="error">
         <h1 class="title" v-html="$t('error.title')" />
-        <p class="message">{{ error }}</p>
+        <p class="message">{{ actualError }}</p>
 
         <a class="action" @click="action" v-html="$t(message)" />
     </div>
@@ -25,6 +25,21 @@
         methods: {
             action() {
                 this.$emit('action');
+            }
+        },
+        computed: {
+            actualError() {
+                const error = this.error.toString();
+
+                if (error.toLowerCase().includes('network')) {
+                    return this.$t('error.network');
+                }
+
+                if (error === 'rate-limit') {
+                    return this.$t('error.rateLimit');
+                }
+
+                return error;
             }
         }
     }
@@ -42,7 +57,7 @@
         padding: 0 25px;
         box-sizing: border-box;
 
-        height: inherit;
+        height: 100%;
     }
 
     .title {

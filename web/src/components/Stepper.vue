@@ -13,7 +13,7 @@
         <div class="step" v-for="(name, $i) of steps" :class="{ 'done': step > $i + 1, 'current': ~~step === $i + 1 }">
             <div class="number">
                 <template v-if="step <= $i + 1">{{ $i + 1 }}</template>
-                <img v-else class="check-icon" src="../../assets/check.svg" />
+                <img v-else class="check-icon" :alt="$t(`steps.${name}`)" src="../../assets/check.svg" />
             </div>
             <div class="separator"></div>
             <div class="name" v-html="$t(`steps.${name}`)" />
@@ -37,7 +37,7 @@
 </script>
 
 <style lang="scss" scoped>
-    @import 'src/styles/mixins';
+    @import '../styles/mixins';
     @import '../styles/vars';
 
     .step {

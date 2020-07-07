@@ -10,7 +10,7 @@
 -->
 <template>
     <div class="user">
-        <img class="avatar" :src="user.avatar" />
+        <img class="avatar" alt="Avatar" :src="user.avatar" />
         <div class="username">
             <span>{{ user.username | nick }}</span>
             <span class="tag">{{ user.username | tag }}</span>
@@ -39,7 +39,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-    @import 'src/styles/mixins';
+    @import '../styles/mixins';
 
     .user {
         display: flex;

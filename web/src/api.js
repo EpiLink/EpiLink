@@ -6,6 +6,8 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
+import { isMobile } from './util';
+
 const UNLOGGED_TOKEN_HEADER = 'RegistrationSessionId';
 const LOGGED_TOKEN_HEADER = 'SessionId';
 
@@ -22,7 +24,7 @@ export function getRedirectURI(service) {
 
 export function openPopup(title, service, stub) {
     const url = `${stub}&redirect_uri=${getRedirectURI(service)}`;
-    if (navigator.userAgent.includes('obil')) {
+    if (isMobile()) {
         window.location.href = url;
         return;
     }
@@ -101,7 +103,13 @@ export default async function(method, path, body, returnRawResponse = false) {
 
     if (!json.success) {
         console.error(`API returned an error during request '${method} ${path}' : '${json.message}'`);
-        throw json.message;
+        if (result.status === 429) {
+            // Handle the 429 status separately, as the message is not super clear (and there's no guarantee of there
+            // being a message in the first place)
+            throw 'rate-limit';
+        } else {
+            throw json.message;
+        }
     }
 
     const checkSession = (type, header) => {

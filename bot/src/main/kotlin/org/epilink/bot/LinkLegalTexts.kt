@@ -59,12 +59,30 @@ fun LinkLegalConfiguration.load(cfg: Path): LinkLegalTexts {
     )
 }
 
-sealed class LegalText(val contentType: ContentType) {
+/**
+ * Class for legal texts (Terms of Services and Privacy Policy)
+ *
+ * @property contentType The content type of the enclosed text
+ */
+sealed class LegalText(@Suppress("MemberVisibilityCanBePrivate") val contentType: ContentType) {
+    /**
+     * HTML formatted text available as a string
+     *
+     * @property text the HTML text
+     */
     data class Html(val text: String) : LegalText(ContentType.Text.Html)
+
+    /**
+     * A PDF document available as a byte array
+     *
+     * @property data the PDF document
+     */
     class Pdf(val data: ByteArray) : LegalText(ContentType.Application.Pdf)
 }
 
-
+/**
+ * Load a legal text, from a text value, or if null a file path, or if null returns a default HTML text.
+ */
 fun loadLegalText(textValue: String?, file: (() -> Path)?, defaultText: String): LegalText {
     return when {
         textValue != null -> LegalText.Html(textValue)

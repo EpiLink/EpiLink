@@ -39,6 +39,14 @@ interface LinkDiscordClientFacade {
     suspend fun sendDirectMessage(discordId: String, embed: DiscordEmbed)
 
     /**
+     * Send a message to a channel
+     *
+     * @param channelId The ID of the channel where the message should be sent
+     * @param embed The embed to send to the channel
+     */
+    suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed)
+
+    /**
      * Get the guilds the bot is connected to, no matter whether they are monitored or not.
      *
      * @return A list of the IDs of ALL the guilds the bot is connected to.
@@ -89,6 +97,21 @@ interface LinkDiscordClientFacade {
      * @return A [DiscordUserInfo] object giving information on the user
      */
     suspend fun getDiscordUserInfo(discordId: String): DiscordUserInfo
+
+    /**
+     * Retrieve a role's ID from a specific guild by searching with the role's name.
+     */
+    suspend fun getRoleIdByName(roleName: String, guildId: String): String?
+
+    /**
+     * Retrieve a list of members that have the given role.
+     */
+    suspend fun getMembersWithRole(roleId: String, guildId: String): List<String>
+
+    /**
+     * Retrieve a list of all of the members in a guild.
+     */
+    suspend fun getMembers(guildId: String): List<String>
 }
 
 /**

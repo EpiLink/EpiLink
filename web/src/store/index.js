@@ -32,7 +32,6 @@ export default new Vuex.Store({
         setMeta(state, meta) {
             if (!state.meta) {
                 state.meta = meta;
-                window.document.title = meta.title;
             }
         },
         openPopup(state, popup) {

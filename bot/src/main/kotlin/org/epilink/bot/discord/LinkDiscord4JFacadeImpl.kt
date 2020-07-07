@@ -11,6 +11,7 @@ package org.epilink.bot.discord
 import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.PrivateChannel
+import discord4j.core.`object`.entity.TextChannel
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.util.Permission
 import discord4j.core.`object`.util.Snowflake
@@ -18,6 +19,7 @@ import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
+import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import kotlinx.coroutines.*
@@ -42,6 +44,7 @@ internal class LinkDiscord4JFacadeImpl(
 ) : LinkDiscordClientFacade, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.bot.discord4j")
     private val roleManager: LinkRoleManager by inject()
+    private val commands: LinkDiscordCommands by inject()
 
     /**
      * Coroutine scope used for firing things in events
@@ -56,12 +59,18 @@ internal class LinkDiscord4JFacadeImpl(
      */
     private val client = DiscordClientBuilder.create(token).build().apply {
         eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
+        eventDispatcher.onEvent(MessageCreateEvent::class) { handle() }
     }
 
     override suspend fun sendDirectMessage(discordId: String, embed: DiscordEmbed) {
         sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle()) { from(embed) }
     }
 
+    override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed) {
+        val channel =
+            client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? TextChannel ?: error("Not a text channel")
+        channel.createEmbed { it.from(embed) }.awaitSingle()
+    }
 
     private suspend fun sendDirectMessage(discordUser: User, embed: EmbedCreateSpec.() -> Unit) =
         discordUser.getCheckedPrivateChannel()
@@ -107,8 +116,8 @@ internal class LinkDiscord4JFacadeImpl(
         logger.debug {
             """
             Role transaction for user $discordId in guild $guildId 
-                [+]    To add: ${toAdd.joinToString(", ").orIfEmpty("(none)")}
-                [-] To remove: ${toRemove.joinToString(", ").orIfEmpty("(none)")}
+                [+]    To add: ${toAdd.joinToString(", ").ifEmpty { "(none)" }}
+                [-] To remove: ${toRemove.joinToString(", ").ifEmpty { "(none)" }}
             """.trimIndent()
         }
         val member = client.getMemberById(
@@ -151,6 +160,32 @@ internal class LinkDiscord4JFacadeImpl(
         ).also { logger.debug { "Received $it" } }
     }
 
+    override suspend fun getRoleIdByName(roleName: String, guildId: String): String? {
+        val guild = client.getGuildById(Snowflake.of(guildId)).awaitSingle()
+        val foundRole = guild.roles.filter { it.name == roleName }.awaitFirstOrNull()
+        return foundRole?.id?.asString()
+    }
+
+    override suspend fun getMembersWithRole(roleId: String, guildId: String): List<String> {
+        val guild = client.getGuildById(Snowflake.of(guildId)).awaitSingle()
+        val members = guild.members.collectList().awaitSingle()
+        val roleSnowflake = Snowflake.of(roleId)
+        return coroutineScope {
+            members.map { m ->
+                async {
+                    if (m.roles.any { it.id == roleSnowflake }.awaitSingle())
+                        m.id.asString()
+                    else
+                        null
+                }
+            }.awaitAll().filterNotNull()
+        }
+    }
+
+    override suspend fun getMembers(guildId: String): List<String> =
+        client.getGuildById(Snowflake.of(guildId)).awaitSingle()
+            .members.map { it.id.asString() }.collectList().awaitSingle()
+
     /**
      * Generates an invite link for the bot and returns it
      */
@@ -175,6 +210,15 @@ internal class LinkDiscord4JFacadeImpl(
      */
     private suspend fun MemberJoinEvent.handle() {
         roleManager.handleNewUser(guildId.asString(), guild.awaitSingle().name, member.id.asString())
+    }
+
+    private suspend fun MessageCreateEvent.handle() {
+        commands.handleMessage(
+            message.content.orElse(null) ?: return,
+            message.author.orElse(null)?.id?.asString() ?: return,
+            message.channelId.asString(),
+            message.guild.awaitFirstOrNull()?.id?.asString() ?: return
+        )
     }
 
     /**
@@ -232,5 +276,3 @@ internal class LinkDiscord4JFacadeImpl(
         get() = this.errorResponse?.fields?.get("code")?.toString()
 
 }
-
-private fun String.orIfEmpty(other: String) = if (this.isEmpty()) other else this

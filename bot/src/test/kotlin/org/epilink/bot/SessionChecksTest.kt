@@ -20,9 +20,7 @@ import io.ktor.util.Attributes
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.db.*
 import org.epilink.bot.http.ApiErrorResponse
 import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.LinkSessionChecksImpl
@@ -175,16 +173,19 @@ class SessionChecksTest : KoinBaseTest(
         verify { attr.put(match { it.name.contains("User") }, u) }
     }
 
+    @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test admin, not an admin`() {
         val (call, _) = setupMockedSession(ConnectedSession("userid", "username", null))
-        mockUserAttributes("userid", call)
+        val (_, u) = mockUserAttributes("userid", call)
         val mr = mockResponse(call)
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
             every { finish() } just runs
         }
-        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkPermissionChecks> {
+            coEvery { canPerformAdminActions(u) } returns AdminStatus.NotAdmin
+        }
         runBlocking {
             assertFalse(get<LinkSessionChecks>().verifyAdmin(context))
             val captured = mr.slot.captured
@@ -208,10 +209,9 @@ class SessionChecksTest : KoinBaseTest(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(u) } returns false
+        mockHere<LinkPermissionChecks> {
+            coEvery { canPerformAdminActions(u) } returns AdminStatus.AdminNotIdentifiable
         }
-        declare(named("admins")) { listOf("adminid") }
         runBlocking {
             assertFalse(get<LinkSessionChecks>().verifyAdmin(context))
             val captured = mr.slot.captured
@@ -233,10 +233,9 @@ class SessionChecksTest : KoinBaseTest(
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(u) } returns true
+        mockHere<LinkPermissionChecks> {
+            coEvery { canPerformAdminActions(u) } returns AdminStatus.Admin
         }
-        declare(named("admins")) { listOf("adminid") }
         runBlocking {
             assertTrue(get<LinkSessionChecks>().verifyAdmin(context))
         }

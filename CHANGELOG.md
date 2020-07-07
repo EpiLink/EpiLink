@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2020-07-08
+
+### Added
+
+* Added Discord commands ([#178](https://github.com/EpiLink/EpiLink/pull/178))
+* Added the Interactive Rule Tester (IRT) ([#191](https://github.com/EpiLink/EpiLink/pull/191))
+* Added Rulebook caching ([#195](https://github.com/EpiLink/EpiLink/pull/195))
+
+### Changed
+
+* Moved rulebook settings to the root section instead of the Discord section ([#193](https://github.com/EpiLink/EpiLink/pull/193))
+    * **BREAKING CHANGE:** Move `rulebook` and `rulebookFile` options out of the Discord section. You can place it anywhere "in the root" (i.e. at the same level as the `redis` or `db` option)
+* Updated back-end dependencies
+* Use Discord bot assets from the master branch instead of the dev one ([#182](https://github.com/EpiLink/EpiLink/pull/182))
+* Changed the rate-limited message for a clearer one ([#188](https://github.com/EpiLink/EpiLink/issues/188))
+* Expanded the ToS and Privacy Policy pages to improve the PDF readability ([#198](https://github.com/EpiLink/EpiLink/pull/198))
+* Added meta description and robots.txt file ([#198](https://github.com/EpiLink/EpiLink/pull/198))
+* Improved and translated common error messages ([#198](https://github.com/EpiLink/EpiLink/pull/198))
+* The `/api/v1/admin/gdprreport` is now a POST instead of a GET ([#196](https://github.com/EpiLink/EpiLink/issues/196))
+
+### Fixed
+
+* Fixed the GitHub links pointing to the previous (internal) repository, Litarvan/EpiLink, point to EpiLink/EpiLink instead.
+* Fixed the "Download this PDF file" not working because of ad-blockers. Serve the real URL instead of the pre-loaded blob. ([#190](https://github.com/EpiLink/EpiLink/issues/190))
+
 ## [0.3.1] - 2020-06-29
 
 ### Changed
@@ -23,7 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added ban notifications ([#168](https://github.com/EpiLink/EpiLink/pull/168))
 * Added administration endpoints (and its documentation) ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added banning abilities ([#161](https://github.com/EpiLink/EpiLink/pull/161))
-    * **BREAKING CHANGE:** The Bans table of the database was improved significantly: delete it (you could not ban people anyway) and EpiLink will re-create it for you.
+    * **BREAKING CHANGE:** The Bans table of the database was improved significantly in a non-backwards-compatible way: delete it (you could not ban people before anyways) and EpiLink will re-create it for you.
     * Note: While banning logic has been in place for a while, there was no way of creating or revoking a ban. This adds banning and revoking abilities.
 * Added manual ID access ([#161](https://github.com/EpiLink/EpiLink/pull/161))
 * Added retrieving additional information about users ([#161](https://github.com/EpiLink/EpiLink/pull/161))
@@ -145,7 +170,8 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.3.1...dev
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.4.0...dev
+[0.4.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.4.0
 [0.3.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.3.1
 [0.3.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.3.0
 [0.2.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.2.0

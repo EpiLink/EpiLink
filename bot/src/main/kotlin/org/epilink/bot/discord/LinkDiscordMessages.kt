@@ -48,12 +48,54 @@ interface LinkDiscordMessages {
      * Get the ban notification embed, or null if privacy settings have ban notifications disabled.
      */
     fun getBanNotification(banReason: String, banExpiry: Instant?): DiscordEmbed?
+
+    /**
+     * Embed for replying to a command where the sender is not an admin
+     */
+    fun getNotAnAdminCommandReply(): DiscordEmbed
+
+    /**
+     * Embed for replying to a command where the sender is not registered
+     */
+    fun getNotRegisteredCommandReply(): DiscordEmbed
+
+    /**
+     * Embed for replying to a command where the sender does not have their identity stored
+     */
+    fun getAdminWithNoIdentityCommandReply(): DiscordEmbed
+
+    /**
+     * Embed for replying to a command where the server is not monitored
+     */
+    fun getServerNotMonitoredCommandReply(): DiscordEmbed
+
+    /**
+     * Embed for an invalid command name in a valid command.
+     */
+    fun getInvalidCommandReply(commandName: String): DiscordEmbed
+
+    /**
+     * Embed for an invalid target given in a command body.
+     */
+    fun getWrongTargetCommandReply(target: String): DiscordEmbed
+
+    /**
+     * Generic embed for a successful command result.
+     */
+    fun getSuccessCommandReply(message: String): DiscordEmbed
+
+    /**
+     * Embed for the help message. Simply shows the URL to the documentation
+     */
+    fun getHelpMessage(): DiscordEmbed
 }
 
-private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
-private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/unknownuser256.png"
-private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/idnotify256.png"
-private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/ban256.png"
+private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/epilink256.png"
+private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png"
+private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/idnotify256.png"
+private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/ban256.png"
+private const val targetsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands?id=user-target"
+private const val commandsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands"
 
 private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
 
@@ -162,6 +204,64 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
             null
         }
 
+    override fun getNotAnAdminCommandReply(): DiscordEmbed = DiscordEmbed(
+        title = ":x: Not an administrator",
+        description = "You are not allowed to do that because you are not an administrator.",
+        color = "#8A0303",
+        footer = poweredByEpiLink
+    )
+
+    override fun getNotRegisteredCommandReply(): DiscordEmbed = DiscordEmbed(
+        title = ":x: Not registered",
+        description = "Although you are known as an administrator, you do not have an EpiLink account on this instance. Please create one and try again.",
+        color = "#8A0303",
+        footer = poweredByEpiLink
+    )
+
+    override fun getAdminWithNoIdentityCommandReply(): DiscordEmbed = DiscordEmbed(
+        title = ":x: Identity not recorded",
+        description = "Although you are a registered administrator, your identity is not recorded in the database. Please enable the Remember my identity option in your user panel and try again.",
+        color = "#8A0303",
+        footer = poweredByEpiLink
+    )
+
+    override fun getServerNotMonitoredCommandReply(): DiscordEmbed = DiscordEmbed(
+        title = ":x: Unmonitored server",
+        description = "This server is not monitored by EpiLink. Configure it in the EpiLink configuration file and try again.",
+        color = "#8A0303",
+        footer = poweredByEpiLink
+    )
+
+    override fun getInvalidCommandReply(commandName: String): DiscordEmbed = DiscordEmbed(
+        title = ":x: Invalid command '$commandName'",
+        description = "The command name '$commandName' does not exist.",
+        color = "#8A0303",
+        footer = poweredByEpiLink
+    )
+
+    override fun getWrongTargetCommandReply(target: String): DiscordEmbed = DiscordEmbed(
+        title = ":x: Invalid target",
+        description = "The target you specified ($target, `$target`) is invalid.",
+        fields = listOf(DiscordEmbedField(":grey_question: Need help on targets?", "See $targetsDocsUrl for more information")),
+        color = "#8A0303",
+        footer = poweredByEpiLink
+    )
+
+    override fun getSuccessCommandReply(message: String): DiscordEmbed = DiscordEmbed(
+        title = ":white_check_mark: Success",
+        description = message,
+        color = "#2B9B2B",
+        footer = poweredByEpiLink
+    )
+
+    override fun getHelpMessage(): DiscordEmbed = DiscordEmbed(
+        title = ":grey_question: EpiLink Help",
+        description = """
+            Hello there! Some administrative actions can be performed through Discord. For more information on the commands supported by EpiLink, see $commandsDocsUrl 
+        """.trimIndent(),
+        color = "#CCD6DD",
+        footer = poweredByEpiLink
+    )
 }
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")

@@ -28,3 +28,6 @@ config/*
 !.idea/inspectionProfiles/
 # Run configurations
 !.idea/runConfigurations/
+
+# Cached rulebooks
+*__cached

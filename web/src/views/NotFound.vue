@@ -22,7 +22,7 @@
 </script>
 
 <style lang="scss" scoped>
-    @import 'src/styles/mixins';
+    @import '../styles/mixins';
 
     #not-found {
         display: flex;

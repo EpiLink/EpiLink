@@ -53,6 +53,19 @@ data class LinkConfiguration(
      */
     val redis: String?,
     /**
+     * The rule book, directly as Kotlin code. Mutually exclusive with [rulebookFile].
+     */
+    val rulebook: String? = null,
+    /**
+     * The rule book, as a path relative to the config file's path. Mutually exclusive with [rulebook]
+     */
+    val rulebookFile: String? = null,
+    /**
+     * True if the rulebook should be cached to avoid compiling it every time, false to re-compile it every time EpiLink
+     * is launched.
+     */
+    val cacheRulebook: Boolean = true,
+    /**
      * Legal configuration, with ToS and privacy policy configs
      */
     val legal: LinkLegalConfiguration = LinkLegalConfiguration(),
@@ -189,13 +202,9 @@ data class LinkDiscordConfig(
      */
     val welcomeUrl: String?,
     /**
-     * The rule book, directly as Kotlin code. Mutually exclusive with [rulebookFile].
+     * The prefix for commands. "e!" by default.
      */
-    val rulebook: String? = null,
-    /**
-     * The rule book, as a path relative to the config file's path. Mutually exclusive with [rulebook]
-     */
-    val rulebookFile: String? = null,
+    val commandsPrefix: String = "e!",
     /**
      * The list of EpiLink custom roles (list of [LinkDiscordRoleSpec] objects)
      */

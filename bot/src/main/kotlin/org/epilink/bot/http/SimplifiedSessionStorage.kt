@@ -41,6 +41,7 @@ private suspend fun ByteReadChannel.readAvailable(): ByteArray = withContext(Dis
     while (!isClosedForRead) {
         val read = readAvailable(temp)
         if (read <= 0) break
+        @Suppress("BlockingMethodInNonBlockingContext") // it IS a blocking context but it's complaining about it
         data.write(temp.array(), 0, read)
         temp.clear()
     }

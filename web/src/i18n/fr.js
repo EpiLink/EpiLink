@@ -83,16 +83,25 @@ export default {
 
         navigation: {
             home: 'Accueil',
+            auth: 'Connexion',
+            redirect: 'Redirection...',
+            microsoft: 'Connexion à Microsoft',
+            settings: 'Paramètres',
+            success: 'Terminé',
+            profile: 'Profil',
             tos: 'Conditions d\'utilisation',
             privacy: 'Confidentialité',
             instance: 'Instance',
-            about: 'À Propos'
+            about: 'À Propos',
+            'not-found': 'Page introuvable'
         }
     },
 
     error: {
         title: 'Erreur',
-        retry: 'Rééssayer'
+        retry: 'Réessayer',
+        network: 'Impossible de contacter le serveur, veuillez vérifier votre connexion. Le serveur est peut-être en maintenance.',
+        rateLimit: 'Vous avez été bloqué par le filtre anti-spam, veuillez réessayer dans quelques minutes.'
     },
 
     popups: {

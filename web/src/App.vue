@@ -11,7 +11,7 @@
 <template>
     <div id="app">
         <div id="main-view">
-            <div id="content" :class="{ 'expanded': expanded }">
+            <div id="content" :class="{ expanded }">
                 <transition name="fade" mode="out-in">
                     <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
                         <transition name="fade">
@@ -20,46 +20,48 @@
                     </div>
 
                     <div id="loading" v-if="!redirected && !loaded && !error" :key="1">
-                        <link-loading />
+                        <link-loading/>
                     </div>
 
-                    <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2" />
+                    <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2"/>
                 </transition>
             </div>
         </div>
 
         <div id="footer" v-if="!redirected">
             <div id="left-footer">
-                <img id="menu" src="../assets/menu.svg" @click="sidebar = !sidebar" />
+                <img id="menu" alt="Menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
                 <router-link id="home-button" to="/">
-                    <img id="logo" src="../assets/logo.svg" />
+                    <img id="logo" alt="Logo" src="../assets/logo.svg"/>
                     <span id="title">EpiLink</span>
                 </router-link>
                 <template v-if="instance">
                     <div id="instance-separator"></div>
-                    <img id="logo-instance" v-if="instanceLogo" :src="instanceLogo">
+                    <img id="logo-instance" alt="Logo (Instance)" v-if="instanceLogo" :src="instanceLogo">
                     <span id="instance">{{ instance }}</span>
                 </template>
                 <template v-if="canLogout">
                     <div id="logout-separator"></div>
-                    <a id="logout" @click="logout">{{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout') }}</a>
+                    <a id="logout" @click="logout">
+                        {{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout') }}
+                    </a>
                 </template>
             </div>
             <ul id="navigation">
-                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name"/>
             </ul>
         </div>
 
-        <div id="sidebar-shadow" :class="{ opened: sidebar }" @click="sidebar = false" />
+        <div id="sidebar-shadow" :class="{ opened: sidebar }" @click="sidebar = false"/>
 
         <div id="sidebar" :class="{ opened: sidebar }">
             <div id="header">
-                <img id="side-logo" src="../assets/logo.svg" />
+                <img id="side-logo" alt="Logo" src="../assets/logo.svg"/>
                 EpiLink
             </div>
 
             <ul id="side-navigation">
-                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name"/>
             </ul>
         </div>
     </div>
@@ -70,7 +72,7 @@
 
     import LinkError   from './components/Error';
     import LinkLoading from './components/Loading';
-    import LinkRoute from "./components/Route";
+    import LinkRoute   from "./components/Route";
 
     export default {
         name: 'link-app',
@@ -79,10 +81,8 @@
         mounted() {
             this.load();
 
-            window.addEventListener('resize', () => {
-                document.querySelector("body").style.height = document.querySelector("#app").style.height = window.innerHeight + "px";
-                document.querySelector("#sidebar").style.height = document.querySelector("#sidebar-shadow").style.height = (window.innerHeight - 45) + "px";
-            });
+            window.addEventListener('resize', this.onResize);
+            this.onResize();
         },
         data() {
             return {
@@ -106,14 +106,14 @@
             routes() {
                 const meta = this.$store.state.meta;
                 const urls = meta && meta.footerUrls;
-                const instance = meta && [{ route: 'instance' }];
+                const instance = meta && [{route: 'instance'}];
 
                 return [
-                    { route: 'home' },
+                    {route: 'home'},
 
                     ...(urls || []),
                     ...(instance || []),
-                    { route: 'about' }
+                    {route: 'about'}
                 ];
             },
             instance() {
@@ -126,24 +126,39 @@
             }
         },
         methods: {
+            onResize() {
+                const [body, app, shadow, sidebar] = [
+                    ...document.querySelectorAll('body, #app'),
+                    ...document.querySelectorAll('#sidebar-shadow, #sidebar')
+                ].map(e => e.style);
+
+                body.height = app.height = `${window.innerHeight}px`;
+                sidebar.height = shadow.height = `${window.innerHeight - 45}px`;
+            },
             load() {
                 if (!window.opener) {
-                    this.$store.dispatch('load').catch(err => this.error = err);
+                    this.$store.dispatch('load')
+                        .then(_ => this.updateTitle())
+                        .catch(err => this.error = err);
                 }
             },
             logout() {
                 this.$store.dispatch('logout').then(() => {
-                    this.$router.push({ name: 'home' });
+                    this.$router.push({name: 'home'});
                 });
             },
             retry() {
                 this.error = null;
                 this.load();
+            },
+            updateTitle() {
+                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${this.$t('layout.navigation.' + this.$route.name)}`;
             }
         },
         watch: {
             '$route.name'() {
                 this.sidebar = false;
+                this.updateTitle();
             }
         }
     }
@@ -160,7 +175,6 @@
 
         width: 100vw;
         height: 100vh;
-        height: -webkit-fill-available;
     }
 
     #main-view {
