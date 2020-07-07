@@ -178,7 +178,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
         }
 
         @OptIn(UsesTrueIdentity::class)
-        get("gdprreport/{targetId}") {
+        post("gdprreport/{targetId}") {
             val targetId = call.parameters["targetId"]!!
             val target = dbf.getUser(targetId)
             if (target == null) {

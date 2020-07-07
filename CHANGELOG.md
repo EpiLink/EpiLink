@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Expanded the ToS and Privacy Policy pages to improve the PDF readability ([#198](https://github.com/EpiLink/EpiLink/pull/198))
 * Added meta description and robots.txt file ([#198](https://github.com/EpiLink/EpiLink/pull/198))
 * Improved and translated common error messages ([#198](https://github.com/EpiLink/EpiLink/pull/198))
+* The `/api/v1/admin/gdprreport` is now a POST instead of a GET ([#196](https://github.com/EpiLink/EpiLink/issues/196))
 
 ### Fixed
 

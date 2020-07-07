@@ -379,7 +379,7 @@ Here is what you can do using the administrative actions provided by EpiLink:
 - [Get information about a user](Api.md#get-adminuseruserid)
 - [Get a user's true identity](Api.md#post-adminidrequest)
 - [Ban a user](Api.md#post-adminbanmsfthash), [get previous bans](Api.md#get-adminbanmsfthash) and [revoke them](Api.md#post-adminbanmsfthashbanidrevoke)
-- [Generate a GDPR report about a user](Api.md#get-admingdprreporttargetid)
+- [Generate a GDPR report about a user](Api.md#post-admingdprreporttargetid)
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
 
@@ -401,4 +401,4 @@ An ID access allows you to get a user's identity while also notifying them for m
 
 ### GDPR Report
 
-You can generate a GDPR report using [the `/admin/gdprreport/{discordid}` endpoint](Api.md#get-admingdprreporttargetid). Note that these reports also include the identity of the person, and thus generate a manual identity access report.
+You can generate a GDPR report using [the `/admin/gdprreport/{discordid}` endpoint](Api.md#post-admingdprreporttargetid). Note that these reports also include the identity of the person, and thus generate a manual identity access report.
