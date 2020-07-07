@@ -52,7 +52,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-    @import 'src/styles/mixins';
+    @import '../styles/mixins';
 
     #instance {
         padding: 32px;

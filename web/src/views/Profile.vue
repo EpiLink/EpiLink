@@ -9,53 +9,51 @@
 
 -->
 <template>
-    <div id="profile">
-        <div id="profile-wrapper" :class="{ seen }">
-            <div id="left">
-                <link-user />
+    <link-expanded-view id="profile">
+        <div id="left">
+            <link-user />
 
-                <h2 id="accesses-title" v-html="$t('profile.identityAccesses')" />
-                <div id="accesses-container">
-                    <transition name="fade" mode="out-in">
-                        <div id="accesses" v-if="accesses && accesses.length" :key="0">
-                            <div class="access" v-for="(access, i) of accesses" :class="{ first: !i }" :key="i">
-                                <div>
-                                    <span class="author">{{ access.author || $t('profile.admin') }}</span>
-                                    -
-                                    <span class="type" v-html="$t(`profile.${access.automated ? 'automated' : 'manual'}Access`)" />
-                                </div>
-                                <span class="date">- {{ access.timestamp | date }}</span>
-                                <p class="reason">{{ access.reason }}</p>
-                            </div>
-                        </div>
-                        <div class="center-container" v-if="!accesses" :key="1">
-                            <link-loading />
-                        </div>
-                        <div class="center-container" v-if="accesses && !accesses.length" :key="2" v-html="$t('profile.noAccess')" />
-                    </transition>
-                </div>
-            </div>
-            <div id="right">
+            <h2 id="accesses-title" v-html="$t('profile.identityAccesses')" />
+            <div id="accesses-container">
                 <transition name="fade" mode="out-in">
-                    <div id="form" v-if="!submitting && !error" :key="0">
-                        <link-option v-model="saveEmail">
-                            <p class="title" v-html="$t('settings.remember')" />
-                            <div class="id-prompt" v-html="meta.idPrompt" />
-                            <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check')) }}</p>
-                        </link-option>
-
-                        <link-button id="submit" :enabled="saveEmail !== wasChecked" @action="submit">
-                            {{ saveEmail && !wasChecked ? $t('microsoft.connect') : $t('profile.save') }}
-                        </link-button>
+                    <div id="accesses" v-if="accesses && accesses.length" :key="0">
+                        <div class="access" v-for="(access, i) of accesses" :class="{ first: !i }" :key="i">
+                            <div>
+                                <span class="author">{{ access.author || $t('profile.admin') }}</span>
+                                -
+                                <span class="type" v-html="$t(`profile.${access.automated ? 'automated' : 'manual'}Access`)" />
+                            </div>
+                            <span class="date">- {{ access.timestamp | date }}</span>
+                            <p class="reason">{{ access.reason }}</p>
+                        </div>
                     </div>
-
-                    <link-loading v-if="submitting && !error" :key="1" />
-
-                    <link-error v-if="error" :error="error" :message="accesses ? 'back' : 'error.retry'" @action="retry" :key="2" />
+                    <div class="center-container" v-if="!accesses" :key="1">
+                        <link-loading />
+                    </div>
+                    <div class="center-container" v-if="accesses && !accesses.length" :key="2" v-html="$t('profile.noAccess')" />
                 </transition>
             </div>
         </div>
-    </div>
+        <div id="right">
+            <transition name="fade" mode="out-in">
+                <div id="form" v-if="!submitting && !error" :key="0">
+                    <link-option v-model="saveEmail">
+                        <p class="title" v-html="$t('settings.remember')" />
+                        <div class="id-prompt" v-html="meta.idPrompt" />
+                        <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check')) }}</p>
+                    </link-option>
+
+                    <link-button id="submit" :enabled="saveEmail !== wasChecked" @action="submit">
+                        {{ saveEmail && !wasChecked ? $t('microsoft.connect') : $t('profile.save') }}
+                    </link-button>
+                </div>
+
+                <link-loading v-if="submitting && !error" :key="1" />
+
+                <link-error v-if="error" :error="error" :message="accesses ? 'back' : 'error.retry'" @action="retry" :key="2" />
+            </transition>
+        </div>
+    </link-expanded-view >
 </template>
 
 <script>
@@ -63,32 +61,24 @@
 
     import { openPopup } from '../api';
 
-    import LinkButton  from '../components/Button';
-    import LinkError   from '../components/Error';
-    import LinkLoading from '../components/Loading';
-    import LinkOption  from '../components/Option';
-    import LinkUser    from '../components/User';
+    import LinkExpandedView from '../components/ExpandedView';
+    import LinkButton       from '../components/Button';
+    import LinkError        from '../components/Error';
+    import LinkLoading      from '../components/Loading';
+    import LinkOption       from '../components/Option';
+    import LinkUser         from '../components/User';
 
     export default {
         name: 'link-profile',
-        components: { LinkError, LinkLoading, LinkButton, LinkOption, LinkUser },
+        components: { LinkExpandedView, LinkError, LinkLoading, LinkButton, LinkOption, LinkUser },
 
         mounted() {
-            setTimeout(() => this.$store.commit('setExpanded', true), 300);
-            setTimeout(() => this.seen = true, 700);
-
             this.saveEmail = this.wasChecked = this.user.identifiable;
             this.loadAccesses();
-        },
-        destroyed() {
-            this.seen = false;
-            setTimeout(() => this.$store.commit('setExpanded', false), 200);
         },
 
         data() {
             return {
-                seen: false,
-
                 wasChecked: false,
                 saveEmail: false,
 
@@ -158,23 +148,6 @@
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-
-    #profile {
-        display: flex;
-    }
-
-    #profile-wrapper {
-        flex: 1;
-
-        display: flex;
-
-        opacity: 0;
-        transition: opacity .175s;
-
-        &.seen {
-            opacity: 1;
-        }
-    }
 
     #left, #right {
         flex: 0.5;
@@ -263,11 +236,6 @@
     }
 
     @media screen and (max-width: $expanded-breakpoint) {
-        #profile-wrapper {
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
         #left {
             min-height: 400px;
 

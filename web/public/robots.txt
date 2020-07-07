@@ -1,0 +1,9 @@
+User-Agent: *
+Disallow: /auth/*
+Noindex: /auth/*
+Disallow: /redirect/*
+Noindex: /redirect/*
+Disallow: /settings
+Noindex: /settings
+Disallow: /profile
+Noindex: /profile

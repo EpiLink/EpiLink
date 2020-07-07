@@ -83,16 +83,25 @@ export default {
 
         navigation: {
             home: 'Home',
+            auth: 'Authentication',
+            redirect: 'Redirecting...',
+            microsoft: 'Connecting to Microsoft',
+            settings: 'Settings',
+            success: 'Success',
+            profile: 'Profile',
             tos: 'Terms of Services',
             privacy: 'Privacy',
             instance: 'Instance',
-            about: 'About'
+            about: 'About',
+            'not-found': 'Page not found'
         }
     },
 
     error: {
         title: 'Error',
-        retry: 'Retry'
+        retry: 'Retry',
+        network: 'Unable to reach the server, please check your Internet connection. The server may also be under maintenance.',
+        rateLimit: 'You are being rate-limited. Please try again in a few minutes.'
     },
 
     popups: {

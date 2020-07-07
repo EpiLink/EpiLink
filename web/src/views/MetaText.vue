@@ -9,32 +9,34 @@
 
 -->
 <template>
-    <div class="meta-text">
+    <link-expanded-view class="meta-text" :column="true">
         <h1 class="title" :class="{ overflow: title.length > 30 }">
-            <a @click="back()"><img class="back-icon" src="../../assets/back.svg" /></a>
+            <a @click="back()"><img class="back-icon" :alt="$t('back')" src="../../assets/back.svg" /></a>
             {{ title | capitalize }}
         </h1>
         <a class="back" @click="back()" v-html="$t('back')" />
 
         <transition name="fade" mode="out-in">
             <link-loading v-if="!content" :key="0" />
+
             <div class="text-content" v-if="content && contentText" :key="2">
                 <p class="text" v-html="contentText"/>
             </div>
             <div class="pdf-things" v-if="content && contentPdf" :key="2">
-                <p><a :href="contentUrl" v-html="$t('meta.downloadPdf')" target="_blank"></a></p>
-                <iframe :src="contentPdf"></iframe>
+                <p><a :href="contentUrl" v-html="$t('meta.downloadPdf')" rel="noreferrer" target="_blank"></a></p>
+                <iframe class="pdf-frame" :src="contentPdf"></iframe>
             </div>
         </transition>
-    </div>
+    </link-expanded-view>
 </template>
 
 <script>
-    import LinkLoading from '../components/Loading';
+    import LinkExpandedView from '../components/ExpandedView';
+    import LinkLoading      from '../components/Loading';
 
     export default {
         name: 'link-meta-text',
-        components: { LinkLoading },
+        components: { LinkExpandedView, LinkLoading },
 
         mounted() {
             this.$store.dispatch(this.isPrivacyPolicy ? 'fetchPrivacyPolicy' : 'fetchTermsOfService');
@@ -73,7 +75,7 @@
                 return this.$store.state.texts[prop];
             },
             contentUrl() {
-                return this.content.url
+                return this.content.url;
             },
             contentText() {
                 return this.content.textContent;
@@ -87,14 +89,8 @@
 
 <style lang="scss" scoped>
     .meta-text {
-        overflow: auto;
-
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-
         padding: 15px 20px;
-        padding-bottom: 50px;
+        padding-bottom: 25px;
 
         box-sizing: border-box;
     }
@@ -124,6 +120,10 @@
         margin-bottom: 15px;
     }
 
+    .loading {
+        margin-top: 50px;
+    }
+
     .text-content {
         flex-grow: 1;
 
@@ -139,18 +139,23 @@
     .pdf-things {
         display: flex;
         flex-direction: column;
+
         min-width: 100%;
         height: 100%;
 
         p {
             text-align: center;
+            margin-top: 0;
         }
+
         a {
             text-decoration: underline;
         }
-        iframe {
+
+        .pdf-frame {
             width: 100%;
             flex-grow: 1;
+            border: none;
         }
     }
 

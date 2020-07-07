@@ -31,7 +31,7 @@
 
 <style lang="scss" scoped>
     @import '../styles/vars';
-    @import 'src/styles/mixins';
+    @import '../styles/mixins';
 
     .button-container {
         text-align: center;

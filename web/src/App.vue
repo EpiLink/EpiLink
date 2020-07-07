@@ -11,7 +11,7 @@
 <template>
     <div id="app">
         <div id="main-view">
-            <div id="content" :class="{ 'expanded': expanded }">
+            <div id="content" :class="{ expanded }">
                 <transition name="fade" mode="out-in">
                     <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
                         <transition name="fade">
@@ -30,20 +30,21 @@
 
         <div id="footer" v-if="!redirected">
             <div id="left-footer">
-                <img id="menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
+                <img id="menu" alt="Menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
                 <router-link id="home-button" to="/">
-                    <img id="logo" src="../assets/logo.svg"/>
+                    <img id="logo" alt="Logo" src="../assets/logo.svg"/>
                     <span id="title">EpiLink</span>
                 </router-link>
                 <template v-if="instance">
                     <div id="instance-separator"></div>
-                    <img id="logo-instance" v-if="instanceLogo" :src="instanceLogo">
+                    <img id="logo-instance" alt="Logo (Instance)" v-if="instanceLogo" :src="instanceLogo">
                     <span id="instance">{{ instance }}</span>
                 </template>
                 <template v-if="canLogout">
                     <div id="logout-separator"></div>
-                    <a id="logout" @click="logout">{{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout')
-                        }}</a>
+                    <a id="logout" @click="logout">
+                        {{ canLogout === 'link' ? $t('layout.cancel') : $t('layout.logout') }}
+                    </a>
                 </template>
             </div>
             <ul id="navigation">
@@ -55,7 +56,7 @@
 
         <div id="sidebar" :class="{ opened: sidebar }">
             <div id="header">
-                <img id="side-logo" src="../assets/logo.svg"/>
+                <img id="side-logo" alt="Logo" src="../assets/logo.svg"/>
                 EpiLink
             </div>
 
@@ -69,9 +70,9 @@
 <script>
     import { mapState } from 'vuex';
 
-    import LinkError from './components/Error';
+    import LinkError   from './components/Error';
     import LinkLoading from './components/Loading';
-    import LinkRoute from "./components/Route";
+    import LinkRoute   from "./components/Route";
 
     export default {
         name: 'link-app',
@@ -136,7 +137,9 @@
             },
             load() {
                 if (!window.opener) {
-                    this.$store.dispatch('load').catch(err => this.error = err);
+                    this.$store.dispatch('load')
+                        .then(_ => this.updateTitle())
+                        .catch(err => this.error = err);
                 }
             },
             logout() {
@@ -147,11 +150,15 @@
             retry() {
                 this.error = null;
                 this.load();
+            },
+            updateTitle() {
+                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${this.$t('layout.navigation.' + this.$route.name)}`;
             }
         },
         watch: {
             '$route.name'() {
                 this.sidebar = false;
+                this.updateTitle();
             }
         }
     }

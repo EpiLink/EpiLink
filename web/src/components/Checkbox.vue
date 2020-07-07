@@ -10,7 +10,7 @@
 -->
 <template>
     <div class="checkbox" :class="{ 'ticked': checked }" @click="tick">
-        <img class="tick" src="../../assets/check.svg" />
+        <img class="tick" alt="Checkbox" src="../../assets/check.svg" />
     </div>
 </template>
 
