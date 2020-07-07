@@ -22,7 +22,7 @@
         props: ['column'],
 
         mounted() {
-            setTimeout(() => this.$store.commit('setExpanded', true), 300);
+            setTimeout(() => this.$store.commit('setExpanded', true), 200);
         },
         destroyed() {
             this.hidden = true;
@@ -45,7 +45,7 @@
     }
 
     .expanded-wrapper {
-        animation: fade .175s .7s ease 1 both;
+        animation: fade .175s .6s ease 1 both;
 
         display: flex;
         flex: 1;
