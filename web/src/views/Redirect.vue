@@ -56,7 +56,7 @@
                     return;
                 }
 
-                window.opener.postMessage({ code });
+                window.opener.postMessage({ code }, window.origin);
                 window.close();
             }, 1250);
         },
