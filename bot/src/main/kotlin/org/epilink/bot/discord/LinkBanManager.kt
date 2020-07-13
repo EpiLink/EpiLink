@@ -9,6 +9,7 @@
 package org.epilink.bot.discord
 
 import org.epilink.bot.LinkEndpointException
+import org.epilink.bot.LinkEndpointUserException
 import org.epilink.bot.StandardErrorCodes.InvalidId
 import org.epilink.bot.db.LinkBan
 import org.epilink.bot.db.LinkBanLogic
@@ -68,9 +69,9 @@ internal class LinkBanManagerImpl : LinkBanManager, KoinComponent {
 
     override suspend fun revokeBan(msftHashBase64: String, banId: Int) {
         val actualHash = Base64.getUrlDecoder().decode(msftHashBase64)
-        val ban = dbf.getBan(banId) ?: throw LinkEndpointException(InvalidId, "Unknown ban ID $banId", true)
+        val ban = dbf.getBan(banId) ?: throw LinkEndpointUserException(InvalidId, "Unknown ban ID", "bm.ubi")
         if (!ban.msftIdHash.contentEquals(actualHash)) {
-            throw LinkEndpointException(InvalidId, "Microsoft ID hash does not match given ban ID $banId", true)
+            throw LinkEndpointUserException(InvalidId, "Microsoft ID hash does not match given ban ID", "bm.mid")
         }
         val previouslyActive = banLogic.isBanActive(ban)
         dbf.revokeBan(banId)

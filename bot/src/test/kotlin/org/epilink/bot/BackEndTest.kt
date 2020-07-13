@@ -15,12 +15,15 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.routing.Route
+import io.ktor.routing.Routing
 import io.ktor.routing.get
 import io.ktor.routing.routing
+import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.Sessions
 import io.mockk.*
+import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.endpoints.LinkAdminApi
@@ -30,10 +33,7 @@ import org.epilink.bot.http.endpoints.LinkUserApi
 import org.koin.core.get
 import org.koin.dsl.module
 import org.koin.test.mock.declare
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class BackEndTest : KoinBaseTest(
     module {
@@ -52,52 +52,91 @@ class BackEndTest : KoinBaseTest(
         }
     }
 
-    @Test
-    fun `Test error handling`() {
-        declare<LinkBackEnd> { LinkBackEndImpl() }
+    private fun withErrorHandlingTestApplication(routing: Routing.() -> Unit, test: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             // Requires content negotiation
             with(get<LinkBackEnd>()) { installFeatures() }
-
             routing {
                 with(get<LinkBackEnd>()) { installErrorHandling() }
+                routing()
+            }
+        }, test)
 
-                get("/one") {
-                    error("You don't know me")
-                }
-
-                get("/two") {
-                    throw LinkEndpointException(StandardErrorCodes.MissingAuthentication, "Oops", true)
-                }
-
-                get("/three") {
-                    throw LinkEndpointException(StandardErrorCodes.InvalidAuthCode, "EEEE", false)
-                }
+    @Test
+    fun `Test error handling random error`() {
+        declare<LinkBackEnd> { LinkBackEndImpl() }
+        withErrorHandlingTestApplication({
+            get("/one") {
+                error("You don't know me")
             }
         }) {
             handleRequest(HttpMethod.Get, "/one").apply {
                 assertStatus(HttpStatusCode.InternalServerError)
-                val apiError = fromJson<ApiError>(response)
-                assertTrue(apiError.message.contains("unknown", ignoreCase = true))
-                val data = apiError.data
-                assertEquals(StandardErrorCodes.UnknownError.code, data.code)
-                assertEquals(StandardErrorCodes.UnknownError.description, data.description)
+                val apiError = fromJson<ApiError>(response).apply {
+                    assertTrue(message.contains("unknown", ignoreCase = true))
+                    assertEquals("err.999", message_i18n)
+                    assertTrue(message_i18n_data.isEmpty())
+                }
+                apiError.data.apply {
+                    assertEquals(StandardErrorCodes.UnknownError.code, code)
+                    assertEquals(StandardErrorCodes.UnknownError.description, description)
+                }
             }
+        }
+    }
+
+    @Test
+    fun `Test error handling user error`() {
+        declare<LinkBackEnd> { LinkBackEndImpl() }
+        withErrorHandlingTestApplication({
+            get("/two") {
+                throw LinkEndpointUserException(
+                    StandardErrorCodes.MissingAuthentication,
+                    "Oops",
+                    "oo.ps",
+                    mapOf("oo" to "ps")
+                )
+            }
+        }) {
             handleRequest(HttpMethod.Get, "/two").apply {
                 assertStatus(HttpStatusCode.BadRequest)
-                val apiError = fromJson<ApiError>(response)
-                assertTrue(apiError.message.contains("Oops"))
-                val data = apiError.data
-                assertEquals(StandardErrorCodes.MissingAuthentication.code, data.code)
-                assertEquals(StandardErrorCodes.MissingAuthentication.description, data.description)
+                val apiError = fromJson<ApiError>(response).apply {
+                    assertEquals("Oops", message)
+                    assertEquals("oo.ps", message_i18n)
+                    assertEquals(1, message_i18n_data.size)
+                }
+                apiError.message_i18n_data.entries.first().apply {
+                    assertEquals("oo", key)
+                    assertEquals("ps", value)
+                }
+                apiError.data.apply {
+                    assertEquals(StandardErrorCodes.MissingAuthentication.code, code)
+                    assertEquals(StandardErrorCodes.MissingAuthentication.description, description)
+                }
             }
+
+        }
+    }
+
+    @Test
+    fun `Test error handling internal error`() {
+        declare<LinkBackEnd> { LinkBackEndImpl() }
+        withErrorHandlingTestApplication({
+            get("/three") {
+                throw LinkEndpointInternalException(InvalidAuthCode, "EEEE")
+            }
+        }) {
             handleRequest(HttpMethod.Get, "/three").apply {
                 assertStatus(HttpStatusCode.InternalServerError)
-                val apiError = fromJson<ApiError>(response)
-                assertTrue(apiError.message.contains("EEEE"))
-                val data = apiError.data
-                assertEquals(StandardErrorCodes.InvalidAuthCode.code, data.code)
-                assertEquals(StandardErrorCodes.InvalidAuthCode.description, data.description)
+                val apiError = fromJson<ApiError>(response).apply {
+                    assertFalse(message.contains("EEEE"))
+                    assertEquals("err.102", message_i18n)
+                    assertTrue(message_i18n_data.isEmpty())
+                }
+                apiError.data.apply {
+                    assertEquals(InvalidAuthCode.code, code)
+                    assertEquals(InvalidAuthCode.description, description)
+                }
             }
         }
     }

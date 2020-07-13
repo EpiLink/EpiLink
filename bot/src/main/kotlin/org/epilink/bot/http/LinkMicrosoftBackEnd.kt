@@ -21,6 +21,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
 import org.epilink.bot.LinkEndpointException
+import org.epilink.bot.LinkEndpointInternalException
+import org.epilink.bot.LinkEndpointUserException
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.debug
 import org.koin.core.KoinComponent
@@ -74,26 +76,28 @@ class LinkMicrosoftBackEnd(
                 logger.debug { "Failed: received $received" }
                 val data = ObjectMapper().readValue<Map<String, Any?>>(received)
                 when (val error = data["error"] as? String) {
-                    "invalid_grant" -> throw LinkEndpointException(
+                    "invalid_grant" -> throw LinkEndpointUserException(
                         InvalidAuthCode,
                         "Invalid authorization code",
-                        true,
-                        ex
+                        "oa.iac",
+                        cause = ex
                     )
-                    else -> throw LinkEndpointException(
+                    else -> throw LinkEndpointInternalException(
                         MicrosoftApiFailure,
                         "Microsoft OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
-                        false,
                         ex
                     )
                 }
             } else {
-                throw LinkEndpointException(MicrosoftApiFailure, "Microsoft API call failed", false, ex)
+                throw LinkEndpointInternalException(MicrosoftApiFailure, "Microsoft API call failed", ex)
             }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
         return data["access_token"] as String?
-            ?: throw LinkEndpointException(MicrosoftApiFailure, "Did not receive any access token from Microsoft")
+            ?: throw LinkEndpointInternalException(
+                MicrosoftApiFailure,
+                "Did not receive any access token from Microsoft"
+            )
 
     }
 
@@ -109,23 +113,22 @@ class LinkMicrosoftBackEnd(
             val email = data["mail"] as String?
                 ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
                     ?.also { logger.debug("Taking userPrincipalName $it instead of mail because mail was not found in response") }
-                ?: throw LinkEndpointException(
+                ?: throw LinkEndpointUserException(
                     AccountHasNoEmailAddress,
                     "This account does not have an email address",
-                    true
+                    "ms.nea"
                 )
-            val id = data["id"] as String? ?: throw LinkEndpointException(
+            val id = data["id"] as String? ?: throw LinkEndpointUserException(
                 AccountHasNoId,
                 "This user does not have an ID",
-                true
+                "ms.nid"
             )
             return MicrosoftUserInfo(id, email).also { logger.debug { "Retrieved info $it" } }
         } catch (ex: ClientRequestException) {
-            throw LinkEndpointException(
+            throw LinkEndpointInternalException(
                 MicrosoftApiFailure,
                 "Failed to contact the Microsoft API.",
-                ex.response.status.value == 400,
-                ex
+                cause = ex
             )
         }
     }

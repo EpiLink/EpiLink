@@ -24,4 +24,4 @@ object Allowed : DatabaseAdvisory()
  *
  * @property reason The explanation behind the disallowed advice. User-friendly.
  */
-class Disallowed(val reason: String): DatabaseAdvisory()
+class Disallowed(val reason: String, val reasonI18n: String, val reasonI18nData: Map<String, String> = mapOf()): DatabaseAdvisory()

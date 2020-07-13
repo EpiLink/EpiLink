@@ -61,11 +61,10 @@ class BanManagerTest : KoinBaseTest(
             coEvery { getBan(any()) } returns null
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 revokeBan("blabla", 12345)
             }
             assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 
@@ -80,11 +79,10 @@ class BanManagerTest : KoinBaseTest(
             every { isBanActive(any()) } returns true
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 revokeBan("nope", 12)
             }
             assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
-            assertTrue(exc.isEndUserAtFault)
             assertTrue(exc.message!!.contains("hash"))
         }
     }

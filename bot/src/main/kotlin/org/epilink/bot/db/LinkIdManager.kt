@@ -8,13 +8,10 @@
  */
 package org.epilink.bot.db
 
-import org.epilink.bot.LinkEndpointException
-import org.epilink.bot.LinkException
-import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.IdentityAlreadyKnown
 import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
 import org.epilink.bot.config.LinkPrivacy
-import org.epilink.bot.debug
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.http.data.IdAccess
@@ -103,12 +100,12 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     @UsesTrueIdentity
     override suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String) {
         if (facade.isUserIdentifiable(user)) {
-            throw LinkEndpointException(IdentityAlreadyKnown, "Cannot update identity, it is already known", true)
+            throw LinkEndpointUserException(IdentityAlreadyKnown)
         }
         val knownHash = user.msftIdHash
         val newHash = associatedMsftId.hashSha256()
         if (!knownHash.contentEquals(newHash)) {
-            throw LinkEndpointException(NewIdentityDoesNotMatch, isEndUserAtFault = true)
+            throw LinkEndpointUserException(NewIdentityDoesNotMatch)
         }
         facade.recordNewIdentity(user, email)
     }
@@ -129,7 +126,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     @UsesTrueIdentity
     override suspend fun deleteUserIdentity(user: LinkUser) {
         if (!facade.isUserIdentifiable(user))
-            throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+            throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyUnknown)
         facade.eraseIdentity(user)
     }
 }

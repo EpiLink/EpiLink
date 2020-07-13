@@ -18,6 +18,56 @@ The rate limiting is based on three factors (keys):
 
 Note that 429 errors *never* return API responses, they always return a JSON object with three values, `message`, `retry_after` (in seconds, not milliseconds like Discord) and `global`.
 
+## I18n
+
+Messages are always sent in plain English. Additionally, an I18n key may be given (`..._i18n`) that may be used to show a localized message, and a dictionary (`..._i18n_data`) is provided for values that should be inserted in the localized message.
+
+Note that all error codes have an implicit I18n key, `err.code`, where code is the error code's ID (e.g. `err.101`). (This is why ErrorData does not have an I18n key.)
+
+### I18n keys
+
+I18n keys are what you find in the fields that end with `_i18n`. They can also need additional information, which is 
+given in the field that ends with `_i18n_data` in the form of a dictionary. For example:
+
+```json5
+{
+  /* ... */
+  "message_i18n": "reg.isv",
+  "message_i18n_data": {
+    "%service%": "my service"
+  }
+}
+``` 
+
+Apart from `err.***` keys, the following keys can be returned:
+
+| Key | English version |
+|:---:| --------------- |
+| bm.ubi | Unknown ban ID |
+| bm.mid | Microsoft ID hash does not match given ban ID. |
+| ms.nea | This account does not have an email address. |
+| oa.iac | Invalid authorization code |
+| use.slo | Successfully logged out. |
+| use.slm | Successfully linked Microsoft account. |
+| use.sdi | Successfully deleted identity. |
+| pc.ala | This Microsoft account is already linked to another account |
+| pc.cba | This Microsoft account is banned (reason: %reason%) |
+| pc.jba | You are banned from joining any server at the moment. (Ban reason: %reason%) |
+| pc.erj | This e-mail address was rejected. Are you sure you are using the correct Microsoft account? |
+| pc.dae | This Discord account already exists |
+| sc.ani | You need to have your identity recorded to perform administrative tasks. |
+| adm.mir | Missing reason. |
+| adm.iet | Invalid expiry timestamp. |
+| adm.ibi | Invalid ban ID. |
+| adm.nbi | No ban with given ID found. |
+| adm.hnc | Microsoft ID hash does not correspond. |
+| adm.brk | Ban revoked. |
+| reg.msh | Missing session header. |
+| reg.acc | Account created, logged in. |
+| reg.isv | Invalid service: %service% |
+| reg.lgi | Logged in |
+
+
 ## Details
 
 * All endpoints begin with `/api/v1`.
@@ -31,6 +81,8 @@ Note that 429 errors *never* return API responses, they always return a JSON obj
 {
   "success": true, // or false
   "message": "Hello", // nullable
+  "message_i18n": "...", // I18n key for the message, null if and only if message is null
+  "message_i18n_data":  { /* ... */ }, // I18n map for the data
   "data": {} // nullable, depends on the request
 }
 ```

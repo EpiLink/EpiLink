@@ -124,7 +124,7 @@ class AdminTest : KoinBaseTest(
             }.apply {
                 assertStatus(BadRequest)
                 val err = fromJson<ApiError>(response)
-                assertEquals(400, err.data.code)
+                assertEquals(402, err.data.code)
             }
             coVerify {
                 sessionChecks.verifyUser(any())
@@ -426,7 +426,6 @@ class AdminTest : KoinBaseTest(
             }.apply {
                 assertStatus(OK)
                 val info = fromJson<ApiSuccess>(response)
-                assertEquals("Ban created.", info.message)
                 val data = info.data
                 assertNotNull(data)
                 assertEquals(123, data["id"])

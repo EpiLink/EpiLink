@@ -65,7 +65,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
             rateLimited(limit = 50, timeBeforeReset = Duration.ofMinutes(1)) {
                 @ApiEndpoint("GET /api/v1/meta/info")
                 get("info") {
-                    call.respond(ApiSuccessResponse(data = getInstanceInformation()))
+                    call.respond(ApiSuccessResponse.of(getInstanceInformation()))
                 }
 
                 @ApiEndpoint("GET /api/v1/meta/tos")

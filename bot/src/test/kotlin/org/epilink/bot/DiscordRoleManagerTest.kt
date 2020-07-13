@@ -38,7 +38,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             coEvery { getUser("userid") } returns user
         }
         val pc = mockHere<LinkPermissionChecks> {
-            coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason")
+            coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "my.reason")
         }
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { sendDirectMessage("userid", any()) } just runs
@@ -266,7 +266,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             coEvery { getUser("userid") } returns user
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason")
+            coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "yes.maybe")
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
@@ -282,7 +282,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             coEvery { getUser("userid") } returns user
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason")
+            coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "yes.allo")
         }
         val embed: DiscordEmbed = mockk()
         val dcf = mockHere<LinkDiscordClientFacade> {

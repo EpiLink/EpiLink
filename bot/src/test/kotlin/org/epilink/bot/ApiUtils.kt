@@ -43,6 +43,8 @@ import kotlin.test.assertTrue
 data class ApiSuccess(
     val success: Boolean,
     val message: String?,
+    val message_i18n: String?,
+    val message_i18n_data: Map<String, String>,
     val data: Map<String, Any?>?
 ) {
     init {
@@ -53,6 +55,8 @@ data class ApiSuccess(
 data class ApiError(
     val success: Boolean,
     val message: String,
+    val message_i18n: String,
+    val message_i18n_data: Map<String, String>,
     val data: ApiErrorDetails
 ) {
     init {

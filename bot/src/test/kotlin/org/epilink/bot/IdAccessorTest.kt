@@ -76,11 +76,10 @@ class IdAccessorTest : KoinBaseTest(
             coEvery { isUserIdentifiable(user) } returns true
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 relinkMicrosoftIdentity(user, "this doesn't matter", "this doesn't matter either")
             }
             assertEquals(110, exc.errorCode.code)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 
@@ -95,11 +94,10 @@ class IdAccessorTest : KoinBaseTest(
             coEvery { isUserIdentifiable(u) } returns false
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 relinkMicrosoftIdentity(u, "this doesn't matter", "That is definitely not okay")
             }
             assertEquals(112, exc.errorCode.code)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 
@@ -130,11 +128,10 @@ class IdAccessorTest : KoinBaseTest(
             coEvery { isUserIdentifiable(u) } returns false
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 deleteUserIdentity(u)
             }
             assertEquals(111, exc.errorCode.code)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 

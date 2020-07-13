@@ -8,10 +8,7 @@
  */
 package org.epilink.bot.db
 
-import org.epilink.bot.LinkEndpointException
-import org.epilink.bot.StandardErrorCodes
-import org.epilink.bot.debug
-import org.epilink.bot.infoOrDebug
+import org.epilink.bot.*
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
@@ -40,10 +37,11 @@ internal class LinkUserCreatorImpl : LinkUserCreator, KoinComponent {
         keepIdentity: Boolean
     ): LinkUser {
         return when (val adv = isAllowedToCreateAccount(discordId, microsoftUid, email)) {
-            is Disallowed -> throw LinkEndpointException(
+            is Disallowed -> throw LinkEndpointUserException(
                 StandardErrorCodes.AccountCreationNotAllowed,
                 adv.reason,
-                true
+                adv.reasonI18n,
+                adv.reasonI18nData
             ).also { logger.debug { "Account creation disallowed for Discord $discordId / MS $microsoftUid: " + adv.reason } }
             is Allowed -> {
                 logger.infoOrDebug("Creating a new user") {

@@ -18,7 +18,7 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.sessions.*
-import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkPermissionChecks
@@ -31,7 +31,7 @@ import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.RegistrationContinuation
 import org.epilink.bot.http.data.RegistrationInformation
 import org.epilink.bot.http.sessions.RegisterSession
-import org.epilink.bot.toErrorData
+import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
@@ -86,10 +86,11 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                         }
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ApiErrorResponse(
+                            IncompleteRegistrationRequest.toResponse(
                                 "Missing session header",
-                                StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
+                                "reg.msh"
                             )
+
                         )
                     } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
                         logger.debug {
@@ -103,10 +104,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                         }
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ApiErrorResponse(
-                                "Incomplete registration process",
-                                StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
-                            )
+                            IncompleteRegistrationRequest.toResponse()
                         )
                     } else {
                         val regSessionId = call.request.header("RegistrationSessionId")
@@ -119,7 +117,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                         logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
                         call.respond(
                             HttpStatusCode.Created,
-                            apiSuccess("Account created, logged in.")
+                            apiSuccess("Account created, logged in.", "reg.acc")
                         )
                     }
                 }
@@ -136,9 +134,10 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                         logger.debug { "Attempted to register under unknown service $service" }
                         call.respond(
                             HttpStatusCode.NotFound,
-                            ApiErrorResponse(
+                            UnknownService.toResponse(
                                 "Invalid service: $service",
-                                StandardErrorCodes.UnknownService.toErrorData()
+                                "reg.isv",
+                                mapOf("%service%" to service)
                             )
                         )
                     }
@@ -165,10 +164,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
             logger.debug { "Microsoft user $id ($email) is not allowed to create an account: " + adv.reason }
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiErrorResponse(
-                    adv.reason,
-                    StandardErrorCodes.AccountCreationNotAllowed.toErrorData()
-                )
+                AccountCreationNotAllowed.toResponse(adv.reason, adv.reasonI18n, adv.reasonI18nData)
             )
             return
         }
@@ -176,10 +172,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
         val newSession = session.copy(email = email, microsoftUid = id)
         call.sessions.set(newSession)
         call.respond(
-            ApiSuccessResponse(
-                "Connected to Microsoft",
-                RegistrationContinuation("continue", newSession.toRegistrationInformation())
-            )
+            ApiSuccessResponse.of(RegistrationContinuation("continue", newSession.toRegistrationInformation()))
         )
     }
 
@@ -200,9 +193,10 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
             logger.debug { "User already exists: logging in" }
             with(userApi) { loginAs(call, user, username, avatarUrl) }
             call.respond(
-                ApiSuccessResponse(
+                ApiSuccessResponse.of(
                     "Logged in",
-                    RegistrationContinuation("login", null)
+                    "reg.lgi",
+                    data = RegistrationContinuation("login", null)
                 )
             )
         } else {
@@ -211,10 +205,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                 logger.debug { "Discord user $id cannot create account: " + adv.reason }
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiErrorResponse(
-                        adv.reason,
-                        StandardErrorCodes.AccountCreationNotAllowed.toErrorData()
-                    )
+                    AccountCreationNotAllowed.toResponse(adv.reason, adv.reasonI18n, adv.reasonI18nData)
                 )
                 return
             }
@@ -222,16 +213,13 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
             val newSession = session.copy(discordUsername = username, discordId = id, discordAvatarUrl = avatarUrl)
             call.sessions.set(newSession)
             call.respond(
-                ApiSuccessResponse(
-                    "Connected to Discord",
-                    RegistrationContinuation("continue", newSession.toRegistrationInformation())
-                )
+                ApiSuccessResponse.of(RegistrationContinuation("continue", newSession.toRegistrationInformation()))
             )
         }
     }
 
     private suspend fun ApplicationCall.respondRegistrationStatus(session: RegisterSession) {
-        respond(ApiSuccessResponse(null, session.toRegistrationInformation()))
+        respond(ApiSuccessResponse.of(session.toRegistrationInformation()))
     }
 
     private suspend inline fun <reified T : Any> ApplicationCall.receiveCatching(): T? = try {

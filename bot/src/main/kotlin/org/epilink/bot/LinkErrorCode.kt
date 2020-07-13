@@ -33,8 +33,12 @@ fun LinkErrorCode.toErrorData(): ApiErrorData = ApiErrorData(code, description)
  * Utility function for turning an error code into a proper API Error response with the given description, filling
  * the error information with the error code.
  */
-fun LinkErrorCode.toResponse(description: String? = null) =
-    ApiErrorResponse(description ?: this.description, toErrorData())
+fun LinkErrorCode.toResponse() = ApiErrorResponse(description, "err.$code", mapOf(), toErrorData())
+fun LinkErrorCode.toResponse(
+    description: String,
+    description_i18n: String,
+    description_i18n_data: Map<String, String> = mapOf()
+) = ApiErrorResponse(description, description_i18n, description_i18n_data, toErrorData())
 
 /**
  * Standard error codes of the EpiLink API.
@@ -124,6 +128,7 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
      * Sent when an API call made to the admin endpoints is invalid
      */
     InvalidAdminRequest(400, "Invalid administration request."),
+
     /**
      * Sent when an API call made to the admin endpoints is incomplete.
      *
