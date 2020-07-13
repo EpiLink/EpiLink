@@ -108,7 +108,8 @@ export default async function(method, path, body, returnRawResponse = false) {
             // being a message in the first place)
             throw 'rate-limit';
         } else {
-            throw json.message;
+            // Do not throw the message directly, throw the I18n key instead with the replacements
+            throw {"key": 'backend.' + json.message_i18n, "replace": json.message_i18n_data};
         }
     }
 

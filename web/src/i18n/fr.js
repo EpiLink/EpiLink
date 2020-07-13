@@ -116,5 +116,29 @@ export default {
 
     meta: {
         downloadPdf: 'Télécharger ce fichier PDF'
+    },
+
+    backend: {
+        ms: {
+            nea: "Ce compte ne possède pas d'adresse e-mail"
+        },
+        oa: {
+            iac: "Code d'autorisation invalide"
+        },
+        use: {
+            slo: 'Connecté avec succès.',
+            slm: 'Compte Microsoft relié avec succès.',
+            sdi: 'Identité supprimée avec succès.'
+        },
+        pc: {
+            erj: "Cette adresse e-mail a été rejetée. Êtes-vous sûr d'utiliser le bon compte Microsoft ?",
+            dae: 'Ce compte Discord existe déjà.',
+            cba: 'Ce compte Microsoft est banni (raison : {reason})',
+            ala: 'Ce compte Microsoft est déjà lié à un autre compte.'
+        },
+        reg: {
+            msh: 'En-tête de session manquant.',
+            isv: 'Service invalide : {service}.'
+        }
     }
 };
