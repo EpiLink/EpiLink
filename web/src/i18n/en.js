@@ -142,6 +142,20 @@ export default {
         reg: {
             msh: 'Missing session header.',
             isv: 'Invalid service: {service}.'
+        },
+        err: {
+            '999': 'An unknown error occurred',
+            '101': 'Account creation is not allowed',
+            '102': 'Invalid authorization code',
+            '104': 'This account does not have any ID',
+            '105': 'This service is not known or does not exist',
+            '110': 'The identity of this account is already registered in the database',
+            '111': 'The identity of this account already does not exist in the database',
+            '112': 'This account\'s identity does not match the new one',
+            '201': 'Something went wrong with a Discord API call',
+            '202': 'Something went wrong with a Microsoft API call',
+            '300': 'You need authentication to be able to access this resource',
+            '301': 'You do not have permission to do that.',
         }
     }
 };

@@ -139,6 +139,20 @@ export default {
         reg: {
             msh: 'En-tête de session manquant.',
             isv: 'Service invalide : {service}.'
+        },
+        err: {
+            '999': 'Une erreur inconnue est survenue.',
+            '101': 'La création de compte n\'est pas permise',
+            '102': 'Code d\'autorisation invalide',
+            '104': 'Ce compte n\'a pas d\'identifiant',
+            '105': 'Ce service est inconnu ou n\'existe pas',
+            '110': "L'identité de ce compte est déjà connue dans la base de données.",
+            '111': "L'identité de ce compte est déjà absente de la base de données.",
+            '112': "L'identifiant du compte ne correspond pas au nouveau compte.",
+            '201': "Une erreur est survenue lors d'un appel à l'API de Discord",
+            '202': "Une erreur est survenue lors d'un appel à l'API de Microsoft",
+            '300': "Vous avez besoin d'être connecté pour accéder à cette ressource",
+            '301': "Vous n'avez pas la permission de faire cela",
         }
     }
 };
