@@ -34,12 +34,13 @@ given in the field that ends with `_i18n_data` in the form of a dictionary. For 
   /* ... */
   "message_i18n": "reg.isv",
   "message_i18n_data": {
-    "%service%": "my service"
+    "service": "my service"
   }
 }
 ``` 
 
-Apart from `err.***` keys, the following keys can be returned:
+In the following table, words surrounded by `%` correspond to an entry in the data dictionary (the keys themselves in
+the data dictionary do *not* have `%`). Apart from `err.***` keys, the following keys can be returned:
 
 | Key | English version |
 |:---:| --------------- |

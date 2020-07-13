@@ -98,7 +98,7 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
             return Disallowed(
                 "This Microsoft account is banned (reason: ${ban.reason})",
                 "pc.cba",
-                mapOf("%reason%" to ban.reason)
+                mapOf("reason" to ban.reason)
             )
         }
         return Allowed
@@ -112,7 +112,7 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
             return Disallowed(
                 "You are banned from joining any server at the moment. (Ban reason: ${activeBan.reason})",
                 "pc.jba",
-                mapOf("%reason%" to activeBan.reason)
+                mapOf("reason" to activeBan.reason)
             )
         }
         return Allowed

@@ -137,7 +137,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                             UnknownService.toResponse(
                                 "Invalid service: $service",
                                 "reg.isv",
-                                mapOf("%service%" to service)
+                                mapOf("service" to service)
                             )
                         )
                     }
