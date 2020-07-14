@@ -87,11 +87,12 @@ interface LinkDiscordMessages {
     /**
      * Embed for the help message. Simply shows the URL to the documentation
      */
-    fun getHelpMessage(): DiscordEmbed
+    fun getHelpMessage(withAdminHelp: Boolean): DiscordEmbed
 }
 
 private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/epilink256.png"
-private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png"
+private const val unknownUserLogoUrl =
+    "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png"
 private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/idnotify256.png"
 private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/ban256.png"
 private const val targetsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands?id=user-target"
@@ -213,7 +214,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
 
     override fun getNotRegisteredCommandReply(): DiscordEmbed = DiscordEmbed(
         title = ":x: Not registered",
-        description = "Although you are known as an administrator, you do not have an EpiLink account on this instance. Please create one and try again.",
+        description = "You do not have an EpiLink account on this instance. Please create one and try again.",
         color = "#8A0303",
         footer = poweredByEpiLink
     )
@@ -242,7 +243,12 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     override fun getWrongTargetCommandReply(target: String): DiscordEmbed = DiscordEmbed(
         title = ":x: Invalid target",
         description = "The target you specified ($target, `$target`) is invalid.",
-        fields = listOf(DiscordEmbedField(":grey_question: Need help on targets?", "See $targetsDocsUrl for more information")),
+        fields = listOf(
+            DiscordEmbedField(
+                ":grey_question: Need help on targets?",
+                "See $targetsDocsUrl for more information"
+            )
+        ),
         color = "#8A0303",
         footer = poweredByEpiLink
     )
@@ -254,11 +260,16 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
         footer = poweredByEpiLink
     )
 
-    override fun getHelpMessage(): DiscordEmbed = DiscordEmbed(
+    override fun getHelpMessage(withAdminHelp: Boolean): DiscordEmbed = DiscordEmbed(
         title = ":grey_question: EpiLink Help",
-        description = """
-            Hello there! Some administrative actions can be performed through Discord. For more information on the commands supported by EpiLink, see $commandsDocsUrl 
-        """.trimIndent(),
+        description = "Hello there! You can use a few commands in EpiLink. The main command you can use is `e!lang` to set the language.",
+        fields = if (withAdminHelp) listOf(
+            DiscordEmbedField(
+                "Admin commands",
+                "Some administrative actions can be performed through Discord. For more information on the commands supported by EpiLink, see $commandsDocsUrl",
+                false
+            )
+        ) else listOf(),
         color = "#CCD6DD",
         footer = poweredByEpiLink
     )

@@ -10,6 +10,7 @@ package org.epilink.bot.discord
 
 import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
+import discord4j.core.`object`.entity.MessageChannel
 import discord4j.core.`object`.entity.PrivateChannel
 import discord4j.core.`object`.entity.TextChannel
 import discord4j.core.`object`.entity.User
@@ -68,7 +69,7 @@ internal class LinkDiscord4JFacadeImpl(
 
     override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed) {
         val channel =
-            client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? TextChannel ?: error("Not a text channel")
+            client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? MessageChannel ?: error("Not a message channel")
         channel.createEmbed { it.from(embed) }.awaitSingle()
     }
 
@@ -217,7 +218,7 @@ internal class LinkDiscord4JFacadeImpl(
             message.content.orElse(null) ?: return,
             message.author.orElse(null)?.id?.asString() ?: return,
             message.channelId.asString(),
-            message.guild.awaitFirstOrNull()?.id?.asString() ?: return
+            message.guild.awaitFirstOrNull()?.id?.asString()
         )
     }
 

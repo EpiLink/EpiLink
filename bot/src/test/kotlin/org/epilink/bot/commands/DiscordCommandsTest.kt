@@ -28,6 +28,7 @@ class DiscordCommandsTest : KoinBaseTest(
         single<LinkDiscordCommands> { LinkDiscordCommandsImpl() }
     }
 ) {
+    // TODO reorganize this mess
     @Test
     fun `Do not accept prefix-less messages`() {
         test {
@@ -37,21 +38,25 @@ class DiscordCommandsTest : KoinBaseTest(
     }
 
     @Test
-    fun `Do not accept messages from non-admins`() {
+    fun `Do not accept messages from non-admins if admin-only command`() {
         val embed = mockk<DiscordEmbed>()
         mockHere<LinkDiscordMessages> { every { getNotAnAdminCommandReply() } returns embed }
         val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("5678", embed) } just runs }
-        test {
+        declareCommand("hellothere") {}
+        test(server = "90") {
             handleMessage("e!hellothere", "1234", "5678", "90")
             coVerify { dcf.sendChannelMessage("5678", embed) }
         }
     }
 
     @Test
-    fun `Do not accept commands from unmonitored servers`() {
+    fun `Do not accept commands from unmonitored servers if monitored server is required`() {
         val embed = mockk<DiscordEmbed>()
         mockHere<LinkDiscordMessages> { every { getServerNotMonitoredCommandReply() } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("5678", embed) } just runs }
+        val dcf = mockHere<LinkDiscordClientFacade> {
+            coEvery { sendChannelMessage("5678", embed) } just runs
+        }
+        declareCommand("hellothere", requireMonitored = true) {}
         test("1234") {
             handleMessage("e!hellothere", "1234", "5678", "90")
             coVerify { dcf.sendChannelMessage("5678", embed) }
@@ -59,11 +64,51 @@ class DiscordCommandsTest : KoinBaseTest(
     }
 
     @Test
-    fun `Do not accept messages from non-registered users`() {
+    fun `Accept commands from DMs if monitored server is not required`() {
+        val c = declareCommand("hellothere", PermissionLevel.Anyone, requireMonitored = false) {
+            coEvery { this@declareCommand.run(any(), any(), any(), any(), any()) } just runs
+        }
+        test("1234") {
+            handleMessage("e!hellothere", "1234", "5678", null)
+            coVerify { c.run("e!hellothere", "", null, "5678", null) }
+        }
+    }
+
+    @Test
+    fun `Accept commands from unmonitored servers if monitored server is not required`() {
+        val embed = mockk<DiscordEmbed>()
+        mockHere<LinkDiscordMessages> { every { getServerNotMonitoredCommandReply() } returns embed }
+        val dcf = mockHere<LinkDiscordClientFacade> {
+            coEvery { sendChannelMessage("5678", embed) } just runs
+        }
+        val c = declareCommand("hellothere", PermissionLevel.Anyone, requireMonitored = false) {
+            coEvery { this@declareCommand.run(any(), any(), any(), any(), any()) } just runs
+        }
+        test {
+            handleMessage("e!hellothere", "1234", "5678", "90")
+            coVerify { c.run("e!hellothere", "", null, "5678", "90") }
+        }
+    }
+
+    @Test
+    fun `Do not accept messages from non-registered users if admin command`() {
         val embed = mockk<DiscordEmbed>()
         mockHere<LinkDiscordMessages> { every { getNotRegisteredCommandReply() } returns embed }
         val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("5678", embed) } just runs }
+        declareCommand("hellothere") {}
         test("1234", "90") {
+            handleMessage("e!hellothere", "1234", "5678", "90")
+            coVerify { dcf.sendChannelMessage("5678", embed) }
+        }
+    }
+
+    @Test
+    fun `Do not accept messages from non-registered users if user command`() {
+        val embed = mockk<DiscordEmbed>()
+        mockHere<LinkDiscordMessages> { every { getNotRegisteredCommandReply() } returns embed }
+        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("5678", embed) } just runs }
+        declareCommand("hellothere", PermissionLevel.User) {}
+        test(null, "90") {
             handleMessage("e!hellothere", "1234", "5678", "90")
             coVerify { dcf.sendChannelMessage("5678", embed) }
         }
@@ -75,6 +120,7 @@ class DiscordCommandsTest : KoinBaseTest(
         mockHere<LinkDiscordMessages> { every { getAdminWithNoIdentityCommandReply() } returns embed }
         val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("5678", embed) } just runs }
         val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        declareCommand("hellothere") {}
         test("1234", "90", u) {
             handleMessage("e!hellothere", "1234", "5678", "90")
             coVerify { dcf.sendChannelMessage("5678", embed) }
@@ -109,9 +155,43 @@ class DiscordCommandsTest : KoinBaseTest(
         }
     }
 
-    private fun declareCommand(name: String, initializer: Command.() -> Unit): Command {
+    @Test
+    fun `Accept messages from users if user command`() {
+        val c = declareCommand("hellothere", PermissionLevel.User) {
+            coEvery { run(any(), any(), any(), any(), any()) } just runs
+        }
+        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        test(null, "90", u) {
+            handleMessage("e!hellothere", "1234", "5678", "90")
+        }
+        coVerify {
+            c.run("e!hellothere", "", u, "5678", "90")
+        }
+    }
+
+    @Test
+    fun `Accept messages from unregistered user if anyone command`() {
+        val c = declareCommand("hellothere", PermissionLevel.Anyone) {
+            coEvery { run(any(), any(), any(), any(), any()) } just runs
+        }
+        test(null, "90") {
+            handleMessage("e!hellothere", "1234", "5678", "90")
+        }
+        coVerify {
+            c.run("e!hellothere", "", null, "5678", "90")
+        }
+    }
+
+    private fun declareCommand(
+        name: String,
+        permissionLevel: PermissionLevel = PermissionLevel.Admin,
+        requireMonitored: Boolean = true,
+        initializer: Command.() -> Unit
+    ): Command {
         val c = mockk<Command> {
             every { this@mockk.name } returns name
+            every { this@mockk.permissionLevel } returns permissionLevel
+            every { this@mockk.requireMonitoredServer } returns requireMonitored
             initializer()
         }
         declare(named("discord.commands")) { listOf(c) }

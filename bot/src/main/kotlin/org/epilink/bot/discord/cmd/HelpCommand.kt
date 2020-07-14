@@ -12,8 +12,10 @@ import org.epilink.bot.db.LinkUser
 import org.epilink.bot.discord.Command
 import org.epilink.bot.discord.LinkDiscordClientFacade
 import org.epilink.bot.discord.LinkDiscordMessages
+import org.epilink.bot.discord.PermissionLevel
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.koin.core.qualifier.named
 
 /**
  * Implementation for the help command
@@ -21,14 +23,19 @@ import org.koin.core.inject
 class HelpCommand : Command, KoinComponent {
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()
+    private val admins by inject<List<String>>(named("admins"))
+
     override val name: String = "help"
+    override val permissionLevel = PermissionLevel.Anyone
+    override val requireMonitoredServer = false
+
     override suspend fun run(
         fullCommand: String,
         commandBody: String,
-        sender: LinkUser,
+        sender: LinkUser?,
         channelId: String,
-        guildId: String
+        guildId: String?
     ) {
-        client.sendChannelMessage(channelId, msg.getHelpMessage())
+        client.sendChannelMessage(channelId, msg.getHelpMessage(sender != null && sender.discordId in admins))
     }
 }

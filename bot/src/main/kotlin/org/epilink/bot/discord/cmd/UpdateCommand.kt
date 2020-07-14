@@ -28,13 +28,19 @@ class UpdateCommand : Command, KoinComponent {
     override val name: String
         get() = "update"
 
+    override val permissionLevel = PermissionLevel.Admin
+
+    override val requireMonitoredServer = true
+
     override suspend fun run(
         fullCommand: String,
         commandBody: String,
-        sender: LinkUser,
+        sender: LinkUser?,
         channelId: String,
-        guildId: String
+        guildId: String?
     ) {
+        requireNotNull(sender)
+        requireNotNull(guildId)
         val parsedTarget = targetResolver.parseDiscordTarget(commandBody)
         if (parsedTarget is TargetParseResult.Error) {
             client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
