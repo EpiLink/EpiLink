@@ -32,6 +32,12 @@ export default new Vuex.Store({
         setMeta(state, meta) {
             if (!state.meta) {
                 state.meta = meta;
+                // Change the favicon to the instance logo
+                // We can't bind the favicon in a nice vueish way because it is outside of Vue's virtual DOM (it's
+                // directly in our index.html)
+                if (meta.logo != null) {
+                    document.querySelector("[rel=icon]").href = meta.logo;
+                }
             }
         },
         openPopup(state, popup) {
