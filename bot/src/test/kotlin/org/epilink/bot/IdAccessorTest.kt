@@ -39,15 +39,16 @@ class IdAccessorTest : KoinBaseTest(
         val dms = mockHere<LinkDiscordMessageSender> {
             every { sendDirectMessageLater("targetid", embed) } returns mockk()
         }
+        declareNoOpI18n()
         val dm = mockHere<LinkDiscordMessages> {
-            every { getIdentityAccessEmbed(false, "authorrr", "reasonnn") } returns embed
+            every { getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn") } returns embed
         }
         test {
             val id = accessIdentity(u, false, "authorrr", "reasonnn")
             assertEquals("identity", id)
         }
         coVerify {
-            dm.getIdentityAccessEmbed(false, "authorrr", "reasonnn")
+            dm.getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn")
             dms.sendDirectMessageLater("targetid", embed)
             dbf.getUserEmailWithAccessLog(u, false, "authorrr", "reasonnn")
         }

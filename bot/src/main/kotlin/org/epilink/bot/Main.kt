@@ -24,9 +24,12 @@ import org.epilink.bot.rulebook.loadRules
 import org.epilink.bot.rulebook.loadRulesWithCache
 import org.epilink.bot.rulebook.readScriptSource
 import org.slf4j.LoggerFactory
+import java.nio.charset.StandardCharsets
 import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.*
+import kotlin.streams.asSequence
 import kotlin.system.exitProcess
 
 private val logger = LoggerFactory.getLogger("epilink.main")
@@ -109,8 +112,11 @@ fun main(args: Array<String>) = mainBody("epilink") {
 
     val rulebook = runBlocking { loadRulebook(cfg, cfgPath, cfg.cacheRulebook) }
 
+    logger.debug("Loading Discord strings")
+    val strings = loadDiscordI18n()
+
     logger.debug("Checking config...")
-    checkConfig(cfg, rulebook, cliArgs)
+    checkConfig(cfg, rulebook, cliArgs, strings.keys)
 
     logger.debug("Loading legal texts")
     val legal = cfg.legal.load(cfgPath)
@@ -119,15 +125,17 @@ fun main(args: Array<String>) = mainBody("epilink") {
     val env = LinkServerEnvironment(
         cfg = cfg,
         legal = legal,
-        rulebook = rulebook
+        rulebook = rulebook,
+        discordStrings = strings,
+        defaultDiscordLanguage = cfg.discord.defaultLanguage
     )
 
     logger.info("Environment created, starting ${env.name}")
     env.start()
 }
 
-private fun checkConfig(cfg: LinkConfiguration, rulebook: Rulebook, cliArgs: CliArgs) {
-    val configReport = cfg.isConfigurationSane(cliArgs, rulebook)
+private fun checkConfig(cfg: LinkConfiguration, rulebook: Rulebook, cliArgs: CliArgs, availableDiscordLanguages: Set<String>) {
+    val configReport = cfg.isConfigurationSane(cliArgs, rulebook, availableDiscordLanguages)
     var shouldExit = false
     configReport.forEach {
         when (it) {
@@ -177,3 +185,16 @@ private suspend fun loadRulebook(cfg: LinkConfiguration, cfgPath: Path, enableCa
     }
     return rb ?: Rulebook(mapOf()) { true }
 }
+
+private fun loadDiscordI18n(): Map<String, Map<String, String>> =
+    CliArgs::class.java.getResourceAsStream("/discord_i18n/languages").bufferedReader().use { reader ->
+        reader.lines().asSequence().associateWith {
+            val props = Properties()
+            CliArgs::class.java.getResourceAsStream("/discord_i18n/strings_$it.properties").bufferedReader().use { fileReader ->
+                props.load(fileReader)
+            }
+            val map = mutableMapOf<String, String>()
+            props.forEach { (k, v) -> map[k.toString()] = v.toString() }
+            map
+        }
+    }

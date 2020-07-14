@@ -12,20 +12,15 @@ import org.epilink.bot.db.LinkUser
 import org.epilink.bot.discord.*
 import org.koin.core.KoinComponent
 import org.koin.core.inject
-import org.koin.core.qualifier.named
 
-/**
- * Implementation for the help command
- */
-class HelpCommand : Command, KoinComponent {
-    private val client: LinkDiscordClientFacade by inject()
-    private val msg: LinkDiscordMessages by inject()
-    private val i18n: LinkDiscordMessagesI18n by inject()
-    private val admins by inject<List<String>>(named("admins"))
-
-    override val name: String = "help"
+class LangCommand : Command, KoinComponent {
+    override val name = "lang"
     override val permissionLevel = PermissionLevel.Anyone
     override val requireMonitoredServer = false
+
+    private val client by inject<LinkDiscordClientFacade>()
+    private val messages by inject<LinkDiscordMessages>()
+    private val i18n by inject<LinkDiscordMessagesI18n>()
 
     override suspend fun run(
         fullCommand: String,
@@ -35,9 +30,15 @@ class HelpCommand : Command, KoinComponent {
         channelId: String,
         guildId: String?
     ) {
-        client.sendChannelMessage(
-            channelId,
-            msg.getHelpMessage(i18n.getLanguage(senderId), sender != null && sender.discordId in admins)
-        )
+        if (commandBody.isEmpty()) {
+            client.sendChannelMessage(channelId, messages.getLangHelpEmbed(i18n.getLanguage(sender?.discordId)))
+            return
+        }
+        if(i18n.setLanguage(senderId, commandBody)) {
+            client.sendChannelMessage(channelId, messages.getSuccessCommandReply(i18n.getLanguage(sender?.discordId), "lang.success"))
+        } else {
+            client.sendChannelMessage(channelId, messages.getErrorCommandReply(i18n.getLanguage(sender?.discordId), "lang.invalidLanguage"))
+        }
     }
+
 }

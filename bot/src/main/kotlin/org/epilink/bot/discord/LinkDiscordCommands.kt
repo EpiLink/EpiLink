@@ -139,7 +139,7 @@ interface Command {
      * [requireMonitoredServer] is false. If not null, this guild is monitored if [requireMonitoredServer]
      * is true.
      */
-    suspend fun run(fullCommand: String, commandBody: String, sender: LinkUser?, channelId: String, guildId: String?)
+    suspend fun run(fullCommand: String, commandBody: String, sender: LinkUser?, senderId: String, channelId: String, guildId: String?)
 }
 
 internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
@@ -150,6 +150,7 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()
     private val logger = LoggerFactory.getLogger("epilink.discord.cmd")
+    private val i18n: LinkDiscordMessagesI18n by inject()
 
     private val commands by lazy {
         get<List<Command>>(named("discord.commands")).associateBy { it.name }
@@ -161,28 +162,23 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
                 // return silently
             }
             MessageAcceptStatus.NotAdmin ->
-                client.sendChannelMessage(channelId, msg.getNotAnAdminCommandReply()).also {
-                    logger.debugReject("not an admin", message, senderId, channelId, serverId)
-                }
+                client.sendChannelMessage(channelId, msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.nan"))
+                    .also { logger.debugReject("not an admin", message, senderId, channelId, serverId) }
             NotRegistered ->
-                client.sendChannelMessage(channelId, msg.getNotRegisteredCommandReply()).also {
-                    logger.debugReject("not registered", message, senderId, channelId, serverId)
-                }
+                client.sendChannelMessage(channelId, msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.nr"))
+                    .also { logger.debugReject("not registered", message, senderId, channelId, serverId) }
             AdminNoIdentity ->
-                client.sendChannelMessage(channelId, msg.getAdminWithNoIdentityCommandReply()).also {
-                    logger.debugReject("admin with no identity", message, senderId, channelId, serverId)
-                }
+                client.sendChannelMessage(channelId, msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.awni"))
+                    .also { logger.debugReject("admin with no identity", message, senderId, channelId, serverId) }
             ServerNotMonitored ->
-                client.sendChannelMessage(channelId, msg.getServerNotMonitoredCommandReply()).also {
-                    logger.debugReject("server not monitored", message, senderId, channelId, serverId)
-                }
+                client.sendChannelMessage(channelId, msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.snm"))
+                    .also { logger.debugReject("server not monitored", message, senderId, channelId, serverId) }
             is UnknownCommand ->
-                client.sendChannelMessage(channelId, msg.getInvalidCommandReply(a.name)).also {
-                    logger.debugReject("unknown command", message, senderId, channelId, serverId)
-                }
+                client.sendChannelMessage(channelId, msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.ic", a.name))
+                    .also { logger.debugReject("unknown command", message, senderId, channelId, serverId) }
             is Accept -> {
                 // Do the thing
-                a.command.run(message, a.commandBody, a.user, channelId, serverId).also {
+                a.command.run(message, a.commandBody, a.user, senderId, channelId, serverId).also {
                     logger.debug {
                         "Accepted command '$message' from $senderId @ channel $channelId server $serverId (command name '${a.command.name}' body '${a.commandBody}')"
                     }

@@ -96,3 +96,9 @@ interface LinkIdentityAccess {
      */
     val automated: Boolean
 }
+
+interface LinkDiscordLanguage {
+    val discordId: String
+
+    val language: String
+}

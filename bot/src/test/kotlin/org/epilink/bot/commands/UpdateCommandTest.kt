@@ -12,6 +12,7 @@ import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.LinkUser
+import org.epilink.bot.declareNoOpI18n
 import org.epilink.bot.discord.*
 import org.epilink.bot.discord.cmd.UpdateCommand
 import org.epilink.bot.mockHere
@@ -29,16 +30,18 @@ class UpdateCommandTest : KoinBaseTest(
     fun `Test wrong target cannot be parsed`() {
         mockHere<LinkDiscordTargets> { every { parseDiscordTarget("HELLO THERE") } returns TargetParseResult.Error }
         val embed = mockk<DiscordEmbed>()
-        mockHere<LinkDiscordMessages> { every { getWrongTargetCommandReply("HELLO THERE") } returns embed }
+        declareNoOpI18n()
+        mockHere<LinkDiscordMessages> { every { getWrongTargetCommandReply(any(), "HELLO THERE") } returns embed }
         val f = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } just runs }
         test {
             run(
-                channelId = "channel",
+                fullCommand = "",
                 commandBody = "HELLO THERE",
                 // Unused
-                fullCommand = "",
-                guildId = "",
-                sender = mockk()
+                sender = mockk(),
+                senderId = "",
+                channelId = "channel",
+                guildId = ""
             )
         }
         coVerify { f.sendChannelMessage("channel", embed) }
@@ -52,15 +55,17 @@ class UpdateCommandTest : KoinBaseTest(
             every { parseDiscordTarget("HELLO I AM COMMAND BODY") } returns parsedTarget
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.RoleNotFound("Rooole")
         }
-        mockHere<LinkDiscordMessages> { every { getWrongTargetCommandReply("HELLO I AM COMMAND BODY") } returns embed }
+        declareNoOpI18n()
+        mockHere<LinkDiscordMessages> { every { getWrongTargetCommandReply(any(), "HELLO I AM COMMAND BODY") } returns embed }
         val f = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } just runs }
         test {
             run(
-                channelId = "channel",
+                fullCommand = "",
                 commandBody = "HELLO I AM COMMAND BODY",
-                guildId = "guild",
                 sender = +"user",
-                fullCommand = "" // Unused
+                senderId = "user",
+                channelId = "channel",
+                guildId = "guild" // Unused
             )
         }
         coVerify { f.sendChannelMessage("channel", embed) }
@@ -84,16 +89,18 @@ class UpdateCommandTest : KoinBaseTest(
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
-        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any()) } returns embed }
+        declareNoOpI18n()
+        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any(), any(), "Rooole ID", 3) } returns embed }
         val f = softMockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } just runs }
         // (soft mock because already defined above)
         test {
             run(
-                channelId = "channel",
+                fullCommand = "",
                 commandBody = "HELLO I AM COMMAND BODY",
-                guildId = "guild",
                 sender = +"user",
-                fullCommand = "" // unused
+                senderId = "user",
+                channelId = "channel",
+                guildId = "guild" // unused
             )
         }
         coVerify {
@@ -117,16 +124,18 @@ class UpdateCommandTest : KoinBaseTest(
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
-        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any()) } returns embed }
+        declareNoOpI18n()
+        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any(), any()) } returns embed }
         val f = softMockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } just runs }
         // (soft mock because already defined above)
         test {
             run(
-                channelId = "channel",
+                fullCommand = "",
                 commandBody = "HELLO I AM COMMAND BODY",
-                guildId = "guild",
                 sender = +"user",
-                fullCommand = "" // unused
+                senderId = "user",
+                channelId = "channel",
+                guildId = "guild" // unused
             )
         }
         coVerify {
@@ -153,16 +162,18 @@ class UpdateCommandTest : KoinBaseTest(
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
-        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any()) } returns embed }
+        declareNoOpI18n()
+        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any(), any(), 3) } returns embed }
         val f = softMockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } just runs }
         // (soft mock because already defined above)
         test {
             run(
-                channelId = "channel",
+                fullCommand = "",
                 commandBody = "HELLO I AM COMMAND BODY",
-                guildId = "guild",
                 sender = +"user",
-                fullCommand = "" // unused
+                senderId = "user",
+                channelId = "channel",
+                guildId = "guild" // unused
             )
         }
         coVerify {

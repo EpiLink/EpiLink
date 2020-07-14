@@ -42,11 +42,11 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { sendDirectMessage("userid", any()) } just runs
-            coEvery { isUserInGuild("userid", "guildid") } returns true
             coEvery { getGuildName("Hello") } returns "There"
         }
+        declareNoOpI18n()
         val dm = mockHere<LinkDiscordMessages> {
-            every { getCouldNotJoinEmbed("There", "This is my reason") } returns mockk()
+            every { getCouldNotJoinEmbed(any(), "There", "This is my reason") } returns mockk()
         }
         runBlocking {
             val rm = get<LinkRoleManager>()
@@ -57,7 +57,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
             dcf.sendDirectMessage("userid", any())
             dcf.getGuildName("Hello")
             sd.getUser("userid")
-            dm.getCouldNotJoinEmbed(any(), "This is my reason")
+            dm.getCouldNotJoinEmbed(any(), "There", "This is my reason")
         }
         confirmVerified(sd, dcf, dm)
     }
@@ -92,8 +92,9 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val db = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("jacques") } returns null
         }
+        declareNoOpI18n()
         val dm = mockHere<LinkDiscordMessages> {
-            every { getGreetingsEmbed("guildid", "My Awesome Guild") } returns mockem
+            every { getGreetingsEmbed(any(), "guildid", "My Awesome Guild") } returns mockem
         }
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { sendDirectMessage("jacques", mockem) } just runs
@@ -104,7 +105,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         coVerifyAll {
             cfg.servers
-            dm.getGreetingsEmbed("guildid", "My Awesome Guild")
+            dm.getGreetingsEmbed(any(), "guildid", "My Awesome Guild")
             dcf.sendDirectMessage("jacques", mockem)
             db.getUser("jacques")
         }
@@ -125,8 +126,9 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val db = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("jacques") } returns null
         }
+        declareNoOpI18n()
         val dm = mockHere<LinkDiscordMessages> {
-            every { getGreetingsEmbed("guildid", "My Awesome Guild") } returns null
+            every { getGreetingsEmbed(any(), "guildid", "My Awesome Guild") } returns null
         }
         runBlocking {
             val rm = get<LinkRoleManager>()
@@ -134,7 +136,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         }
         coVerifyAll {
             cfg.servers
-            dm.getGreetingsEmbed("guildid", "My Awesome Guild")
+            dm.getGreetingsEmbed(any(), "guildid", "My Awesome Guild")
             db.getUser("jacques")
         }
         confirmVerified(cfg, dm, db)
@@ -289,8 +291,9 @@ class DiscordRoleManagerTest : KoinBaseTest(
             coEvery { sendDirectMessage("userid", embed) } just runs
             coEvery { getGuildName("HELLO THERE") } returns "GENERAL KENOBI"
         }
+        declareNoOpI18n()
         mockHere<LinkDiscordMessages> {
-            every { getCouldNotJoinEmbed("GENERAL KENOBI", "This is my reason") } returns embed
+            every { getCouldNotJoinEmbed(any(), "GENERAL KENOBI", "This is my reason") } returns embed
         }
         val rm = get<LinkRoleManager>()
         runBlocking {

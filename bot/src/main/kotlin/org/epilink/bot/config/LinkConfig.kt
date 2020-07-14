@@ -212,7 +212,11 @@ data class LinkDiscordConfig(
     /**
      * The list of Discord servers that should be monitored by EpiLink
      */
-    val servers: List<LinkDiscordServerSpec> = listOf()
+    val servers: List<LinkDiscordServerSpec> = listOf(),
+    /**
+     * The default language to use in the bot
+     */
+    val defaultLanguage: String = "en"
 )
 
 
@@ -350,7 +354,8 @@ fun loadConfigFromFile(path: Path): LinkConfiguration =
  */
 fun LinkConfiguration.isConfigurationSane(
     @Suppress("UNUSED_PARAMETER") args: CliArgs,
-    rulebook: Rulebook
+    rulebook: Rulebook,
+    availableDiscordLanguages: Set<String>
 ): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
     if (redis == null) {
@@ -365,6 +370,14 @@ fun LinkConfiguration.isConfigurationSane(
     // Warn if the tenant is broad (common, consumers, organizations) and no e-mail validation is in place
     if (tokens.msftTenant in setOf("common", "consumers", "organizations") && rulebook.validator == null) {
         report += ConfigWarning("You are using a non-specific Microsoft tenant (that allows anyone to log in) without e-mail validation: people from domains you do not trust may be accepted by EpiLink!")
+    }
+
+    if (discord.defaultLanguage !in availableDiscordLanguages) {
+        val languages = availableDiscordLanguages.joinToString(", ")
+        report += ConfigError(
+            true,
+            "The default language you chose (${discord.defaultLanguage}) is not available. The available languages are $languages"
+        )
     }
 
     return report
@@ -413,7 +426,10 @@ fun LinkTokens.check(): List<ConfigReportElement> {
 fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
     val reports = mutableListOf<ConfigReportElement>()
     if (this.frontendUrl?.endsWith("/") == false) { // Equality check because left side can be null
-        reports += ConfigError(true, "The frontendUrl value in the server config must have a trailing slash (add a / at the end of your URL)")
+        reports += ConfigError(
+            true,
+            "The frontendUrl value in the server config must have a trailing slash (add a / at the end of your URL)"
+        )
     }
     return reports
 }

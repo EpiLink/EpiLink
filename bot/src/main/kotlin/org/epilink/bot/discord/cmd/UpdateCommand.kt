@@ -24,6 +24,7 @@ class UpdateCommand : Command, KoinComponent {
     private val targetResolver: LinkDiscordTargets by inject()
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()
+    private val i18n: LinkDiscordMessagesI18n by inject()
 
     override val name: String
         get() = "update"
@@ -36,6 +37,7 @@ class UpdateCommand : Command, KoinComponent {
         fullCommand: String,
         commandBody: String,
         sender: LinkUser?,
+        senderId: String,
         channelId: String,
         guildId: String?
     ) {
@@ -43,34 +45,41 @@ class UpdateCommand : Command, KoinComponent {
         requireNotNull(guildId)
         val parsedTarget = targetResolver.parseDiscordTarget(commandBody)
         if (parsedTarget is TargetParseResult.Error) {
-            client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
+            client.sendChannelMessage(
+                channelId,
+                msg.getWrongTargetCommandReply(i18n.getLanguage(senderId), commandBody)
+            )
             return
         }
         val target = targetResolver.resolveDiscordTarget(parsedTarget as TargetParseResult.Success, guildId)
-        val (toInvalidate, message) = when (target) {
+        val (toInvalidate, messageAndReplace) = when (target) {
             is TargetResult.User -> {
                 logger.debug { "Updating ${target.id}'s roles globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
-                listOf(target.id) to "Updating the target's roles globally. This may take some time."
+                listOf(target.id) to ("update.user" to arrayOf())
             }
             is TargetResult.Role -> {
                 logger.debug { "Updating everyone with role ${target.id} globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
                 client.getMembersWithRole(target.id, guildId).let {
-                    it to "Updating members with role ${target.id} (${it.size} total) globally. This may take some time."
+                    it to ("update.role" to arrayOf<Any>(target.id, it.size))
                 }
             }
             TargetResult.Everyone -> {
                 logger.debug { "Updating everyone on server $guildId globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
                 client.getMembers(guildId).let {
-                    it to "Updating everyone present on this server (${it.size} total) globally. This may take some time."
+                    it to ("update.everyone" to arrayOf(it.size))
                 }
             }
             is TargetResult.RoleNotFound -> {
                 logger.debug { "Attempted update on invalid target $commandBody (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
-                client.sendChannelMessage(channelId, msg.getWrongTargetCommandReply(commandBody))
+                client.sendChannelMessage(
+                    channelId,
+                    msg.getWrongTargetCommandReply(i18n.getLanguage(senderId), commandBody)
+                )
                 return
             }
         }
         toInvalidate.forEach { roleManager.invalidateAllRoles(it, false) }
-        client.sendChannelMessage(channelId, msg.getSuccessCommandReply(message))
+        val (message, replace) = messageAndReplace
+        client.sendChannelMessage(channelId, msg.getSuccessCommandReply(i18n.getLanguage(senderId), message, *replace))
     }
 }

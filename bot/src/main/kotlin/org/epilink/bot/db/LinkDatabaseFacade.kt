@@ -118,4 +118,10 @@ interface LinkDatabaseFacade {
      * Retrieve all of the identity accesses where the target has the given Discord ID
      */
     suspend fun getIdentityAccessesFor(user: LinkUser): Collection<LinkIdentityAccess>
+
+    suspend fun getLanguagePreference(discordId: String): String?
+
+    suspend fun recordLanguagePreference(discordId: String, preference: String)
+
+    suspend fun clearLanguagePreference(discordId: String)
 }

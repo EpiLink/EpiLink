@@ -38,8 +38,9 @@ class BanManagerTest : KoinBaseTest(
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRoles("targetid") } returns mockk()
         }
+        declareNoOpI18n()
         mockHere<LinkDiscordMessages> {
-            every { getBanNotification("the description", null) } returns embed
+            every { getBanNotification(any(), "the description", null) } returns embed
         }
         val dms = mockHere<LinkDiscordMessageSender> {
             every { sendDirectMessageLater("targetid", embed) } returns mockk()

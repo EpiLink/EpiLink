@@ -14,6 +14,7 @@ import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessages
+import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
 import org.koin.core.KoinComponent
@@ -80,6 +81,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.idaccessor")
     private val facade: LinkDatabaseFacade by inject()
     private val messages: LinkDiscordMessages by inject()
+    private val i18n: LinkDiscordMessagesI18n by inject()
     private val discordSender: LinkDiscordMessageSender by inject()
     private val privacy: LinkPrivacy by inject()
 
@@ -91,7 +93,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
         if (!facade.isUserIdentifiable(user)) {
             throw LinkException("User is not identifiable")
         }
-        val embed = messages.getIdentityAccessEmbed(automated, author, reason)
+        val embed = messages.getIdentityAccessEmbed(i18n.getLanguage(user.discordId), automated, author, reason)
         if (embed != null)
             discordSender.sendDirectMessageLater(user.discordId, embed)
         return facade.getUserEmailWithAccessLog(user, automated, author, reason)
