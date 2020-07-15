@@ -23,5 +23,8 @@ object Allowed : DatabaseAdvisory()
  * friendly string.
  *
  * @property reason The explanation behind the disallowed advice. User-friendly.
+ * @property reasonI18n An I18n key for the reason
+ * @property reasonI18nData An I18n replacement dictionary for the i18n key, with the replacement keys and actual
+ * values.
  */
 class Disallowed(val reason: String, val reasonI18n: String, val reasonI18nData: Map<String, String> = mapOf()): DatabaseAdvisory()

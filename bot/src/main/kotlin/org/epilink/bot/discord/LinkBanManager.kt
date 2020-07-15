@@ -8,7 +8,6 @@
  */
 package org.epilink.bot.discord
 
-import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkEndpointUserException
 import org.epilink.bot.StandardErrorCodes.InvalidId
 import org.epilink.bot.db.LinkBan

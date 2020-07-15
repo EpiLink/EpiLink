@@ -13,18 +13,41 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 import java.util.*
 
-class DiscordI18nContext(val language: String) {
+/**
+ * A utility class for providing a nicer way of retrieving I18n strings
+ */
+class DiscordI18nContext(private val language: String) {
+    /**
+     * Get the key with the language inferred from this I18n context.
+     */
     operator fun LinkDiscordMessagesI18n.get(key: String) = get(language, key)
+
+    /**
+     * Format the given string with the given language, inferring the language from this i18n context.
+     */
     fun String.f(vararg objects: Any): String {
         val locale = Locale.forLanguageTag(language)
         return String.format(locale, this, *objects)
     }
 }
 
+/**
+ * I18n support for the Discord messages
+ */
 interface LinkDiscordMessagesI18n {
+    /**
+     * A set of all of the supported languages (by language code)
+     */
     val availableLanguages: Set<String>
+
+    /**
+     * Get the preferred language of a user, or the default language if [discordId] is null.
+     */
     suspend fun getLanguage(discordId: String?): String
 
+    /**
+     * Get the translated string for a given language. No particular formatting is performed.
+     */
     fun get(language: String, key: String): String
 
     /**

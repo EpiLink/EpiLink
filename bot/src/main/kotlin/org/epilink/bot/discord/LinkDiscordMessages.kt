@@ -49,6 +49,11 @@ interface LinkDiscordMessages {
      */
     fun getBanNotification(language: String, banReason: String, banExpiry: Instant?): DiscordEmbed?
 
+    /**
+     * Get an error command reply for a generic command in a specific language. Two sub-keys are automatically used:
+     * `key.title` and `key.description`, where key is the [key] argument. The [objects] are used for formatting the
+     * description only.
+     */
     fun getErrorCommandReply(language: String, key: String, vararg objects: Any): DiscordEmbed
 
     /**
@@ -65,6 +70,10 @@ interface LinkDiscordMessages {
      * Embed for the help message. Simply shows the URL to the documentation
      */
     fun getHelpMessage(language: String, withAdminHelp: Boolean): DiscordEmbed
+
+    /**
+     * Embed for the e!lang command's help message.
+     */
     fun getLangHelpEmbed(language: String): DiscordEmbed
 }
 
@@ -233,7 +242,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     }
 
     override fun getLangHelpEmbed(language: String): DiscordEmbed = language.ctx {
-        val languageLines = i18n.availableLanguages.map { i18n.get(it, "languageLine") }.joinToString("\n")
+        val languageLines = i18n.availableLanguages.joinToString("\n") { i18n.get(it, "languageLine") }
         DiscordEmbed(
             title = i18n["lang.help.title"],
             description = i18n["lang.help.description"],

@@ -13,6 +13,9 @@ import org.epilink.bot.discord.*
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
+/**
+ * The e!lang command that allows any user to change the EpiLink Discord bot's language.
+ */
 class LangCommand : Command, KoinComponent {
     override val name = "lang"
     override val permissionLevel = PermissionLevel.Anyone

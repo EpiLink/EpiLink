@@ -492,6 +492,9 @@ private object ExposedDiscordLanguages : IntIdTable("DiscordLanguages") {
     val language = varchar("language", 16)
 }
 
+/**
+ * The DAO class for language preferences
+ */
 class ExposedDiscordLanguage(id: EntityID<Int>) : IntEntity(id), LinkDiscordLanguage {
     companion object : IntEntityClass<ExposedDiscordLanguage>(ExposedDiscordLanguages)
 

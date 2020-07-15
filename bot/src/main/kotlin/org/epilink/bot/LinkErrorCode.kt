@@ -34,6 +34,10 @@ fun LinkErrorCode.toErrorData(): ApiErrorData = ApiErrorData(code, description)
  * the error information with the error code.
  */
 fun LinkErrorCode.toResponse() = ApiErrorResponse(description, "err.$code", mapOf(), toErrorData())
+
+/**
+ * Create a response from this error code with the given description data.
+ */
 fun LinkErrorCode.toResponse(
     description: String,
     description_i18n: String,
@@ -127,6 +131,7 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     /**
      * Sent when an API call made to the admin endpoints is invalid
      */
+    @Suppress("unused")
     InvalidAdminRequest(400, "Invalid administration request."),
 
     /**

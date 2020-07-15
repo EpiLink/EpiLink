@@ -24,7 +24,6 @@ import org.epilink.bot.rulebook.loadRules
 import org.epilink.bot.rulebook.loadRulesWithCache
 import org.epilink.bot.rulebook.readScriptSource
 import org.slf4j.LoggerFactory
-import java.nio.charset.StandardCharsets
 import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.Paths

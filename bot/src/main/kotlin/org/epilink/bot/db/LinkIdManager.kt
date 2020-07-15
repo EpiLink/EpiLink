@@ -50,28 +50,28 @@ interface LinkIdManager {
      * hash associated with the new e-mail address.
      *
      * This function checks if the user already has their identity recorded in the database, in which case this function
-     * throws a [LinkEndpointException] with error [IdentityAlreadyKnown].
+     * throws a [LinkEndpointUserException] with error [IdentityAlreadyKnown].
      *
      * This function also checks whether the Microsoft ID we remember for them matches the new one. If not, this
-     * function throws a [LinkEndpointException] with error [NewIdentityDoesNotMatch].
+     * function throws a [LinkEndpointUserException] with error [NewIdentityDoesNotMatch].
      *
      * If all goes well, the user then has a true identity created for them.
      *
      * @param user The user of whom we want to relink the identity
      * @param email The new e-mail address
      * @param associatedMsftId The Microsoft ID (not hashed) associated with the new e-mail address
-     * @throws LinkEndpointException If the identity of the user is already known, or if the given new ID does not
+     * @throws LinkEndpointUserException If the identity of the user is already known, or if the given new ID does not
      * match the previous one
      */
     @UsesTrueIdentity
     suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String)
 
     /**
-     * Delete the identity of the user with the given Discord ID from the database, or throw a [LinkEndpointException]
-     * if no such identity exists.
+     * Delete the identity of the user with the given Discord ID from the database, or throw a
+     * [LinkEndpointUserException] if no such identity exists.
      *
      * @param user The user whose identity we should remove
-     * @throws LinkEndpointException If the user does not have any identity recorded in the first place.
+     * @throws LinkEndpointUserException If the user does not have any identity recorded in the first place.
      */
     @UsesTrueIdentity
     suspend fun deleteUserIdentity(user: LinkUser)
