@@ -211,6 +211,8 @@ You should also add redirection URIs based on where the front-end is served. The
 discord:
   welomeUrl: ~
   commandsPrefix: ...
+  defaultLanguage: ...
+  preferredLanguages: [...]
   roles: []
   servers:
     - id: ...
@@ -220,6 +222,8 @@ discord:
 
 * `welcomeUrl`: The URL the bot will send in the default welcome message. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can use a custom embed instead of the default one with `welcomeEmbed` in each server -- the `welcomeUrl` value is ignored for servers which use a custom welcome embed. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
 * `commandsPrefix` *(optional, `e!` by default)*: The command prefix that EpiLink should use for accepting commands from admins.
+* `defaultLanguage` *(optional, `en` English by default)*: The language EpiLink uses to send Discord messages to users if said users did not configure one for themselves. *(since version 0.5.0)*
+* `preferredLanguages` *(optional, `[defaultLanguage]` by default)*: The languages EpiLink will prioritize over others. When sending a DM to users for the first time, these are the languages that will be used, and the languages in the list will appear above all others in the language list sent by `e!lang`. This list must contain at least the default language. *(since version 0.5.0)*
 * `roles` *(optional, empty list `[]` by default)*: A list of [custom roles specifications](#discord-custom-roles-configuration). You can omit it if you do not use custom roles.
 * `servers`: A list of [server configurations](#discord-server-configuration).
 
