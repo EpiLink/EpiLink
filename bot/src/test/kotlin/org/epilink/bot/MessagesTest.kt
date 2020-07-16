@@ -61,7 +61,7 @@ class MessagesTest : KoinBaseTest(
             coEvery { getLanguage(any()) } returns ""
             every { get(any(), capture(keySlot)) } answers {
                 keySlot.captured.let {
-                    if(it == "greet.authreg" || it == "greet.welcome")
+                    if(it == "greet.title" || it == "greet.welcome")
                         "$it::%s"
                     else it
                 }
@@ -70,7 +70,7 @@ class MessagesTest : KoinBaseTest(
         val dm = get<LinkDiscordMessages>()
         val embed = dm.getGreetingsEmbed("", "guildid", "My Guild")
         assertNotNull(embed)
-        assertEquals("greet.authreg::My Guild", embed.title)
+        assertEquals("greet.title::My Guild", embed.title)
         assertEquals("greet.welcome::My Guild", embed.description)
         assertNotNull(embed.color, "Has color")
         assertNotNull(embed.thumbnail, "Has a thumbnail")

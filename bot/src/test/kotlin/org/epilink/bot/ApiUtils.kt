@@ -158,6 +158,8 @@ object NoOpI18n : LinkDiscordMessagesI18n {
 
     override val preferredLanguages = listOf("")
 
+    override val defaultLanguage = ""
+
     override suspend fun getLanguage(discordId: String?): String = ""
 
     override fun get(language: String, key: String): String = key
