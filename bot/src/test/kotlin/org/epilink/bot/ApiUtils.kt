@@ -156,6 +156,8 @@ suspend fun Scope.injectUserIntoAttributes(
 object NoOpI18n : LinkDiscordMessagesI18n {
     override val availableLanguages = setOf("")
 
+    override val preferredLanguages = listOf("")
+
     override suspend fun getLanguage(discordId: String?): String = ""
 
     override fun get(language: String, key: String): String = key

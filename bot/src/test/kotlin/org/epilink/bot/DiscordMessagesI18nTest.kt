@@ -28,7 +28,8 @@ class DiscordMessagesI18nTest : KoinBaseTest(
                     "one" to mapOf("hello" to "Bonjour", "goodbye" to "Au revoir"),
                     "two" to mapOf("hello" to "Buongiorno")
                 ),
-                "one"
+                "one",
+                listOf("one")
             )
         }
     }
