@@ -11,6 +11,7 @@ package org.epilink.bot.discord
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -64,14 +65,20 @@ internal class LinkDiscordMessagesI18nImpl(
 
     private val db by inject<LinkDatabaseFacade>()
 
+    private val logger = LoggerFactory.getLogger("epilink.discord.i18n")
+
     override val availableLanguages = strings.keys
 
     override fun get(language: String, key: String) =
-        // TODO add proper logging in fallback cases
-        strings[language]?.get(key) ?: strings[default]?.get(key) ?: key
+        strings[language]?.get(key)
+            ?: strings[default]?.get(key).also {
+                logger.warn("Key $key not found for language $language")
+            } ?: key.also {
+                logger.error("Key $key not found for in default language $default nor in language $language")
+            }
 
     override suspend fun setLanguage(discordId: String, language: String): Boolean {
-        return if(language in availableLanguages) {
+        return if (language in availableLanguages) {
             db.recordLanguagePreference(discordId, language)
             true
         } else {
@@ -80,7 +87,7 @@ internal class LinkDiscordMessagesI18nImpl(
     }
 
     override suspend fun getLanguage(discordId: String?): String {
-        if(discordId == null) {
+        if (discordId == null) {
             return default
         }
         val x = db.getLanguagePreference(discordId)
