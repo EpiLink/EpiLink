@@ -216,7 +216,12 @@ data class LinkDiscordConfig(
     /**
      * The default language to use in the bot
      */
-    val defaultLanguage: String = "en"
+    val defaultLanguage: String = "en",
+    /**
+     * The preferred languages list. Used for the first "change your language" prompt (only preferred languages are
+     * shown) + preferred languages are shown first in the e!lang list.
+     */
+    val preferredLanguages: List<String> = listOf(defaultLanguage)
 )
 
 
@@ -372,11 +377,25 @@ fun LinkConfiguration.isConfigurationSane(
         report += ConfigWarning("You are using a non-specific Microsoft tenant (that allows anyone to log in) without e-mail validation: people from domains you do not trust may be accepted by EpiLink!")
     }
 
+    val languages = availableDiscordLanguages.joinToString(", ")
     if (discord.defaultLanguage !in availableDiscordLanguages) {
-        val languages = availableDiscordLanguages.joinToString(", ")
         report += ConfigError(
             true,
             "The default language you chose (${discord.defaultLanguage}) is not available. The available languages are $languages"
+        )
+    }
+
+    val unavailablePreferredLanguages = discord.preferredLanguages - availableDiscordLanguages
+    if (unavailablePreferredLanguages.isNotEmpty()) {
+        report += ConfigError(
+            true,
+            "The preferred languages contain unavailable languages (${unavailablePreferredLanguages.joinToString(", ")}). The available languages are $languages"
+        )
+    }
+    if (discord.defaultLanguage !in discord.preferredLanguages) {
+        report += ConfigError(
+            true,
+            "The preferred languages list ${discord.preferredLanguages.joinToString(", ")} must contain the default language (${discord.defaultLanguage})."
         )
     }
 

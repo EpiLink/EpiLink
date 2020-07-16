@@ -82,7 +82,9 @@ class LinkServerEnvironment(
         single { cfg.privacy }
         // Discord bot
         single<LinkDiscordMessages> { LinkDiscordMessagesImpl() }
-        single<LinkDiscordMessagesI18n> { LinkDiscordMessagesI18nImpl(discordStrings, defaultDiscordLanguage) }
+        single<LinkDiscordMessagesI18n> {
+            LinkDiscordMessagesI18nImpl(discordStrings, defaultDiscordLanguage, cfg.discord.preferredLanguages)
+        }
         // Role manager
         single<LinkRoleManager> { LinkRoleManagerImpl() }
         // Facade
@@ -93,11 +95,13 @@ class LinkServerEnvironment(
         single<LinkBanManager> { LinkBanManagerImpl() }
         single<LinkDiscordCommands> { LinkDiscordCommandsImpl() }
         single<LinkDiscordTargets> { LinkDiscordTargetsImpl() }
-        single<List<Command>>(named("discord.commands")) { listOf(
-            UpdateCommand(),
-            HelpCommand(),
-            LangCommand()
-        ) }
+        single<List<Command>>(named("discord.commands")) {
+            listOf(
+                UpdateCommand(),
+                HelpCommand(),
+                LangCommand()
+            )
+        }
     }
 
     /**

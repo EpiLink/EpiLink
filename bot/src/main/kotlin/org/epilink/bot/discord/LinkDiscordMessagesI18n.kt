@@ -37,9 +37,19 @@ class DiscordI18nContext(private val language: String) {
  */
 interface LinkDiscordMessagesI18n {
     /**
+     * The default language. Guaranteed to be in [availableLanguages].
+     */
+    val defaultLanguage: String
+
+    /**
      * A set of all of the supported languages (by language code)
      */
     val availableLanguages: Set<String>
+
+    /**
+     * A list of preferred languages
+     */
+    val preferredLanguages: List<String>
 
     /**
      * Get the preferred language of a user, or the default language if [discordId] is null.
@@ -60,7 +70,8 @@ interface LinkDiscordMessagesI18n {
 
 internal class LinkDiscordMessagesI18nImpl(
     private val strings: Map<String, Map<String, String>>,
-    private val default: String
+    override val defaultLanguage: String,
+    preferred: List<String>
 ) : LinkDiscordMessagesI18n, KoinComponent {
 
     private val db by inject<LinkDatabaseFacade>()
@@ -69,12 +80,14 @@ internal class LinkDiscordMessagesI18nImpl(
 
     override val availableLanguages = strings.keys
 
+    override val preferredLanguages = preferred.distinct()
+
     override fun get(language: String, key: String) =
         strings[language]?.get(key)
-            ?: strings[default]?.get(key).also {
-                logger.warn("Key $key not found for language $language")
+            ?: strings[defaultLanguage]?.get(key).also {
+                logger.warn("Key $key not found in language $language")
             } ?: key.also {
-                logger.error("Key $key not found for in default language $default nor in language $language")
+                logger.error("Key $key not found for in default language $defaultLanguage")
             }
 
     override suspend fun setLanguage(discordId: String, language: String): Boolean {
@@ -88,9 +101,9 @@ internal class LinkDiscordMessagesI18nImpl(
 
     override suspend fun getLanguage(discordId: String?): String {
         if (discordId == null) {
-            return default
+            return defaultLanguage
         }
         val x = db.getLanguagePreference(discordId)
-        return if (x == null || x !in availableLanguages) default else x
+        return if (x == null || x !in availableLanguages) defaultLanguage else x
     }
 }

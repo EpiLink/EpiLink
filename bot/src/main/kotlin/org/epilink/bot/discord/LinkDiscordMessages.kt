@@ -75,6 +75,11 @@ interface LinkDiscordMessages {
      * Embed for the e!lang command's help message.
      */
     fun getLangHelpEmbed(language: String): DiscordEmbed
+
+    /**
+     * Get the "welcome please choose a language" embed in the default language of the instance.
+     */
+    fun getWelcomeChooseLanguageEmbed(): DiscordEmbed
 }
 
 private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/epilink256.png"
@@ -116,7 +121,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
         if (!guildConfig.enableWelcomeMessage)
             null
         else guildConfig.welcomeEmbed ?: DiscordEmbed(
-            title = i18n["greet.authreg"].f(guildName),
+            title = i18n["greet.title"].f(guildName),
             description = i18n["greet.welcome"].f(guildName),
             fields = run {
                 val ml = mutableListOf<DiscordEmbedField>()
@@ -190,11 +195,11 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     override fun getErrorCommandReply(
         language: String,
         key: String,
-        vararg descriptionObjects: Any
+        vararg objects: Any
     ): DiscordEmbed = language.ctx {
         DiscordEmbed(
             title = i18n["$key.title"],
-            description = i18n["$key.description"].f(descriptionObjects),
+            description = i18n["$key.description"].f(objects),
             color = errorRed,
             footer = poweredByEpiLink
         )
@@ -242,13 +247,29 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     }
 
     override fun getLangHelpEmbed(language: String): DiscordEmbed = language.ctx {
-        val languageLines = i18n.availableLanguages.joinToString("\n") { i18n.get(it, "languageLine") }
+        // Allows for the preferred languages to show up before all of the available languages
+        val languages = i18n.preferredLanguages + (i18n.availableLanguages - i18n.preferredLanguages)
+        val languageLines = languages.joinToString("\n") { i18n.get(it, "languageLine") }
         DiscordEmbed(
             title = i18n["lang.help.title"],
             description = i18n["lang.help.description"],
-            fields = listOf(DiscordEmbedField(i18n["lang.help.availableLanguages"], languageLines)),
+            fields = listOf(
+                DiscordEmbedField(i18n["lang.help.change.title"], i18n["lang.help.change.description"], false),
+                DiscordEmbedField(i18n["lang.help.clear.title"], i18n["lang.help.clear.description"], false),
+                DiscordEmbedField(i18n["lang.help.availableLanguages"], languageLines, false)
+            ),
             color = helpGrey,
             footer = poweredByEpiLink
+        )
+    }
+
+    override fun getWelcomeChooseLanguageEmbed(): DiscordEmbed = i18n.defaultLanguage.ctx {
+        DiscordEmbed(
+            title = i18n["welcomeLang.current"],
+            description = i18n.preferredLanguages.joinToString("\n\n") { i18n.get(it, "welcomeLang.description") },
+            color = helloBlue
+            // No powered by epilink footer because this embed is sent right before another one. Having a "powered
+            // by epilink" footer on both is obnoxious.
         )
     }
 }

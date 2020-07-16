@@ -45,12 +45,15 @@ class I18nTests {
     @Test
     fun `Test language list validity`() {
         val missingLanguageLine = languages.mapNotNull { (k, v) ->
-            if (!v.containsKey("languageLine")) {
+            if (!v.containsKey("languageLine") || !v.containsKey("welcomeLang.current") || !v.containsKey("welcomeLang.description")) {
                 k
             } else null
         }
-        if(missingLanguageLine.isNotEmpty()) {
-            fail("The following language(s) are missing a languageLine key: " + missingLanguageLine.joinToString(", "))
+        if (missingLanguageLine.isNotEmpty()) {
+            fail(
+                "The following language(s) are missing a languageLine, welcomeLang.current and/or welcomeLang.description key: " +
+                        missingLanguageLine.joinToString(", ")
+            )
         }
     }
 }

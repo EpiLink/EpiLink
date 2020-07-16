@@ -45,6 +45,7 @@ internal class LinkDiscord4JFacadeImpl(
     private val logger = LoggerFactory.getLogger("epilink.bot.discord4j")
     private val roleManager: LinkRoleManager by inject()
     private val commands: LinkDiscordCommands by inject()
+    private val messages: LinkDiscordMessages by inject()
 
     /**
      * Coroutine scope used for firing things in events
@@ -69,11 +70,18 @@ internal class LinkDiscord4JFacadeImpl(
     override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed) {
         val channel =
             client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? MessageChannel ?: error("Not a message channel")
+        sendWelcomeMessageIfEmptyDmChannel(channel)
         channel.createEmbed { it.from(embed) }.awaitSingle()
     }
 
+    private suspend inline fun sendWelcomeMessageIfEmptyDmChannel(channel: MessageChannel) {
+        if (channel is PrivateChannel && channel.lastMessageId.isEmpty) {
+            channel.createEmbed { it.from(messages.getWelcomeChooseLanguageEmbed()) }.awaitSingle()
+        }
+    }
+
     private suspend fun sendDirectMessage(discordUser: User, embed: EmbedCreateSpec.() -> Unit) =
-        discordUser.getCheckedPrivateChannel()
+        discordUser.getCheckedPrivateChannel().also { sendWelcomeMessageIfEmptyDmChannel(it) }
             .createEmbed(embed).awaitSingle()
 
     override suspend fun getGuilds(): List<String> =

@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.discord.cmd
 
+import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.discord.*
 import org.koin.core.KoinComponent
@@ -24,6 +25,7 @@ class LangCommand : Command, KoinComponent {
     private val client by inject<LinkDiscordClientFacade>()
     private val messages by inject<LinkDiscordMessages>()
     private val i18n by inject<LinkDiscordMessagesI18n>()
+    private val db by inject<LinkDatabaseFacade>()
 
     override suspend fun run(
         fullCommand: String,
@@ -33,14 +35,34 @@ class LangCommand : Command, KoinComponent {
         channelId: String,
         guildId: String?
     ) {
-        if (commandBody.isEmpty()) {
-            client.sendChannelMessage(channelId, messages.getLangHelpEmbed(i18n.getLanguage(sender?.discordId)))
-            return
-        }
-        if(i18n.setLanguage(senderId, commandBody)) {
-            client.sendChannelMessage(channelId, messages.getSuccessCommandReply(i18n.getLanguage(sender?.discordId), "lang.success"))
-        } else {
-            client.sendChannelMessage(channelId, messages.getErrorCommandReply(i18n.getLanguage(sender?.discordId), "lang.invalidLanguage"))
+        val previousLanguage = i18n.getLanguage(sender?.discordId)
+        when {
+            commandBody.isEmpty() ->
+                // e!lang
+                client.sendChannelMessage(channelId, messages.getLangHelpEmbed(previousLanguage))
+            commandBody == "clear" -> {
+                // e!lang clear
+                db.clearLanguagePreference(senderId)
+                client.sendChannelMessage(
+                    channelId,
+                    // We don't use previousLanguage because otherwise people may think their language wasn't actually
+                    // cleared
+                    messages.getSuccessCommandReply(i18n.getLanguage(senderId), "lang.clearSuccess")
+                )
+            }
+            // Try to set the language
+            i18n.setLanguage(senderId, commandBody) -> {
+                client.sendChannelMessage(
+                    channelId,
+                    // We don't use previousLanguage because we should send this in the newly chosen language
+                    messages.getSuccessCommandReply(i18n.getLanguage(senderId), "lang.success")
+                )
+            }
+            else ->
+                client.sendChannelMessage(
+                    channelId,
+                    messages.getErrorCommandReply(previousLanguage, "lang.invalidLanguage")
+                )
         }
     }
 
