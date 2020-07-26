@@ -266,7 +266,10 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     override fun getWelcomeChooseLanguageEmbed(): DiscordEmbed = i18n.defaultLanguage.ctx {
         DiscordEmbed(
             title = i18n["welcomeLang.current"],
-            description = i18n.preferredLanguages.joinToString("\n\n") { i18n.get(it, "welcomeLang.description") },
+            description = i18n["welcomeLang.description"] + "\n\n" +
+                    (i18n.preferredLanguages - i18n.defaultLanguage).joinToString("\n\n") {
+                        i18n.get(it, "welcomeLang.change")
+                    },
             color = helloBlue
             // No powered by epilink footer because this embed is sent right before another one. Having a "powered
             // by epilink" footer on both is obnoxious.
