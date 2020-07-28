@@ -282,6 +282,7 @@ The EpiLink role names that begin with a `_` are roles that EpiLink determines a
 
 * `_known`: The user has an account at EpiLink, is not banned and is authenticated. Use this role when you need to know that the user is part of the organization.
 * `_identified`: The user is `_known` and also has his true identity kept in the system. That is, you could potentially get their e-mail address. Use this role when you need to also be able to determine who the user is at any time.
+* `_notIdentified`: The user is `_known` but does not have their true identity kept in the system (i.e. `_known` but not `_identified`).
 
 Role names that do not begin with a `_` are custom roles you define through [rules in rulebooks](Rulebooks.md).
 

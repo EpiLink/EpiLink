@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Added I18n support on the back-end, including Discord I18n with the `e!lang` command. ([#204](https://github.com/EpiLink/EpiLink/pull/204))
+* Added the `_notIdentified` EpiLink role. You can now attribute roles to users who are registered but do not have their identity stored in the database. ([#211](https://github.com/EpiLink/EpiLink/pull/211))
 
 ### Changed
 
