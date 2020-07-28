@@ -304,9 +304,13 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
 
     // Computes the base set is the set of standard EpiLink roles (_known, _identified)
     private fun getBaseRoleSetForKnown(identifiable: Boolean): Set<String> =
-        mutableSetOf(StandardRoles.Known.roleName).apply {
-            if (identifiable) add(StandardRoles.Identified.roleName)
-        }
+        mutableSetOf(
+            StandardRoles.Known.roleName,
+            if (identifiable)
+                StandardRoles.Identified.roleName
+            else
+                StandardRoles.NotIdentified.roleName
+        )
 
     @UsesTrueIdentity
     private suspend fun roleUpdateIdAccess(

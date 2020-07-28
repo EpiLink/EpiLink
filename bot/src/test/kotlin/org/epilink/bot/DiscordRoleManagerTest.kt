@@ -317,7 +317,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val rm = get<LinkRoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
-            assertEquals(setOf("_known"), roles)
+            assertEquals(setOf("_known", "_notIdentified"), roles)
         }
     }
 
@@ -428,7 +428,7 @@ class DiscordRoleManagerTest : KoinBaseTest(
                 true,
                 listOf()
             )
-            assertEquals(setOf("_known", "wirId_userid", "wirDisc_disc"), roles)
+            assertEquals(setOf("_known", "_notIdentified", "wirId_userid", "wirDisc_disc"), roles)
         }
     }
 
