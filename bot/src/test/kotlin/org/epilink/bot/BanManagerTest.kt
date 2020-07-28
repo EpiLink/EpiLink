@@ -38,8 +38,9 @@ class BanManagerTest : KoinBaseTest(
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRoles("targetid") } returns mockk()
         }
+        declareNoOpI18n()
         mockHere<LinkDiscordMessages> {
-            every { getBanNotification("the description", null) } returns embed
+            every { getBanNotification(any(), "the description", null) } returns embed
         }
         val dms = mockHere<LinkDiscordMessageSender> {
             every { sendDirectMessageLater("targetid", embed) } returns mockk()
@@ -61,11 +62,10 @@ class BanManagerTest : KoinBaseTest(
             coEvery { getBan(any()) } returns null
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 revokeBan("blabla", 12345)
             }
             assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 
@@ -80,11 +80,10 @@ class BanManagerTest : KoinBaseTest(
             every { isBanActive(any()) } returns true
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 revokeBan("nope", 12)
             }
             assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
-            assertTrue(exc.isEndUserAtFault)
             assertTrue(exc.message!!.contains("hash"))
         }
     }

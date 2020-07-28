@@ -116,5 +116,43 @@ export default {
 
     meta: {
         downloadPdf: 'Télécharger ce fichier PDF'
+    },
+
+    backend: {
+        ms: {
+            nea: "Ce compte ne possède pas d'adresse e-mail"
+        },
+        oa: {
+            iac: "Code d'autorisation invalide"
+        },
+        use: {
+            slo: 'Connecté avec succès.',
+            slm: 'Compte Microsoft relié avec succès.',
+            sdi: 'Identité supprimée avec succès.'
+        },
+        pc: {
+            erj: "Cette adresse e-mail a été rejetée. Êtes-vous sûr d'utiliser le bon compte Microsoft ?",
+            dae: 'Ce compte Discord existe déjà.',
+            cba: 'Ce compte Microsoft est banni (raison : {reason})',
+            ala: 'Ce compte Microsoft est déjà lié à un autre compte.'
+        },
+        reg: {
+            msh: 'En-tête de session manquant.',
+            isv: 'Service invalide : {service}.'
+        },
+        err: {
+            '999': 'Une erreur inconnue est survenue.',
+            '101': 'La création de compte n\'est pas permise',
+            '102': 'Code d\'autorisation invalide',
+            '104': 'Ce compte n\'a pas d\'identifiant',
+            '105': 'Ce service est inconnu ou n\'existe pas',
+            '110': "L'identité de ce compte est déjà connue dans la base de données.",
+            '111': "L'identité de ce compte est déjà absente de la base de données.",
+            '112': "L'identifiant du compte ne correspond pas au nouveau compte.",
+            '201': "Une erreur est survenue lors d'un appel à l'API de Discord",
+            '202': "Une erreur est survenue lors d'un appel à l'API de Microsoft",
+            '300': "Vous avez besoin d'être connecté pour accéder à cette ressource",
+            '301': "Vous n'avez pas la permission de faire cela",
+        }
     }
 };

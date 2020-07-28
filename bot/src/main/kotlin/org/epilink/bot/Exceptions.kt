@@ -18,24 +18,61 @@ import org.epilink.bot.http.ApiErrorResponse
 open class LinkException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /**
- * An exception that happens within EpiLink whose message is end-user friendly.
+ * An exception that happens within EpiLink and that has information on how routes should display that error to the
+ * user.
  *
+ * What is actually sent in an API response triggered by an exception of this type depends on the exact exception type
+ * used.
+ *
+ * @see LinkEndpointUserException
+ * @see LinkEndpointInternalException
  * @property errorCode The error code information associated with this exception
- * @param message The exception message, which may also be sent as part of an API response.
- * @property isEndUserAtFault True if the error is caused by the user (400 HTTP status code), false if the error
- * comes from EpiLink itself (500 HTTP status code).
+ * @param message The exception message, which must not be sent as part of an API response.
  * @param cause Optional exception that caused this exception to be thrown
  */
-open class LinkEndpointException(
+sealed class LinkEndpointException(
     val errorCode: LinkErrorCode,
-    message: String? = null,
-    val isEndUserAtFault: Boolean = false,
+    message: String,
     cause: Throwable? = null
-) : LinkException(errorCode.description + (message?.let { " ($it)" } ?: ""), cause)
+) : LinkException(message, cause)
+
+/**
+ * An exception that is internal (HTTP 500 code). Only the error code's description is given to the user.
+ */
+class LinkEndpointInternalException(
+    errorCode: LinkErrorCode,
+    message: String,
+    cause: Throwable? = null
+) : LinkEndpointException(errorCode, message, cause)
+
+/**
+ * An exception that is caused by the user (HTTP 4xx code). The details are given to the user.
+ *
+ * @property details Optional details on the exception. Null if no detail is available and the error code is sufficient.
+ * If this is null, [detailsI18n] must be null and [detailsI18nData] should be empty.
+ * @property detailsI18n An I18n key that corresponds to the details. Null if and only if [details] is null.
+ * @property detailsI18nData A map from a replacement key to the actual value it should be replaced with.
+ */
+class LinkEndpointUserException(
+    errorCode: LinkErrorCode,
+    val details: String? = null,
+    val detailsI18n: String? = null,
+    val detailsI18nData: Map<String, String> = mapOf(),
+    cause: Throwable? = null
+) : LinkEndpointException(errorCode, errorCode.description + (details?.let { " ($it)" } ?: ""), cause)
 
 /**
  * Turn the information of this exception into a proper ApiErrorResponse. If this exception does not have a message,
  * uses the error code's description instead.
  */
-fun LinkEndpointException.toApiResponse(): ApiErrorResponse =
-    ApiErrorResponse(message ?: errorCode.description, errorCode.toErrorData())
+fun LinkEndpointException.toApiResponse(): ApiErrorResponse = when (this) {
+    is LinkEndpointInternalException ->
+        ApiErrorResponse(errorCode.description, "err.${errorCode.code}", errorInfo = errorCode.toErrorData())
+    is LinkEndpointUserException ->
+        ApiErrorResponse(
+            details ?: errorCode.description,
+            detailsI18n ?: "err.${errorCode.code}",
+            detailsI18nData,
+            errorCode.toErrorData()
+        )
+}

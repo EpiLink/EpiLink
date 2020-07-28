@@ -74,7 +74,7 @@ class RegistrationTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche")
+            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche", "ch.eh")
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
@@ -154,7 +154,7 @@ class RegistrationTest : KoinBaseTest(
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Disallowed("Cheh dans ta tête")
+            coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Disallowed("Cheh dans ta tête", "ch.eh2")
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("yes") } returns null

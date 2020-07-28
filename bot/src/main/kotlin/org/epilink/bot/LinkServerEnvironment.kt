@@ -18,6 +18,7 @@ import org.epilink.bot.db.*
 import org.epilink.bot.db.exposed.SQLiteExposedFacadeImpl
 import org.epilink.bot.discord.*
 import org.epilink.bot.discord.cmd.HelpCommand
+import org.epilink.bot.discord.cmd.LangCommand
 import org.epilink.bot.discord.cmd.UpdateCommand
 import org.epilink.bot.http.*
 import org.epilink.bot.http.endpoints.*
@@ -38,6 +39,8 @@ import kotlin.system.measureTimeMillis
 class LinkServerEnvironment(
     private val cfg: LinkConfiguration,
     private val legal: LinkLegalTexts,
+    private val discordStrings: Map<String, Map<String, String>>,
+    private val defaultDiscordLanguage: String,
     rulebook: Rulebook
 ) {
     private val logger = LoggerFactory.getLogger("epilink.environment")
@@ -79,6 +82,9 @@ class LinkServerEnvironment(
         single { cfg.privacy }
         // Discord bot
         single<LinkDiscordMessages> { LinkDiscordMessagesImpl() }
+        single<LinkDiscordMessagesI18n> {
+            LinkDiscordMessagesI18nImpl(discordStrings, defaultDiscordLanguage, cfg.discord.preferredLanguages)
+        }
         // Role manager
         single<LinkRoleManager> { LinkRoleManagerImpl() }
         // Facade
@@ -89,7 +95,13 @@ class LinkServerEnvironment(
         single<LinkBanManager> { LinkBanManagerImpl() }
         single<LinkDiscordCommands> { LinkDiscordCommandsImpl() }
         single<LinkDiscordTargets> { LinkDiscordTargetsImpl() }
-        single<List<Command>>(named("discord.commands")) { listOf(UpdateCommand(), HelpCommand()) }
+        single<List<Command>>(named("discord.commands")) {
+            listOf(
+                UpdateCommand(),
+                HelpCommand(),
+                LangCommand()
+            )
+        }
     }
 
     /**

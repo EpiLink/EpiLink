@@ -39,15 +39,16 @@ class IdAccessorTest : KoinBaseTest(
         val dms = mockHere<LinkDiscordMessageSender> {
             every { sendDirectMessageLater("targetid", embed) } returns mockk()
         }
+        declareNoOpI18n()
         val dm = mockHere<LinkDiscordMessages> {
-            every { getIdentityAccessEmbed(false, "authorrr", "reasonnn") } returns embed
+            every { getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn") } returns embed
         }
         test {
             val id = accessIdentity(u, false, "authorrr", "reasonnn")
             assertEquals("identity", id)
         }
         coVerify {
-            dm.getIdentityAccessEmbed(false, "authorrr", "reasonnn")
+            dm.getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn")
             dms.sendDirectMessageLater("targetid", embed)
             dbf.getUserEmailWithAccessLog(u, false, "authorrr", "reasonnn")
         }
@@ -76,11 +77,10 @@ class IdAccessorTest : KoinBaseTest(
             coEvery { isUserIdentifiable(user) } returns true
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 relinkMicrosoftIdentity(user, "this doesn't matter", "this doesn't matter either")
             }
             assertEquals(110, exc.errorCode.code)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 
@@ -95,11 +95,10 @@ class IdAccessorTest : KoinBaseTest(
             coEvery { isUserIdentifiable(u) } returns false
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 relinkMicrosoftIdentity(u, "this doesn't matter", "That is definitely not okay")
             }
             assertEquals(112, exc.errorCode.code)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 
@@ -130,11 +129,10 @@ class IdAccessorTest : KoinBaseTest(
             coEvery { isUserIdentifiable(u) } returns false
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 deleteUserIdentity(u)
             }
             assertEquals(111, exc.errorCode.code)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 

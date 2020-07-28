@@ -96,3 +96,18 @@ interface LinkIdentityAccess {
      */
     val automated: Boolean
 }
+
+/**
+ * A language preference for a specific Discord user
+ */
+interface LinkDiscordLanguage {
+    /**
+     * The Discord ID of the user this language preference is referring to.
+     */
+    val discordId: String
+
+    /**
+     * The preferred language ID. This should be checked for validity when retrieved.
+     */
+    val language: String
+}

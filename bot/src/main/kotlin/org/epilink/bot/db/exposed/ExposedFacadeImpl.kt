@@ -39,7 +39,9 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             SchemaUtils.create(
                 ExposedUsers,
                 ExposedTrueIdentities,
-                ExposedBans, ExposedIdentityAccesses
+                ExposedBans,
+                ExposedIdentityAccesses,
+                ExposedDiscordLanguages
             )
         }
     }
@@ -156,7 +158,8 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         val exUser = user.asExposed()
         return newSuspendedTransaction(db = db) {
             val identity =
-                exUser.trueIdentity?.email ?: throw LinkException("Cannot get true identity of user ${exUser.discordId}")
+                exUser.trueIdentity?.email
+                    ?: throw LinkException("Cannot get true identity of user ${exUser.discordId}")
             // Record the identity access
             ExposedIdentityAccess.new {
                 target = exUser.id
@@ -193,6 +196,32 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         newSuspendedTransaction {
             exUser.trueIdentity!! // We don't care about error cases, callers are responsible for checks
                 .delete()
+        }
+    }
+
+    override suspend fun getLanguagePreference(discordId: String): String? =
+        newSuspendedTransaction(db = db) {
+            ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()?.language
+        }
+
+    override suspend fun recordLanguagePreference(discordId: String, preference: String) {
+        newSuspendedTransaction(db = db) {
+            val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
+            if (x != null) {
+                x.language = preference
+            } else {
+                ExposedDiscordLanguage.new {
+                    this.discordId = discordId
+                    language = preference
+                }
+            }
+        }
+    }
+
+    override suspend fun clearLanguagePreference(discordId: String) {
+        newSuspendedTransaction(db = db) {
+            val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
+            x?.delete()
         }
     }
 }
@@ -455,4 +484,20 @@ class ExposedIdentityAccess(id: EntityID<Int>) : IntEntity(id), LinkIdentityAcce
      * The time at which the identity access happened.
      */
     override var timestamp by ExposedIdentityAccesses.timestamp
+}
+
+private object ExposedDiscordLanguages : IntIdTable("DiscordLanguages") {
+    val discordId = varchar("discordId", 32).uniqueIndex()
+
+    val language = varchar("language", 16)
+}
+
+/**
+ * The DAO class for language preferences
+ */
+class ExposedDiscordLanguage(id: EntityID<Int>) : IntEntity(id), LinkDiscordLanguage {
+    companion object : IntEntityClass<ExposedDiscordLanguage>(ExposedDiscordLanguages)
+
+    override var discordId by ExposedDiscordLanguages.discordId
+    override var language by ExposedDiscordLanguages.language
 }

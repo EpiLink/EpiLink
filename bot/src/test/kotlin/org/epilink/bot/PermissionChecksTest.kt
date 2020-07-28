@@ -69,7 +69,7 @@ class PermissionChecksTest : KoinBaseTest(
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
             coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
-            coEvery { getBansFor(hey) } returns listOf(mockk())
+            coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "badboi"})
         }
         mockHere<LinkBanLogic> {
             every { isBanActive(any()) } returns true
@@ -81,6 +81,7 @@ class PermissionChecksTest : KoinBaseTest(
             val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("banned"), "Reason should contain word banned")
+            assertTrue(adv.reason.contains("badboi"), "Reason should contain ban reason")
         }
     }
 

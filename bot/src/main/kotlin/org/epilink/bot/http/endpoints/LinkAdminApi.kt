@@ -69,14 +69,14 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
         post("idrequest") {
             val request = call.receive<IdRequest>()
             if (request.reason.isEmpty()) {
-                call.respond(BadRequest, IncompleteAdminRequest.toResponse("Missing reason"))
+                call.respond(BadRequest, IncompleteAdminRequest.toResponse("Missing reason.", "adm.mir"))
                 return@post
             }
             val admin = call.admin
             val target = dbf.getUser(request.target)
             when {
                 target == null ->
-                    call.respond(BadRequest, InvalidAdminRequest.toResponse("Target does not exist"))
+                    call.respond(BadRequest, TargetUserDoesNotExist.toResponse())
                 !dbf.isUserIdentifiable(target) ->
                     call.respond(BadRequest, TargetIsNotIdentifiable.toResponse())
                 else -> {
@@ -88,7 +88,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                         "You requested another user's identity: your identity was retrieved for logging purposes."
                     )
                     val userTid = idManager.accessIdentity(target, false, adminTid, request.reason)
-                    call.respond(ApiSuccessResponse(data = IdRequestResult(request.target, userTid)))
+                    call.respond(ApiSuccessResponse.of(IdRequestResult(request.target, userTid)))
                 }
             }
         }
@@ -108,7 +108,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     user.creationDate.toString(),
                     identifiable
                 )
-                call.respond(ApiSuccessResponse(data = info))
+                call.respond(ApiSuccessResponse.of(info))
             }
         }
 
@@ -119,7 +119,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
                 val bans = dbf.getBansFor(msftHashBytes)
                 val data = UserBans(bans.any { banLogic.isBanActive(it) }, bans.map { it.toBanInfo() })
-                call.respond(ApiSuccessResponse(data = data))
+                call.respond(ApiSuccessResponse.of(data))
             }
 
             @ApiEndpoint("POST /api/v1/admin/ban/{msftHash}")
@@ -128,7 +128,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 val request: BanRequest = call.receive()
                 val expiry = request.expiresOn?.let { runCatching { Instant.parse(it) }.getOrNull() }
                 if (expiry == null && request.expiresOn != null) {
-                    call.respond(BadRequest, InvalidInstant.toResponse("Invalid expiry timestamp."))
+                    call.respond(BadRequest, InvalidInstant.toResponse("Invalid expiry timestamp.", "adm.iet"))
                 } else {
                     val admin = call.admin
                     val identity = idManager.accessIdentity(
@@ -138,7 +138,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                         "You requested a ban on someone else: your identity was retrieved for logging purposes."
                     )
                     val result = banManager.ban(call.parameters["msftHash"]!!, expiry, identity, request.reason)
-                    call.respond(OK, ApiSuccessResponse("Ban created.", result.toBanInfo()))
+                    call.respond(OK, ApiSuccessResponse.of(result.toBanInfo()))
                 }
             }
 
@@ -149,16 +149,16 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
                     val banId = call.parameters["banId"]!!.toIntOrNull()
                     if (banId == null) {
-                        call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format"))
+                        call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID.", "adm.ibi"))
                     } else {
                         val ban = dbf.getBan(banId)
                         when {
                             ban == null ->
-                                call.respond(NotFound, InvalidId.toResponse("No ban with given ID found"))
+                                call.respond(NotFound, InvalidId.toResponse("No ban with given ID found.", "adm.nbi"))
                             !ban.msftIdHash.contentEquals(msftHashBytes) ->
-                                call.respond(NotFound, InvalidId.toResponse("Microsoft ID hash does not correspond"))
+                                call.respond(NotFound, InvalidId.toResponse("Microsoft ID hash does not correspond.", "adm.hnc"))
                             else ->
-                                call.respond(OK, ApiSuccessResponse(data = ban.toBanInfo()))
+                                call.respond(OK, ApiSuccessResponse.of(ban.toBanInfo()))
                         }
                     }
                 }
@@ -168,10 +168,10 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     val msftHash = call.parameters["msftHash"]!!
                     val banId = call.parameters["banId"]!!.toIntOrNull()
                     if (banId == null) {
-                        call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format"))
+                        call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format", "adm.ibi"))
                     } else {
                         banManager.revokeBan(msftHash, banId)
-                        call.respond(OK, apiSuccess("Ban revoked."))
+                        call.respond(OK, apiSuccess("Ban revoked.", "adm.brk"))
                     }
                 }
             }

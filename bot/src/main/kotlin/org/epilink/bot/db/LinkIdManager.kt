@@ -8,15 +8,13 @@
  */
 package org.epilink.bot.db
 
-import org.epilink.bot.LinkEndpointException
-import org.epilink.bot.LinkException
-import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.IdentityAlreadyKnown
 import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
 import org.epilink.bot.config.LinkPrivacy
-import org.epilink.bot.debug
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessages
+import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
 import org.koin.core.KoinComponent
@@ -52,28 +50,28 @@ interface LinkIdManager {
      * hash associated with the new e-mail address.
      *
      * This function checks if the user already has their identity recorded in the database, in which case this function
-     * throws a [LinkEndpointException] with error [IdentityAlreadyKnown].
+     * throws a [LinkEndpointUserException] with error [IdentityAlreadyKnown].
      *
      * This function also checks whether the Microsoft ID we remember for them matches the new one. If not, this
-     * function throws a [LinkEndpointException] with error [NewIdentityDoesNotMatch].
+     * function throws a [LinkEndpointUserException] with error [NewIdentityDoesNotMatch].
      *
      * If all goes well, the user then has a true identity created for them.
      *
      * @param user The user of whom we want to relink the identity
      * @param email The new e-mail address
      * @param associatedMsftId The Microsoft ID (not hashed) associated with the new e-mail address
-     * @throws LinkEndpointException If the identity of the user is already known, or if the given new ID does not
+     * @throws LinkEndpointUserException If the identity of the user is already known, or if the given new ID does not
      * match the previous one
      */
     @UsesTrueIdentity
     suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String)
 
     /**
-     * Delete the identity of the user with the given Discord ID from the database, or throw a [LinkEndpointException]
-     * if no such identity exists.
+     * Delete the identity of the user with the given Discord ID from the database, or throw a
+     * [LinkEndpointUserException] if no such identity exists.
      *
      * @param user The user whose identity we should remove
-     * @throws LinkEndpointException If the user does not have any identity recorded in the first place.
+     * @throws LinkEndpointUserException If the user does not have any identity recorded in the first place.
      */
     @UsesTrueIdentity
     suspend fun deleteUserIdentity(user: LinkUser)
@@ -83,6 +81,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.idaccessor")
     private val facade: LinkDatabaseFacade by inject()
     private val messages: LinkDiscordMessages by inject()
+    private val i18n: LinkDiscordMessagesI18n by inject()
     private val discordSender: LinkDiscordMessageSender by inject()
     private val privacy: LinkPrivacy by inject()
 
@@ -94,7 +93,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
         if (!facade.isUserIdentifiable(user)) {
             throw LinkException("User is not identifiable")
         }
-        val embed = messages.getIdentityAccessEmbed(automated, author, reason)
+        val embed = messages.getIdentityAccessEmbed(i18n.getLanguage(user.discordId), automated, author, reason)
         if (embed != null)
             discordSender.sendDirectMessageLater(user.discordId, embed)
         return facade.getUserEmailWithAccessLog(user, automated, author, reason)
@@ -103,12 +102,12 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     @UsesTrueIdentity
     override suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String) {
         if (facade.isUserIdentifiable(user)) {
-            throw LinkEndpointException(IdentityAlreadyKnown, "Cannot update identity, it is already known", true)
+            throw LinkEndpointUserException(IdentityAlreadyKnown)
         }
         val knownHash = user.msftIdHash
         val newHash = associatedMsftId.hashSha256()
         if (!knownHash.contentEquals(newHash)) {
-            throw LinkEndpointException(NewIdentityDoesNotMatch, isEndUserAtFault = true)
+            throw LinkEndpointUserException(NewIdentityDoesNotMatch)
         }
         facade.recordNewIdentity(user, email)
     }
@@ -129,7 +128,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     @UsesTrueIdentity
     override suspend fun deleteUserIdentity(user: LinkUser) {
         if (!facade.isUserIdentifiable(user))
-            throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+            throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyUnknown)
         facade.eraseIdentity(user)
     }
 }

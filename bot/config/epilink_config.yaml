@@ -116,6 +116,12 @@ discord:
   # The prefix to use for commands. e! by default.
   #commandsPrefix: "e!"
 
+  # The default language that will be used if users did not define a role for themselves
+  #defaultLanguage: en
+
+  # The list of preferred languages that will be shown before all others in EpiLink's language-related messages. Must include the default language.
+  #preferredLanguages: [en]
+
   # See the documentation on custom roles for more details on this option. You can omit it if you do not need it.
   roles: []
 

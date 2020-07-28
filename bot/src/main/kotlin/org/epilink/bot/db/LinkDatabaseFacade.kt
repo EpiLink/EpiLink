@@ -8,7 +8,6 @@
  */
 package org.epilink.bot.db
 
-import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkException
 import java.time.Instant
 
@@ -70,7 +69,6 @@ interface LinkDatabaseFacade {
      * @param newEmail The email address to use
      * @param keepIdentity If true, the database should also record the email in the session. If false, the database
      * must not keep it.
-     * @throws LinkEndpointException If the session's data is invalid, the user is banned, or another erroneous scenario
      */
     suspend fun recordNewUser(
         newDiscordId: String,
@@ -118,4 +116,21 @@ interface LinkDatabaseFacade {
      * Retrieve all of the identity accesses where the target has the given Discord ID
      */
     suspend fun getIdentityAccessesFor(user: LinkUser): Collection<LinkIdentityAccess>
+
+    /**
+     * Get the language preference for the given Discord user, or null if no preference is recorded. The returned
+     * preference should be checked for validity.
+     */
+    suspend fun getLanguagePreference(discordId: String): String?
+
+    /**
+     * Record the language preference for the given Discord user, replacing any existing preference. The preference is
+     * not checked for validity.
+     */
+    suspend fun recordLanguagePreference(discordId: String, preference: String)
+
+    /**
+     * Clear the language preference for the given Discord user.
+     */
+    suspend fun clearLanguagePreference(discordId: String)
 }

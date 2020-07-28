@@ -76,7 +76,7 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
 
     override suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory {
         return if (facade.doesUserExist(discordId))
-            Disallowed("This Discord account already exists")
+            Disallowed("This Discord account already exists", "pc.dae")
         else
             Allowed
     }
@@ -84,13 +84,22 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
     override suspend fun isMicrosoftUserAllowedToCreateAccount(microsoftId: String, email: String): DatabaseAdvisory {
         val hash = microsoftId.hashSha256()
         if (facade.isMicrosoftAccountAlreadyLinked(hash))
-            return Disallowed("This Microsoft account is already linked to another account")
+            return Disallowed("This Microsoft account is already linked to another account", "pc.ala")
         if (rulebook.validator?.invoke(email) == false) { // == false because the left side can be true or null
-            return Disallowed("This e-mail address was rejected. Are you sure you are using the correct Microsoft account?")
+            return Disallowed(
+                "This e-mail address was rejected. Are you sure you are using the correct Microsoft account?",
+                "pc.erj"
+            )
         }
         val b = facade.getBansFor(hash)
-        if (b.any { banLogic.isBanActive(it) }) {
-            return Disallowed("This Microsoft account is banned")
+        val ban = b.firstOrNull { banLogic.isBanActive(it) }
+        if (ban != null) {
+            // cba = "creation ban"
+            return Disallowed(
+                "This Microsoft account is banned (reason: ${ban.reason})",
+                "pc.cba",
+                mapOf("reason" to ban.reason)
+            )
         }
         return Allowed
     }
@@ -99,7 +108,12 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
         val activeBan = facade.getBansFor(dbUser.msftIdHash).firstOrNull { banLogic.isBanActive(it) }
         if (activeBan != null) {
             logger.debug { "Active ban found for user ${dbUser.discordId} (with reason ${activeBan.reason})." }
-            return Disallowed("You are banned from joining any server at the moment. (Ban reason: ${activeBan.reason})")
+            // jba = "joined ban"
+            return Disallowed(
+                "You are banned from joining any server at the moment. (Ban reason: ${activeBan.reason})",
+                "pc.jba",
+                mapOf("reason" to activeBan.reason)
+            )
         }
         return Allowed
     }

@@ -241,11 +241,11 @@ class UserTest : KoinBaseTest(
         mockHere<LinkIdManager> {
             coEvery {
                 relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
-            } throws LinkEndpointException(
+            } throws LinkEndpointUserException(
                 object : LinkErrorCode {
                     override val code = 98765
                     override val description = "Strange error WeirdChamp"
-                }, isEndUserAtFault = true
+                }
             )
         }
         withTestEpiLink {

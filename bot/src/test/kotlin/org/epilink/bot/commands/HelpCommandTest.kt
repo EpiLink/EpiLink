@@ -11,6 +11,7 @@ package org.epilink.bot.commands
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.KoinBaseTest
+import org.epilink.bot.declareNoOpI18n
 import org.epilink.bot.discord.Command
 import org.epilink.bot.discord.DiscordEmbed
 import org.epilink.bot.discord.LinkDiscordClientFacade
@@ -29,10 +30,11 @@ class HelpCommandTest : KoinBaseTest(
     @Test
     fun `Test help command`() {
         val embed = mockk<DiscordEmbed>()
-        mockHere<LinkDiscordMessages> { every { getHelpMessage() } returns embed }
+        declareNoOpI18n()
+        mockHere<LinkDiscordMessages> { every { getHelpMessage(any(), false) } returns embed }
         mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } just runs }
         test {
-            run("e!help", "", mockk(), "1234", "")
+            run("e!help", "", null, "", "1234", "")
         }
     }
 
