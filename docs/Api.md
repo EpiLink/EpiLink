@@ -8,7 +8,7 @@ This document reflects the API as it is implemented in the back-end, although it
 
 ## Rate limiting
 
-EpiLink follows [Discord's way of rate limiting](https://discordapp.com/developers/docs/topics/rate-limits), except that the `Retry-After` header and `retry_after` JSON values are *always* an integer number of seconds. All endpoints are rate-limited, the exact rates depending on the endpoint.
+EpiLink follows [Discord's way of rate limiting](https://discord.com/developers/docs/topics/rate-limits), except that the `Retry-After` header and `retry_after` JSON values are *always* an integer number of seconds. All endpoints are rate-limited, the exact rates depending on the endpoint.
 
 The rate limiting is based on three factors (keys):
 

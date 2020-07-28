@@ -210,7 +210,7 @@ internal class LinkDiscord4JFacadeImpl(
             Permission.ATTACH_FILES,
             Permission.ADD_REACTIONS
         ).map { it.value }.sum().toString()
-        return "https://discordapp.com/api/oauth2/authorize?client_id=$discordClientId&scope=bot&permissions=$permissions"
+        return "https://discord.com/api/oauth2/authorize?client_id=$discordClientId&scope=bot&permissions=$permissions"
     }
 
     /**

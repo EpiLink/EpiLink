@@ -157,7 +157,7 @@ The first step is to set up the credential EpiLink will use to contact Microsoft
 
 #### Discord
 
-Create an application at [Discord's developer portal](https://discordapp.com/developers/applications/). You will also need to create a bot for the application (check the Bot section).
+Create an application at [Discord's developer portal](https://discord.com/developers/applications/). You will also need to create a bot for the application (check the Bot section).
 
 The Bot section on Discord's developer portal will determine what the application looks like on Discord. Take some time to customize its logo and username.
 
