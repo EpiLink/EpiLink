@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Fixed a front-end popup bug on Safari
+* Use the new `discord.com` URLs instead of `discordapp.com` (except for the CDN URLs) ([#208](https://github.com/EpiLink/EpiLink/issues/208))
 
 ## [0.4.0] - 2020-07-08
 

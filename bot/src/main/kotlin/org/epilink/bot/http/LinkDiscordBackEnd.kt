@@ -41,7 +41,7 @@ class LinkDiscordBackEnd(
 
     private val client: HttpClient by inject()
 
-    private val authStubDiscord = "https://discordapp.com/api/oauth2/authorize?" +
+    private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" +
             listOf(
                 "response_type=code",
                 "client_id=${clientId}",
@@ -61,7 +61,7 @@ class LinkDiscordBackEnd(
     suspend fun getDiscordToken(authcode: String, redirectUri: String): String {
         logger.debug { "Contacting Discord API for retrieving OAuth2 token..." }
         val res = runCatching {
-            client.post<String>("https://discordapp.com/api/v6/oauth2/token") {
+            client.post<String>("https://discord.com/api/v6/oauth2/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 body = TextContent(
                     ParametersBuilder().apply {
@@ -110,7 +110,7 @@ class LinkDiscordBackEnd(
     suspend fun getDiscordInfo(token: String): DiscordUserInfo {
         logger.debug { "Attempting to retrieve Discord information from token $token" }
         val data = runCatching {
-            client.getJson("https://discordapp.com/api/v6/users/@me", bearer = token)
+            client.getJson("https://discord.com/api/v6/users/@me", bearer = token)
         }.getOrElse {
             logger.debug(it) { "Failed (token $token)" }
             throw LinkEndpointInternalException(
