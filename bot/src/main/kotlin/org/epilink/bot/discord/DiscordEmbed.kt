@@ -9,8 +9,8 @@
 package org.epilink.bot.discord
 
 import discord4j.core.spec.EmbedCreateSpec
+import discord4j.rest.util.Color
 import org.epilink.bot.LinkException
-import java.awt.Color
 
 /**
  * Represents an embed that can be sent in a Discord message. Use [EmbedCreateSpec.from] (an extension function) to
@@ -33,7 +33,7 @@ data class DiscordEmbed(
      */
     val url: String? = null,
     /**
-     * The color of the embed. Can be either a static field of [java.awt.Color] or a hexadecimal value preceded by a
+     * The color of the embed. Can be either a static field of [discord4j.rest.util.Color] or a hexadecimal value preceded by a
      * `#` (e.g.: `#12be00`)
      */
     val color: String? = null,
@@ -63,20 +63,18 @@ data class DiscordEmbed(
      *
      * @throws LinkException if the color is in an unrecognized format
      */
-    val awtColor: Color? by lazy {
+    val d4jColor: Color? by lazy {
         when {
             this.color == null -> null
             this.color.startsWith("#") -> runCatching {
-                // Color is guaranteed to not be null at this point
-                Color(Integer.parseInt(this.color!!.substring(1), 16))
+                // Color is guaranteed to not be null at this point, so we can just !! it
+                // (runCatching is missing a contract to let the compiler know)
+                Color.of(Integer.parseInt(this.color!!.substring(1), 16))
             }.getOrElse { throw LinkException("Invalid hexadecimal color format: $color", it) }
             else -> {
-                // Try and parse a java.awt.Color static field
+                // Try and parse a Color static field
                 runCatching {
-                    // runCatching does not have a contract, so Kotlin does not know that this.color is still not null
-                    // here
-                    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-                    Color::class.java.getField(this.color).get(null) as? Color
+                    Color::class.java.getField(this.color!!.toUpperCase()).get(null) as? Color
                 }.getOrElse { throw LinkException("Unrecognized color: $color", it) }
             }
         }
@@ -87,26 +85,15 @@ data class DiscordEmbed(
  * Apply the content of a [DiscordEmbed] into the passed [EmbedCreateSpec] object.
  */
 fun EmbedCreateSpec.from(e: DiscordEmbed) {
-    if (e.title != null)
-        setTitle(e.title)
-    if (e.description != null)
-        setDescription(e.description)
-    if (e.url != null)
-        setUrl(e.url)
-    val c = e.awtColor
-    if (c != null)
-        setColor(c)
-    if (e.footer != null)
-        setFooter(e.footer.text, e.footer.iconUrl)
-    if (e.image != null)
-        setImage(e.image)
-    if (e.thumbnail != null)
-        setThumbnail(e.thumbnail)
-    if (e.author != null)
-        setAuthor(e.author.name, e.author.url, e.author.iconUrl)
-    e.fields.forEach {
-        addField(it.name, it.value, it.inline)
-    }
+    e.title?.let { setTitle(it) }
+    e.description?.let { setDescription(it) }
+    e.url?.let { setUrl(it) }
+    e.d4jColor?.let { setColor(it) }
+    e.footer?.let { setFooter(it.text, e.footer.iconUrl) }
+    e.image?.let { setImage(it) }
+    e.thumbnail?.let { setThumbnail(it) }
+    e.author?.let { setAuthor(it.name, it.url, it.iconUrl) }
+    e.fields.forEach { addField(it.name, it.value, it.inline) }
 }
 
 /**
