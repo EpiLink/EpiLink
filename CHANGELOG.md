@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * The tab icon now shows the instance's icon instead of the EpiLink icon ([#203](https://github.com/EpiLink/EpiLink/pull/203))
 * Reworked some Discord embeds
+* Updated dependencies and Discord4J ([#212](https://github.com/EpiLink/EpiLink/pull/212))
+    * **BREAKING CHANGE:** Some color names no longer work properly because we are now parsing Discord4J color names instead of Java AWT color names. Use the Discord4J color names or use hexadecimal color values directly (`#123abc`)
 
 ### Fixed
 
