@@ -371,34 +371,39 @@ fun LinkConfiguration.isConfigurationSane(
     report += legal.check()
     report += discord.check()
     report += discord.checkCoherenceWithRulebook(rulebook)
+    report += discord.checkCoherenceWithLanguages(availableDiscordLanguages)
 
     // Warn if the tenant is broad (common, consumers, organizations) and no e-mail validation is in place
     if (tokens.msftTenant in setOf("common", "consumers", "organizations") && rulebook.validator == null) {
         report += ConfigWarning("You are using a non-specific Microsoft tenant (that allows anyone to log in) without e-mail validation: people from domains you do not trust may be accepted by EpiLink!")
     }
 
-    val languages = availableDiscordLanguages.joinToString(", ")
-    if (discord.defaultLanguage !in availableDiscordLanguages) {
+    return report
+}
+
+fun LinkDiscordConfig.checkCoherenceWithLanguages(available: Set<String>): List<ConfigReportElement> {
+    val languages = available.joinToString(", ")
+    val report = mutableListOf<ConfigReportElement>()
+    if (defaultLanguage !in available) {
         report += ConfigError(
             true,
-            "The default language you chose (${discord.defaultLanguage}) is not available. The available languages are $languages"
+            "The default language you chose ($defaultLanguage) is not available. The available languages are $languages"
         )
     }
 
-    val unavailablePreferredLanguages = discord.preferredLanguages - availableDiscordLanguages
+    val unavailablePreferredLanguages = preferredLanguages - available
     if (unavailablePreferredLanguages.isNotEmpty()) {
         report += ConfigError(
             true,
             "The preferred languages contain unavailable languages (${unavailablePreferredLanguages.joinToString(", ")}). The available languages are $languages"
         )
     }
-    if (discord.defaultLanguage !in discord.preferredLanguages) {
+    if (defaultLanguage !in preferredLanguages) {
         report += ConfigError(
             true,
-            "The preferred languages list ${discord.preferredLanguages.joinToString(", ")} must contain the default language (${discord.defaultLanguage})."
+            "The preferred languages list ${preferredLanguages.joinToString(", ")} must contain the default language ($defaultLanguage)."
         )
     }
-
     return report
 }
 
@@ -431,7 +436,7 @@ fun LinkTokens.check(): List<ConfigReportElement> {
         report += ConfigError(true, "discordToken was left with its default value: please provide a bot token!")
     }
     if (msftOAuthClientId == "...") {
-        report += ConfigError(true, "msftOauthClientId was left with its default value: please provide a client ID!")
+        report += ConfigError(true, "msftOAuthClientId was left with its default value: please provide a client ID!")
     }
     if (msftOAuthSecret == "...") {
         report += ConfigError(true, "msftOAuthSecret was left with its default value: please provide a secret!")

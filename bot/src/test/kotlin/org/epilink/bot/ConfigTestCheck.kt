@@ -90,6 +90,104 @@ class ConfigTestCheck {
             every { frontendUrl } returns "https://whereismy.slash"
         }
         val reports = config.check()
-        assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("frontendUrl")})
+        assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("frontendUrl") })
+    }
+
+    private val defaultTokenValue = "..."
+
+    @Test
+    fun `Test default Discord client id triggers error`() {
+        assertContainsSingleError(tokens(discordOAuthClientId = defaultTokenValue).check(), "discordOAuthClientId")
+    }
+
+    @Test
+    fun `Test default Discord client secret triggers error`() {
+        assertContainsSingleError(tokens(discordOAuthSecret = defaultTokenValue).check(), "discordOAuthSecret")
+    }
+
+    @Test
+    fun `Test default Discord token triggers error`() {
+        assertContainsSingleError(tokens(discordToken = defaultTokenValue).check(), "discordToken")
+    }
+
+    @Test
+    fun `Test default Microsoft client id triggers error`() {
+        assertContainsSingleError(tokens(msftOAuthClientId = defaultTokenValue).check(), "msftOAuthClientId")
+    }
+
+    @Test
+    fun `Test default Microsoft client secrt triggers error`() {
+        assertContainsSingleError(tokens(msftOAuthSecret = defaultTokenValue).check(), "msftOAuthSecret")
+    }
+
+    /**
+     * Assert that the report has a single error, whose message must contain the provided substring
+     */
+    private fun assertContainsSingleError(report: List<ConfigReportElement>, vararg substring: String) {
+        val messages = report.joinToString(" // ") { it.message }
+        assertEquals(1, report.size, "Expected only one error but got: $messages")
+        report[0].message.let { msg ->
+            substring.forEach { s ->
+                assertTrue(msg.contains(s), "Message '$msg' does not contain expected substring $s")
+            }
+        }
+    }
+
+    /**
+     * Assert that the report has at least one error whose message must contain the provided substring
+     */
+    private fun assertContainsError(report: List<ConfigReportElement>, vararg substring: String) {
+        val messages = report.joinToString(" // ") { it.message }
+        assertTrue(report.any { el ->
+            substring.all { s ->
+                el.message.contains(s)
+            }
+        }, "None of the messages matched the expected substrings ($messages)")
+    }
+
+    /**
+     * Create a fake LinkTokens with valid values for all parameters. To create invalid values, provide an argument.
+     */
+    private fun tokens(
+        discordOAuthClientId: String = "a",
+        discordOAuthSecret: String = "b",
+        discordToken: String = "c",
+        msftOAuthClientId: String = "d",
+        msftOAuthSecret: String = "e"
+    ): LinkTokens = LinkTokens(
+        discordOAuthClientId = discordOAuthClientId,
+        discordOAuthSecret = discordOAuthSecret,
+        discordToken = discordToken,
+        msftOAuthClientId = msftOAuthClientId,
+        msftOAuthSecret = msftOAuthSecret,
+        msftTenant = "nope"
+    )
+
+    private val testValidLanguages = setOf("a", "b", "c")
+
+    @Test
+    fun `Test invalid default language config error`() {
+        val r = languages(default = "blahblah").checkCoherenceWithLanguages(testValidLanguages)
+        assertContainsError(r, "default", "blahblah")
+    }
+
+    @Test
+    fun `Test preferred does not contain default language config error`() {
+        val r = languages(default = "b", preferred = listOf("c")).checkCoherenceWithLanguages(testValidLanguages)
+        assertContainsSingleError(r, "must contain the default language (b)")
+    }
+
+    @Test
+    fun `Test invalid preferred language config error`() {
+        val r = languages(preferred = listOf("a", "klkl")).checkCoherenceWithLanguages(testValidLanguages)
+        assertContainsSingleError(r, "klkl")
+    }
+
+    private fun languages(
+        default: String = "a",
+        preferred: List<String> = listOf("a")
+    ) = mockk<LinkDiscordConfig> {
+        every { defaultLanguage } returns default
+        every { preferredLanguages } returns preferred
     }
 }
