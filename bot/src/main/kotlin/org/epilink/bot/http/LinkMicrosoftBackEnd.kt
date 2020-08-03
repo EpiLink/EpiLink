@@ -20,14 +20,20 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkEndpointInternalException
 import org.epilink.bot.LinkEndpointUserException
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.debug
+import org.jose4j.jwk.HttpsJwks
+import org.jose4j.jwt.consumer.JwtConsumerBuilder
+import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
+
 
 /**
  * This class is responsible for communicating with Microsoft APIs
@@ -38,33 +44,44 @@ class LinkMicrosoftBackEnd(
     private val tenant: String
 ) : KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.microsoftapi")
-
     private val authStubMsft = "https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?" +
             listOf(
                 "client_id=${clientId}",
                 "response_type=code",
                 "prompt=select_account",
-                "scope=User.Read"
+                "scope=openid%20profile%20email"
             ).joinToString("&")
 
     private val client: HttpClient by inject()
 
+    private val jwtConsumer = JwtConsumerBuilder().apply {
+        setRequireExpirationTime()
+        setRequireIssuedAt()
+        setRequireNotBefore()
+        setAllowedClockSkewInSeconds(30)
+        setRequireSubject()
+        setExpectedAudience(clientId)
+        setVerificationKeyResolver(
+            // TODO Dynamically determine the URL from the OIDC metadata document (.well-known/...)
+            HttpsJwksVerificationKeyResolver(HttpsJwks("https://login.microsoftonline.com/$tenant/discovery/v2.0/keys"))
+        )
+    }.build()
+
     /**
-     * Consume the authcode and return a token.
+     * Consume the authcode and return the microsoft info from the retrieved ID token.
      *
      * @param code The authorization code to consume
      * @param redirectUri The redirect_uri that was used in the authorization request that returned the authorization
      * code
      * @throws LinkEndpointException If some error is thrown
      */
-    suspend fun getMicrosoftToken(code: String, redirectUri: String): String {
-        logger.debug { "Contacting Microsoft API for retrieving OAuth2 token..." }
+    suspend fun getMicrosoftInfo(code: String, redirectUri: String): MicrosoftUserInfo {
         val res = runCatching {
             client.post<String>("https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 body = TextContent(
                     ParametersBuilder().apply {
-                        append("scope", "User.Read")
+                        append("scope", "openid profile email")
                         appendOauthParameters(clientId, secret, code, redirectUri)
                     }.build().formUrlEncode(),
                     ContentType.Application.FormUrlEncoded
@@ -93,44 +110,24 @@ class LinkMicrosoftBackEnd(
             }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
-        return data["access_token"] as String?
+        val jwt = data["id_token"] as String?
             ?: throw LinkEndpointInternalException(
                 MicrosoftApiFailure,
-                "Did not receive any access token from Microsoft"
+                "Did not receive any ID token from Microsoft"
             )
-
-    }
-
-    /**
-     * Retrieve a user's own information with Microsoft Graph using a Microsoft OAuth2 token.
-     *
-     * @throws LinkEndpointException if something goes wrong when calling the Microsoft Graph API
-     */
-    suspend fun getMicrosoftInfo(token: String): MicrosoftUserInfo {
-        logger.debug { "Attempting to retrieve Microsoft information from token $token" }
-        try {
-            val data = client.getJson("https://graph.microsoft.com/v1.0/me", bearer = token)
-            val email = data["mail"] as String?
-                ?: (data["userPrincipalName"] as String?)?.takeIf { it.contains("@") }
-                    ?.also { logger.debug("Taking userPrincipalName $it instead of mail because mail was not found in response") }
-                ?: throw LinkEndpointUserException(
-                    AccountHasNoEmailAddress,
-                    "This account does not have an email address",
-                    "ms.nea"
-                )
-            val id = data["id"] as String? ?: throw LinkEndpointUserException(
+        val claims = withContext(Dispatchers.Default) { jwtConsumer.processToClaims(jwt) }
+        return MicrosoftUserInfo(
+            claims.getClaimValueAsString("oid") ?: throw LinkEndpointUserException(
                 AccountHasNoId,
                 "This user does not have an ID",
                 "ms.nid"
+            ),
+            claims.getClaimValueAsString("email") ?: throw LinkEndpointUserException(
+                AccountHasNoEmailAddress,
+                "This account does not have an email address",
+                "ms.nea"
             )
-            return MicrosoftUserInfo(id, email).also { logger.debug { "Retrieved info $it" } }
-        } catch (ex: ClientRequestException) {
-            throw LinkEndpointInternalException(
-                MicrosoftApiFailure,
-                "Failed to contact the Microsoft API.",
-                cause = ex
-            )
-        }
+        )
     }
 
     /**

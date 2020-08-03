@@ -154,10 +154,8 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
     private suspend fun processMicrosoftAuthCode(call: ApplicationCall, authcode: RegistrationAuthCode) {
         val session = call.sessions.getOrSet { RegisterSession() }
         logger.debug { "Get Microsoft token from authcode ${authcode.code}" }
-        // Get token
-        val token = microsoftBackEnd.getMicrosoftToken(authcode.code, authcode.redirectUri)
         // Get information
-        val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
+        val (id, email) = microsoftBackEnd.getMicrosoftInfo(authcode.code, authcode.redirectUri)
         logger.debug { "Processing Microsoft info for registration for $id ($email)" }
         val adv = perms.isMicrosoftUserAllowedToCreateAccount(id, email)
         if (adv is Disallowed) {

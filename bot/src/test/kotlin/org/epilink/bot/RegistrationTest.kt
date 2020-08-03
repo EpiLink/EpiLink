@@ -41,8 +41,7 @@ class RegistrationTest : KoinBaseTest(
     @Test
     fun `Test Microsoft account authcode registration`() {
         mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+            coEvery { getMicrosoftInfo("fake mac", "fake mur") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
             coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
@@ -70,8 +69,7 @@ class RegistrationTest : KoinBaseTest(
     @Test
     fun `Test Microsoft account authcode registration when disallowed`() {
         mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+            coEvery { getMicrosoftInfo("fake mac", "fake mur") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
             coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche", "ch.eh")
@@ -195,8 +193,7 @@ class RegistrationTest : KoinBaseTest(
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
         }
         mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+            coEvery { getMicrosoftInfo("fake mac", "fake mur") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed

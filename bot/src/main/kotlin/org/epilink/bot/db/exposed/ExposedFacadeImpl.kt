@@ -224,6 +224,13 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             x?.delete()
         }
     }
+
+    override suspend fun updateMsftId(user: LinkUser, newIdHash: ByteArray) {
+        val u = user.asExposed()
+        newSuspendedTransaction(db = db) {
+            u.msftIdHash = newIdHash
+        }
+    }
 }
 
 /**

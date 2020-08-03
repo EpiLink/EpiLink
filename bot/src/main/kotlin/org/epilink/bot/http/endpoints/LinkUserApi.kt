@@ -107,12 +107,12 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 logger.debug {
                     "User ${user.discordId} has asked for a relink with authcode ${auth.code}."
                 }
-                val microsoftToken = microsoftBackEnd.getMicrosoftToken(auth.code, auth.redirectUri)
+                // Consume the authorization code, just in case
+                val (guid, email) = microsoftBackEnd.getMicrosoftInfo(auth.code, auth.redirectUri)
                 if (dbFacade.isUserIdentifiable(user)) {
                     throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyKnown)
                 }
-                val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
-                idManager.relinkMicrosoftIdentity(user, userInfo.email, userInfo.guid)
+                idManager.relinkMicrosoftIdentity(user, email, guid)
                 roleManager.invalidateAllRoles(user.discordId, true)
                 call.respond(apiSuccess("Successfully linked Microsoft account.", "use.slm"))
             }

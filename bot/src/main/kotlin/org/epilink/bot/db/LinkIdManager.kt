@@ -101,13 +101,25 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
 
     @UsesTrueIdentity
     override suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String) {
+        logger.debug { "Relinking $user with new email $email and msft id $associatedMsftId" }
         if (facade.isUserIdentifiable(user)) {
             throw LinkEndpointUserException(IdentityAlreadyKnown)
         }
         val knownHash = user.msftIdHash
         val newHash = associatedMsftId.hashSha256()
         if (!knownHash.contentEquals(newHash)) {
-            throw LinkEndpointUserException(NewIdentityDoesNotMatch)
+            // Upgrade path: For some accounts, the MS Graph API returned an ID format that does not correspond to the
+            // OIDC ID (old: non-padded + no hyphens, new: padded with hyphens). Updates to the OIDC-style ID
+            if (associatedMsftId.startsWith("00000000-0000-0000-")) {
+                // Convert the new ID format to the old one and compare
+                val oldIdFormat = associatedMsftId.substringAfter("00000000-0000-0000-").replace("-", "")
+                if (oldIdFormat.hashSha256().contentEquals(knownHash)) {
+                    // If the oldified new one matches, replace by the correct new one
+                    logger.info("Updating hash for user ${user.discordId} due to format changes between Microsoft Graph & OIDC APIs")
+                    // Update known hash
+                    facade.updateMsftId(user, newHash)
+                } else throw LinkEndpointUserException(NewIdentityDoesNotMatch)
+            } else throw LinkEndpointUserException(NewIdentityDoesNotMatch)
         }
         facade.recordNewIdentity(user, email)
     }

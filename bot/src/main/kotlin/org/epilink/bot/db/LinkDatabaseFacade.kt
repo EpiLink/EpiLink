@@ -133,4 +133,10 @@ interface LinkDatabaseFacade {
      * Clear the language preference for the given Discord user.
      */
     suspend fun clearLanguagePreference(discordId: String)
+
+    /**
+     * Update the Microsoft ID of a given user to the new hash. Can be used for updating user hashes in case of format
+     * changes or other backwards-compatibility concerns.
+     */
+    suspend fun updateMsftId(user: LinkUser, newIdHash: ByteArray)
 }
