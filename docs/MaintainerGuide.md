@@ -115,7 +115,8 @@ server:
   port: 9090
   frontendUrl: ~
   proxyType: None # or XForwarded, or Forwarded
-  logo: "https://..." # optional
+  logo: ~ # optional
+  background: ~ # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -137,7 +138,10 @@ server:
     
 !> Not setting the `proxyType` or setting it to the incorrect value will lead to (at best) too aggressive rate-limiting or (at worst) security issues and possible IP spoofing from users!
 
-* `logo` *(optional, null by default)*: A URL to the logo of this instance, used by the front-end. When null (or `~`), the logo of EpiLink is used.
+* `logo` *(optional, null by default)*: The logo of this instance, used by the front-end. When null (or `~`), the logo of EpiLink is used.
+    * To use a logo from a URL, use `logo: { url: "https://..." }`
+    * To use a logo that's stored next to the configuration file, use `logo: { file: mylogo.png }`
+* `background` *(optional, null by default)*: The background of this instance, used by the front-end. When null (or `~`), a default grey background is used. The syntax is the same as for the `logo`. 
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 
