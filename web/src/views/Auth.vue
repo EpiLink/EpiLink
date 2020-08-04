@@ -91,7 +91,8 @@
 
                 this.$store.dispatch((!user || user.temp) ? 'postCode' : 'postIdentity', {
                     service: service === 'microsoft' ? 'msft' : 'discord',
-                    code: msg.data.code,
+                    // Some identity provider (e.g. google) have some URI encoded characters in the authcode: decode it
+                    code: decodeURIComponent(msg.data.code),
                     uri: getRedirectURI(service)
                 }).then(() => {
                     let route = 'profile';

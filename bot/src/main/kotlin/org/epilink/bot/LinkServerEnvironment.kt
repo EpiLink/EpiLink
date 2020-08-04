@@ -39,6 +39,7 @@ import kotlin.system.measureTimeMillis
 class LinkServerEnvironment(
     private val cfg: LinkConfiguration,
     private val legal: LinkLegalTexts,
+    private val identityProviderMetadata: IdentityProviderMetadata,
     private val assets: LinkAssets,
     private val discordStrings: Map<String, Map<String, String>>,
     private val defaultDiscordLanguage: String,
@@ -125,7 +126,11 @@ class LinkServerEnvironment(
         }
 
         single {
-            LinkMicrosoftBackEnd(cfg.tokens.msftOAuthClientId, cfg.tokens.msftOAuthSecret, cfg.tokens.msftTenant)
+            LinkIdentityProvider(
+                identityProviderMetadata,
+                cfg.tokens.msftOAuthClientId,
+                cfg.tokens.msftOAuthSecret
+            )
         }
 
         single { legal }

@@ -87,7 +87,7 @@ class MsftBackEndTest : KoinBaseTest(
             val exc = assertFailsWith<LinkEndpointException> {
                 mbe.getMicrosoftToken("Auth", "Re")
             }
-            assertEquals(StandardErrorCodes.MicrosoftApiFailure, exc.errorCode)
+            assertEquals(StandardErrorCodes.IdentityProviderApiFailure, exc.errorCode)
             assertTrue(exc.message!!.contains("¯\\_(ツ)_/¯"), "Message ${exc.message!!} does not contain error name")
         }
     }

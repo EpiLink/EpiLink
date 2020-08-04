@@ -26,7 +26,7 @@ import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.ApiEndpoint
 import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.LinkDiscordBackEnd
-import org.epilink.bot.http.LinkMicrosoftBackEnd
+import org.epilink.bot.http.LinkIdentityProvider
 import org.epilink.bot.http.data.InstanceInformation
 import org.koin.core.KoinComponent
 import org.koin.core.inject
@@ -49,7 +49,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
     private val env: LinkServerEnvironment by inject()
     private val legal: LinkLegalTexts by inject()
     private val discordBackEnd: LinkDiscordBackEnd by inject()
-    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
+    private val idProvider: LinkIdentityProvider by inject()
     private val assets: LinkAssets by inject()
     private val wsCfg: LinkWebServerConfiguration by inject()
 
@@ -102,7 +102,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
             title = env.name,
             logo = assets.logo.asUrl("logo"),
             background = assets.background.asUrl("background"),
-            authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
+            authorizeStub_msft = idProvider.getAuthorizeStub(),
             authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
             idPrompt = legal.idPrompt,
             footerUrls = wsCfg.footers,

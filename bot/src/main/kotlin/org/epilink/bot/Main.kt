@@ -15,10 +15,15 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.mainBody
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.apache.Apache
+import io.ktor.client.request.get
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.epilink.bot.config.*
+import org.epilink.bot.http.MetadataOrFailure
+import org.epilink.bot.http.identityProviderMetadataFromDiscovery
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.loadRules
 import org.epilink.bot.rulebook.loadRulesWithCache
@@ -103,6 +108,16 @@ fun main(args: Array<String>) = mainBody("epilink") {
         exitProcess(123)
     }
 
+    logger.info("Loading identity provider information...")
+    val discoveryContent = download(cfg.idProvider.url + "/.well-known/openid-configuration")
+    val idProviderMetadata = when (val m = identityProviderMetadataFromDiscovery(
+        discoveryContent,
+        if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub"
+    )) {
+        is MetadataOrFailure.Metadata -> m.metadata
+        is MetadataOrFailure.IncompatibleProvider -> error("The chosen provider is not compatible: ${m.reason}")
+    }
+
     if (cfg.rulebook != null && cfg.rulebookFile != null) {
         logger.error("Your configuration defines both a rulebook and a rulebookFile: please only use one of those.")
         logger.info("Use rulebook if you are putting the rulebook code directly in the config file, or rulebookFile if you are putting the code in a separate file.")
@@ -128,6 +143,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
         cfg = cfg,
         legal = legal,
         assets = assets,
+        identityProviderMetadata = idProviderMetadata,
         rulebook = rulebook,
         discordStrings = strings,
         defaultDiscordLanguage = cfg.discord.defaultLanguage
@@ -137,7 +153,12 @@ fun main(args: Array<String>) = mainBody("epilink") {
     env.start()
 }
 
-private fun checkConfig(cfg: LinkConfiguration, rulebook: Rulebook, cliArgs: CliArgs, availableDiscordLanguages: Set<String>) {
+private fun checkConfig(
+    cfg: LinkConfiguration,
+    rulebook: Rulebook,
+    cliArgs: CliArgs,
+    availableDiscordLanguages: Set<String>
+) {
     val configReport = cfg.isConfigurationSane(cliArgs, rulebook, availableDiscordLanguages)
     var shouldExit = false
     configReport.forEach {
@@ -155,6 +176,8 @@ private fun checkConfig(cfg: LinkConfiguration, rulebook: Rulebook, cliArgs: Cli
         exitProcess(1)
     }
 }
+
+private fun download(url: String) = runBlocking { HttpClient(Apache).get<String>(url) }
 
 private suspend fun loadRulebook(cfg: LinkConfiguration, cfgPath: Path, enableCache: Boolean): Rulebook {
     val rb = when {
@@ -193,9 +216,10 @@ private fun loadDiscordI18n(): Map<String, Map<String, String>> =
     CliArgs::class.java.getResourceAsStream("/discord_i18n/languages").bufferedReader().use { reader ->
         reader.lines().asSequence().associateWith {
             val props = Properties()
-            CliArgs::class.java.getResourceAsStream("/discord_i18n/strings_$it.properties").bufferedReader().use { fileReader ->
-                props.load(fileReader)
-            }
+            CliArgs::class.java.getResourceAsStream("/discord_i18n/strings_$it.properties").bufferedReader()
+                .use { fileReader ->
+                    props.load(fileReader)
+                }
             val map = mutableMapOf<String, String>()
             props.forEach { (k, v) -> map[k.toString()] = v.toString() }
             map

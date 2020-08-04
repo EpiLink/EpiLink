@@ -51,7 +51,7 @@ interface LinkRegistrationApi {
 internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.registration")
     private val discordBackEnd: LinkDiscordBackEnd by inject()
-    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
+    private val idProvider: LinkIdentityProvider by inject()
     private val roleManager: LinkRoleManager by inject()
     private val userApi: LinkUserApi by inject()
     private val userCreator: LinkUserCreator by inject()
@@ -155,7 +155,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
         val session = call.sessions.getOrSet { RegisterSession() }
         logger.debug { "Get Microsoft token from authcode ${authcode.code}" }
         // Get information
-        val (id, email) = microsoftBackEnd.getMicrosoftInfo(authcode.code, authcode.redirectUri)
+        val (id, email) = idProvider.getUserIdentityInfo(authcode.code, authcode.redirectUri)
         logger.debug { "Processing Microsoft info for registration for $id ($email)" }
         val adv = perms.isMicrosoftUserAllowedToCreateAccount(id, email)
         if (adv is Disallowed) {

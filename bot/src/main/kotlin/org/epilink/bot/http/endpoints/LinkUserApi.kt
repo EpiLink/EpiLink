@@ -58,7 +58,7 @@ interface LinkUserApi {
 internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.user")
     private val roleManager: LinkRoleManager by inject()
-    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
+    private val idProvider: LinkIdentityProvider by inject()
     private val sessionChecks: LinkSessionChecks by inject()
     private val idManager: LinkIdManager by inject()
     private val dbFacade: LinkDatabaseFacade by inject()
@@ -108,7 +108,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                     "User ${user.discordId} has asked for a relink with authcode ${auth.code}."
                 }
                 // Consume the authorization code, just in case
-                val (guid, email) = microsoftBackEnd.getMicrosoftInfo(auth.code, auth.redirectUri)
+                val (guid, email) = idProvider.getUserIdentityInfo(auth.code, auth.redirectUri)
                 if (dbFacade.isUserIdentifiable(user)) {
                     throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyKnown)
                 }

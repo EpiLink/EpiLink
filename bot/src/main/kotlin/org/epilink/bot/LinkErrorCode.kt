@@ -114,7 +114,7 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     /**
      * Sent in case of a back-end call to the Microsoft API that failed with no decipherable reason
      */
-    MicrosoftApiFailure(202, "Something went wrong with a Microsoft API call"),
+    IdentityProviderApiFailure(202, "Something went wrong with an identity provider API call"),
 
     // ************ 3xx: general errors ************
     /**

@@ -16,10 +16,7 @@ import io.ktor.client.features.ClientRequestException
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.content.TextContent
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.ParametersBuilder
-import io.ktor.http.formUrlEncode
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.epilink.bot.LinkEndpointException
@@ -27,6 +24,8 @@ import org.epilink.bot.LinkEndpointInternalException
 import org.epilink.bot.LinkEndpointUserException
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.debug
+import org.epilink.bot.rulebook.getList
+import org.epilink.bot.rulebook.getString
 import org.jose4j.jwk.HttpsJwks
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
@@ -36,15 +35,15 @@ import org.slf4j.LoggerFactory
 
 
 /**
- * This class is responsible for communicating with Microsoft APIs
+ * This class is responsible for communicating with OIDC APIs, determined from the given metadata
  */
-class LinkMicrosoftBackEnd(
+class LinkIdentityProvider(
+    private val metadata: IdentityProviderMetadata,
     private val clientId: String,
-    private val secret: String,
-    private val tenant: String
+    private val clientSecret: String
 ) : KoinComponent {
-    private val logger = LoggerFactory.getLogger("epilink.microsoftapi")
-    private val authStubMsft = "https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?" +
+    private val logger = LoggerFactory.getLogger("epilink.identityProvider")
+    private val authStubMsft = metadata.authorizeUrl + "?" +
             listOf(
                 "client_id=${clientId}",
                 "response_type=code",
@@ -57,33 +56,36 @@ class LinkMicrosoftBackEnd(
     private val jwtConsumer = JwtConsumerBuilder().apply {
         setRequireExpirationTime()
         setRequireIssuedAt()
-        setRequireNotBefore()
+        // Not present for Google
+        // setRequireNotBefore()
         setAllowedClockSkewInSeconds(30)
         setRequireSubject()
         setExpectedAudience(clientId)
+        // Does not work for MS, since the issuer is different for every tenant
+        // setExpectedIssuer(metadata.issuer)
         setVerificationKeyResolver(
             // TODO Dynamically determine the URL from the OIDC metadata document (.well-known/...)
-            HttpsJwksVerificationKeyResolver(HttpsJwks("https://login.microsoftonline.com/$tenant/discovery/v2.0/keys"))
+            HttpsJwksVerificationKeyResolver(HttpsJwks(metadata.jwksUri))
         )
     }.build()
 
     /**
-     * Consume the authcode and return the microsoft info from the retrieved ID token.
+     * Consume the authcode and return the user info from the retrieved ID token.
      *
      * @param code The authorization code to consume
      * @param redirectUri The redirect_uri that was used in the authorization request that returned the authorization
      * code
      * @throws LinkEndpointException If some error is thrown
      */
-    suspend fun getMicrosoftInfo(code: String, redirectUri: String): MicrosoftUserInfo {
+    suspend fun getUserIdentityInfo(code: String, redirectUri: String): UserIdentityInfo {
         val res = runCatching {
-            client.post<String>("https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token") {
+            client.post<String>(metadata.tokenUrl.also { logger.error(it) }) {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 body = TextContent(
                     ParametersBuilder().apply {
-                        append("scope", "openid profile email")
-                        appendOauthParameters(clientId, secret, code, redirectUri)
-                    }.build().formUrlEncode(),
+                        //append("scope", "openid profile email")
+                        appendOauthParameters(clientId, clientSecret, code, redirectUri)
+                    }.build().formUrlEncode().also { logger.error(it) },
                     ContentType.Application.FormUrlEncoded
                 )
             }
@@ -100,24 +102,25 @@ class LinkMicrosoftBackEnd(
                         cause = ex
                     )
                     else -> throw LinkEndpointInternalException(
-                        MicrosoftApiFailure,
-                        "Microsoft OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
+                        IdentityProviderApiFailure,
+                        "Identity Provider OAuth failed: $error (" + (data["error_description"]
+                            ?: "no description") + ")",
                         ex
                     )
                 }
             } else {
-                throw LinkEndpointInternalException(MicrosoftApiFailure, "Microsoft API call failed", ex)
+                throw LinkEndpointInternalException(IdentityProviderApiFailure, "Microsoft API call failed", ex)
             }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
         val jwt = data["id_token"] as String?
             ?: throw LinkEndpointInternalException(
-                MicrosoftApiFailure,
-                "Did not receive any ID token from Microsoft"
+                IdentityProviderApiFailure,
+                "Did not receive any ID token from the identity provider"
             )
         val claims = withContext(Dispatchers.Default) { jwtConsumer.processToClaims(jwt) }
-        return MicrosoftUserInfo(
-            claims.getClaimValueAsString("oid") ?: throw LinkEndpointUserException(
+        return UserIdentityInfo(
+            claims.getClaimValueAsString(metadata.idClaim) ?: throw LinkEndpointUserException(
                 AccountHasNoId,
                 "This user does not have an ID",
                 "ms.nid"
@@ -134,4 +137,42 @@ class LinkMicrosoftBackEnd(
      * Retrieve the beginning of the authorization URL that is only missing the redirect_uri
      */
     fun getAuthorizeStub(): String = authStubMsft
+}
+
+data class IdentityProviderMetadata(
+    val issuer: String,
+    val tokenUrl: String,
+    val authorizeUrl: String,
+    val jwksUri: String,
+    // or oid for backwards compat for ms accounts
+    val idClaim: String = "sub"
+)
+
+sealed class MetadataOrFailure {
+    class Metadata(val metadata: IdentityProviderMetadata) : MetadataOrFailure()
+    class IncompatibleProvider(val reason: String) : MetadataOrFailure()
+}
+
+fun identityProviderMetadataFromDiscovery(discoveryContent: String, idClaim: String = "sub"): MetadataOrFailure {
+    val map: Map<String, *> = ObjectMapper().readValue(discoveryContent)
+    val responseTypes = map.getList("response_types_supported")
+    if ("code" !in responseTypes) {
+        return MetadataOrFailure.IncompatibleProvider("Does not support authorization code flow")
+    }
+    val metadata = IdentityProviderMetadata(
+        issuer = map.getString("issuer"),
+        tokenUrl = map.getString("token_endpoint")
+            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+        authorizeUrl = map.getString("authorization_endpoint")
+            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+        jwksUri = map.getString("jwks_uri")
+            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+        idClaim = idClaim
+    )
+    return MetadataOrFailure.Metadata(metadata)
+}
+
+private inline fun String.ensureHttps(ifNotHttps: (String) -> Nothing): String {
+    if (!this.startsWith("https://")) ifNotHttps(this)
+    return this
 }

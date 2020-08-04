@@ -43,6 +43,10 @@ data class LinkConfiguration(
      */
     val tokens: LinkTokens,
     /**
+     * The OIDC Identity Provider to use
+     */
+    val idProvider: LinkIdProviderConfiguration,
+    /**
      * Discord-related configurations, defined using a [LinkDiscordConfig] object
      */
     val discord: LinkDiscordConfig,
@@ -348,6 +352,11 @@ data class LinkLegalConfiguration(
      * The text shown below the "Remember who I am" checkbox in the front-end
      */
     val identityPromptText: String? = null
+)
+
+data class LinkIdProviderConfiguration(
+    val url: String,
+    val microsoftBackwardsCompatibility: Boolean = false
 )
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
