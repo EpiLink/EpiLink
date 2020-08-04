@@ -18,9 +18,7 @@ import com.xenomachina.argparser.mainBody
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.request.get
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.epilink.bot.config.*
 import org.epilink.bot.http.MetadataOrFailure
 import org.epilink.bot.http.identityProviderMetadataFromDiscovery
@@ -93,65 +91,76 @@ fun main(args: Array<String>) = mainBody("epilink") {
         ctx.getLogger("epilink").level = Level.DEBUG
         logger.debug("DEBUG output enabled. Remove flag -v to disable.")
     }
+    runBlockingWithScope {
+        logger.debug("Loading configuration")
 
-    logger.debug("Loading configuration")
-
-    val cfgPath = Paths.get(cliArgs.config)
-    val cfg = runCatching { loadConfigFromFile(cfgPath) }.getOrElse { exc ->
-        logger.debug(exc) { "Encountered exception on config load" }
-        when (exc) {
-            is java.nio.file.NoSuchFileException -> logger.error("Failed to load config, could not find config file $cfgPath")
-            is JsonParseException -> logger.error("Failed to parse YAML file, wrong syntax: ${exc.message}")
-            is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
-            else -> logger.error("Encountered an unexpected exception on config load", exc)
+        val cfgPath = Paths.get(cliArgs.config)
+        val cfg = runCatching { loadConfigFromFile(cfgPath) }.getOrElse { exc ->
+            logger.debug(exc) { "Encountered exception on config load" }
+            when (exc) {
+                is java.nio.file.NoSuchFileException -> logger.error("Failed to load config, could not find config file $cfgPath")
+                is JsonParseException -> logger.error("Failed to parse YAML file, wrong syntax: ${exc.message}")
+                is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
+                else -> logger.error("Encountered an unexpected exception on config load", exc)
+            }
+            exitProcess(123)
         }
-        exitProcess(123)
+
+        if (cfg.rulebook != null && cfg.rulebookFile != null) {
+            logger.error("Your configuration defines both a rulebook and a rulebookFile: please only use one of those.")
+            logger.info("Use rulebook if you are putting the rulebook code directly in the config file, or rulebookFile if you are putting the code in a separate file.")
+            exitProcess(4)
+        }
+
+        val idProviderMetadata = async {
+            logger.info("Loading identity provider information...")
+            val discoveryContent = download(cfg.idProvider.url + "/.well-known/openid-configuration")
+            when (val m = identityProviderMetadataFromDiscovery(
+                discoveryContent,
+                if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub"
+            )) {
+                is MetadataOrFailure.Metadata -> m.metadata
+                is MetadataOrFailure.IncompatibleProvider -> error("The chosen provider is not compatible: ${m.reason}")
+            }
+        }
+
+        val rulebook = async { loadRulebook(cfg, cfgPath, cfg.cacheRulebook) }
+
+        val strings = async {
+            logger.debug("Loading Discord strings")
+            loadDiscordI18n()
+        }
+
+        logger.debug("Checking config...")
+        checkConfig(cfg, rulebook.await(), cliArgs, strings.await().keys)
+
+        val legal = async {
+            logger.debug("Loading legal texts")
+            cfg.legal.load(cfgPath)
+        }
+
+        val assets = async {
+            logger.debug("Loading assets")
+            loadAssets(cfg.server, cfgPath.parent)
+        }
+
+        logger.debug("Creating environment")
+        val env = LinkServerEnvironment(
+            cfg = cfg,
+            legal = legal.await(),
+            assets = assets.await(),
+            identityProviderMetadata = idProviderMetadata.await(),
+            rulebook = rulebook.await(),
+            discordStrings = strings.await(),
+            defaultDiscordLanguage = cfg.discord.defaultLanguage
+        )
+
+        logger.info("Environment created, starting ${env.name}")
+        env.start()
     }
-
-    logger.info("Loading identity provider information...")
-    val discoveryContent = download(cfg.idProvider.url + "/.well-known/openid-configuration")
-    val idProviderMetadata = when (val m = identityProviderMetadataFromDiscovery(
-        discoveryContent,
-        if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub"
-    )) {
-        is MetadataOrFailure.Metadata -> m.metadata
-        is MetadataOrFailure.IncompatibleProvider -> error("The chosen provider is not compatible: ${m.reason}")
-    }
-
-    if (cfg.rulebook != null && cfg.rulebookFile != null) {
-        logger.error("Your configuration defines both a rulebook and a rulebookFile: please only use one of those.")
-        logger.info("Use rulebook if you are putting the rulebook code directly in the config file, or rulebookFile if you are putting the code in a separate file.")
-        exitProcess(4)
-    }
-
-    val rulebook = runBlocking { loadRulebook(cfg, cfgPath, cfg.cacheRulebook) }
-
-    logger.debug("Loading Discord strings")
-    val strings = loadDiscordI18n()
-
-    logger.debug("Checking config...")
-    checkConfig(cfg, rulebook, cliArgs, strings.keys)
-
-    logger.debug("Loading legal texts")
-    val legal = cfg.legal.load(cfgPath)
-
-    logger.debug("Loading assets")
-    val assets = runBlocking { loadAssets(cfg.server, cfgPath.parent) }
-
-    logger.debug("Creating environment")
-    val env = LinkServerEnvironment(
-        cfg = cfg,
-        legal = legal,
-        assets = assets,
-        identityProviderMetadata = idProviderMetadata,
-        rulebook = rulebook,
-        discordStrings = strings,
-        defaultDiscordLanguage = cfg.discord.defaultLanguage
-    )
-
-    logger.info("Environment created, starting ${env.name}")
-    env.start()
 }
+
+private fun runBlockingWithScope(block: suspend CoroutineScope.() -> Unit) = runBlocking { coroutineScope { block() } }
 
 private fun checkConfig(
     cfg: LinkConfiguration,

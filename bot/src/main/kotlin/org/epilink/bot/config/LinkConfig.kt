@@ -191,17 +191,13 @@ data class LinkTokens(
      */
     val discordOAuthSecret: String,
     /**
-     * Microsoft/Azure AD Client Id
+     * Identity provider OpenID Connect / OAuth 2 Client Id
      */
-    val msftOAuthClientId: String,
+    val idpOAuthClientId: String,
     /**
-     * Microsoft/Azure Ad Client Secret
+     * Identity provider OpenID Connect / OAuth 2 Client Secret
      */
-    val msftOAuthSecret: String,
-    /**
-     * Microsoft tenant. Check the maintainer guide for more information.
-     */
-    val msftTenant: String
+    val idpOAuthSecret: String
 )
 
 /**
@@ -356,6 +352,8 @@ data class LinkLegalConfiguration(
 
 data class LinkIdProviderConfiguration(
     val url: String,
+    val name: String,
+    val iconUrl: String,
     val microsoftBackwardsCompatibility: Boolean = false
 )
 
@@ -390,11 +388,6 @@ fun LinkConfiguration.isConfigurationSane(
     report += discord.check()
     report += discord.checkCoherenceWithRulebook(rulebook)
     report += discord.checkCoherenceWithLanguages(availableDiscordLanguages)
-
-    // Warn if the tenant is broad (common, consumers, organizations) and no e-mail validation is in place
-    if (tokens.msftTenant in setOf("common", "consumers", "organizations") && rulebook.validator == null) {
-        report += ConfigWarning("You are using a non-specific Microsoft tenant (that allows anyone to log in) without e-mail validation: people from domains you do not trust may be accepted by EpiLink!")
-    }
 
     return report
 }
@@ -453,11 +446,11 @@ fun LinkTokens.check(): List<ConfigReportElement> {
     if (discordToken == "...") {
         report += ConfigError(true, "discordToken was left with its default value: please provide a bot token!")
     }
-    if (msftOAuthClientId == "...") {
-        report += ConfigError(true, "msftOAuthClientId was left with its default value: please provide a client ID!")
+    if (idpOAuthClientId == "...") {
+        report += ConfigError(true, "idpOAuthClientId was left with its default value: please provide a client ID!")
     }
-    if (msftOAuthSecret == "...") {
-        report += ConfigError(true, "msftOAuthSecret was left with its default value: please provide a secret!")
+    if (idpOAuthSecret == "...") {
+        report += ConfigError(true, "idpOAuthSecret was left with its default value: please provide a secret!")
     }
     return report
 }

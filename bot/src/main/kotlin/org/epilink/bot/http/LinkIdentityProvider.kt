@@ -43,7 +43,7 @@ class LinkIdentityProvider(
     private val clientSecret: String
 ) : KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.identityProvider")
-    private val authStubMsft = metadata.authorizeUrl + "?" +
+    private val authStub = metadata.authorizeUrl + "?" +
             listOf(
                 "client_id=${clientId}",
                 "response_type=code",
@@ -109,7 +109,7 @@ class LinkIdentityProvider(
                     )
                 }
             } else {
-                throw LinkEndpointInternalException(IdentityProviderApiFailure, "Microsoft API call failed", ex)
+                throw LinkEndpointInternalException(IdentityProviderApiFailure, "Identity Provider API call failed", ex)
             }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
@@ -136,7 +136,7 @@ class LinkIdentityProvider(
     /**
      * Retrieve the beginning of the authorization URL that is only missing the redirect_uri
      */
-    fun getAuthorizeStub(): String = authStubMsft
+    fun getAuthorizeStub(): String = authStub
 }
 
 data class IdentityProviderMetadata(

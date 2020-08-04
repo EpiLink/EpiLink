@@ -119,6 +119,8 @@ class LinkServerEnvironment(
 
         single { cfg.server }
 
+        single { cfg.idProvider }
+
         single { HttpClient(Apache) }
 
         single {
@@ -128,8 +130,8 @@ class LinkServerEnvironment(
         single {
             LinkIdentityProvider(
                 identityProviderMetadata,
-                cfg.tokens.msftOAuthClientId,
-                cfg.tokens.msftOAuthSecret
+                cfg.tokens.idpOAuthClientId,
+                cfg.tokens.idpOAuthSecret
             )
         }
 

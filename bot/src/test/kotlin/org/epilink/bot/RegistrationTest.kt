@@ -44,7 +44,7 @@ class RegistrationTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("fake mac", "fake mur") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
+            coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Allowed
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
@@ -62,7 +62,7 @@ class RegistrationTest : KoinBaseTest(
             assertEquals(null, regInfo.getValue("discordAvatarUrl"))
             // Check that a session was set
             val session = call.sessions.get<RegisterSession>()
-            assertEquals(RegisterSession(microsoftUid = "fakeguid", email = "fakemail"), session)
+            assertEquals(RegisterSession(idpId = "fakeguid", email = "fakemail"), session)
         }
     }
 
@@ -72,7 +72,7 @@ class RegistrationTest : KoinBaseTest(
             coEvery { getMicrosoftInfo("fake mac", "fake mur") } returns MicrosoftUserInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche", "ch.eh")
+            coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche", "ch.eh")
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
@@ -197,7 +197,7 @@ class RegistrationTest : KoinBaseTest(
         }
         mockHere<LinkPermissionChecks> {
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
+            coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Allowed
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("yes") } answers { if (userCreated) mockk() else null }

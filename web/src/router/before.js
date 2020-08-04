@@ -16,9 +16,9 @@ export default (to, from, next) => {
 
     const go = p => next(path !== p ? p : undefined);
 
-    const isAuthRoute = path === '/' || path === '/microsoft' || path === '/settings';
+    const isAuthRoute = path === '/' || path === '/idProvider' || path === '/settings';
     const authAuthorized = (path === '/auth/discord' && fromPath === '/') ||
-        (path === '/auth/microsoft' && (fromPath === '/microsoft' || fromPath === '/profile')) ||
+        (path === '/auth/idProvider' && (fromPath === '/idProvider' || fromPath === '/profile')) ||
         (path.startsWith('/auth/') && fromPath.startsWith('/redirect'));
 
     if (isAuthRoute || (path.startsWith('/auth/') && !authAuthorized) || (path === '/success' && fromPath !== '/settings')) {
@@ -35,7 +35,7 @@ export default (to, from, next) => {
         }
 
         if (user.username) {
-            return go('/microsoft');
+            return go('/idProvider');
         }
     }
 

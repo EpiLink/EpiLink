@@ -259,7 +259,7 @@ class RulebookBuilder {
 
     /**
      * Define an e-mail validator. The lambda will be called for every e-mail address and, if it returns false, the
-     * Microsoft account will be rejected.
+     * Identity Provider account will be rejected.
      */
     @RulebookDsl
     @Suppress("unused")

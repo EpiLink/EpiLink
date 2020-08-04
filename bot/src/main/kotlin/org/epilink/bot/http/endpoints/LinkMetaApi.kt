@@ -22,6 +22,7 @@ import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.route
 import org.epilink.bot.*
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.ApiEndpoint
 import org.epilink.bot.http.ApiSuccessResponse
@@ -52,6 +53,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
     private val idProvider: LinkIdentityProvider by inject()
     private val assets: LinkAssets by inject()
     private val wsCfg: LinkWebServerConfiguration by inject()
+    private val providerConfig: LinkIdProviderConfiguration by inject()
 
     override fun install(route: Route) =
         with(route) { meta() }
@@ -102,8 +104,10 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
             title = env.name,
             logo = assets.logo.asUrl("logo"),
             background = assets.background.asUrl("background"),
-            authorizeStub_msft = idProvider.getAuthorizeStub(),
+            authorizeStub_idProvider = idProvider.getAuthorizeStub(),
             authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
+            providerName = providerConfig.name,
+            providerIconUrl = providerConfig.iconUrl,
             idPrompt = legal.idPrompt,
             footerUrls = wsCfg.footers,
             contacts = wsCfg.contacts

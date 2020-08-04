@@ -152,8 +152,8 @@ tokens:
     discordToken: ...
     discordOAuthClientId: ...
     discordOAuthSecret: ...
-    msftOAuthClientId: ...
-    msftOAuthSecret: ...
+    idpOAuthClientId: ...
+    idpOAuthSecret: ...
     msftTenant: common
 ```
 
@@ -193,10 +193,10 @@ You will need to create a secret manually, as Azure AD does not create one for y
 
 | Name in Azure AD Application page        | Name in the config file |
 | ---------------------------------------  | ----------------------- |
-| Overview -> Application (client) ID      | `msftOAuthClientId`     |
-| Certificates & Secrets -> Client secrets | `msftOAuthSecret`       |
+| Overview -> Application (client) ID      | `idpOAuthClientId`     |
+| Certificates & Secrets -> Client secrets | `idpOAuthSecret`       |
 
-You should also add redirection URIs based on where the front-end is served. The path is `/redirect/microsoft`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/microsoft`.
+You should also add redirection URIs based on where the front-end is served. The path is `/redirect/idProvider`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/idProvider`.
 
 ##### Tenant
 

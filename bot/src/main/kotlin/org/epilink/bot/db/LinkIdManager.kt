@@ -52,19 +52,19 @@ interface LinkIdManager {
      * This function checks if the user already has their identity recorded in the database, in which case this function
      * throws a [LinkEndpointUserException] with error [IdentityAlreadyKnown].
      *
-     * This function also checks whether the Microsoft ID we remember for them matches the new one. If not, this
+     * This function also checks whether the Identity Provider ID we remember for them matches the new one. If not, this
      * function throws a [LinkEndpointUserException] with error [NewIdentityDoesNotMatch].
      *
      * If all goes well, the user then has a true identity created for them.
      *
      * @param user The user of whom we want to relink the identity
      * @param email The new e-mail address
-     * @param associatedMsftId The Microsoft ID (not hashed) associated with the new e-mail address
+     * @param associatedIdpId The Identity Provider ID (not hashed) associated with the new e-mail address
      * @throws LinkEndpointUserException If the identity of the user is already known, or if the given new ID does not
      * match the previous one
      */
     @UsesTrueIdentity
-    suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String)
+    suspend fun relinkIdentity(user: LinkUser, email: String, associatedIdpId: String)
 
     /**
      * Delete the identity of the user with the given Discord ID from the database, or throw a
@@ -100,24 +100,24 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     }
 
     @UsesTrueIdentity
-    override suspend fun relinkMicrosoftIdentity(user: LinkUser, email: String, associatedMsftId: String) {
-        logger.debug { "Relinking $user with new email $email and msft id $associatedMsftId" }
+    override suspend fun relinkIdentity(user: LinkUser, email: String, associatedIdpId: String) {
+        logger.debug { "Relinking $user with new email $email and IDP id $associatedIdpId" }
         if (facade.isUserIdentifiable(user)) {
             throw LinkEndpointUserException(IdentityAlreadyKnown)
         }
-        val knownHash = user.msftIdHash
-        val newHash = associatedMsftId.hashSha256()
+        val knownHash = user.idpIdHash
+        val newHash = associatedIdpId.hashSha256()
         if (!knownHash.contentEquals(newHash)) {
             // Upgrade path: For some accounts, the MS Graph API returned an ID format that does not correspond to the
             // OIDC ID (old: non-padded + no hyphens, new: padded with hyphens). Updates to the OIDC-style ID
-            if (associatedMsftId.startsWith("00000000-0000-0000-")) {
+            if (associatedIdpId.startsWith("00000000-0000-0000-")) {
                 // Convert the new ID format to the old one and compare
-                val oldIdFormat = associatedMsftId.substringAfter("00000000-0000-0000-").replace("-", "")
+                val oldIdFormat = associatedIdpId.substringAfter("00000000-0000-0000-").replace("-", "")
                 if (oldIdFormat.hashSha256().contentEquals(knownHash)) {
                     // If the oldified new one matches, replace by the correct new one
                     logger.info("Updating hash for user ${user.discordId} due to format changes between Microsoft Graph & OIDC APIs")
                     // Update known hash
-                    facade.updateMsftId(user, newHash)
+                    facade.updateIdpId(user, newHash)
                 } else throw LinkEndpointUserException(NewIdentityDoesNotMatch)
             } else throw LinkEndpointUserException(NewIdentityDoesNotMatch)
         }

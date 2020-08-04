@@ -26,9 +26,9 @@ interface LinkDatabaseFacade {
     suspend fun getUser(discordId: String): LinkUser?
 
     /**
-     * Returns the user with the given Microsoft ID hash, or null if no such user exists
+     * Returns the user with the given Identity Provider ID hash, or null if no such user exists
      */
-    suspend fun getUserFromMsftIdHash(msftIdHash: ByteArray): LinkUser?
+    suspend fun getUserFromIdpIdHash(idpIdHash: ByteArray): LinkUser?
 
     /**
      * Checks if a user exists with the given Discord ID.
@@ -36,12 +36,12 @@ interface LinkDatabaseFacade {
     suspend fun doesUserExist(discordId: String): Boolean
 
     /**
-     * Checks if a user exists with the given Microsoft ID hash.
+     * Checks if a user exists with the given identity provider ID hash.
      */
-    suspend fun isMicrosoftAccountAlreadyLinked(hash: ByteArray): Boolean
+    suspend fun isIdentityAccountAlreadyLinked(hash: ByteArray): Boolean
 
     /**
-     * Get the list of bans associated with the given Microsoft ID hash.
+     * Get the list of bans associated with the given identity provider ID hash.
      */
     suspend fun getBansFor(hash: ByteArray): List<LinkBan>
 
@@ -65,14 +65,14 @@ interface LinkDatabaseFacade {
      * coherence. It is the caller's job to check that the parameters are correct.
      *
      * @param newDiscordId The Discord ID to use
-     * @param newMsftIdHash The SHA256 hash of the Microsoft ID to use
+     * @param newIdpIdHash The SHA256 hash of the identity provider ID to use
      * @param newEmail The email address to use
      * @param keepIdentity If true, the database should also record the email in the session. If false, the database
      * must not keep it.
      */
     suspend fun recordNewUser(
         newDiscordId: String,
-        newMsftIdHash: ByteArray,
+        newIdpIdHash: ByteArray,
         newEmail: String,
         keepIdentity: Boolean,
         timestamp: Instant
@@ -135,8 +135,8 @@ interface LinkDatabaseFacade {
     suspend fun clearLanguagePreference(discordId: String)
 
     /**
-     * Update the Microsoft ID of a given user to the new hash. Can be used for updating user hashes in case of format
-     * changes or other backwards-compatibility concerns.
+     * Update the Identity Provider ID of a given user to the new hash. Can be used for updating user hashes in case of
+     * format changes or other backwards-compatibility concerns.
      */
-    suspend fun updateMsftId(user: LinkUser, newIdHash: ByteArray)
+    suspend fun updateIdpId(user: LinkUser, newIdHash: ByteArray)
 }

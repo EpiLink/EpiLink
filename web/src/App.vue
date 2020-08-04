@@ -168,7 +168,7 @@
                 this.load();
             },
             updateTitle() {
-                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${this.$t('layout.navigation.' + this.$route.name)}`;
+                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${this.$t('layout.navigation.' + this.$route.name, {provider: this.$store.meta.providerName})}`;
             }
         },
         watch: {

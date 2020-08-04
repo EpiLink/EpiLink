@@ -174,7 +174,7 @@ class UserTest : KoinBaseTest(
             coEvery { isUserIdentifiable(any()) } returns false
         }
         val ida = mockHere<LinkIdManager> {
-            coEvery { relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId") } just runs
+            coEvery { relinkIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId") } just runs
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
@@ -190,7 +190,7 @@ class UserTest : KoinBaseTest(
         }
         coVerify {
             rm.invalidateAllRoles(any(), true)
-            ida.relinkMicrosoftIdentity(any(), email, "MyMicrosoftId")
+            ida.relinkIdentity(any(), email, "MyMicrosoftId")
             sessionChecks.verifyUser(any())
         }
     }
@@ -238,7 +238,7 @@ class UserTest : KoinBaseTest(
         }
         mockHere<LinkIdManager> {
             coEvery {
-                relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
+                relinkIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
             } throws LinkEndpointUserException(
                 object : LinkErrorCode {
                     override val code = 98765

@@ -10,7 +10,7 @@
 -->
 <template>
     <li class="route">
-        <router-link v-if="r.route" :to="{ name: r.route }" v-html="$t(`layout.navigation.${r.route}`)" />
+        <router-link v-if="r.route" :to="{ name: r.route }" v-html="$t(`layout.navigation.${r.route}`, {provider: providerName})" />
         <a v-if="r.url" :href="r.url" rel="noreferrer" target="_blank">{{ r.name }}</a>
     </li>
 </template>
@@ -18,6 +18,12 @@
 <script>
     export default {
         name: 'link-route',
-        props: ['r']
+        props: ['r'],
+        computed: {
+            providerName() {
+                const meta = this.$store.meta;
+                return meta && meta.providerName;
+            }
+        }
     }
 </script>

@@ -57,7 +57,7 @@
 
                     setTimeout(() => {
                         if (!this.done) {
-                            this.$router.push({ name: this.$route.params.service === 'discord' ? 'home' : 'microsoft' });
+                            this.$router.push({ name: this.$route.params.service === 'discord' ? 'home' : 'idProvider' });
                         }
                     }, 150);
                 }
@@ -90,14 +90,14 @@
                 console.log(`Received code for service ${service}`);
 
                 this.$store.dispatch((!user || user.temp) ? 'postCode' : 'postIdentity', {
-                    service: service === 'microsoft' ? 'msft' : 'discord',
+                    service: service,
                     // Some identity provider (e.g. google) have some URI encoded characters in the authcode: decode it
                     code: decodeURIComponent(msg.data.code),
                     uri: getRedirectURI(service)
                 }).then(() => {
                     let route = 'profile';
                     if (this.$store.state.auth.user.temp) {
-                        route = service === 'discord' ? 'microsoft' : 'settings';
+                        route = service === 'discord' ? 'idProvider' : 'settings';
                     }
 
                     setTimeout(() => {

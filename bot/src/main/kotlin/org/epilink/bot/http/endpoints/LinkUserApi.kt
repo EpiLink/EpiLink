@@ -112,9 +112,9 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 if (dbFacade.isUserIdentifiable(user)) {
                     throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyKnown)
                 }
-                idManager.relinkMicrosoftIdentity(user, email, guid)
+                idManager.relinkIdentity(user, email, guid)
                 roleManager.invalidateAllRoles(user.discordId, true)
-                call.respond(apiSuccess("Successfully linked Microsoft account.", "use.slm"))
+                call.respond(apiSuccess("Successfully linked Identity Provider account.", "use.slm"))
             }
 
             @ApiEndpoint("DELETE /api/v1/user/identity")
