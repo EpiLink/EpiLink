@@ -181,6 +181,7 @@ These endpoints can be used to retrieve information from the back-end that is us
 {
   "title": "Title of the EpiLink instance",
   "logo": "https://url.to/instance/logo", // nullable
+  "background": "https://url.to/instance/background", // nullable
   "authorizeStub_msft": "...",
   "authorizeStub_discord": "...",
   "idPrompt": "...",
@@ -188,14 +189,13 @@ These endpoints can be used to retrieve information from the back-end that is us
   "contacts": [ /* ... */ ]
 }
 ```
-
-The `authorizeStub` values are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
-
-`idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. It is inline HTML that is meant to be embedded within a web page.
-
-`footerUrls` is a list of [FooterUrl](#footerurl) objects, each describing a link that should be displayed in the footer. These links are customized by the back-end.
-
-`contacts` is a list of [ContactInformation](#contactinformation) objects, each describing a person that can be contacted (e.g. an instance maintainer). May be empty. *(since version 0.2.0)*
+* `title` is the name of the instance
+* `logo` is a URL to the logo of the instance, either absolute (`https://...`) or with a trailing slash (in which case it will always be `/api/v1/meta/logo`)
+* `background` is a URL to the background of the instance that should be shown on the login page, either absolute (`https://...`) or with a trailing slash (in which case it will always be `/api/v1/meta/background`)
+* The `authorizeStub` values are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
+* `idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. It is inline HTML that is meant to be embedded within a web page.
+* `footerUrls` is a list of [FooterUrl](#footerurl) objects, each describing a link that should be displayed in the footer. These links are customized by the back-end.
+* `contacts` is a list of [ContactInformation](#contactinformation) objects, each describing a person that can be contacted (e.g. an instance maintainer). May be empty. *(since version 0.2.0)*
 
 #### FooterUrl
 
@@ -264,6 +264,20 @@ Example:
 ```
 
 (or a PDF file's contents)
+
+### GET /meta/logo and GET /meta/background
+
+```http request
+GET /api/v1/meta/logo
+###
+GET /api/v1/meta/background
+```
+
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns an image in some specific circumstances.
+
+Returns an image if the image is hosted directly by the back-end. The behavior is undefined if the image is not hosted by the back-end.
+
+Instead of relying on these endpoints, you should instead rely on the `background` and `logo` information you get from the [meta information endpoint](#get-metainfo).
 
 ## Registration (/register)
 

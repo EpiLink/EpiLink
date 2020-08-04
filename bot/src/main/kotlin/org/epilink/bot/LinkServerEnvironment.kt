@@ -39,6 +39,7 @@ import kotlin.system.measureTimeMillis
 class LinkServerEnvironment(
     private val cfg: LinkConfiguration,
     private val legal: LinkLegalTexts,
+    private val assets: LinkAssets,
     private val discordStrings: Map<String, Map<String, String>>,
     private val defaultDiscordLanguage: String,
     rulebook: Rulebook
@@ -128,6 +129,8 @@ class LinkServerEnvironment(
         }
 
         single { legal }
+
+        single { assets }
 
         single<LinkRegistrationApi> { LinkRegistrationApiImpl() }
 

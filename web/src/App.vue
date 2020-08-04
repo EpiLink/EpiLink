@@ -9,9 +9,9 @@
 
 -->
 <template>
-    <div id="app">
+    <div id="app" :style="backgroundCss">
         <div id="main-view">
-            <div id="content" :class="{ expanded }">
+            <div id="content" :class="{ expanded, 'blur-content': background }">
                 <transition name="fade" mode="out-in">
                     <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
                         <transition name="fade">
@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <div id="footer" v-if="!redirected">
+        <div id="footer" v-if="!redirected" :class="{ 'blur-footer': background }">
             <div id="left-footer">
                 <img id="menu" alt="Menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
                 <router-link id="home-button" to="/">
@@ -122,7 +122,23 @@
             },
             instanceLogo() {
                 const meta = this.$store.state.meta;
-                return meta && meta.logo;
+                const logoUrl = meta && meta.logo;
+                if (logoUrl)
+                    return logoUrl.startsWith('/api/v1/') ? BACKEND_URL + logoUrl.substring(7) : logoUrl;
+                else
+                    return false;
+            },
+            background() {
+                const meta = this.$store.state.meta;
+                const bgUrl = meta && meta.background;
+                if (bgUrl)
+                    return bgUrl.startsWith('/api/v1/') ? BACKEND_URL + bgUrl.substring(7) : bgUrl;
+                else
+                    return false;
+            },
+            backgroundCss() {
+                const bg = this.background
+                return bg && { background: 'center/cover url(' + bg + ')' }
             }
         },
         methods: {
@@ -326,6 +342,16 @@
                 margin-right: 20px;
             }
         }
+    }
+
+    .blur-footer {
+        background-color: #fffc !important;
+        backdrop-filter: blur(6px);
+    }
+
+    .blur-content {
+        background-color: #fffb !important;
+        backdrop-filter: blur(6px);
     }
 
     #sidebar, #sidebar-shadow {

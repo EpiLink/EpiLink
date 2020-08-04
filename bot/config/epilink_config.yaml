@@ -38,6 +38,14 @@ server:
   # (Optional) Custom logo that will be displayed to the user. ~ means default, in which case it will show EpiLink's
   # logo
   logo: ~
+  # To use a logo from a URL, use this syntax
+  #logo: { url: "https://..." }
+  # To use a logo stored next to this configuration file, use this syntax
+  #logo: { file: mylogo.jpg }
+
+  # (Optional) Custom background that will be displayed to the user on the website. ~ means default, in which case a
+  # simple grey background is shown. Same syntax as for the logo
+  background: { file: bg.jpg }
   
   # An optional list of custom footers that should be shown on the front-end
   footers: # optional

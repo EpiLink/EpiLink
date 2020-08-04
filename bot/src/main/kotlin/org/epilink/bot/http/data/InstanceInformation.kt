@@ -16,6 +16,7 @@ import org.epilink.bot.config.LinkFooterUrl
 data class InstanceInformation(
     val title: String,
     val logo: String?,
+    val background: String?,
     val authorizeStub_msft: String,
     val authorizeStub_discord: String,
     val idPrompt: String,

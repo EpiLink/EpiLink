@@ -118,15 +118,24 @@ data class LinkWebServerConfiguration(
      */
     val footers: List<LinkFooterUrl> = listOf(),
     /**
-     * Logo URL that is passed to the front-end
+     * Logo resource asset that is passed to the front-end
      */
-    val logo: String? = null,
+    val logo: ResourceAssetConfig? = ResourceAssetConfig(),
+    /**
+     * Background resource asset that is passed to the front-end
+     */
+    val background: ResourceAssetConfig? = ResourceAssetConfig(),
     /**
      * Contact information for instance maintainers
      *
      * @since 0.2.0
      */
     val contacts: List<LinkContactInformation> = listOf()
+)
+
+data class ResourceAssetConfig(
+    val url: String? = null,
+    val file: String? = null
 )
 
 /**

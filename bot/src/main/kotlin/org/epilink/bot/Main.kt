@@ -120,10 +120,14 @@ fun main(args: Array<String>) = mainBody("epilink") {
     logger.debug("Loading legal texts")
     val legal = cfg.legal.load(cfgPath)
 
+    logger.debug("Loading assets")
+    val assets = runBlocking { loadAssets(cfg.server, cfgPath.parent) }
+
     logger.debug("Creating environment")
     val env = LinkServerEnvironment(
         cfg = cfg,
         legal = legal,
+        assets = assets,
         rulebook = rulebook,
         discordStrings = strings,
         defaultDiscordLanguage = cfg.discord.defaultLanguage
