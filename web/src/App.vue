@@ -11,7 +11,7 @@
 <template>
     <div id="app" :style="backgroundCss">
         <div id="main-view">
-            <div id="content" :class="{ expanded/*, 'blur-content': background*/ }">
+            <div id="content" :class="{ expanded }">
                 <transition name="fade" mode="out-in">
                     <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
                         <transition name="fade">
@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <div id="footer" v-if="!redirected" ><!--:class="{ 'blur-footer': background }"-->
+        <div id="footer" v-if="!redirected">
             <div id="left-footer">
                 <img id="menu" alt="Menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
                 <router-link id="home-button" to="/">
@@ -342,16 +342,6 @@
                 margin-right: 20px;
             }
         }
-    }
-
-    .blur-footer {
-        background-color: #fffc !important;
-        backdrop-filter: blur(6px);
-    }
-
-    .blur-content {
-        background-color: #fffb !important;
-        backdrop-filter: blur(6px);
     }
 
     #sidebar, #sidebar-shadow {
