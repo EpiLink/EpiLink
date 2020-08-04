@@ -12,12 +12,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.config.ResourceAssetConfig
 import java.nio.file.Files
 import java.nio.file.Path
 
-class LinkAssets(val logo: ResourceAsset, val background: ResourceAsset)
+class LinkAssets(val logo: ResourceAsset, val background: ResourceAsset, val idpLogo: ResourceAsset)
 
 sealed class ResourceAsset {
     object None : ResourceAsset()
@@ -31,11 +32,13 @@ fun ResourceAsset.asUrl(name: String): String? = when (this) {
     is ResourceAsset.File -> "/api/v1/meta/$name"
 }
 
-suspend fun loadAssets(cfg: LinkWebServerConfiguration, root: Path): LinkAssets = coroutineScope {
-    val logo = async { loadAsset(cfg.logo ?: ResourceAssetConfig(), "logo", root) }
-    val background = async { loadAsset(cfg.background ?: ResourceAssetConfig(), "background", root) }
-    LinkAssets(logo.await(), background.await())
-}
+suspend fun loadAssets(wsCfg: LinkWebServerConfiguration, idpCfg: LinkIdProviderConfiguration, root: Path): LinkAssets =
+    coroutineScope {
+        val logo = async { loadAsset(wsCfg.logo ?: ResourceAssetConfig(), "logo", root) }
+        val background = async { loadAsset(wsCfg.background ?: ResourceAssetConfig(), "background", root) }
+        val idpLogo = async { loadAsset(idpCfg.icon ?: ResourceAssetConfig(), "idpLogo", root) }
+        LinkAssets(logo.await(), background.await(), idpLogo.await())
+    }
 
 suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): ResourceAsset {
     if (asset.file != null) {

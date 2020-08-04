@@ -185,7 +185,7 @@ These endpoints can be used to retrieve information from the back-end that is us
   "authorizeStub_idProvider": "...",
   "authorizeStub_discord": "...",
   "providerName": "...",
-  "providerIconUrl": "...",
+  "providerIcon": "...", // nullable
   "idPrompt": "...",
   "footerUrls": [ /* ... */ ] ,
   "contacts": [ /* ... */ ]
@@ -194,9 +194,9 @@ These endpoints can be used to retrieve information from the back-end that is us
 * `title` is the name of the instance
 * `logo` is a URL to the logo of the instance, either absolute (`https://...`) or with a trailing slash (in which case it will always be `/api/v1/meta/logo`)
 * `background` is a URL to the background of the instance that should be shown on the login page, either absolute (`https://...`) or with a trailing slash (in which case it will always be `/api/v1/meta/background`)
-* The `authorizeStub` values are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
+* The `authorizeStub` values are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to encode it as a URI component to properly escape special characters! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
 * `providerName` is the name of the identity provider.
-* `providerIconUrl` is a URL to the logo of the identity provider
+* `providerIcon` is a URL to the logo of the identity provider, similar to `logo` and `background`.
 * `idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. It is inline HTML that is meant to be embedded within a web page.
 * `footerUrls` is a list of [FooterUrl](#footerurl) objects, each describing a link that should be displayed in the footer. These links are customized by the back-end.
 * `contacts` is a list of [ContactInformation](#contactinformation) objects, each describing a person that can be contacted (e.g. an instance maintainer). May be empty. *(since version 0.2.0)*

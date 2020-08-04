@@ -353,7 +353,7 @@ data class LinkLegalConfiguration(
 data class LinkIdProviderConfiguration(
     val url: String,
     val name: String,
-    val iconUrl: String,
+    val icon: ResourceAssetConfig?,
     val microsoftBackwardsCompatibility: Boolean = false
 )
 

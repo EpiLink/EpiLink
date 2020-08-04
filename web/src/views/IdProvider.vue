@@ -14,8 +14,8 @@
         <link-stepper id="stepper" step="2" />
 
         <button id="login" @click="login()">
-            <img id="icon" :alt="$t('idProvider.connect', {provider: meta.providerName}
-)" :src="meta.providerIconUrl" />
+            <img v-if="meta.providerIcon" id="icon" :alt="$t('idProvider.connect', {provider: meta.providerName}
+)" :src="providerIconUrl" />
             <span id="text" v-html="$t('idProvider.connect', {provider: meta.providerName}
 )" />
         </button>
@@ -47,7 +47,17 @@
                 submitting: false
             };
         },
-        computed: mapState({ user: state => state.auth.user, meta: state => state.meta }),
+        computed: {
+            ...mapState({ user: state => state.auth.user, meta: state => state.meta }),
+            providerIconUrl() {
+                const meta = this.$store.state.meta;
+                const logoUrl = meta && meta.providerIcon;
+                if (logoUrl)
+                    return logoUrl.startsWith('/api/v1/') ? BACKEND_URL + logoUrl.substring(7) : logoUrl;
+                else
+                    return false;
+            }
+        },
         methods: {
             login() {
                 if (this.submitting) {

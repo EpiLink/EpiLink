@@ -64,7 +64,6 @@ class LinkIdentityProvider(
         // Does not work for MS, since the issuer is different for every tenant
         // setExpectedIssuer(metadata.issuer)
         setVerificationKeyResolver(
-            // TODO Dynamically determine the URL from the OIDC metadata document (.well-known/...)
             HttpsJwksVerificationKeyResolver(HttpsJwks(metadata.jwksUri))
         )
     }.build()

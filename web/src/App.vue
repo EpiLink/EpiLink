@@ -68,15 +68,15 @@
 </template>
 
 <script>
-    import { mapState } from 'vuex';
+    import {mapState} from 'vuex';
 
-    import LinkError   from './components/Error';
+    import LinkError from './components/Error';
     import LinkLoading from './components/Loading';
-    import LinkRoute   from "./components/Route";
+    import LinkRoute from "./components/Route";
 
     export default {
         name: 'link-app',
-        components: { LinkRoute, LinkError, LinkLoading },
+        components: {LinkRoute, LinkError, LinkLoading},
 
         mounted() {
             this.load();
@@ -138,7 +138,7 @@
             },
             backgroundCss() {
                 const bg = this.background
-                return bg && { background: 'center/cover url(' + bg + ')' }
+                return bg && {background: 'center/cover url(' + bg + ')'}
             }
         },
         methods: {
@@ -168,7 +168,9 @@
                 this.load();
             },
             updateTitle() {
-                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${this.$t('layout.navigation.' + this.$route.name, {provider: this.$store.meta.providerName})}`;
+                const providerName = this.$store.meta && this.$store.meta.providerName || "Identity Provider";
+                const routeName = this.$t('layout.navigation.' + this.$route.name, {provider: providerName});
+                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${routeName}`;
             }
         },
         watch: {

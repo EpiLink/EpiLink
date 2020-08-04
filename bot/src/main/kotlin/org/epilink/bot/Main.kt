@@ -141,7 +141,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
 
         val assets = async {
             logger.debug("Loading assets")
-            loadAssets(cfg.server, cfgPath.parent)
+            loadAssets(cfg.server, cfg.idProvider, cfgPath.parent)
         }
 
         logger.debug("Creating environment")

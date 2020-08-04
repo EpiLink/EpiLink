@@ -78,6 +78,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
 
                 serveAsset("logo", assets.logo)
                 serveAsset("background", assets.background)
+                serveAsset("idpLogo", assets.idpLogo)
             }
         }
     }
@@ -107,7 +108,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
             authorizeStub_idProvider = idProvider.getAuthorizeStub(),
             authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
             providerName = providerConfig.name,
-            providerIconUrl = providerConfig.iconUrl,
+            providerIcon = assets.idpLogo.asUrl("idpLogo"),
             idPrompt = legal.idPrompt,
             footerUrls = wsCfg.footers,
             contacts = wsCfg.contacts
