@@ -159,8 +159,7 @@ class ConfigTestCheck {
         discordOAuthSecret = discordOAuthSecret,
         discordToken = discordToken,
         idpOAuthClientId = msftOAuthClientId,
-        idpOAuthSecret = msftOAuthSecret,
-        msftTenant = "nope"
+        idpOAuthSecret = msftOAuthSecret
     )
 
     private val testValidLanguages = setOf("a", "b", "c")

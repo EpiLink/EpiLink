@@ -40,14 +40,14 @@ class RegistrationTest : KoinBaseTest(
 ) {
     @Test
     fun `Test Microsoft account authcode registration`() {
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftInfo("fake mac", "fake mur") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("fake mac", "fake mur") } returns UserIdentityInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
             coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Allowed
         }
         withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/idProvider") {
                 setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
             }
             call.assertStatus(HttpStatusCode.OK)
@@ -68,14 +68,14 @@ class RegistrationTest : KoinBaseTest(
 
     @Test
     fun `Test Microsoft account authcode registration when disallowed`() {
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftInfo("fake mac", "fake mur") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("fake mac", "fake mur") } returns UserIdentityInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
             coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche", "ch.eh")
         }
         withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/idProvider") {
                 setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
             }
             call.assertStatus(HttpStatusCode.BadRequest)
@@ -192,8 +192,8 @@ class RegistrationTest : KoinBaseTest(
             coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
         }
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftInfo("fake mac", "fake mur") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("fake mac", "fake mur") } returns UserIdentityInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
@@ -227,7 +227,7 @@ class RegistrationTest : KoinBaseTest(
                 response.headers["RegistrationSessionId"]!!
             }
             // Microsoft authentication
-            handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+            handleRequest(HttpMethod.Post, "/api/v1/register/authcode/idProvider") {
                 addHeader("RegistrationSessionId", regHeader)
                 setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
             }.apply {

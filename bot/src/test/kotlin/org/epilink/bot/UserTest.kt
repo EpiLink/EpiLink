@@ -164,8 +164,8 @@ class UserTest : KoinBaseTest(
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
         val email = "e.mail@mail.maiiiil"
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftInfo("msauth", "uriii") } returns MicrosoftUserInfo("MyMicrosoftId", email)
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
         val rm = mockHere<LinkRoleManager> {
             every { invalidateAllRoles("userid", true) } returns mockk()
@@ -200,8 +200,8 @@ class UserTest : KoinBaseTest(
     fun `Test user identity relink with account already linked`() {
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
-        val mbe = mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftInfo("msauth", "uriii") } returns MicrosoftUserInfo("", "")
+        val mbe = mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("", "")
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns true
@@ -219,7 +219,7 @@ class UserTest : KoinBaseTest(
             }
         }
         coVerify {
-            mbe.getMicrosoftInfo("msauth", "uriii") // Ensure the back-end has consumed the authcode
+            mbe.getUserIdentityInfo("msauth", "uriii") // Ensure the back-end has consumed the authcode
             sessionChecks.verifyUser(any())
         }
     }
@@ -230,8 +230,8 @@ class UserTest : KoinBaseTest(
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
         val email = "e.mail@mail.maiiiil"
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftInfo("msauth", "uriii") } returns MicrosoftUserInfo("MyMicrosoftId", email)
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false

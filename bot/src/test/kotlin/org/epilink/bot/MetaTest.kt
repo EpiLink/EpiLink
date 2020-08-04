@@ -17,13 +17,15 @@ import io.ktor.server.testing.contentType
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.mockk.every
+import io.mockk.mockk
 import org.epilink.bot.config.LinkContactInformation
 import org.epilink.bot.config.LinkFooterUrl
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkDiscordBackEnd
-import org.epilink.bot.http.LinkMicrosoftBackEnd
+import org.epilink.bot.http.LinkIdentityProvider
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkMetaApiImpl
 import org.koin.dsl.module
@@ -38,6 +40,7 @@ class MetaTest : KoinBaseTest(
         single<LinkMetaApi> { LinkMetaApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }
         single<CacheClient> { MemoryCacheClient() }
+        single { LinkAssets(ResourceAsset.None, ResourceAsset.None, ResourceAsset.None) }
     }
 ) {
     @Test
@@ -48,14 +51,14 @@ class MetaTest : KoinBaseTest(
         mockHere<LinkDiscordBackEnd> {
             every { getAuthorizeStub() } returns "I am a Discord authorize stub"
         }
-        mockHere<LinkMicrosoftBackEnd> {
+        mockHere<LinkIdentityProvider> {
             every { getAuthorizeStub() } returns "I am a Microsoft authorize stub"
         }
         mockHere<LinkLegalTexts> {
             every { idPrompt } returns "My id prompt text is the best"
         }
+        mockHere<LinkIdProviderConfiguration> { every { name } returns "the_name"}
         mockHere<LinkWebServerConfiguration> {
-            every { logo } returns "https://amazinglogo"
             every { footers } returns listOf(
                 LinkFooterUrl("Hello", "https://hello"),
                 LinkFooterUrl("Heeeey", "/macarena")
@@ -71,9 +74,9 @@ class MetaTest : KoinBaseTest(
             val data = fromJson<ApiSuccess>(call.response).data
             assertNotNull(data)
             assertEquals("EpiLink Test Instance", data["title"])
-            assertEquals("https://amazinglogo", data.getValue("logo"))
+            assertEquals(null, data.getValue("logo"))
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
-            assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
+            assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_idProvider"))
             assertEquals("My id prompt text is the best", data.getString("idPrompt"))
             val footers = data.getListOfMaps("footerUrls")
             assertEquals(2, footers.size)

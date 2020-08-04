@@ -55,7 +55,7 @@ class PermissionChecksTest : KoinBaseTest(
     fun `Test Microsoft user who already exists cannot create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns true
+            coEvery { isIdentityAccountAlreadyLinked(hey) } returns true
         }
         test {
             val adv = isIdentityProviderUserAllowedToCreateAccount("hey", "emailemail")
@@ -68,7 +68,7 @@ class PermissionChecksTest : KoinBaseTest(
     fun `Test banned Microsoft user cannot create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
+            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
             coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "badboi"})
         }
         mockHere<LinkBanLogic> {
@@ -89,7 +89,7 @@ class PermissionChecksTest : KoinBaseTest(
     fun `Test Microsoft user with no validator can create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
+            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
             coEvery { getBansFor(hey) } returns listOf()
         }
         mockHere<Rulebook> {
@@ -105,7 +105,7 @@ class PermissionChecksTest : KoinBaseTest(
     fun `Test Microsoft user with email rejected cannot create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
+            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
         }
         mockHere<Rulebook> {
             every { validator } returns { it != "mailmail" }

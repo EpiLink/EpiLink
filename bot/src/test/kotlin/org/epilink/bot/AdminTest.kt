@@ -39,7 +39,7 @@ import kotlin.test.*
 
 private class BanImpl(
     override val banId: Int,
-    override val msftIdHash: ByteArray,
+    override val idpIdHash: ByteArray,
     override val expiresOn: Instant?,
     override val issued: Instant,
     override val revoked: Boolean,

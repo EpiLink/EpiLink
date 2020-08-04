@@ -8,12 +8,13 @@
  */
 package org.epilink.bot
 
-import org.epilink.bot.http.LinkMicrosoftBackEnd
+import io.mockk.mockk
+import org.epilink.bot.http.LinkIdentityProvider
 import org.koin.dsl.module
 
 class MsftBackEndTest : KoinBaseTest(
     module {
-        single { LinkMicrosoftBackEnd("MsftClientId", "MsftSecret", "MsftTenant") }
+        single { LinkIdentityProvider(mockk(), "MsftSecret", "MsftTenant") }
     }
 ) {
 /*
