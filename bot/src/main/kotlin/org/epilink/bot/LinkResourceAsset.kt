@@ -8,6 +8,7 @@
  */
 package org.epilink.bot
 
+import io.ktor.http.ContentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -23,7 +24,7 @@ class LinkAssets(val logo: ResourceAsset, val background: ResourceAsset, val idp
 sealed class ResourceAsset {
     object None : ResourceAsset()
     class Url(val url: String) : ResourceAsset()
-    class File(val contents: ByteArray) : ResourceAsset()
+    class File(val contents: ByteArray, val contentType: ContentType?) : ResourceAsset()
 }
 
 fun ResourceAsset.asUrl(name: String): String? = when (this) {
@@ -43,7 +44,9 @@ suspend fun loadAssets(wsCfg: LinkWebServerConfiguration, idpCfg: LinkIdProvider
 suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): ResourceAsset {
     if (asset.file != null) {
         if (asset.url != null) error("Cannot define both a file and a url for the $name asset")
-        return ResourceAsset.File(withContext(Dispatchers.IO) { Files.readAllBytes(root.resolve(asset.file)) })
+        return ResourceAsset.File(
+            withContext(Dispatchers.IO) { Files.readAllBytes(root.resolve(asset.file)) },
+            asset.contentType?.let { ContentType.parse(it) })
     }
     if (asset.url != null)
         return ResourceAsset.Url(asset.url)

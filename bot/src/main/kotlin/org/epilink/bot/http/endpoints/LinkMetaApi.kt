@@ -92,7 +92,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
                 call.respondRedirect(asset.url)
             }.also { logger.debug { "Will serve asset $name as a URL redirect" } }
             is ResourceAsset.File -> get(name) {
-                call.respondBytes(asset.contents)
+                call.respondBytes(asset.contents, asset.contentType)
             }.also { logger.debug { "Will serve asset $name as a file" } }
         }
     }

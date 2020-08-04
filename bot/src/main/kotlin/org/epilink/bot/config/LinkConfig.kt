@@ -139,7 +139,8 @@ data class LinkWebServerConfiguration(
 
 data class ResourceAssetConfig(
     val url: String? = null,
-    val file: String? = null
+    val file: String? = null,
+    val contentType: String? = null
 )
 
 /**
