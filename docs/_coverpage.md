@@ -2,7 +2,7 @@
 
 # EpiLink <small>0.5.0</small>
 
-> Link Discord and Microsoft accounts together
+> Link Discord and any OpenID Connect account (Microsoft, Google, ...) together
 
 - Only allow people you trust on your work Discord servers
 - All-in-one: Discord bot and web portal

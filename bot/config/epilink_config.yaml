@@ -36,12 +36,14 @@ server:
   frontendUrl: ~
 
   # (Optional) Custom logo that will be displayed to the user. ~ means default, in which case it will show EpiLink's
-  # logo
+  # logo.
   logo: ~
   # To use a logo from a URL, use this syntax
   #logo: { url: "https://..." }
   # To use a logo stored next to this configuration file, use this syntax
   #logo: { file: mylogo.jpg }
+  # or, if you want to also specify the contentType (recommended for SVG files)
+  #logo: { file: mylogo.svg, contentType: image/svg+xml }
 
   # (Optional) Custom background that will be displayed to the user on the website. ~ means default, in which case a
   # simple grey background is shown. Same syntax as for the logo
@@ -64,6 +66,20 @@ redis: "redis://localhost:6379"
 # /!\ Administrators have a lot of power over the application, be careful with who you trust!
 admins: []
 
+# Identity Provider configuration
+idProvider:
+
+  # Issuer/Authority URL for the OpenID provider
+  url: ...
+
+  # Name of the OpenID provider, used in the front-end (Sign in with ...)
+  name: ...
+
+  # Icon for the OpenID provider, used in the front-end (Logo for Sign in button)
+  # Same format as for the background and logo from the server config (see above)
+  icon: { url: ... }
+
+
 # The tokens to use when connecting
 # Note that providing them in the configuration file is optional. If you do not define them here, you can pass them as
 # environment values.
@@ -75,12 +91,9 @@ tokens:
   # The secret for Discord's OAuth2
   discordOAuthSecret: ...
   # The client ID for the ID Provider's OAuth2
-  msftOAuthClientId: ...
+  idpOAuthClientId: ...
   # The secret for the ID Provider's OAuth2
-  msftOAuthSecret: ...
-  # The tenant for Microsoft OAuth requests.
-  # This can be "common" (allow everyone) or an ID specific to a company/school.
-  msftTenant: common
+  idpOAuthSecret: ...
 
 # Rulebook declaration
 # See the docs for more information

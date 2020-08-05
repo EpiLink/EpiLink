@@ -7,7 +7,7 @@
 
 **Links:** [Documentation](https://epilink.zoroark.guru) | [CHANGELOG](/CHANGELOG.md)
 
-EpiLink is an account verification server, allowing you to link a Discord identity to a Microsoft (including Office 365)
+EpiLink is an account verification server, allowing you to link a Discord identity to any OpenID Provider (including Microsoft, Google...)
 identity.
 
 ![Screenshot of the front-end](docs/img/front.png)

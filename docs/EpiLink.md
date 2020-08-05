@@ -2,7 +2,7 @@
 
 EpiLink is an authentication server and Discord bot that:
 
-* Links Discord account to Microsoft accounts (Office 365 included)
+* Links Discord account to any OpenID Connect-compatible service accounts (Microsoft/Azure AD, Google, ...)
 * Automatically attributes roles based on who is known or not
 * Automatically attributes roles based on [e-mail addresses](Rulebooks.md#e-mail-validation) and even [HTTPS requests](Rulebooks.md#rule-declaration)
 * Has a nice web front-end so that users can control their accounts

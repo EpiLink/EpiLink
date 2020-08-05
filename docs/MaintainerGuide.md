@@ -106,7 +106,7 @@ Custom roles can be determined using custom rules, and you can additionally vali
 * You can put the rulebook in a separate file (using `rulebookFile`). The value of `rulebookFile` is the path to the rulebook file **relative to the configuration file**. If the rulebook named `epilink.rule.kts` is located in the same folder as your config file, you can just use `rulebookFile: epilink.rule.kts`
 * Using *both* `rulebook` and `rulebookFile` at the same time will result in an error upon launching EpiLink.
 
-!> In case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, **all e-mail addresses will be treated as valid.** In other words, **if you use a general tenant as your Microsoft tenant instead of a specific one, use e-mail validation, otherwise untrusted parties may be authenticated via EpiLink!**
+!> In case you do not want e-mail validation (e.g. because you use a specific tenant for Microsoft, your application is internal to your organization for Google): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, **all e-mail addresses will be treated as valid.** In other words, **if you use a general tenant as your Microsoft tenant instead of a specific one, or people outside of your organization could potentially log in, use e-mail validation, otherwise untrusted parties may be authenticated via EpiLink!**
 
 ### HTTP Server Settings
 
@@ -154,10 +154,9 @@ tokens:
     discordOAuthSecret: ...
     idpOAuthClientId: ...
     idpOAuthSecret: ...
-    msftTenant: common
 ```
 
-The first step is to set up the credential EpiLink will use to contact Microsoft and Discord APIs.
+The first step is to set up the credential EpiLink will use to contact your [Identity Provider](IdentityProvider.md) and Discord APIs.
 
 #### Discord
 
@@ -173,41 +172,11 @@ The Bot section on Discord's developer portal will determine what the applicatio
 
 You should also add redirection URIs based on where the front-end is served. The path is `/redirect/discord`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/discord`. 
 
-#### Microsoft
+#### Identity Provider (credentials)
 
-##### Choosing an account and tenants
+Note that you must also configure the Identity Provider `idProvider` section of the configuration file. See [here](IdentityProviders.md) for more information on Identity providers and [here](#identity-provider) for configuration information.
 
-Before starting, you must determine *where* your app will live. If your app will live inside a company or school, you should do this entire procedure from your company or school account, and, if there is only one Azure tenant, choose the "account in my organization" option. EpiLink will work fine with just your regular Microsoft account, but this is not recommended.
-
-EpiLink allows you to define a tenant in the configuration file directly, so just choose what makes sense for your use case. 
-
-If you need to support multiple tenants and have to resort to tenants like `common`, which allow using any Microsoft account, you can tell EpiLink to validate only some e-mail addresses based on rules you define in the rulebook. See [this section](Rulebooks.md#e-mail-validation) for more information.
-
-##### Registering EpiLink
-
-Go to the [Azure portal](https://portal.azure.com) and log in with your Microsoft account ([which one?](#choosing-an-account-and-tenants)). Go to the Azure Active Directory view, then "App Registrations" and "New registration".
-
-Carefully choose the "Supported account types field" ([help](#choosing-an-account-and-tenants)). The registering process can take some time, just be patient. Once done, you will be redirected to your app's page.
-
-You will need to create a secret manually, as Azure AD does not create one for you automatically. Simply go to Certificates & Secrets and click on New client secret. Note that the secret will not be visible once you leave the page, so copy it then and not later!
-
-| Name in Azure AD Application page        | Name in the config file |
-| ---------------------------------------  | ----------------------- |
-| Overview -> Application (client) ID      | `idpOAuthClientId`     |
-| Certificates & Secrets -> Client secrets | `idpOAuthSecret`       |
-
-You should also add redirection URIs based on where the front-end is served. The path is `/redirect/idProvider`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/idProvider`.
-
-##### Tenant
-
-`msftTenant` can take a few different values:
- 
-* `common` to accept any Microsoft account (personal, business/school account)
-* `consumers` to accept only personal Microsoft accounts
-* `organizations` to accept only business/school accounts
-* Your tenant's ID to accept only accounts from your tenant. You can get it by connecting to the Azure portal with your work account and going to `?` -> Show Diagnostics. In the JSON file, you will find a list of tenants, simply pick the ID of the one you want.
-
-?> If you need to use multiple tenants, and cannot guarantee identities by just having a tenant in place, you can validate e-mail addresses using rulebooks. [Read this for more information](Rulebooks.md#e-mail-validation).
+`idpOAuthClientId` (IDP is for **Id**entity **P**rovider)
 
 ### Discord configuration
 
@@ -387,7 +356,7 @@ Here is what you can do using the administrative actions provided by EpiLink:
 
 - [Get information about a user](Api.md#get-adminuseruserid)
 - [Get a user's true identity](Api.md#post-adminidrequest)
-- [Ban a user](Api.md#post-adminbanmsfthash), [get previous bans](Api.md#get-adminbanmsfthash) and [revoke them](Api.md#post-adminbanmsfthashbanidrevoke)
+- [Ban a user](Api.md#post-adminbanidphash), [get previous bans](Api.md#get-adminbanidphash) and [revoke them](Api.md#post-adminbanidphashbanidrevoke)
 - [Generate a GDPR report about a user](Api.md#post-admingdprreporttargetid)
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
@@ -400,7 +369,7 @@ Bans are simple: a banned user will not get any role from EpiLink. That's all!
 - Bans can have an expiration date, after which they will no longer count towards a user being "banned" (i.e. they will no longer be considered active bans)
 - Bans can also be manually revoked before their expiration date. A revoked ban no longer counts towards a user being "banned" (i.e. they will no longer be considered active bans)
 
-!> EpiLink does not automatically refresh the roles of a banned user whose ban has expired. They will have to have their roles refreshed in another way, e.g. by leaving and re-joining the server, changing whether their ID is kept in the system or not, etc.
+!> EpiLink does not automatically refresh the roles of a banned user whose ban has expired. They will have to have their roles refreshed in another way, e.g. by leaving and re-joining the server, changing whether their ID is kept in the system or not, etc. You can also [update their roles using a Discord command](DiscordCommands.md#update).
 
 ### ID Access
 

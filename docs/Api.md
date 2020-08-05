@@ -269,7 +269,7 @@ Example:
 
 (or a PDF file's contents)
 
-### GET /meta/logo and GET /meta/background
+### GET /meta/logo, background and idpLogo
 
 ```http request
 GET /api/v1/meta/logo
@@ -281,7 +281,7 @@ GET /api/v1/meta/background
 
 Returns an image if the image is hosted directly by the back-end. The behavior is undefined if the image is not hosted by the back-end.
 
-Instead of relying on these endpoints, you should instead rely on the `background` and `logo` information you get from the [meta information endpoint](#get-metainfo).
+Instead of relying on these endpoints, you should instead rely on the `background`, `logo` and `providerIcon` (for `idpLogo`) information you get from the [meta information endpoint](#get-metainfo).
 
 ## Registration (/register)
 
@@ -467,7 +467,7 @@ Contains information about all of the ID Accesses of a user.
 {
     "manualAuthorsDisclosed": true, // or false
     "accesses": [
-        // IdAccess objects    
+        // IdAccess objects
     ]
 }
 ```
