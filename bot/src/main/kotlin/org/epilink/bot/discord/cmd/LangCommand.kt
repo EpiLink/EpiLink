@@ -35,7 +35,7 @@ class LangCommand : Command, KoinComponent {
         channelId: String,
         guildId: String?
     ) {
-        val previousLanguage = i18n.getLanguage(sender?.discordId)
+        val previousLanguage = i18n.getLanguage(senderId)
         when {
             commandBody.isEmpty() ->
                 // e!lang
