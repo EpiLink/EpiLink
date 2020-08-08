@@ -4,7 +4,7 @@ Identity Providers (formally known as OpenID Providers or OPs in the OpenID Conn
 
 You can use any OpenID Connect compliant service for EpiLink. This page will describe the recommended configuration for the most popular ones.
 
-You can set the Identity Provider [in the `idProvider` section of the configuration file](TODO).
+You can set the Identity Provider [in the `idProvider` section of the configuration file](MaintainerGuide.md#identity-provider).
 
 ## Discovery process
 
@@ -69,4 +69,4 @@ idProvider:
   icon: { file: google_icon.svg, contentType: "image/svg+xml" }
 ```
 
-For `google_icon.svg`, you can use simpleicons.org's logo, which you can find [here](https://simpleicons.org/icons/google.svg). Place it next to your configuration file.
+For `google_icon.svg`, you can use simpleicons.org's logo, which you can find [here](https://simpleicons.org/icons/google.svg), which you can make white using your favorite SVG editor. You can also just look for any Google logo of your choosing, as Google does not seem to provide one themselves. Place the SVG file next to your configuration file.

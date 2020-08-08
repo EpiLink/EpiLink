@@ -5,7 +5,7 @@
 [![MPL 2.0 No copyleft exception license](https://img.shields.io/badge/License-MPL%202.0%20(NCE)-lightgray?style=for-the-badge)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/EpiLink/EpiLink?color=darkgreen&include_prereleases&label=Latest%20release&style=for-the-badge)](https://github.com/EpiLink/EpiLink/releases) 
 
-**Links:** [Documentation](https://epilink.zoroark.guru) | [CHANGELOG](/CHANGELOG.md)
+**Links:** [Documentation](https://epilink.zoroark.guru) | [Changelog](/CHANGELOG.md) | [Discord server](https://discord.gg/CpHmSUt)
 
 EpiLink is an account verification server, allowing you to link a Discord identity to any OpenID Provider (including Microsoft, Google...)
 identity.

@@ -2,9 +2,11 @@
 
 This page will guide you through the configuration of a working EpiLink instance.
 
+?> This page mainly goes through [a basic check-list](#getting-started), [deployment](#deployment), [instance configuration](#configuration) and [administrative actions](#administration). Other information, especially regarding [Identity Provider setup](IdentityProviders.md), [Discord commands](DiscordCommands.md), [Rulebooks](Rulebooks.md) and [Rulebooks testing](IRT.md) is available in other pages.
+
 ## Getting started
 
-Go through all of these steps before going public:
+Go through all of these steps before going public with your instance:
 
 - Get EpiLink (and all of the [required stuff](#deployment))
 - [Configure it](#configuration) using the [sample configuration](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml) as a template
@@ -145,6 +147,23 @@ server:
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 
+### Identity provider
+
+?> More information and presets are available [in the dedicated page](IdentityProviders.md).
+
+The identity provider is the service that Discord accounts are linked to. They provide an e-mail address (an identity) for the users.
+
+```yaml
+idProvider:
+  url: ...
+  name: ...
+  icon: { ... }
+```
+
+* `url`: the [authority/issuer URL](MaintainerGuide.md#discovery-process)
+* `name`: the name of the identity provider, only used for displaying it to the user
+* `icon`: the icon for the identity provider, only used for displaying it to the user. Follows the same format as the background/logo entry in the [server configuration](#http-server-settings). 
+
 ### Credentials
 
 ```yaml
@@ -174,7 +193,7 @@ You should also add redirection URIs based on where the front-end is served. The
 
 #### Identity Provider (credentials)
 
-Note that you must also configure the Identity Provider `idProvider` section of the configuration file. See [here](IdentityProviders.md) for more information on Identity providers and [here](#identity-provider) for configuration information.
+?> Note that you must also configure the Identity Provider `idProvider` section of the configuration file. See [here](IdentityProviders.md) for more information on Identity providers and [here](#identity-provider) for configuration information.
 
 `idpOAuthClientId` (IDP is for **Id**entity **P**rovider)
 
