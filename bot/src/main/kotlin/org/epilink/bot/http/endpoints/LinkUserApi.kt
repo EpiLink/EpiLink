@@ -58,7 +58,7 @@ interface LinkUserApi {
 internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.user")
     private val roleManager: LinkRoleManager by inject()
-    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
+    private val idProvider: LinkIdentityProvider by inject()
     private val sessionChecks: LinkSessionChecks by inject()
     private val idManager: LinkIdManager by inject()
     private val dbFacade: LinkDatabaseFacade by inject()
@@ -107,14 +107,14 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 logger.debug {
                     "User ${user.discordId} has asked for a relink with authcode ${auth.code}."
                 }
-                val microsoftToken = microsoftBackEnd.getMicrosoftToken(auth.code, auth.redirectUri)
+                // Consume the authorization code, just in case
+                val (guid, email) = idProvider.getUserIdentityInfo(auth.code, auth.redirectUri)
                 if (dbFacade.isUserIdentifiable(user)) {
                     throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyKnown)
                 }
-                val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
-                idManager.relinkMicrosoftIdentity(user, userInfo.email, userInfo.guid)
+                idManager.relinkIdentity(user, email, guid)
                 roleManager.invalidateAllRoles(user.discordId, true)
-                call.respond(apiSuccess("Successfully linked Microsoft account.", "use.slm"))
+                call.respond(apiSuccess("Successfully linked Identity Provider account.", "use.slm"))
             }
 
             @ApiEndpoint("DELETE /api/v1/user/identity")

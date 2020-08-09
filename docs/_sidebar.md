@@ -3,6 +3,7 @@
 - Using EpiLink
 
     - [📖 Maintainer Guide](MaintainerGuide.md)
+    - [📇 Identity Providers](IdentityProviders.md)
     - [🎯 Rulebooks](Rulebooks.md)
     - [🪁 Rule Tester (IRT)](IRT.md)
     - [💎 Discord commands](DiscordCommands.md)

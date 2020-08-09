@@ -13,11 +13,11 @@ package org.epilink.bot.http.sessions
  */
 data class RegisterSession (
     /**
-     * The Microsoft ID to be used
+     * The Identity Provider ID to be used
      */
-    val microsoftUid: String? = null,
+    val idpId: String? = null,
     /**
-     * The Microsoft email to be used
+     * The Identity Provider email to be used
      */
     val email: String? = null,
     /**

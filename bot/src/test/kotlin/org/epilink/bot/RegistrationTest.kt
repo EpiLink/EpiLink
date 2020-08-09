@@ -40,15 +40,14 @@ class RegistrationTest : KoinBaseTest(
 ) {
     @Test
     fun `Test Microsoft account authcode registration`() {
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("fake mac", "fake mur") } returns UserIdentityInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
+            coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Allowed
         }
         withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/idProvider") {
                 setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
             }
             call.assertStatus(HttpStatusCode.OK)
@@ -63,21 +62,20 @@ class RegistrationTest : KoinBaseTest(
             assertEquals(null, regInfo.getValue("discordAvatarUrl"))
             // Check that a session was set
             val session = call.sessions.get<RegisterSession>()
-            assertEquals(RegisterSession(microsoftUid = "fakeguid", email = "fakemail"), session)
+            assertEquals(RegisterSession(idpId = "fakeguid", email = "fakemail"), session)
         }
     }
 
     @Test
     fun `Test Microsoft account authcode registration when disallowed`() {
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("fake mac", "fake mur") } returns UserIdentityInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche", "ch.eh")
+            coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche", "ch.eh")
         }
         withTestEpiLink {
-            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+            val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/idProvider") {
                 setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
             }
             call.assertStatus(HttpStatusCode.BadRequest)
@@ -194,13 +192,12 @@ class RegistrationTest : KoinBaseTest(
             coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
         }
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("fake mac", "fake mur") } returns "fake mtk"
-            coEvery { getMicrosoftInfo("fake mtk") } returns MicrosoftUserInfo("fakeguid", "fakemail")
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("fake mac", "fake mur") } returns UserIdentityInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
-            coEvery { isMicrosoftUserAllowedToCreateAccount(any(), any()) } returns Allowed
+            coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Allowed
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("yes") } answers { if (userCreated) mockk() else null }
@@ -230,7 +227,7 @@ class RegistrationTest : KoinBaseTest(
                 response.headers["RegistrationSessionId"]!!
             }
             // Microsoft authentication
-            handleRequest(HttpMethod.Post, "/api/v1/register/authcode/msft") {
+            handleRequest(HttpMethod.Post, "/api/v1/register/authcode/idProvider") {
                 addHeader("RegistrationSessionId", regHeader)
                 setJsonBody("""{"code":"fake mac","redirectUri":"fake mur"}""")
             }.apply {

@@ -37,9 +37,13 @@ val minimalConfig = LinkConfiguration(
         discordToken = "",
         discordOAuthClientId = "",
         discordOAuthSecret = "",
-        msftOAuthClientId = "",
-        msftOAuthSecret = "",
-        msftTenant = ""
+        idpOAuthClientId = "",
+        idpOAuthSecret = ""
+    ),
+    idProvider = LinkIdProviderConfiguration(
+        url = "",
+        name = "",
+        icon = null
     ),
     discord = LinkDiscordConfig(null),
     redis = null

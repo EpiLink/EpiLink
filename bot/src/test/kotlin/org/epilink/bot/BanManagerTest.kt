@@ -33,7 +33,7 @@ class BanManagerTest : KoinBaseTest(
         val embed = mockk<DiscordEmbed>()
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { recordBan(idHash, null, "the_author", "the description") } returns ban
-            coEvery { getUserFromMsftIdHash(any()) } returns u
+            coEvery { getUserFromIdpIdHash(any()) } returns u
         }
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRoles("targetid") } returns mockk()
@@ -73,7 +73,7 @@ class BanManagerTest : KoinBaseTest(
     fun `Test revoke ban that does not correspond to msft id hash`() {
         mockHere<LinkDatabaseFacade> {
             coEvery { getBan(12) } returns mockk {
-                every { msftIdHash } returns byteArrayOf(1, 2, 3)
+                every { idpIdHash } returns byteArrayOf(1, 2, 3)
             }
         }
         mockHere<LinkBanLogic> {
@@ -93,7 +93,7 @@ class BanManagerTest : KoinBaseTest(
         val idHash = byteArrayOf(1, 2, 3, 4)
         val idHashStr = Base64.getUrlEncoder().encodeToString(idHash)
         val initialBan = mockk<LinkBan> {
-            every { msftIdHash } returns idHash
+            every { idpIdHash } returns idHash
         }
         mockHere<LinkBanLogic> {
             every { isBanActive(initialBan) } returns true
@@ -101,7 +101,7 @@ class BanManagerTest : KoinBaseTest(
         val dbf = mockHere<LinkDatabaseFacade> {
             coEvery { getBan(12) } returns initialBan
             coEvery { revokeBan(12) } just runs
-            coEvery { getUserFromMsftIdHash(any()) } returns mockk {
+            coEvery { getUserFromIdpIdHash(any()) } returns mockk {
                 every { discordId } returns "discordid"
             }
         }

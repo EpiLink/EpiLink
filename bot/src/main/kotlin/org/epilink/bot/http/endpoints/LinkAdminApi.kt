@@ -104,7 +104,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 val identifiable = dbf.isUserIdentifiable(user)
                 val info = RegisteredUserInfo(
                     targetId,
-                    user.msftIdHash.encodeUrlSafeBase64(),
+                    user.idpIdHash.encodeUrlSafeBase64(),
                     user.creationDate.toString(),
                     identifiable
                 )
@@ -112,17 +112,17 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
             }
         }
 
-        route("ban/{msftHash}") {
-            @ApiEndpoint("GET /api/v1/admin/ban/{msftHash}")
+        route("ban/{idpHash}") {
+            @ApiEndpoint("GET /api/v1/admin/ban/{idpHash}")
             get {
-                val msftHash = call.parameters["msftHash"]!!
-                val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
-                val bans = dbf.getBansFor(msftHashBytes)
+                val idpHash = call.parameters["idpHash"]!!
+                val idpHashBytes = Base64.getUrlDecoder().decode(idpHash)
+                val bans = dbf.getBansFor(idpHashBytes)
                 val data = UserBans(bans.any { banLogic.isBanActive(it) }, bans.map { it.toBanInfo() })
                 call.respond(ApiSuccessResponse.of(data))
             }
 
-            @ApiEndpoint("POST /api/v1/admin/ban/{msftHash}")
+            @ApiEndpoint("POST /api/v1/admin/ban/{idpHash}")
             @OptIn(UsesTrueIdentity::class) // Retrieves the ID of the admin
             post {
                 val request: BanRequest = call.receive()
@@ -137,16 +137,16 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                         "EpiLink Admin Service",
                         "You requested a ban on someone else: your identity was retrieved for logging purposes."
                     )
-                    val result = banManager.ban(call.parameters["msftHash"]!!, expiry, identity, request.reason)
+                    val result = banManager.ban(call.parameters["idpHash"]!!, expiry, identity, request.reason)
                     call.respond(OK, ApiSuccessResponse.of(result.toBanInfo()))
                 }
             }
 
             route("{banId}") {
-                @ApiEndpoint("GET /api/v1/admin/ban/{msftHash}/{banId}")
+                @ApiEndpoint("GET /api/v1/admin/ban/{idpHash}/{banId}")
                 get {
-                    val msftHash = call.parameters["msftHash"]!!
-                    val msftHashBytes = Base64.getUrlDecoder().decode(msftHash)
+                    val idpHash = call.parameters["idpHash"]!!
+                    val idpHashBytes = Base64.getUrlDecoder().decode(idpHash)
                     val banId = call.parameters["banId"]!!.toIntOrNull()
                     if (banId == null) {
                         call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID.", "adm.ibi"))
@@ -155,22 +155,22 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                         when {
                             ban == null ->
                                 call.respond(NotFound, InvalidId.toResponse("No ban with given ID found.", "adm.nbi"))
-                            !ban.msftIdHash.contentEquals(msftHashBytes) ->
-                                call.respond(NotFound, InvalidId.toResponse("Microsoft ID hash does not correspond.", "adm.hnc"))
+                            !ban.idpIdHash.contentEquals(idpHashBytes) ->
+                                call.respond(NotFound, InvalidId.toResponse("Identity Provider ID hash does not correspond.", "adm.hnc"))
                             else ->
                                 call.respond(OK, ApiSuccessResponse.of(ban.toBanInfo()))
                         }
                     }
                 }
 
-                @ApiEndpoint("POST /api/v1/admin/ban/{msftHash}/{banId}/revoke")
+                @ApiEndpoint("POST /api/v1/admin/ban/{idpHash}/{banId}/revoke")
                 post("revoke") {
-                    val msftHash = call.parameters["msftHash"]!!
+                    val idpHash = call.parameters["idpHash"]!!
                     val banId = call.parameters["banId"]!!.toIntOrNull()
                     if (banId == null) {
                         call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format", "adm.ibi"))
                     } else {
-                        banManager.revokeBan(msftHash, banId)
+                        banManager.revokeBan(idpHash, banId)
                         call.respond(OK, apiSuccess("Ban revoked.", "adm.brk"))
                     }
                 }

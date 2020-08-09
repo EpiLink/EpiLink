@@ -31,7 +31,13 @@
             actualError() {
                 if (this.error.key !== undefined && this.error.replace !== undefined) {
                     // Back-end I18n string
-                    return this.$t(this.error.key, this.error.replace);
+                    return this.$t(
+                        this.error.key,
+                        {
+                            ...this.error.replace,
+                            provider: (this.$store.meta && this.$store.meta.providerName) || "Identity Provider"
+                        }
+                    );
                 }
                 const error = this.error.toString();
 

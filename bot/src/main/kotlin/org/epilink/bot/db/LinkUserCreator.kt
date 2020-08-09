@@ -21,7 +21,7 @@ interface LinkUserCreator {
     /**
      * Create a user in the database with all of the given parameters
      */
-    suspend fun createUser(discordId: String, microsoftUid: String, email: String, keepIdentity: Boolean): LinkUser
+    suspend fun createUser(discordId: String, idpId: String, email: String, keepIdentity: Boolean): LinkUser
 }
 
 internal class LinkUserCreatorImpl : LinkUserCreator, KoinComponent {
@@ -32,38 +32,38 @@ internal class LinkUserCreatorImpl : LinkUserCreator, KoinComponent {
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     override suspend fun createUser(
         discordId: String,
-        microsoftUid: String,
+        idpId: String,
         email: String,
         keepIdentity: Boolean
     ): LinkUser {
-        return when (val adv = isAllowedToCreateAccount(discordId, microsoftUid, email)) {
+        return when (val adv = isAllowedToCreateAccount(discordId, idpId, email)) {
             is Disallowed -> throw LinkEndpointUserException(
                 StandardErrorCodes.AccountCreationNotAllowed,
                 adv.reason,
                 adv.reasonI18n,
                 adv.reasonI18nData
-            ).also { logger.debug { "Account creation disallowed for Discord $discordId / MS $microsoftUid: " + adv.reason } }
+            ).also { logger.debug { "Account creation disallowed for Discord $discordId / MS $idpId: " + adv.reason } }
             is Allowed -> {
                 logger.infoOrDebug("Creating a new user") {
                     """
                     Creating a new user with:
                             Discord ID: $discordId
-                          Microsoft ID: $microsoftUid
+                                IDP ID: $idpId
                                 E-Mail: $email
                          Keep identity: $keepIdentity
                     """.trimIndent()
                 }
-                facade.recordNewUser(discordId, microsoftUid.hashSha256(), email, keepIdentity, Instant.now())
+                facade.recordNewUser(discordId, idpId.hashSha256(), email, keepIdentity, Instant.now())
             }
         }
     }
 
     private suspend fun isAllowedToCreateAccount(
         discordId: String,
-        microsoftId: String,
+        idpId: String,
         email: String
     ): DatabaseAdvisory =
-        perms.isMicrosoftUserAllowedToCreateAccount(microsoftId, email) and {
+        perms.isIdentityProviderUserAllowedToCreateAccount(idpId, email) and {
             perms.isDiscordUserAllowedToCreateAccount(discordId)
         }
 }

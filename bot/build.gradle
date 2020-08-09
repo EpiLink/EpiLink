@@ -66,6 +66,8 @@ dependencies {
 
     implementation "guru.zoroark:ktor-rate-limit:$krlVersion"
 
+    implementation "org.bitbucket.b_c:jose4j:$jose4jVersion"
+
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'

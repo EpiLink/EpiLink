@@ -76,12 +76,12 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     InvalidAuthCode(102, "Invalid authorization code"),
 
     /**
-     * Sent when a Microsoft account does not have any attached email address
+     * Sent when an Identity Provider account does not have any attached email address
      */
     AccountHasNoEmailAddress(103, "This account does not have any attached email address"),
 
     /**
-     * Sent when a Microsoft account does not have any attached ID
+     * Sent when an Identity Provider account does not have any attached ID
      */
     AccountHasNoId(104, "This account does not have any ID"),
 
@@ -101,7 +101,7 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     IdentityAlreadyUnknown(111, "The identity of this account already does not exist in the database"),
 
     /**
-     * This account's identity does not match the one retrieved via the Microsoft authcode (different IDs).
+     * This account's identity does not match the one retrieved via the an Identity Provider authcode (different IDs).
      */
     NewIdentityDoesNotMatch(112, "This account's identity does not match the new one"),
 
@@ -112,9 +112,9 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     DiscordApiFailure(201, "Something went wrong with a Discord API call"),
 
     /**
-     * Sent in case of a back-end call to the Microsoft API that failed with no decipherable reason
+     * Sent in case of a back-end call to the an Identity Provider API that failed with no decipherable reason
      */
-    MicrosoftApiFailure(202, "Something went wrong with a Microsoft API call"),
+    IdentityProviderApiFailure(202, "Something went wrong with an identity provider API call"),
 
     // ************ 3xx: general errors ************
     /**

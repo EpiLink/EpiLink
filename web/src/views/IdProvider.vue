@@ -9,13 +9,15 @@
 
 -->
 <template>
-    <div id="microsoft" v-if="user">
+    <div id="idProvider" v-if="user">
         <link-user />
         <link-stepper id="stepper" step="2" />
 
         <button id="login" @click="login()">
-            <img id="icon" :alt="$t('microsoft.connect')" src="../../assets/ms_icon.svg" />
-            <span id="text" v-html="$t('microsoft.connect')" />
+            <img v-if="meta.providerIcon" id="icon" :alt="$t('idProvider.connect', {provider: meta.providerName}
+)" :src="providerIconUrl" />
+            <span id="text" v-html="$t('idProvider.connect', {provider: meta.providerName}
+)" />
         </button>
     </div>
 </template>
@@ -29,7 +31,7 @@
     import LinkUser    from '../components/User';
 
     export default {
-        name: 'link-microsoft',
+        name: 'link-idProvider',
         components: { LinkUser, LinkStepper },
 
         beforeMount() {
@@ -45,7 +47,17 @@
                 submitting: false
             };
         },
-        computed: mapState({ user: state => state.auth.user }),
+        computed: {
+            ...mapState({ user: state => state.auth.user, meta: state => state.meta }),
+            providerIconUrl() {
+                const meta = this.$store.state.meta;
+                const logoUrl = meta && meta.providerIcon;
+                if (logoUrl)
+                    return logoUrl.startsWith('/api/v1/') ? BACKEND_URL + logoUrl.substring(7) : logoUrl;
+                else
+                    return false;
+            }
+        },
         methods: {
             login() {
                 if (this.submitting) {
@@ -54,15 +66,15 @@
 
                 this.submitting = true;
 
-                const name = this.$t('popups.microsoft');
+                const name = this.$t('popups.idProvider');
 
                 this.$router.push({
                     name: 'auth',
-                    params: { service: 'microsoft' }
+                    params: { service: 'idProvider' }
                 });
 
                 setTimeout(() => {
-                    const popup = openPopup(name, 'microsoft', this.$store.state.meta.authorizeStub_msft);
+                    const popup = openPopup(name, 'idProvider', this.$store.state.meta.authorizeStub_idProvider);
                     this.$store.commit('openPopup', popup);
                 }, 300);
             }
@@ -74,7 +86,7 @@
     @import '../styles/vars';
     @import '../styles/mixins';
 
-    #microsoft {
+    #idProvider {
         display: flex;
         flex-direction: column;
         align-items: center;

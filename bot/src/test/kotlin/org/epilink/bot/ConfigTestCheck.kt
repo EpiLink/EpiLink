@@ -112,12 +112,12 @@ class ConfigTestCheck {
 
     @Test
     fun `Test default Microsoft client id triggers error`() {
-        assertContainsSingleError(tokens(msftOAuthClientId = defaultTokenValue).check(), "msftOAuthClientId")
+        assertContainsSingleError(tokens(msftOAuthClientId = defaultTokenValue).check(), "idpOAuthClientId")
     }
 
     @Test
     fun `Test default Microsoft client secrt triggers error`() {
-        assertContainsSingleError(tokens(msftOAuthSecret = defaultTokenValue).check(), "msftOAuthSecret")
+        assertContainsSingleError(tokens(msftOAuthSecret = defaultTokenValue).check(), "idpOAuthSecret")
     }
 
     /**
@@ -158,9 +158,8 @@ class ConfigTestCheck {
         discordOAuthClientId = discordOAuthClientId,
         discordOAuthSecret = discordOAuthSecret,
         discordToken = discordToken,
-        msftOAuthClientId = msftOAuthClientId,
-        msftOAuthSecret = msftOAuthSecret,
-        msftTenant = "nope"
+        idpOAuthClientId = msftOAuthClientId,
+        idpOAuthSecret = msftOAuthSecret
     )
 
     private val testValidLanguages = setOf("a", "b", "c")

@@ -115,7 +115,7 @@ internal fun KoinTest.setupSession(
 ): String {
     val u: LinkUser = mockk {
         every { discordId } returns discId
-        every { msftIdHash } returns msIdHash
+        every { idpIdHash } returns msIdHash
         every { creationDate } returns created
     }
     softMockHere<LinkDatabaseFacade> {

@@ -28,8 +28,8 @@ export default {
             description: 'Récupération des informations...'
         }
     },
-    microsoft: {
-        connect: 'Se connecter via Microsoft'
+    idProvider: {
+        connect: 'Se connecter via {provider}'
     },
     notFound: {
         description: 'La page demandée n\'existe pas.'
@@ -56,7 +56,7 @@ export default {
     },
     profile: {
         noticeUncheck: 'Décocher cette option supprimera complètement votre identité du serveur.',
-        noticeCheck: 'Après avoir coché cette option, vous devrez vous connecter à nouveau à Microsoft.',
+        noticeCheck: 'Après avoir coché cette option, vous devrez vous connecter à nouveau à {provider}.',
 
         admin: 'Administrateur',
         identityAccesses: 'Accès à votre identité',
@@ -85,7 +85,7 @@ export default {
             home: 'Accueil',
             auth: 'Connexion',
             redirect: 'Redirection...',
-            microsoft: 'Connexion à Microsoft',
+            idProvider: 'Connexion à {provider}',
             settings: 'Paramètres',
             success: 'Terminé',
             profile: 'Profil',
@@ -106,11 +106,11 @@ export default {
 
     popups: {
         discord: 'Connexion à Discord',
-        microsoft: 'Connexion à Microsoft'
+        idProvider: 'Connexion à {provider}'
     },
     steps: {
         discord: 'Connexion à Discord',
-        microsoft: 'Connexion à Microsoft',
+        idProvider: 'Connexion à {provider}',
         settings: 'Validation des paramètres'
     },
 
@@ -127,14 +127,14 @@ export default {
         },
         use: {
             slo: 'Connecté avec succès.',
-            slm: 'Compte Microsoft relié avec succès.',
+            slm: 'Compte {provider} relié avec succès.',
             sdi: 'Identité supprimée avec succès.'
         },
         pc: {
-            erj: "Cette adresse e-mail a été rejetée. Êtes-vous sûr d'utiliser le bon compte Microsoft ?",
+            erj: "Cette adresse e-mail a été rejetée. Êtes-vous sûr d'utiliser le bon compte {provider} ?",
             dae: 'Ce compte Discord existe déjà.',
-            cba: 'Ce compte Microsoft est banni (raison : {reason})',
-            ala: 'Ce compte Microsoft est déjà lié à un autre compte.'
+            cba: 'Ce compte {provider} est banni (raison : {reason})',
+            ala: 'Ce compte {provider} est déjà lié à un autre compte.'
         },
         reg: {
             msh: 'En-tête de session manquant.',
@@ -150,7 +150,7 @@ export default {
             '111': "L'identité de ce compte est déjà absente de la base de données.",
             '112': "L'identifiant du compte ne correspond pas au nouveau compte.",
             '201': "Une erreur est survenue lors d'un appel à l'API de Discord",
-            '202': "Une erreur est survenue lors d'un appel à l'API de Microsoft",
+            '202': "Une erreur est survenue lors d'un appel à l'API de {provider}",
             '300': "Vous avez besoin d'être connecté pour accéder à cette ressource",
             '301': "Vous n'avez pas la permission de faire cela",
         }

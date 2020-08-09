@@ -78,7 +78,7 @@ class IdAccessorTest : KoinBaseTest(
         }
         test {
             val exc = assertFailsWith<LinkEndpointUserException> {
-                relinkMicrosoftIdentity(user, "this doesn't matter", "this doesn't matter either")
+                relinkIdentity(user, "this doesn't matter", "this doesn't matter either")
             }
             assertEquals(110, exc.errorCode.code)
         }
@@ -89,14 +89,14 @@ class IdAccessorTest : KoinBaseTest(
     fun `Test relink fails on ID mismatch`() {
         val originalHash = "That doesn't look right".sha256()
         val u = mockk<LinkUser> {
-            every { msftIdHash } returns originalHash
+            every { idpIdHash } returns originalHash
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
         }
         test {
             val exc = assertFailsWith<LinkEndpointUserException> {
-                relinkMicrosoftIdentity(u, "this doesn't matter", "That is definitely not okay")
+                relinkIdentity(u, "this doesn't matter", "That is definitely not okay")
             }
             assertEquals(112, exc.errorCode.code)
         }
@@ -108,14 +108,14 @@ class IdAccessorTest : KoinBaseTest(
         val id = "This looks quite alright"
         val hash = id.sha256()
         val u = mockk<LinkUser> {
-            every { msftIdHash } returns hash
+            every { idpIdHash } returns hash
         }
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
             coEvery { recordNewIdentity(u, "mynewemail@email.com") } just runs
         }
         test {
-            relinkMicrosoftIdentity(u, "mynewemail@email.com", id)
+            relinkIdentity(u, "mynewemail@email.com", id)
         }
         coVerify { df.recordNewIdentity(u, "mynewemail@email.com") }
     }

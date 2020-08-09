@@ -16,8 +16,11 @@ import org.epilink.bot.config.LinkFooterUrl
 data class InstanceInformation(
     val title: String,
     val logo: String?,
-    val authorizeStub_msft: String,
+    val background: String?,
+    val authorizeStub_idProvider: String,
     val authorizeStub_discord: String,
+    val providerName: String,
+    val providerIcon: String?,
     val idPrompt: String,
     val footerUrls: List<LinkFooterUrl>,
     val contacts: List<LinkContactInformation>

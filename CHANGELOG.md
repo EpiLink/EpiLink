@@ -8,11 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+* Added compatibility with any OpenID Connect compatible service ([#214](https://github.com/EpiLink/EpiLink/pull/214))
+  * **BREAKING CHANGE:** If you were using EpiLink before this version, you must add an `idProvider` section in your configuration file and **enable the Microsoft backwards compatibility option.** See the docs for more details.
+* Added an asset system ([#214](https://github.com/EpiLink/EpiLink/pull/214))
+  * **BREAKING CHANGE:** If you still want to an URL, replace the URL string with `{ url: "your_url" }`
+* Added a background ([#214](https://github.com/EpiLink/EpiLink/pull/214))
 * Added I18n support on the back-end, including Discord I18n with the `e!lang` command. ([#204](https://github.com/EpiLink/EpiLink/pull/204))
 * Added the `_notIdentified` EpiLink role. You can now attribute roles to users who are registered but do not have their identity stored in the database. ([#211](https://github.com/EpiLink/EpiLink/pull/211))
 
 ### Changed
 
+* Made some startup steps asynchronous for better startup speed ([#214](https://github.com/EpiLink/EpiLink/pull/214))
 * The tab icon now shows the instance's icon instead of the EpiLink icon ([#203](https://github.com/EpiLink/EpiLink/pull/203))
 * Reworked some Discord embeds
 * Updated dependencies and Discord4J ([#212](https://github.com/EpiLink/EpiLink/pull/212))
