@@ -47,6 +47,11 @@ interface LinkGdprReport {
      * privacy config.
      */
     suspend fun getIdentityAccessesReport(user: LinkUser): String
+
+    /**
+     * Generate a report on the user's language preferences
+     */
+    suspend fun getLanguagePreferencesReport(user: LinkUser): String
 }
 
 internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
@@ -72,6 +77,8 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         |${getBanReport(user)}
         |
         |${getIdentityAccessesReport(user)}
+        |
+        |${getLanguagePreferencesReport(user)}
         |
         |(end of report)
         |   
@@ -169,6 +176,15 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         }
     }
 
-    // TODO add report on language preferences
+    override suspend fun getLanguagePreferencesReport(user: LinkUser): String {
+        val language = dbf.getLanguagePreference(user.discordId) ?: "None"
+        return """
+            |## Language preferences
+            |
+            |You set your language preference using the "e!lang" command in Discord.
+            |
+            |Language preference: $language
+        """.trimMargin()
+    }
 
 }

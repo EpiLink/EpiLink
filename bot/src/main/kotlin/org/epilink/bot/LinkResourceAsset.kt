@@ -19,20 +19,60 @@ import org.epilink.bot.config.ResourceAssetConfig
 import java.nio.file.Files
 import java.nio.file.Path
 
-class LinkAssets(val logo: ResourceAsset, val background: ResourceAsset, val idpLogo: ResourceAsset)
+/**
+ * The assets used by EpiLink. All of these are used to transmit stuff to the front-end
+ */
+class LinkAssets(
+    /**
+     * The logo asset
+     */
+    val logo: ResourceAsset,
+    /**
+     * The background asset
+     */
+    val background: ResourceAsset,
+    /**
+     * The Identity provider's logo asset
+     */
+    val idpLogo: ResourceAsset)
 
+/**
+ * An asset.
+ */
 sealed class ResourceAsset {
+    /**
+     * No asset provided, a default value should be used instead
+     */
     object None : ResourceAsset()
+
+    /**
+     * Asset as an URL to the actual asset
+     *
+     * @property url The URL
+     */
     class Url(val url: String) : ResourceAsset()
+
+    /**
+     * Asset as a byte array and an optional content type
+     *
+     * @property contents The asset as a byte array
+     * @property contentType The Content-Type value for this asset, or null if unknown
+     */
     class File(val contents: ByteArray, val contentType: ContentType?) : ResourceAsset()
 }
 
+/**
+ * Turn an asset into a URL, or null if there is no asset.
+ */
 fun ResourceAsset.asUrl(name: String): String? = when (this) {
     ResourceAsset.None -> null
     is ResourceAsset.Url -> url
     is ResourceAsset.File -> "/api/v1/meta/$name"
 }
 
+/**
+ * Loads all of the assets from the configuration. Paths are derived from the given root path argument
+ */
 suspend fun loadAssets(wsCfg: LinkWebServerConfiguration, idpCfg: LinkIdProviderConfiguration, root: Path): LinkAssets =
     coroutineScope {
         val logo = async { loadAsset(wsCfg.logo ?: ResourceAssetConfig(), "logo", root) }
@@ -41,6 +81,9 @@ suspend fun loadAssets(wsCfg: LinkWebServerConfiguration, idpCfg: LinkIdProvider
         LinkAssets(logo.await(), background.await(), idpLogo.await())
     }
 
+/**
+ * Load a single asset
+ */
 suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): ResourceAsset {
     if (asset.file != null) {
         if (asset.url != null) error("Cannot define both a file and a url for the $name asset")

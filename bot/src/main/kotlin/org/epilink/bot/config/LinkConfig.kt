@@ -137,9 +137,22 @@ data class LinkWebServerConfiguration(
     val contacts: List<LinkContactInformation> = listOf()
 )
 
+/**
+ * Configuration entry for an asset. An asset is either a URL or a local file with its path and optionally its content
+ * type
+ */
 data class ResourceAssetConfig(
+    /**
+     * The URL to the asset
+     */
     val url: String? = null,
+    /**
+     * The file for this asset
+     */
     val file: String? = null,
+    /**
+     * The content type for the file
+     */
     val contentType: String? = null
 )
 
@@ -351,10 +364,25 @@ data class LinkLegalConfiguration(
     val identityPromptText: String? = null
 )
 
+/**
+ * Configuration for the identity provider
+ */
 data class LinkIdProviderConfiguration(
+    /**
+     * Url of the issuer/authority (without the .well-known/openid-configuration
+     */
     val url: String,
+    /**
+     * The name of the identity provider
+     */
     val name: String,
+    /**
+     * Asset for the identity provider's icon, possibly null
+     */
     val icon: ResourceAssetConfig?,
+    /**
+     * Enable backwards compat, for msft only.
+     */
     val microsoftBackwardsCompatibility: Boolean = false
 )
 
@@ -393,6 +421,9 @@ fun LinkConfiguration.isConfigurationSane(
     return report
 }
 
+/**
+ * Check the coherence of the configuration with the available languages
+ */
 fun LinkDiscordConfig.checkCoherenceWithLanguages(available: Set<String>): List<ConfigReportElement> {
     val languages = available.joinToString(", ")
     val report = mutableListOf<ConfigReportElement>()

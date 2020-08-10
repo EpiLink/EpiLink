@@ -138,20 +138,54 @@ class LinkIdentityProvider(
     fun getAuthorizeStub(): String = authStub
 }
 
+/**
+ * Metadata for the identity provider OpenID setup
+ */
 data class IdentityProviderMetadata(
+    /**
+     * Issuer URL
+     */
     val issuer: String,
+    /**
+     * URL for the token endpoint
+     */
     val tokenUrl: String,
+    /**
+     * URL for the authorize endpoint
+     */
     val authorizeUrl: String,
+    /**
+     * URI for the JWK set (JWKS)
+     */
     val jwksUri: String,
-    // or oid for backwards compat for ms accounts
-    val idClaim: String = "sub"
+    /**
+     * The claim used for keying on identity
+     */
+    val idClaim: String = "sub" // or oid for backwards compat for ms accounts
 )
 
+/**
+ * Metadata about an identity provider or a failure with a reason if the provider is not compatible
+ */
 sealed class MetadataOrFailure {
+    /**
+     * Metadata (implying that it was a success)
+     *
+     * @property metadata The metadata
+     */
     class Metadata(val metadata: IdentityProviderMetadata) : MetadataOrFailure()
+
+    /**
+     * The provider is not compatible with EpiLink
+     *
+     * @property reason The reason for the incompatibility
+     */
     class IncompatibleProvider(val reason: String) : MetadataOrFailure()
 }
 
+/**
+ * Determine the identity provider metadata from the contents of the discovery URL
+ */
 fun identityProviderMetadataFromDiscovery(discoveryContent: String, idClaim: String = "sub"): MetadataOrFailure {
     val map: Map<String, *> = ObjectMapper().readValue(discoveryContent)
     val responseTypes = map.getList("response_types_supported")

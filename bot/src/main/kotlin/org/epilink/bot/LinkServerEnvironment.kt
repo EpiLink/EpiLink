@@ -50,7 +50,7 @@ class LinkServerEnvironment(
     /**
      * Base module, which contains the environment and the database
      */
-    val epilinkBaseModule = module {
+    private val epilinkBaseModule = module {
         // Environment
         single { this@LinkServerEnvironment }
         // Facade between EpiLink and the actual database
@@ -75,7 +75,7 @@ class LinkServerEnvironment(
     /**
      * Discord module, for everything related to Discord
      */
-    val epilinkDiscordModule = module {
+    private val epilinkDiscordModule = module {
         // Rulebook
         single { rulebook }
         // Discord configuration
@@ -109,7 +109,7 @@ class LinkServerEnvironment(
     /**
      * Web module, for everything related to the web server, the front-end and Ktor
      */
-    val epilinkWebModule = module {
+    private val epilinkWebModule = module {
         // HTTP (Ktor) server
         single<LinkHttpServer> { LinkHttpServerImpl() }
 

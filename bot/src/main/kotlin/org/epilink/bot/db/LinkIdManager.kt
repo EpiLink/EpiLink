@@ -114,7 +114,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
                 // Convert the new ID format to the old one and compare
                 val oldIdFormat = associatedIdpId.substringAfter("00000000-0000-0000-").replace("-", "")
                 if (oldIdFormat.hashSha256().contentEquals(knownHash)) {
-                    // If the oldified new one matches, replace by the correct new one
+                    // If the "oldified" new one matches, replace by the correct new one
                     logger.info("Updating hash for user ${user.discordId} due to format changes between Microsoft Graph & OIDC APIs")
                     // Update known hash
                     facade.updateIdpId(user, newHash)
