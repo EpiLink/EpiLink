@@ -199,7 +199,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     ): DiscordEmbed = language.ctx {
         DiscordEmbed(
             title = i18n["$key.title"],
-            description = i18n["$key.description"].f(objects),
+            description = i18n["$key.description"].f(*objects),
             color = errorRed,
             footer = poweredByEpiLink
         )
@@ -224,7 +224,7 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
         language.ctx {
             DiscordEmbed(
                 title = i18n["cr.ok.title"],
-                description = i18n[messageKey].f(messageArgs),
+                description = i18n[messageKey].f(*messageArgs),
                 color = okGreen,
                 footer = poweredByEpiLink
             )

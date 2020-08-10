@@ -61,7 +61,7 @@ class LangCommand : Command, KoinComponent {
             else ->
                 client.sendChannelMessage(
                     channelId,
-                    messages.getErrorCommandReply(previousLanguage, "lang.invalidLanguage")
+                    messages.getErrorCommandReply(previousLanguage, "lang.invalidLanguage", commandBody)
                 )
         }
     }
