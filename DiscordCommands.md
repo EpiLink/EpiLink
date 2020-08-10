@@ -6,12 +6,14 @@ This page describes the Discord commands that are available in EpiLink.
 
 ## Prerequisites
 
-In order to be able to use commands, you must:
+In order to be able to use admin commands, you must:
 
 - Be an [admin](MaintainerGuide.md#general-settings) in the config file
 - Be registered in EpiLink with your identity recorded
 - Use the prefix you set in the config file (`e!` by default, e.g. `e!update`)
 - The server you're running the command on must be [monitored](MaintainerGuide.md#discord-configuration), i.e. it must be configured in EpiLink's config file.
+
+Some commands have less strict requirements.
 
 ## User target
 
@@ -33,6 +35,8 @@ Here are the available commands:
 
 ### update
 
+This is an admin command.
+
 The `update` command can be used to refresh the roles of a single user or multiple users. The roles are updated *globally*, meaning that refreshing someone will refresh their roles on every server they're on, not just the server they're in at the moment. This is by design to avoid discrepancies between the roles on the servers.
 
 The syntax is:
@@ -45,4 +49,22 @@ Where `<user>` is a [user target](#user-target). Note that you must prepend the 
 
 ### help
 
-The `help` commands displays a help message that redirects you to this very page. It takes no arguments, so simply call it with `e!help`. Replace `e!` with your the prefix you set in the configuration. The default prefix is `e!`.
+This is *not* an admin command.
+
+The `help` commands displays a help message, mainly telling users about the `lang` command. If you are an administrator, the help message also redirects you to this very page. 
+
+This command takes no arguments, so simply call it with `e!help`. Replace `e!` with your the prefix you set in the configuration. The default prefix is `e!`.
+
+### lang
+
+?> Since version 0.5.0
+
+This is *not* an admin command.
+
+The `lang` command, sent by itself, displays a help page. With an argument, it changes the language EpiLink uses to talk to the user who sent the command, or clears it if the argument is `clear`.
+
+In short:
+
+* `e!lang` to see general help
+* `e!lang xx` to change the language to another language (replace `xx` by a language code, send `e!lang` to get a list)
+* `e!lang clear` to clear language preferences

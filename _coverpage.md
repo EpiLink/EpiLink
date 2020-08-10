@@ -1,13 +1,14 @@
 ![logo](logo.svg)
 
-# EpiLink <small>0.4.0</small>
+# EpiLink <small>0.5.0</small>
 
-> Link Discord and Microsoft accounts together
+> Only allow people you trust on your Discord servers
 
-- Only allow people you trust on your work Discord servers
+- Link accounts from Discord and any OpenID Connect service (Microsoft, Google...) together
+- Attribute roles automatically
 - All-in-one: Discord bot and web portal
 - Free and Open-Source: MPLv2 (No copyleft exception)
 
-[Docs](#epilink) [GitHub repository](https://github.com/EpiLink/EpiLink)
+[Docs](#epilink) [GitHub repository](https://github.com/EpiLink/EpiLink) [Discord server](https://discord.gg/CpHmSUt)
 
 ![](/bg.jpg)
