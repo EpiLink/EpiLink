@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
+* Fixed issues for Discord messages ([#217](https://github.com/EpiLink/EpiLink/pull/217))
 * Fixed an i18n issue on the front-end ([#216](https://github.com/EpiLink/EpiLink/pull/216)) 
 
 ## [0.5.0] - 2020-08-10
