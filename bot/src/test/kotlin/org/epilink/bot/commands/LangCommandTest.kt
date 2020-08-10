@@ -78,7 +78,7 @@ class LangCommandTest : KoinBaseTest(
             coEvery { getLanguage(any()) } returns ""
             coEvery { setLanguage("iid", "lll") } returns false
         }
-        mockHere<LinkDiscordMessages> { every { getErrorCommandReply(any(), "lang.invalidLanguage") } returns embed }
+        mockHere<LinkDiscordMessages> { every { getErrorCommandReply(any(), "lang.invalidLanguage", "lll") } returns embed }
         val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } just runs }
         test {
             run("e!lang lll", "lll", null, "iid", "1234", "")
