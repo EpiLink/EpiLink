@@ -50,8 +50,8 @@
         computed: {
             ...mapState({ user: state => state.auth.user, meta: state => state.meta }),
             providerIconUrl() {
-                const meta = this.$store.state.meta;
-                const logoUrl = meta && meta.providerIcon;
+                //const meta = this.$store.state.meta;
+                const logoUrl = this.meta && this.meta.providerIcon;
                 if (logoUrl)
                     return logoUrl.startsWith('/api/v1/') ? BACKEND_URL + logoUrl.substring(7) : logoUrl;
                 else

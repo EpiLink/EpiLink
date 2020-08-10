@@ -18,6 +18,8 @@
 </template>
 
 <script>
+    import { mapState } from 'vuex';
+
     export default {
         name: 'link-error',
         props: ['error', 'message'],
@@ -28,6 +30,10 @@
             }
         },
         computed: {
+            ...mapState({ meta: state => state.meta }),
+            providerName() {
+                return (this.meta && this.meta.providerName) || "Identity Provider";
+            },
             actualError() {
                 if (this.error.key !== undefined && this.error.replace !== undefined) {
                     // Back-end I18n string
@@ -35,7 +41,7 @@
                         this.error.key,
                         {
                             ...this.error.replace,
-                            provider: (this.$store.meta && this.$store.meta.providerName) || "Identity Provider"
+                            provider: this.providerName
                         }
                     );
                 }
