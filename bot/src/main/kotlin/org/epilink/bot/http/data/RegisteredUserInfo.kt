@@ -12,7 +12,7 @@ package org.epilink.bot.http.data
 @Suppress("KDocMissingDocumentation")
 data class RegisteredUserInfo(
     val discordId: String,
-    val msftIdHash: String,
+    val idpIdHash: String,
     val created: String,
     val identifiable: Boolean
 )

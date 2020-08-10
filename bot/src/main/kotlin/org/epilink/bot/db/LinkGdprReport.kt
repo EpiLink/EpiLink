@@ -9,6 +9,7 @@
 package org.epilink.bot.db
 
 import org.epilink.bot.LinkServerEnvironment
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkPrivacy
 import org.koin.core.KoinComponent
 import org.koin.core.inject
@@ -24,7 +25,7 @@ interface LinkGdprReport {
     suspend fun getFullReport(user: LinkUser, requester: String): String
 
     /**
-     * Generate a report on the user's information (Discord ID, Microsoft ID hash, creation timestamp)
+     * Generate a report on the user's information (Discord ID, Identity Provider ID hash, creation timestamp)
      */
     fun getUserInfoReport(user: LinkUser): String
 
@@ -46,6 +47,11 @@ interface LinkGdprReport {
      * privacy config.
      */
     suspend fun getIdentityAccessesReport(user: LinkUser): String
+
+    /**
+     * Generate a report on the user's language preferences
+     */
+    suspend fun getLanguagePreferencesReport(user: LinkUser): String
 }
 
 internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
@@ -54,6 +60,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
     private val banLogic: LinkBanLogic by inject()
     private val privacy: LinkPrivacy by inject()
     private val env: LinkServerEnvironment by inject()
+    private val idpCfg: LinkIdProviderConfiguration by inject()
 
     override suspend fun getFullReport(user: LinkUser, requester: String): String =
         """
@@ -71,6 +78,8 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         |
         |${getIdentityAccessesReport(user)}
         |
+        |${getLanguagePreferencesReport(user)}
+        |
         |(end of report)
         |   
         |(1): More information may be *temporarily* stored in caches, and is not included here. This information may contain your Discord username, avatar and roles. This information is stored temporarily and will be deleted after some time.
@@ -83,7 +92,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         General information stored about your account.
         
         - Discord ID: $discordId
-        - Microsoft ID hash (Base64 URL-safe encoded): ${user.msftIdHash.encodeBase64Url()}
+        - Identity Provider (${idpCfg.name}) ID hash (Base64 URL-safe encoded): ${user.idpIdHash.encodeBase64Url()}
         - Account creation timestamp: $creationDate
         """.trimIndent()
     }
@@ -128,7 +137,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         """.trimMargin()
 
     private suspend fun makeBansList(user: LinkUser): String? {
-        val bans = dbf.getBansFor(user.msftIdHash)
+        val bans = dbf.getBansFor(user.idpIdHash)
         return if (bans.isEmpty()) {
             null
         } else {
@@ -165,6 +174,17 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
                 """.trimMargin()
             }
         }
+    }
+
+    override suspend fun getLanguagePreferencesReport(user: LinkUser): String {
+        val language = dbf.getLanguagePreference(user.discordId) ?: "None"
+        return """
+            |## Language preferences
+            |
+            |You set your language preference using the "e!lang" command in Discord.
+            |
+            |Language preference: $language
+        """.trimMargin()
     }
 
 }

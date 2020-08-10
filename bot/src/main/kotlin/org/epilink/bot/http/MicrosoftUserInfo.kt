@@ -9,10 +9,9 @@
 package org.epilink.bot.http
 
 /**
- * Represents Microsoft user information retrieved from the Microsoft API. This is manually filled in, so it does not
- * *actually* correspond do any real Microsoft Graph endpoint.
+ * Represents the identity provider's user information retrieved through the OIDC protocol.
  *
- * @property guid The ID of the user
+ * @property guid The ID of the user (sub, possibly oid for backwards compatibility purposes)
  * @property email The e-mail address of the user
  */
-data class MicrosoftUserInfo(val guid: String, val email: String)
+data class UserIdentityInfo(val guid: String, val email: String)

@@ -15,6 +15,11 @@ package org.epilink.bot.discord
  */
 enum class StandardRoles(val roleName: String) {
     /**
+     * A user who is authenticated but does not have their identity stored in the database.
+     */
+    NotIdentified("_notIdentified"),
+
+    /**
      * A user who has his true identity stored in the database
      */
     Identified("_identified"),

@@ -2,9 +2,11 @@
 
 This page will guide you through the configuration of a working EpiLink instance.
 
+?> This page mainly goes through [a basic check-list](#getting-started), [deployment](#deployment), [instance configuration](#configuration) and [administrative actions](#administration). Other information, especially regarding [Identity Provider setup](IdentityProviders.md), [Discord commands](DiscordCommands.md), [Rulebooks](Rulebooks.md) and [Rulebooks testing](IRT.md) is available in other pages.
+
 ## Getting started
 
-Go through all of these steps before going public:
+Go through all of these steps before going public with your instance:
 
 - Get EpiLink (and all of the [required stuff](#deployment))
 - [Configure it](#configuration) using the [sample configuration](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml) as a template
@@ -106,7 +108,7 @@ Custom roles can be determined using custom rules, and you can additionally vali
 * You can put the rulebook in a separate file (using `rulebookFile`). The value of `rulebookFile` is the path to the rulebook file **relative to the configuration file**. If the rulebook named `epilink.rule.kts` is located in the same folder as your config file, you can just use `rulebookFile: epilink.rule.kts`
 * Using *both* `rulebook` and `rulebookFile` at the same time will result in an error upon launching EpiLink.
 
-!> In case you do not want e-mail validation (e.g. you use a specific tenant, therefore ensuring that all Microsoft accounts are within your organization): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, **all e-mail addresses will be treated as valid.** In other words, **if you use a general tenant as your Microsoft tenant instead of a specific one, use e-mail validation, otherwise untrusted parties may be authenticated via EpiLink!**
+!> In case you do not want e-mail validation (e.g. because you use a specific tenant for Microsoft, your application is internal to your organization for Google): the default behavior is to treat all e-mail addresses as valid. So, if you do not define a validation function, or if you don't define any rulebook at all, **all e-mail addresses will be treated as valid.** In other words, **if you use a general tenant as your Microsoft tenant instead of a specific one, or people outside of your organization could potentially log in, use e-mail validation, otherwise untrusted parties may be authenticated via EpiLink!**
 
 ### HTTP Server Settings
 
@@ -115,7 +117,8 @@ server:
   port: 9090
   frontendUrl: ~
   proxyType: None # or XForwarded, or Forwarded
-  logo: "https://..." # optional
+  logo: ~ # optional
+  background: ~ # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -137,9 +140,29 @@ server:
     
 !> Not setting the `proxyType` or setting it to the incorrect value will lead to (at best) too aggressive rate-limiting or (at worst) security issues and possible IP spoofing from users!
 
-* `logo` *(optional, null by default)*: A URL to the logo of this instance, used by the front-end. When null (or `~`), the logo of EpiLink is used.
+* `logo` *(optional, null by default)*: The logo of this instance, used by the front-end. When null (or `~`), the logo of EpiLink is used.
+    * To use a logo from a URL, use `logo: { url: "https://..." }`
+    * To use a logo that's stored next to the configuration file, use `logo: { file: mylogo.png }`
+* `background` *(optional, null by default)*: The background of this instance, used by the front-end. When null (or `~`), a default grey background is used. The syntax is the same as for the `logo`. 
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
+
+### Identity provider
+
+?> More information and presets are available [in the dedicated page](IdentityProviders.md).
+
+The identity provider is the service that Discord accounts are linked to. They provide an e-mail address (an identity) for the users.
+
+```yaml
+idProvider:
+  url: ...
+  name: ...
+  icon: { ... }
+```
+
+* `url`: the [authority/issuer URL](MaintainerGuide.md#discovery-process)
+* `name`: the name of the identity provider, only used for displaying it to the user
+* `icon`: the icon for the identity provider, only used for displaying it to the user. Follows the same format as the background/logo entry in the [server configuration](#http-server-settings). 
 
 ### Credentials
 
@@ -148,16 +171,15 @@ tokens:
     discordToken: ...
     discordOAuthClientId: ...
     discordOAuthSecret: ...
-    msftOAuthClientId: ...
-    msftOAuthSecret: ...
-    msftTenant: common
+    idpOAuthClientId: ...
+    idpOAuthSecret: ...
 ```
 
-The first step is to set up the credential EpiLink will use to contact Microsoft and Discord APIs.
+The first step is to set up the credential EpiLink will use to contact your [Identity Provider](IdentityProvider.md) and Discord APIs.
 
 #### Discord
 
-Create an application at [Discord's developer portal](https://discordapp.com/developers/applications/). You will also need to create a bot for the application (check the Bot section).
+Create an application at [Discord's developer portal](https://discord.com/developers/applications/). You will also need to create a bot for the application (check the Bot section).
 
 The Bot section on Discord's developer portal will determine what the application looks like on Discord. Take some time to customize its logo and username.
 
@@ -169,41 +191,11 @@ The Bot section on Discord's developer portal will determine what the applicatio
 
 You should also add redirection URIs based on where the front-end is served. The path is `/redirect/discord`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/discord`. 
 
-#### Microsoft
+#### Identity Provider (credentials)
 
-##### Choosing an account and tenants
+?> Note that you must also configure the Identity Provider `idProvider` section of the configuration file. See [here](IdentityProviders.md) for more information on Identity providers and [here](#identity-provider) for configuration information.
 
-Before starting, you must determine *where* your app will live. If your app will live inside a company or school, you should do this entire procedure from your company or school account, and, if there is only one Azure tenant, choose the "account in my organization" option. EpiLink will work fine with just your regular Microsoft account, but this is not recommended.
-
-EpiLink allows you to define a tenant in the configuration file directly, so just choose what makes sense for your use case. 
-
-If you need to support multiple tenants and have to resort to tenants like `common`, which allow using any Microsoft account, you can tell EpiLink to validate only some e-mail addresses based on rules you define in the rulebook. See [this section](Rulebooks.md#e-mail-validation) for more information.
-
-##### Registering EpiLink
-
-Go to the [Azure portal](https://portal.azure.com) and log in with your Microsoft account ([which one?](#choosing-an-account-and-tenants)). Go to the Azure Active Directory view, then "App Registrations" and "New registration".
-
-Carefully choose the "Supported account types field" ([help](#choosing-an-account-and-tenants)). The registering process can take some time, just be patient. Once done, you will be redirected to your app's page.
-
-You will need to create a secret manually, as Azure AD does not create one for you automatically. Simply go to Certificates & Secrets and click on New client secret. Note that the secret will not be visible once you leave the page, so copy it then and not later!
-
-| Name in Azure AD Application page        | Name in the config file |
-| ---------------------------------------  | ----------------------- |
-| Overview -> Application (client) ID      | `msftOAuthClientId`     |
-| Certificates & Secrets -> Client secrets | `msftOAuthSecret`       |
-
-You should also add redirection URIs based on where the front-end is served. The path is `/redirect/microsoft`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/microsoft`.
-
-##### Tenant
-
-`msftTenant` can take a few different values:
- 
-* `common` to accept any Microsoft account (personal, business/school account)
-* `consumers` to accept only personal Microsoft accounts
-* `organizations` to accept only business/school accounts
-* Your tenant's ID to accept only accounts from your tenant. You can get it by connecting to the Azure portal with your work account and going to `?` -> Show Diagnostics. In the JSON file, you will find a list of tenants, simply pick the ID of the one you want.
-
-?> If you need to use multiple tenants, and cannot guarantee identities by just having a tenant in place, you can validate e-mail addresses using rulebooks. [Read this for more information](Rulebooks.md#e-mail-validation).
+`idpOAuthClientId` (IDP is for **Id**entity **P**rovider)
 
 ### Discord configuration
 
@@ -211,6 +203,8 @@ You should also add redirection URIs based on where the front-end is served. The
 discord:
   welomeUrl: ~
   commandsPrefix: ...
+  defaultLanguage: ...
+  preferredLanguages: [...]
   roles: []
   servers:
     - id: ...
@@ -220,6 +214,8 @@ discord:
 
 * `welcomeUrl`: The URL the bot will send in the default welcome message. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can use a custom embed instead of the default one with `welcomeEmbed` in each server -- the `welcomeUrl` value is ignored for servers which use a custom welcome embed. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
 * `commandsPrefix` *(optional, `e!` by default)*: The command prefix that EpiLink should use for accepting commands from admins.
+* `defaultLanguage` *(optional, `en` English by default)*: The language EpiLink uses to send Discord messages to users if said users did not configure one for themselves. *(since version 0.5.0)*
+* `preferredLanguages` *(optional, `[defaultLanguage]` by default)*: The languages EpiLink will prioritize over others. When sending a DM to users for the first time, these are the languages that will be used, and the languages in the list will appear above all others in the language list sent by `e!lang`. This list must contain at least the default language. *(since version 0.5.0)*
 * `roles` *(optional, empty list `[]` by default)*: A list of [custom roles specifications](#discord-custom-roles-configuration). You can omit it if you do not use custom roles.
 * `servers`: A list of [server configurations](#discord-server-configuration).
 
@@ -278,6 +274,7 @@ The EpiLink role names that begin with a `_` are roles that EpiLink determines a
 
 * `_known`: The user has an account at EpiLink, is not banned and is authenticated. Use this role when you need to know that the user is part of the organization.
 * `_identified`: The user is `_known` and also has his true identity kept in the system. That is, you could potentially get their e-mail address. Use this role when you need to also be able to determine who the user is at any time.
+* `_notIdentified`: The user is `_known` but does not have their true identity kept in the system (i.e. `_known` but not `_identified`).
 
 Role names that do not begin with a `_` are custom roles you define through [rules in rulebooks](Rulebooks.md).
 
@@ -378,7 +375,7 @@ Here is what you can do using the administrative actions provided by EpiLink:
 
 - [Get information about a user](Api.md#get-adminuseruserid)
 - [Get a user's true identity](Api.md#post-adminidrequest)
-- [Ban a user](Api.md#post-adminbanmsfthash), [get previous bans](Api.md#get-adminbanmsfthash) and [revoke them](Api.md#post-adminbanmsfthashbanidrevoke)
+- [Ban a user](Api.md#post-adminbanidphash), [get previous bans](Api.md#get-adminbanidphash) and [revoke them](Api.md#post-adminbanidphashbanidrevoke)
 - [Generate a GDPR report about a user](Api.md#post-admingdprreporttargetid)
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
@@ -391,7 +388,7 @@ Bans are simple: a banned user will not get any role from EpiLink. That's all!
 - Bans can have an expiration date, after which they will no longer count towards a user being "banned" (i.e. they will no longer be considered active bans)
 - Bans can also be manually revoked before their expiration date. A revoked ban no longer counts towards a user being "banned" (i.e. they will no longer be considered active bans)
 
-!> EpiLink does not automatically refresh the roles of a banned user whose ban has expired. They will have to have their roles refreshed in another way, e.g. by leaving and re-joining the server, changing whether their ID is kept in the system or not, etc.
+!> EpiLink does not automatically refresh the roles of a banned user whose ban has expired. They will have to have their roles refreshed in another way, e.g. by leaving and re-joining the server, changing whether their ID is kept in the system or not, etc. You can also [update their roles using a Discord command](DiscordCommands.md#update).
 
 ### ID Access
 

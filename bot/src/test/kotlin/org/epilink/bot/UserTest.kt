@@ -164,9 +164,8 @@ class UserTest : KoinBaseTest(
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
         val email = "e.mail@mail.maiiiil"
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
-            coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
         val rm = mockHere<LinkRoleManager> {
             every { invalidateAllRoles("userid", true) } returns mockk()
@@ -175,7 +174,7 @@ class UserTest : KoinBaseTest(
             coEvery { isUserIdentifiable(any()) } returns false
         }
         val ida = mockHere<LinkIdManager> {
-            coEvery { relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId") } just runs
+            coEvery { relinkIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId") } just runs
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
@@ -191,7 +190,7 @@ class UserTest : KoinBaseTest(
         }
         coVerify {
             rm.invalidateAllRoles(any(), true)
-            ida.relinkMicrosoftIdentity(any(), email, "MyMicrosoftId")
+            ida.relinkIdentity(any(), email, "MyMicrosoftId")
             sessionChecks.verifyUser(any())
         }
     }
@@ -201,8 +200,8 @@ class UserTest : KoinBaseTest(
     fun `Test user identity relink with account already linked`() {
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
-        val mbe = mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
+        val mbe = mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("", "")
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns true
@@ -220,7 +219,7 @@ class UserTest : KoinBaseTest(
             }
         }
         coVerify {
-            mbe.getMicrosoftToken("msauth", "uriii") // Ensure the back-end has consumed the authcode
+            mbe.getUserIdentityInfo("msauth", "uriii") // Ensure the back-end has consumed the authcode
             sessionChecks.verifyUser(any())
         }
     }
@@ -231,21 +230,20 @@ class UserTest : KoinBaseTest(
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
         val email = "e.mail@mail.maiiiil"
-        mockHere<LinkMicrosoftBackEnd> {
-            coEvery { getMicrosoftToken("msauth", "uriii") } returns "mstok"
-            coEvery { getMicrosoftInfo("mstok") } returns MicrosoftUserInfo("MyMicrosoftId", email)
+        mockHere<LinkIdentityProvider> {
+            coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false
         }
         mockHere<LinkIdManager> {
             coEvery {
-                relinkMicrosoftIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
-            } throws LinkEndpointException(
+                relinkIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
+            } throws LinkEndpointUserException(
                 object : LinkErrorCode {
                     override val code = 98765
                     override val description = "Strange error WeirdChamp"
-                }, isEndUserAtFault = true
+                }
             )
         }
         withTestEpiLink {

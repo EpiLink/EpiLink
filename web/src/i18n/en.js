@@ -28,8 +28,8 @@ export default {
             description: 'Retrieving information...'
         }
     },
-    microsoft: {
-        connect: 'Log in with Microsoft'
+    idProvider: {
+        connect: 'Log in with {provider}'
     },
     notFound: {
         description: 'The requested page does not exist.'
@@ -56,7 +56,7 @@ export default {
     },
     profile: {
         noticeUncheck: 'Unchecking this option will completely remove your identity from our servers.',
-        noticeCheck: 'Checking this option will require you to log in to Microsoft again.',
+        noticeCheck: 'Checking this option will require you to log in to {provider} again.',
 
         admin: 'Administrator',
         identityAccesses: 'Accesses to your identity',
@@ -85,7 +85,7 @@ export default {
             home: 'Home',
             auth: 'Authentication',
             redirect: 'Redirecting...',
-            microsoft: 'Connecting to Microsoft',
+            idProvider: 'Connecting to {provider}',
             settings: 'Settings',
             success: 'Success',
             profile: 'Profile',
@@ -106,15 +106,56 @@ export default {
 
     popups: {
         discord: 'Connection to Discord',
-        microsoft: 'Connection to Microsoft'
+        idProvider: 'Connection to {provider}'
     },
     steps: {
         discord: 'Connection to Discord',
-        microsoft: 'Connection to Microsoft',
+        idProvider: 'Connection to {provider}',
         settings: 'Settings review'
     },
 
     meta: {
         downloadPdf: 'Download this PDF file'
+    },
+
+    // Keys received directly from the back-end
+    // This is a subset of the keys you see in the documentation because it's impossible for the front-end
+    // to receive some of them.
+    backend: {
+        ms: {
+            nea: 'This account does not have an email address.'
+        },
+        oa: {
+            iac: 'Invalid authorization code.'
+        },
+        use: {
+            slo: 'Successfully logged out.',
+            slm: 'Successfully linked {provider} account.',
+            sdi: 'Successfully deleted identity.'
+        },
+        pc: {
+            erj: 'This e-mail address was rejected. Are you sure you are using the correct {provider} account?',
+            dae: 'This Discord account already exists.',
+            cba: 'This {provider} account is banned (reason: {reason})',
+            ala: 'This {provider} account is already linked to another account'
+        },
+        reg: {
+            msh: 'Missing session header.',
+            isv: 'Invalid service: {service}.'
+        },
+        err: {
+            '999': 'An unknown error occurred',
+            '101': 'Account creation is not allowed',
+            '102': 'Invalid authorization code',
+            '104': 'This account does not have any ID',
+            '105': 'This service is not known or does not exist',
+            '110': 'The identity of this account is already registered in the database',
+            '111': 'The identity of this account already does not exist in the database',
+            '112': 'This account\'s identity does not match the new one',
+            '201': 'Something went wrong with a Discord API call',
+            '202': 'Something went wrong with a {provider} API call',
+            '300': 'You need authentication to be able to access this resource',
+            '301': 'You do not have permission to do that.',
+        }
     }
 };

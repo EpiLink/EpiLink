@@ -26,11 +26,13 @@ import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.scope.Scope
 import org.koin.test.KoinTest
+import org.koin.test.mock.declare
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -43,6 +45,8 @@ import kotlin.test.assertTrue
 data class ApiSuccess(
     val success: Boolean,
     val message: String?,
+    val message_i18n: String?,
+    val message_i18n_data: Map<String, String>,
     val data: Map<String, Any?>?
 ) {
     init {
@@ -53,6 +57,8 @@ data class ApiSuccess(
 data class ApiError(
     val success: Boolean,
     val message: String,
+    val message_i18n: String,
+    val message_i18n_data: Map<String, String>,
     val data: ApiErrorDetails
 ) {
     init {
@@ -109,7 +115,7 @@ internal fun KoinTest.setupSession(
 ): String {
     val u: LinkUser = mockk {
         every { discordId } returns discId
-        every { msftIdHash } returns msIdHash
+        every { idpIdHash } returns msIdHash
         every { creationDate } returns created
     }
     softMockHere<LinkDatabaseFacade> {
@@ -145,4 +151,24 @@ suspend fun Scope.injectUserIntoAttributes(
         attribute,
         get<LinkDatabaseFacade>().getUser(call.sessions.get<ConnectedSession>()!!.discordId)!!
     )
+}
+
+object NoOpI18n : LinkDiscordMessagesI18n {
+    override val availableLanguages = setOf("")
+
+    override val preferredLanguages = listOf("")
+
+    override val defaultLanguage = ""
+
+    override suspend fun getLanguage(discordId: String?): String = ""
+
+    override fun get(language: String, key: String): String = key
+
+    override suspend fun setLanguage(discordId: String, language: String): Boolean {
+        error("Not implemented")
+    }
+}
+
+fun KoinTest.declareNoOpI18n() {
+    declare<LinkDiscordMessagesI18n> { NoOpI18n }
 }

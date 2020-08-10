@@ -55,10 +55,10 @@ class PermissionChecksTest : KoinBaseTest(
     fun `Test Microsoft user who already exists cannot create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns true
+            coEvery { isIdentityAccountAlreadyLinked(hey) } returns true
         }
         test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "emailemail")
+            val adv = isIdentityProviderUserAllowedToCreateAccount("hey", "emailemail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("already"), "Reason should contain word already")
         }
@@ -68,8 +68,8 @@ class PermissionChecksTest : KoinBaseTest(
     fun `Test banned Microsoft user cannot create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
-            coEvery { getBansFor(hey) } returns listOf(mockk())
+            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
+            coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "badboi"})
         }
         mockHere<LinkBanLogic> {
             every { isBanActive(any()) } returns true
@@ -78,9 +78,10 @@ class PermissionChecksTest : KoinBaseTest(
             every { validator } returns { true }
         }
         test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
+            val adv = isIdentityProviderUserAllowedToCreateAccount("hey", "mailmail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("banned"), "Reason should contain word banned")
+            assertTrue(adv.reason.contains("badboi"), "Reason should contain ban reason")
         }
     }
 
@@ -88,14 +89,14 @@ class PermissionChecksTest : KoinBaseTest(
     fun `Test Microsoft user with no validator can create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
+            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
             coEvery { getBansFor(hey) } returns listOf()
         }
         mockHere<Rulebook> {
             every { validator } returns null
         }
         test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
+            val adv = isIdentityProviderUserAllowedToCreateAccount("hey", "mailmail")
             assertTrue(adv is Allowed)
         }
     }
@@ -104,13 +105,13 @@ class PermissionChecksTest : KoinBaseTest(
     fun `Test Microsoft user with email rejected cannot create account`() {
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
-            coEvery { isMicrosoftAccountAlreadyLinked(hey) } returns false
+            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
         }
         mockHere<Rulebook> {
             every { validator } returns { it != "mailmail" }
         }
         test {
-            val adv = isMicrosoftUserAllowedToCreateAccount("hey", "mailmail")
+            val adv = isIdentityProviderUserAllowedToCreateAccount("hey", "mailmail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("e-mail", ignoreCase = true), "Reason should contain word e-mail")
         }
@@ -128,7 +129,7 @@ class PermissionChecksTest : KoinBaseTest(
         }
         test {
             val adv = canUserJoinServers(mockk {
-                every { msftIdHash } returns hey
+                every { idpIdHash } returns hey
                 every { discordId } returns "banneduid"
             })
             assertTrue(adv is Disallowed, "Expected disallowed")
@@ -143,7 +144,7 @@ class PermissionChecksTest : KoinBaseTest(
             coEvery { getBansFor(hey) } returns listOf()
         }
         test {
-            val adv = canUserJoinServers(mockk { every { msftIdHash } returns hey })
+            val adv = canUserJoinServers(mockk { every { idpIdHash } returns hey })
             assertEquals(Allowed, adv, "Expected allowed")
         }
     }

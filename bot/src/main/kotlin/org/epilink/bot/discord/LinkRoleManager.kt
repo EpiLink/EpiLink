@@ -115,6 +115,7 @@ interface LinkRoleManager {
 internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.bot.roles")
     private val messages: LinkDiscordMessages by inject()
+    private val i18n: LinkDiscordMessagesI18n by inject()
     private val config: LinkDiscordConfig by inject()
     private val rulebook: Rulebook by inject()
     private val facade: LinkDiscordClientFacade by inject()
@@ -160,7 +161,8 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         }
         val dbUser = dbFacade.getUser(memberId)
         if (dbUser == null)
-            messages.getGreetingsEmbed(guildId, guildName)?.let { facade.sendDirectMessage(memberId, it) }
+            messages.getGreetingsEmbed(i18n.getLanguage(memberId), guildId, guildName)
+                ?.let { facade.sendDirectMessage(memberId, it) }
         else
             updateRolesOnGuilds(memberId, listOf(guildId), true)
     }
@@ -242,7 +244,11 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
                         userId,
                         // See the other SimplifiableCallChain in this file for explanations
                         @Suppress("SimplifiableCallChain")
-                        messages.getCouldNotJoinEmbed(guildIds.map { facade.getGuildName(it) }.joinToString(", "), adv.reason)
+                        messages.getCouldNotJoinEmbed(
+                            i18n.getLanguage(userId),
+                            guildIds.map { facade.getGuildName(it) }.joinToString(", "),
+                            adv.reason
+                        )
                     )
                 setOf<String>().also { logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" } }
             }
@@ -298,9 +304,13 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
 
     // Computes the base set is the set of standard EpiLink roles (_known, _identified)
     private fun getBaseRoleSetForKnown(identifiable: Boolean): Set<String> =
-        mutableSetOf(StandardRoles.Known.roleName).apply {
-            if (identifiable) add(StandardRoles.Identified.roleName)
-        }
+        mutableSetOf(
+            StandardRoles.Known.roleName,
+            if (identifiable)
+                StandardRoles.Identified.roleName
+            else
+                StandardRoles.NotIdentified.roleName
+        )
 
     @UsesTrueIdentity
     private suspend fun roleUpdateIdAccess(

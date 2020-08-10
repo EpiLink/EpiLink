@@ -40,11 +40,11 @@
                     <link-option v-model="saveEmail">
                         <p class="title" v-html="$t('settings.remember')" />
                         <div class="id-prompt" v-html="meta.idPrompt" />
-                        <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check')) }}</p>
+                        <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check'), {provider: meta.providerName} ) }}</p>
                     </link-option>
 
                     <link-button id="submit" :enabled="saveEmail !== wasChecked" @action="submit">
-                        {{ saveEmail && !wasChecked ? $t('microsoft.connect') : $t('profile.save') }}
+                        {{ saveEmail && !wasChecked ? $t('idProvider.connect', {provider: meta.providerName}) : $t('profile.save') }}
                     </link-button>
                 </div>
 
@@ -109,15 +109,15 @@
                         })
                         .catch(err => this.error = err);
                 } else if (!this.wasChecked && this.saveEmail) {
-                    const name = this.$t('popups.microsoft');
+                    const name = this.$t('popups.idProvider');
 
                     this.$router.push({
                         name: 'auth',
-                        params: { service: 'microsoft' }
+                        params: { service: 'idProvider' }
                     });
 
                     setTimeout(() => {
-                        const popup = openPopup(name, 'microsoft', this.$store.state.meta.authorizeStub_msft);
+                        const popup = openPopup(name, 'idProvider', this.$store.state.meta.authorizeStub_idProvider);
                         this.$store.commit('openPopup', popup);
                     }, 300);
                 }

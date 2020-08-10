@@ -8,7 +8,6 @@
  */
 package org.epilink.bot.db
 
-import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkException
 import java.time.Instant
 
@@ -27,9 +26,9 @@ interface LinkDatabaseFacade {
     suspend fun getUser(discordId: String): LinkUser?
 
     /**
-     * Returns the user with the given Microsoft ID hash, or null if no such user exists
+     * Returns the user with the given Identity Provider ID hash, or null if no such user exists
      */
-    suspend fun getUserFromMsftIdHash(msftIdHash: ByteArray): LinkUser?
+    suspend fun getUserFromIdpIdHash(idpIdHash: ByteArray): LinkUser?
 
     /**
      * Checks if a user exists with the given Discord ID.
@@ -37,12 +36,12 @@ interface LinkDatabaseFacade {
     suspend fun doesUserExist(discordId: String): Boolean
 
     /**
-     * Checks if a user exists with the given Microsoft ID hash.
+     * Checks if a user exists with the given identity provider ID hash.
      */
-    suspend fun isMicrosoftAccountAlreadyLinked(hash: ByteArray): Boolean
+    suspend fun isIdentityAccountAlreadyLinked(hash: ByteArray): Boolean
 
     /**
-     * Get the list of bans associated with the given Microsoft ID hash.
+     * Get the list of bans associated with the given identity provider ID hash.
      */
     suspend fun getBansFor(hash: ByteArray): List<LinkBan>
 
@@ -66,15 +65,14 @@ interface LinkDatabaseFacade {
      * coherence. It is the caller's job to check that the parameters are correct.
      *
      * @param newDiscordId The Discord ID to use
-     * @param newMsftIdHash The SHA256 hash of the Microsoft ID to use
+     * @param newIdpIdHash The SHA256 hash of the identity provider ID to use
      * @param newEmail The email address to use
      * @param keepIdentity If true, the database should also record the email in the session. If false, the database
      * must not keep it.
-     * @throws LinkEndpointException If the session's data is invalid, the user is banned, or another erroneous scenario
      */
     suspend fun recordNewUser(
         newDiscordId: String,
-        newMsftIdHash: ByteArray,
+        newIdpIdHash: ByteArray,
         newEmail: String,
         keepIdentity: Boolean,
         timestamp: Instant
@@ -118,4 +116,27 @@ interface LinkDatabaseFacade {
      * Retrieve all of the identity accesses where the target has the given Discord ID
      */
     suspend fun getIdentityAccessesFor(user: LinkUser): Collection<LinkIdentityAccess>
+
+    /**
+     * Get the language preference for the given Discord user, or null if no preference is recorded. The returned
+     * preference should be checked for validity.
+     */
+    suspend fun getLanguagePreference(discordId: String): String?
+
+    /**
+     * Record the language preference for the given Discord user, replacing any existing preference. The preference is
+     * not checked for validity.
+     */
+    suspend fun recordLanguagePreference(discordId: String, preference: String)
+
+    /**
+     * Clear the language preference for the given Discord user.
+     */
+    suspend fun clearLanguagePreference(discordId: String)
+
+    /**
+     * Update the Identity Provider ID of a given user to the new hash. Can be used for updating user hashes in case of
+     * format changes or other backwards-compatibility concerns.
+     */
+    suspend fun updateIdpId(user: LinkUser, newIdHash: ByteArray)
 }

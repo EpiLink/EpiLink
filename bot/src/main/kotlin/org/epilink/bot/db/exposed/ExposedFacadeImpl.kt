@@ -39,7 +39,9 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             SchemaUtils.create(
                 ExposedUsers,
                 ExposedTrueIdentities,
-                ExposedBans, ExposedIdentityAccesses
+                ExposedBans,
+                ExposedIdentityAccesses,
+                ExposedDiscordLanguages
             )
         }
     }
@@ -66,9 +68,9 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             ExposedUser.find(ExposedUsers.discordId eq discordId).firstOrNull()
         }
 
-    override suspend fun getUserFromMsftIdHash(msftIdHash: ByteArray): LinkUser? =
+    override suspend fun getUserFromIdpIdHash(idpIdHash: ByteArray): LinkUser? =
         newSuspendedTransaction(db = db) {
-            ExposedUser.find(ExposedUsers.msftIdHash eq msftIdHash).firstOrNull()
+            ExposedUser.find(ExposedUsers.idpIdHash eq idpIdHash).firstOrNull()
         }
 
     override suspend fun doesUserExist(discordId: String): Boolean =
@@ -76,9 +78,9 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             ExposedUser.count(ExposedUsers.discordId eq discordId) > 0
         }
 
-    override suspend fun isMicrosoftAccountAlreadyLinked(hash: ByteArray): Boolean =
+    override suspend fun isIdentityAccountAlreadyLinked(hash: ByteArray): Boolean =
         newSuspendedTransaction(db = db) {
-            ExposedUser.count(ExposedUsers.msftIdHash eq hash) > 0
+            ExposedUser.count(ExposedUsers.idpIdHash eq hash) > 0
         }
 
     override suspend fun recordBan(
@@ -89,7 +91,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     ): LinkBan =
         newSuspendedTransaction(db = db) {
             ExposedBan.new {
-                msftIdHash = target
+                idpIdHash = target
                 expiresOn = until
                 issued = Instant.now()
                 this.author = author
@@ -100,7 +102,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
 
     override suspend fun getBansFor(hash: ByteArray): List<LinkBan> =
         newSuspendedTransaction(db = db) {
-            ExposedBan.find(ExposedBans.msftIdHash eq hash).toList()
+            ExposedBan.find(ExposedBans.idpIdHash eq hash).toList()
         }
 
     override suspend fun getBan(banId: Int): LinkBan? =
@@ -111,7 +113,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     @OptIn(UsesTrueIdentity::class)
     override suspend fun recordNewUser(
         newDiscordId: String,
-        newMsftIdHash: ByteArray,
+        newIdpIdHash: ByteArray,
         newEmail: String,
         keepIdentity: Boolean,
         timestamp: Instant
@@ -119,7 +121,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         newSuspendedTransaction(db = db) {
             val u = ExposedUser.new {
                 discordId = newDiscordId
-                msftIdHash = newMsftIdHash
+                idpIdHash = newIdpIdHash
                 creationDate = timestamp
             }
             if (keepIdentity) {
@@ -156,7 +158,8 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         val exUser = user.asExposed()
         return newSuspendedTransaction(db = db) {
             val identity =
-                exUser.trueIdentity?.email ?: throw LinkException("Cannot get true identity of user ${exUser.discordId}")
+                exUser.trueIdentity?.email
+                    ?: throw LinkException("Cannot get true identity of user ${exUser.discordId}")
             // Record the identity access
             ExposedIdentityAccess.new {
                 target = exUser.id
@@ -193,6 +196,39 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         newSuspendedTransaction {
             exUser.trueIdentity!! // We don't care about error cases, callers are responsible for checks
                 .delete()
+        }
+    }
+
+    override suspend fun getLanguagePreference(discordId: String): String? =
+        newSuspendedTransaction(db = db) {
+            ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()?.language
+        }
+
+    override suspend fun recordLanguagePreference(discordId: String, preference: String) {
+        newSuspendedTransaction(db = db) {
+            val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
+            if (x != null) {
+                x.language = preference
+            } else {
+                ExposedDiscordLanguage.new {
+                    this.discordId = discordId
+                    language = preference
+                }
+            }
+        }
+    }
+
+    override suspend fun clearLanguagePreference(discordId: String) {
+        newSuspendedTransaction(db = db) {
+            val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
+            x?.delete()
+        }
+    }
+
+    override suspend fun updateIdpId(user: LinkUser, newIdHash: ByteArray) {
+        val u = user.asExposed()
+        newSuspendedTransaction(db = db) {
+            u.idpIdHash = newIdHash
         }
     }
 }
@@ -259,13 +295,13 @@ class ExposedTrueIdentity(id: EntityID<Int>) : IntEntity(id) {
  */
 private object ExposedBans : IntIdTable("Bans") {
     /**
-     * The hashed (SHA256) Microsoft ID of the banned user.
+     * The hashed (SHA256) Identity Provider ID of the banned user.
      *
      * We do not directly link to the user here to ensure that a user can delete
      * their account (i.e. delete the row of that user in the [ExposedUsers] table)
-     * while still maintaining the information that this Microsoft ID is banned.
+     * while still maintaining the information that this Identity Provider ID is banned.
      */
-    val msftIdHash = binary("msftIdHash", 64)
+    val idpIdHash = binary("msftIdHash", 64)
 
     /**
      * Null if this is a definitive ban, the expiration date if this is a
@@ -302,11 +338,11 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
         get() = id.value
 
     /**
-     * The SHA256 hash of the Microsoft ID of the banned user.
+     * The SHA256 hash of the Identity Provider ID of the banned user.
      *
-     * @see ExposedBans.msftIdHash
+     * @see ExposedBans.idpIdHash
      */
-    override var msftIdHash by ExposedBans.msftIdHash
+    override var idpIdHash by ExposedBans.idpIdHash
 
     /**
      * The expiration date of a temporary ban, or null for a definitive ban.
@@ -340,9 +376,9 @@ private object ExposedUsers : IntIdTable("Users") {
     val discordId = varchar("discordId", 32).uniqueIndex()
 
     /**
-     * The SHA256 hash of the User's Microsoft ID
+     * The SHA256 hash of the User's Identity Provider ID
      */
-    val msftIdHash = binary("msftIdHash", 64).uniqueIndex()
+    val idpIdHash = binary("msftIdHash", 64).uniqueIndex()
 
     /**
      * The creation date of the user's account
@@ -368,9 +404,9 @@ class ExposedUser(id: EntityID<Int>) : IntEntity(id), LinkUser {
     override var discordId by ExposedUsers.discordId
 
     /**
-     * The SHA256 hash of the User's Microsoft ID
+     * The SHA256 hash of the User's Identity Provider ID
      */
-    override var msftIdHash by ExposedUsers.msftIdHash
+    override var idpIdHash by ExposedUsers.idpIdHash
 
     /**
      * The date on which the account was created
@@ -455,4 +491,20 @@ class ExposedIdentityAccess(id: EntityID<Int>) : IntEntity(id), LinkIdentityAcce
      * The time at which the identity access happened.
      */
     override var timestamp by ExposedIdentityAccesses.timestamp
+}
+
+private object ExposedDiscordLanguages : IntIdTable("DiscordLanguages") {
+    val discordId = varchar("discordId", 32).uniqueIndex()
+
+    val language = varchar("language", 16)
+}
+
+/**
+ * The DAO class for language preferences
+ */
+class ExposedDiscordLanguage(id: EntityID<Int>) : IntEntity(id), LinkDiscordLanguage {
+    companion object : IntEntityClass<ExposedDiscordLanguage>(ExposedDiscordLanguages)
+
+    override var discordId by ExposedDiscordLanguages.discordId
+    override var language by ExposedDiscordLanguages.language
 }

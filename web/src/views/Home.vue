@@ -29,7 +29,7 @@
         mounted() {
             const user = this.$store.state.auth.user;
             if (user) {
-                this.$router.push({ name: user.temp ? (user.email ? 'settings' : 'microsoft') : 'profile' });
+                this.$router.push({ name: user.temp ? (user.email ? 'settings' : 'idProvider') : 'profile' });
             }
         },
         computed: {

@@ -16,9 +16,17 @@ package org.epilink.bot.http
  */
 sealed class ApiResponse<T>(
     /**
-     * A message explaining the success or failure. If success is false, this should be non-null.
+     * A message (in English) explaining the success or failure. If success is false, this should be non-null.
      */
     val message: String?,
+    /**
+     * The I18n key for the message
+     */
+    val message_i18n: String?,
+    /**
+     * The I18n replacement dictionary, with the replacement key on the left and the replacement value on the right
+     */
+    val message_i18n_data: Map<String, String> = mapOf(),
     /**
      * Data attached to this response
      */
@@ -38,10 +46,28 @@ sealed class ApiResponse<T>(
 /**
  * Sent upon a successful operation, with optionally a message and attached data
  */
-class ApiSuccessResponse<T>(
+class ApiSuccessResponse<T> private constructor(
     message: String? = null,
+    message_i18n: String? = null,
+    message_i18n_data: Map<String, String> = mapOf(),
     data: T
-) : ApiResponse<T>(message, data) {
+) : ApiResponse<T>(message, message_i18n, message_i18n_data, data) {
+
+    companion object {
+        /**
+         * Create a success response from only the data object. The message fields will be null and the i18n data
+         * field will be an empty map.
+         */
+        fun <T> of(data: T) =
+            ApiSuccessResponse(null, null, mapOf(), data)
+
+        /**
+         * Create a success response from all of the provided values. See [ApiResponse] for details.
+         */
+        fun <T> of(message: String, message_i18n: String, message_i18n_data: Map<String, String> = mapOf(), data: T) =
+            ApiSuccessResponse(message, message_i18n, message_i18n_data, data)
+    }
+
     override val success: Boolean
         get() = true
 }
@@ -51,8 +77,10 @@ class ApiSuccessResponse<T>(
  */
 class ApiErrorResponse(
     message: String,
+    message_i18n: String,
+    message_i18n_data: Map<String, String> = mapOf(),
     errorInfo: ApiErrorData
-): ApiResponse<ApiErrorData>(message, errorInfo) {
+) : ApiResponse<ApiErrorData>(message, message_i18n, message_i18n_data, errorInfo) {
     override val success: Boolean
         get() = false
 }
@@ -68,5 +96,9 @@ data class ApiErrorData(val code: Int, val description: String)
 /**
  * Utility function for building an [ApiResponse] object with null data.
  */
-fun apiSuccess(message: String): ApiResponse<Nothing?> =
-    ApiSuccessResponse(message, null)
+fun apiSuccess(
+    message: String,
+    message_i18n: String,
+    message_i18n_data: Map<String, String> = mapOf()
+): ApiResponse<Nothing?> =
+    ApiSuccessResponse.of(message, message_i18n, message_i18n_data, null)

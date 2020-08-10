@@ -30,7 +30,7 @@ class UserCreatorTest : KoinBaseTest(
             coEvery { recordNewUser("discordid", hash, "eeemail", true, any()) } returns mockk()
         }
         val pc = mockHere<LinkPermissionChecks> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
+            coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
         }
         test {
@@ -38,7 +38,7 @@ class UserCreatorTest : KoinBaseTest(
         }
         coVerify {
             fac.recordNewUser("discordid", hash, "eeemail", true, any())
-            pc.isMicrosoftUserAllowedToCreateAccount("tested", "eeemail")
+            pc.isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail")
             pc.isDiscordUserAllowedToCreateAccount("discordid")
         }
     }
@@ -46,34 +46,34 @@ class UserCreatorTest : KoinBaseTest(
     @Test
     fun `Unsuccessful account creation on msft issue`() {
         val pc = mockHere<LinkPermissionChecks> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") } returns Disallowed("Hello")
+            coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Disallowed("Hello", "good.bye")
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 createUser("discordid", "tested", "eeemail", true)
             }
             assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)
-            assertTrue(exc.isEndUserAtFault, "End user is expected to be at fault")
-            assertTrue(exc.message!!.contains("Hello"))
+            assertEquals("Hello", exc.details)
+            assertEquals("good.bye", exc.detailsI18n)
         }
-        coVerify { pc.isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") }
+        coVerify { pc.isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") }
     }
 
 
     @Test
     fun `Unsuccessful account creation on Discord issue`() {
         val pc = mockHere<LinkPermissionChecks> {
-            coEvery { isMicrosoftUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
-            coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Disallowed("Hiii")
+            coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
+            coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Disallowed("Hiii", "he.y")
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 createUser("discordid", "tested", "eeemail", true)
             }
             assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)
-            assertTrue(exc.isEndUserAtFault, "End use is expected to be at fault")
-            assertTrue(exc.message!!.contains("Hiii"), "Expected failure reason in message (message = ${exc.message})")
+            assertEquals("Hiii", exc.details)
+            assertEquals("he.y", exc.detailsI18n)
         }
         coVerify { pc.isDiscordUserAllowedToCreateAccount("discordid") }
     }

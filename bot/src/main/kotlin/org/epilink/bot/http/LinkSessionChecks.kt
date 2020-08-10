@@ -22,7 +22,6 @@ import org.epilink.bot.LinkException
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.db.*
 import org.epilink.bot.http.sessions.ConnectedSession
-import org.epilink.bot.toErrorData
 import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
@@ -68,7 +67,7 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
             logger.info("Attempted access with no or invalid SessionId (${call.request.header("SessionId")})")
             call.respond(
                 HttpStatusCode.Unauthorized,
-                ApiErrorResponse("You are not authenticated.", StandardErrorCodes.MissingAuthentication.toErrorData())
+                StandardErrorCodes.MissingAuthentication.toResponse()
             )
             finish()
             false
@@ -86,7 +85,7 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
             AdminStatus.NotAdmin -> {
                 call.respond(
                     HttpStatusCode.Unauthorized,
-                    StandardErrorCodes.InsufficientPermissions.toResponse("Insufficient permissions")
+                    StandardErrorCodes.InsufficientPermissions.toResponse()
                 )
                 finish()
                 false
@@ -95,7 +94,8 @@ internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
                 call.respond(
                     HttpStatusCode.Unauthorized,
                     StandardErrorCodes.InsufficientPermissions.toResponse(
-                        "You need to have your identity recorded to perform administrative tasks"
+                        "You need to have your identity recorded to perform administrative tasks.",
+                        "sc.ani"
                     )
                 )
                 finish()

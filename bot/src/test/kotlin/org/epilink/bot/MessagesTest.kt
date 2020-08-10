@@ -8,12 +8,15 @@
  */
 package org.epilink.bot
 
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.discord.DiscordEmbed
 import org.epilink.bot.discord.LinkDiscordMessages
+import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.epilink.bot.discord.LinkDiscordMessagesImpl
 import org.koin.dsl.module
 import org.koin.test.get
@@ -38,7 +41,7 @@ class MessagesTest : KoinBaseTest(
             )
         }
         val dm = get<LinkDiscordMessages>()
-        assertNull(dm.getGreetingsEmbed("guildid", "My Guild"))
+        assertNull(dm.getGreetingsEmbed("", "guildid", "My Guild"))
     }
 
     @Test
@@ -53,11 +56,22 @@ class MessagesTest : KoinBaseTest(
                 }
             )
         }
+        val keySlot = slot<String>()
+        mockHere<LinkDiscordMessagesI18n> {
+            coEvery { getLanguage(any()) } returns ""
+            every { get(any(), capture(keySlot)) } answers {
+                keySlot.captured.let {
+                    if(it == "greet.title" || it == "greet.welcome")
+                        "$it::%s"
+                    else it
+                }
+            }
+        }
         val dm = get<LinkDiscordMessages>()
-        val embed = dm.getGreetingsEmbed("guildid", "My Guild")
+        val embed = dm.getGreetingsEmbed("", "guildid", "My Guild")
         assertNotNull(embed)
-        assertNotNull(embed.description)
-        assertTrue(embed.description!!.contains("My Guild"), "Embed description should contain guild name")
+        assertEquals("greet.title::My Guild", embed.title)
+        assertEquals("greet.welcome::My Guild", embed.description)
         assertNotNull(embed.color, "Has color")
         assertNotNull(embed.thumbnail, "Has a thumbnail")
         assertNotNull(embed.footer, "Has a footer")
@@ -78,16 +92,22 @@ class MessagesTest : KoinBaseTest(
             )
         }
         val dm = get<LinkDiscordMessages>()
-        val embedReturned = dm.getGreetingsEmbed("guildid", "My Guild")
+        val embedReturned = dm.getGreetingsEmbed("", "guildid", "My Guild")
         assertSame(embed, embedReturned)
     }
 
     @Test
     fun `Test could not join`() {
+        mockHere<LinkDiscordMessagesI18n> {
+            every { get(any(), "cnj.title") } returns "title::%s"
+            every { get(any(), "cnj.description") } returns "description::%s"
+            every { get(any(), "cnj.reason") } returns "reason"
+            every { get(any(), "poweredBy") } returns "poweredBy"
+        }
         val dm = get<LinkDiscordMessages>()
-        val embed = dm.getCouldNotJoinEmbed("My Guild", "My Reason")
-        assertTrue(embed.description!!.contains("My Guild"), "Guild name is mentioned")
-        assertTrue(embed.fields.any { it.value.contains("My Reason") }, "Reason is mentioned")
+        val embed = dm.getCouldNotJoinEmbed("", "My Guild", "My Reason")
+        assertEquals("description::My Guild", embed.description)
+        assertEquals("title::My Guild", embed.title)
     }
 
     @Test
@@ -96,9 +116,9 @@ class MessagesTest : KoinBaseTest(
             every { shouldNotify(any()) } returns false
         }
         val dm = get<LinkDiscordMessages>()
-        val embed = dm.getIdentityAccessEmbed(true, "TestAuthor", "TestReason")
+        val embed = dm.getIdentityAccessEmbed("", true, "TestAuthor", "TestReason")
         assertNull(embed, "Should not give an embed")
-        val embed2 = dm.getIdentityAccessEmbed(false, "TrueAuthor", "TestReason")
+        val embed2 = dm.getIdentityAccessEmbed("", false, "TrueAuthor", "TestReason")
         assertNull(embed2, "Should not give an embed")
     }
 
@@ -108,12 +128,16 @@ class MessagesTest : KoinBaseTest(
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(true) } returns true
         }
+        val keySlot = slot<String>()
+        mockHere<LinkDiscordMessagesI18n> {
+            every { get(any(), capture(keySlot)) } answers { keySlot.captured }
+            every { get(any(), "ida.accessAuthorAuto") } returns "authorauto::%s"
+        }
         val dm = get<LinkDiscordMessages>()
-        val embed = dm.getIdentityAccessEmbed(true, "TestAuthor", "TestReason")
+        val embed = dm.getIdentityAccessEmbed("", true, "TestAuthor", "TestReason")
         assertNotNull(embed)
-        assertTrue(embed.description!!.contains("TestAuthor"))
+        assertEquals("authorauto::TestAuthor", embed.description)
         assertTrue(embed.fields.any { it.value.contains("TestReason") })
-        assertTrue(embed.fields.any { it.value.contains("auto") })
     }
 
     @Test
@@ -122,12 +146,16 @@ class MessagesTest : KoinBaseTest(
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(false) } returns true
         }
+        val keySlot = slot<String>()
+        mockHere<LinkDiscordMessagesI18n> {
+            every { get(any(), capture(keySlot)) } answers { keySlot.captured }
+            every { get(any(), "ida.accessAuthor") } returns "author::%s"
+        }
         val dm = get<LinkDiscordMessages>()
-        val embed = dm.getIdentityAccessEmbed(false, "TestAuthor", "TestReason")
+        val embed = dm.getIdentityAccessEmbed("", false, "TestAuthor", "TestReason")
         assertNotNull(embed)
-        assertTrue(embed.description!!.contains("TestAuthor"))
+        assertEquals("author::TestAuthor", embed.description)
         assertTrue(embed.fields.any { it.value.contains("TestReason") })
-        assertTrue(embed.fields.any { it.name.contains("need help") })
     }
 
     @Test
@@ -136,12 +164,12 @@ class MessagesTest : KoinBaseTest(
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(false) } returns false
         }
+        declareNoOpI18n()
         val dm = get<LinkDiscordMessages>()
-        val embed = dm.getIdentityAccessEmbed(false, "TestAuthor", "TestReason")
+        val embed = dm.getIdentityAccessEmbed("", false, "TestAuthor", "TestReason")
         assertNotNull(embed)
         assertFalse(embed.description!!.contains("TestAuthor"))
-        assertTrue(embed.fields.any { it.value.contains("TestReason") })
-        assertTrue(embed.fields.any { it.name.contains("need help") })
+        assertTrue(embed.fields.any { it.value == "TestReason" })
     }
 
     @Test
@@ -150,7 +178,7 @@ class MessagesTest : KoinBaseTest(
             every { notifyBans } returns false
         }
         val dm = get<LinkDiscordMessages>()
-        val embed = dm.getBanNotification("Hello", Instant.now() + Duration.ofHours(230))
+        val embed = dm.getBanNotification("", "Hello", Instant.now() + Duration.ofHours(230))
         assertNull(embed)
     }
 
@@ -159,12 +187,15 @@ class MessagesTest : KoinBaseTest(
         mockHere<LinkPrivacy> {
             every { notifyBans } returns true
         }
+        val keySlot = slot<String>()
+        mockHere<LinkDiscordMessagesI18n> {
+            every { get(any(), capture(keySlot)) } answers { keySlot.captured }
+            every { get(any(), "bn.expiry.date") } returns "date::%s::%s"
+        }
         val dm = get<LinkDiscordMessages>()
-        val embed = dm.getBanNotification("You are now banned, RIP.", Instant.parse("2020-02-03T13:37:01.02Z"))
+        val embed = dm.getBanNotification("", "You are now banned, RIP.", Instant.parse("2020-02-03T13:37:01.02Z"))
         assertNotNull(embed)
-        assertEquals("Reason", embed.fields[0].name)
         assertEquals("You are now banned, RIP.", embed.fields[0].value)
-        assertEquals("Expires on", embed.fields[1].name)
-        assertEquals("Expires on 2020-02-03 at 13:37 (UTC+0)", embed.fields[1].value)
+        assertEquals("date::2020-02-03::13:37", embed.fields[1].value)
     }
 }

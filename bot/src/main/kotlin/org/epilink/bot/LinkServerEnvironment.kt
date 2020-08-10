@@ -18,6 +18,7 @@ import org.epilink.bot.db.*
 import org.epilink.bot.db.exposed.SQLiteExposedFacadeImpl
 import org.epilink.bot.discord.*
 import org.epilink.bot.discord.cmd.HelpCommand
+import org.epilink.bot.discord.cmd.LangCommand
 import org.epilink.bot.discord.cmd.UpdateCommand
 import org.epilink.bot.http.*
 import org.epilink.bot.http.endpoints.*
@@ -38,6 +39,10 @@ import kotlin.system.measureTimeMillis
 class LinkServerEnvironment(
     private val cfg: LinkConfiguration,
     private val legal: LinkLegalTexts,
+    private val identityProviderMetadata: IdentityProviderMetadata,
+    private val assets: LinkAssets,
+    private val discordStrings: Map<String, Map<String, String>>,
+    private val defaultDiscordLanguage: String,
     rulebook: Rulebook
 ) {
     private val logger = LoggerFactory.getLogger("epilink.environment")
@@ -45,7 +50,7 @@ class LinkServerEnvironment(
     /**
      * Base module, which contains the environment and the database
      */
-    val epilinkBaseModule = module {
+    private val epilinkBaseModule = module {
         // Environment
         single { this@LinkServerEnvironment }
         // Facade between EpiLink and the actual database
@@ -70,7 +75,7 @@ class LinkServerEnvironment(
     /**
      * Discord module, for everything related to Discord
      */
-    val epilinkDiscordModule = module {
+    private val epilinkDiscordModule = module {
         // Rulebook
         single { rulebook }
         // Discord configuration
@@ -79,6 +84,9 @@ class LinkServerEnvironment(
         single { cfg.privacy }
         // Discord bot
         single<LinkDiscordMessages> { LinkDiscordMessagesImpl() }
+        single<LinkDiscordMessagesI18n> {
+            LinkDiscordMessagesI18nImpl(discordStrings, defaultDiscordLanguage, cfg.discord.preferredLanguages)
+        }
         // Role manager
         single<LinkRoleManager> { LinkRoleManagerImpl() }
         // Facade
@@ -89,13 +97,19 @@ class LinkServerEnvironment(
         single<LinkBanManager> { LinkBanManagerImpl() }
         single<LinkDiscordCommands> { LinkDiscordCommandsImpl() }
         single<LinkDiscordTargets> { LinkDiscordTargetsImpl() }
-        single<List<Command>>(named("discord.commands")) { listOf(UpdateCommand(), HelpCommand()) }
+        single<List<Command>>(named("discord.commands")) {
+            listOf(
+                UpdateCommand(),
+                HelpCommand(),
+                LangCommand()
+            )
+        }
     }
 
     /**
      * Web module, for everything related to the web server, the front-end and Ktor
      */
-    val epilinkWebModule = module {
+    private val epilinkWebModule = module {
         // HTTP (Ktor) server
         single<LinkHttpServer> { LinkHttpServerImpl() }
 
@@ -105,6 +119,8 @@ class LinkServerEnvironment(
 
         single { cfg.server }
 
+        single { cfg.idProvider }
+
         single { HttpClient(Apache) }
 
         single {
@@ -112,10 +128,16 @@ class LinkServerEnvironment(
         }
 
         single {
-            LinkMicrosoftBackEnd(cfg.tokens.msftOAuthClientId, cfg.tokens.msftOAuthSecret, cfg.tokens.msftTenant)
+            LinkIdentityProvider(
+                identityProviderMetadata,
+                cfg.tokens.idpOAuthClientId,
+                cfg.tokens.idpOAuthSecret
+            )
         }
 
         single { legal }
+
+        single { assets }
 
         single<LinkRegistrationApi> { LinkRegistrationApiImpl() }
 

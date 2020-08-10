@@ -20,6 +20,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
+import org.epilink.bot.LinkEndpointInternalException
+import org.epilink.bot.LinkEndpointUserException
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
@@ -39,7 +41,7 @@ class LinkDiscordBackEnd(
 
     private val client: HttpClient by inject()
 
-    private val authStubDiscord = "https://discordapp.com/api/oauth2/authorize?" +
+    private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" +
             listOf(
                 "response_type=code",
                 "client_id=${clientId}",
@@ -59,7 +61,7 @@ class LinkDiscordBackEnd(
     suspend fun getDiscordToken(authcode: String, redirectUri: String): String {
         logger.debug { "Contacting Discord API for retrieving OAuth2 token..." }
         val res = runCatching {
-            client.post<String>("https://discordapp.com/api/v6/oauth2/token") {
+            client.post<String>("https://discord.com/api/v6/oauth2/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 body = TextContent(
                     ParametersBuilder().apply {
@@ -79,24 +81,25 @@ class LinkDiscordBackEnd(
                     error == "invalid_grant" ||
                             (data["error_description"] as? String)?.contains("Invalid \"code\"") ?: false
                 if (isCodeError)
-                    throw LinkEndpointException(InvalidAuthCode, "Invalid authorization code", true, ex)
+                    throw LinkEndpointUserException(InvalidAuthCode, "Invalid authorization code", "oa.iac", cause = ex)
                 else
-                    throw LinkEndpointException(
+                    throw LinkEndpointInternalException(
                         DiscordApiFailure,
                         "Discord OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
-                        false,
                         ex
                     )
 
             } else {
-                throw LinkEndpointException(
-                    DiscordApiFailure, "Failed to contact Discord API for obtaining token.", false, ex
+                throw LinkEndpointInternalException(
+                    DiscordApiFailure,
+                    "Failed to contact Discord API for obtaining token.",
+                    ex
                 )
             }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
         return data["access_token"] as String?
-            ?: throw LinkEndpointException(DiscordApiFailure, "Did not receive any access token from Discord")
+            ?: throw LinkEndpointInternalException(DiscordApiFailure, "Did not receive any access token from Discord")
     }
 
     /**
@@ -107,21 +110,27 @@ class LinkDiscordBackEnd(
     suspend fun getDiscordInfo(token: String): DiscordUserInfo {
         logger.debug { "Attempting to retrieve Discord information from token $token" }
         val data = runCatching {
-            client.getJson("https://discordapp.com/api/v6/users/@me", bearer = token)
+            client.getJson("https://discord.com/api/v6/users/@me", bearer = token)
         }.getOrElse {
             logger.debug(it) { "Failed (token $token)" }
-            throw LinkEndpointException(
-                DiscordApiFailure, "Failed to contact Discord servers for user information retrieval.",
-                false,
+            throw LinkEndpointInternalException(
+                DiscordApiFailure,
+                "Failed to contact Discord servers for user information retrieval.",
                 it
             )
         }
         val userId = data["id"] as String?
-            ?: throw LinkEndpointException(DiscordApiFailure, "Missing Discord ID in Discord API response")
+            ?: throw LinkEndpointInternalException(DiscordApiFailure, "Missing Discord ID in Discord API response")
         val username = data["username"] as String?
-            ?: throw LinkEndpointException(DiscordApiFailure, "Missing Discord username in Discord API response")
+            ?: throw LinkEndpointInternalException(
+                DiscordApiFailure,
+                "Missing Discord username in Discord API response"
+            )
         val discriminator = data["discriminator"] as String?
-            ?: throw LinkEndpointException(DiscordApiFailure, "Missing Discord discriminator in Discord API response")
+            ?: throw LinkEndpointInternalException(
+                DiscordApiFailure,
+                "Missing Discord discriminator in Discord API response"
+            )
         val displayableUsername = "$username#$discriminator"
         val avatarHash = data["avatar"] as String?
         val avatar =

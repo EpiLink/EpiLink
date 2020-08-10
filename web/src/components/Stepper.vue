@@ -13,16 +13,17 @@
         <div class="step" v-for="(name, $i) of steps" :class="{ 'done': step > $i + 1, 'current': ~~step === $i + 1 }">
             <div class="number">
                 <template v-if="step <= $i + 1">{{ $i + 1 }}</template>
-                <img v-else class="check-icon" :alt="$t(`steps.${name}`)" src="../../assets/check.svg" />
+                <img v-else class="check-icon" :alt="$t(`steps.${name}`, {provider: meta.providerName})" src="../../assets/check.svg" />
             </div>
             <div class="separator"></div>
-            <div class="name" v-html="$t(`steps.${name}`)" />
+            <div class="name" v-html="$t(`steps.${name}`, { provider: meta.providerName })" />
         </div>
     </div>
 </template>
 
 <script>
-    const STEPS = ['discord', 'microsoft', 'settings'];
+    import { mapState } from 'vuex';
+    const STEPS = ['discord', 'idProvider', 'settings'];
 
     export default {
         name: 'link-stepper',
@@ -32,7 +33,8 @@
             return {
                 steps: STEPS
             }
-        }
+        },
+        computed: mapState({ meta: state => state.meta })
     }
 </script>
 

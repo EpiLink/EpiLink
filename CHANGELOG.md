@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.5.0] - 2020-08-10
+
+### Added
+
+* Added compatibility with any OpenID Connect compatible service ([#214](https://github.com/EpiLink/EpiLink/pull/214))
+  * **BREAKING CHANGE:** If you were using EpiLink before this version, you must add an `idProvider` section in your configuration file and **enable the Microsoft backwards compatibility option.** See the docs for more details.
+* Added an asset system ([#214](https://github.com/EpiLink/EpiLink/pull/214))
+  * **BREAKING CHANGE:** If you still want to an URL, replace the URL string with `{ url: "your_url" }`
+* Added a background ([#214](https://github.com/EpiLink/EpiLink/pull/214))
+* Added I18n support on the back-end, including Discord I18n with the `e!lang` command. ([#204](https://github.com/EpiLink/EpiLink/pull/204))
+* Added the `_notIdentified` EpiLink role. You can now attribute roles to users who are registered but do not have their identity stored in the database. ([#211](https://github.com/EpiLink/EpiLink/pull/211))
+
+### Changed
+
+* Made some startup steps asynchronous for better startup speed ([#214](https://github.com/EpiLink/EpiLink/pull/214))
+* The tab icon now shows the instance's icon instead of the EpiLink icon ([#203](https://github.com/EpiLink/EpiLink/pull/203))
+* Reworked some Discord embeds
+* Updated dependencies and Discord4J ([#212](https://github.com/EpiLink/EpiLink/pull/212))
+    * **BREAKING CHANGE:** Some color names no longer work properly because we are now parsing Discord4J color names instead of Java AWT color names. Use the Discord4J color names or use hexadecimal color values directly (`#123abc`)
+
+### Fixed
+
+* Fixed a front-end popup bug on Safari
+* Use the new `discord.com` URLs instead of `discordapp.com` (except for the CDN URLs) ([#208](https://github.com/EpiLink/EpiLink/issues/208))
+
 ## [0.4.0] - 2020-07-08
 
 ### Added
@@ -170,7 +197,8 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.4.0...dev
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.5.0...dev
+[0.5.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.0
 [0.4.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.4.0
 [0.3.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.3.1
 [0.3.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.3.0

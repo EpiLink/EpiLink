@@ -22,8 +22,7 @@ import io.ktor.routing.routing
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.header
 import kotlinx.coroutines.coroutineScope
-import org.epilink.bot.CacheClient
-import org.epilink.bot.LinkEndpointException
+import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.UnknownError
 import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkMetaApi
@@ -31,8 +30,6 @@ import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
-import org.epilink.bot.toApiResponse
-import org.epilink.bot.toErrorData
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
@@ -52,8 +49,8 @@ interface LinkBackEnd {
      * Install the error handling interceptor. Automatically called by [epilinkApiModule].
      *
      * This automatically catches [LinkEndpointException] and any other exceptions. For the former, a 400 or 500 error
-     * is generated (depending on the exception's [isEndUserAtFault][LinkEndpointException.isEndUserAtFault] value). For
-     * the latter, a 500 error is generated.
+     * is generated (depending on whether the exception is a [user exception][LinkEndpointUserException] or an
+     * [internal exception][LinkEndpointInternalException]). For the latter, a 500 error is generated.
      *
      * This logs any error and makes sure than any internal error gets returned as a correct API response.
      */
@@ -118,22 +115,22 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     proceed()
                 }
             } catch (ex: LinkEndpointException) {
-                if (ex.isEndUserAtFault) {
-                    logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
-                    call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
-                } else {
-                    logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}", ex)
-                    call.respond(HttpStatusCode.InternalServerError, ex.toApiResponse())
+                when(ex) {
+                    is LinkEndpointUserException -> {
+                        logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
+                        call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
+                    }
+                    is LinkEndpointInternalException -> {
+                        logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}", ex)
+                        call.respond(HttpStatusCode.InternalServerError, ex.toApiResponse())
+                    }
                 }
             } catch (ex: Exception) {
                 logger.error(
                     "Uncaught exception encountered while processing v1 API call. Catch it and return a proper thing!",
                     ex
                 )
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    ApiErrorResponse("An unknown error occurred. Please report this.", UnknownError.toErrorData())
-                )
+                call.respond(HttpStatusCode.InternalServerError, UnknownError.toResponse())
             }
         }
     }

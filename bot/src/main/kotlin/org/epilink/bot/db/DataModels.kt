@@ -20,9 +20,9 @@ interface LinkUser {
     val discordId: String
 
     /**
-     * The SHA-256 hash of the user's Microsoft ID
+     * The SHA-256 hash of the user's Identity Provider ID.
      */
-    val msftIdHash: ByteArray
+    val idpIdHash: ByteArray
 
     /**
      * The time at which the user's account was created
@@ -40,9 +40,9 @@ interface LinkBan {
     val banId: Int
 
     /**
-     * The banned user's Microsoft ID SHA-256 hash
+     * The banned user's Identity Provider ID SHA-256 hash
      */
-    val msftIdHash: ByteArray
+    val idpIdHash: ByteArray
 
     /**
      * The time at which the ban expires, or null if the ban does not expire
@@ -95,4 +95,19 @@ interface LinkIdentityAccess {
      * True if the identity access was conducted by a bot, false otherwise
      */
     val automated: Boolean
+}
+
+/**
+ * A language preference for a specific Discord user
+ */
+interface LinkDiscordLanguage {
+    /**
+     * The Discord ID of the user this language preference is referring to.
+     */
+    val discordId: String
+
+    /**
+     * The preferred language ID. This should be checked for validity when retrieved.
+     */
+    val language: String
 }

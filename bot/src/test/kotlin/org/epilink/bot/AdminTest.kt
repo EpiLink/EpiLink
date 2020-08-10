@@ -39,7 +39,7 @@ import kotlin.test.*
 
 private class BanImpl(
     override val banId: Int,
-    override val msftIdHash: ByteArray,
+    override val idpIdHash: ByteArray,
     override val expiresOn: Instant?,
     override val issued: Instant,
     override val revoked: Boolean,
@@ -124,7 +124,7 @@ class AdminTest : KoinBaseTest(
             }.apply {
                 assertStatus(BadRequest)
                 val err = fromJson<ApiError>(response)
-                assertEquals(400, err.data.code)
+                assertEquals(402, err.data.code)
             }
             coVerify {
                 sessionChecks.verifyUser(any())
@@ -207,7 +207,7 @@ class AdminTest : KoinBaseTest(
         declare(named("admins")) { listOf("adminid") }
         val targetMock = mockk<LinkUser> {
             every { discordId } returns "targetid"
-            every { msftIdHash } returns byteArrayOf(1, 2, 3)
+            every { idpIdHash } returns byteArrayOf(1, 2, 3)
             every { creationDate } returns instant
         }
         mockHere<LinkDatabaseFacade> {
@@ -226,7 +226,7 @@ class AdminTest : KoinBaseTest(
                 info.data.apply {
                     assertEquals("targetid", get("discordId"))
                     val expectedHash = Base64.getUrlEncoder().encodeToString(byteArrayOf(1, 2, 3))
-                    assertEquals(expectedHash, get("msftIdHash"))
+                    assertEquals(expectedHash, get("idpIdHash"))
                     assertEquals(instant.toString(), get("created"))
                     assertEquals(true, get("identifiable"))
                 }
@@ -426,7 +426,6 @@ class AdminTest : KoinBaseTest(
             }.apply {
                 assertStatus(OK)
                 val info = fromJson<ApiSuccess>(response)
-                assertEquals("Ban created.", info.message)
                 val data = info.data
                 assertNotNull(data)
                 assertEquals(123, data["id"])

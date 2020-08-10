@@ -18,7 +18,7 @@ Also note that Redis sessions for registration and when logged in expire fairly 
 
 This is the data that is collected by default during the registration process.
 
-* Data: Discord ID, Discord username (with discriminator), Microsoft ID (not hashed), Microsoft e-mail
+* Data: Discord ID, Discord username (with discriminator), Identity Provider Subject (`sub`) ID (not hashed), e-mail
 * Lifespan: Until the Redis session expire, the registration process ends or the user cancels the registration process, whichever happens first.
 * Where: Redis database (`el_reg_` prefix)
 
@@ -26,21 +26,21 @@ This is the data that is collected by default during the registration process.
 
 This is the data that is collected by default for registered users. Mandatory:
 
-* Data: Discord ID, Microsoft ID hash (SHA-256)
+* Data: Discord ID, Identity Provider subject `sub` ID hash (SHA-256)
 * Lifespan: Until the account is deleted.
 * Where: SQLite database
 
 Additionally, with the user's consent:
 
-* Data: Microsoft e-mail
-* Lifespan: Until the account is deleted or until the user "un-links" their Microsoft e-mail address from their EpiLink account
+* Data: E-mail address
+* Lifespan: Until the account is deleted or until the user "un-links" their e-mail address from their EpiLink account
 * Where: SQLite database
 
 ### For banned users
 
 This is the data that is collected by default for banned users
 
-* Data: Microsoft ID hash (SHA-256)
+* Data: Identity Provider subject (`sub`) ID hash (SHA-256)
 * Lifespan: Unlimited
 * Where: SQLite database
 

@@ -7,7 +7,7 @@
  * defined by the Mozilla Public License, v. 2.0.
  */
 import Home      from '../views/Home';
-import Microsoft from '../views/Microsoft';
+import IdProvider from '../views/IdProvider';
 import NotFound  from '../views/NotFound';
 import MetaText  from '../views/MetaText';
 import Profile   from '../views/Profile';
@@ -35,9 +35,9 @@ export default [
         component: Redirect
     },
     {
-        path: '/microsoft',
-        name: 'microsoft',
-        component: Microsoft
+        path: '/idProvider',
+        name: 'idProvider',
+        component: IdProvider
     },
     {
         path: '/settings',

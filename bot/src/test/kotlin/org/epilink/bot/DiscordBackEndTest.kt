@@ -44,7 +44,7 @@ class DiscordBackEndTest : KoinBaseTest(
 
     @Test
     fun `Test Discord token retrieval`() {
-        declareClientHandler(onlyMatchUrl = "https://discordapp.com/api/v6/oauth2/token") { request ->
+        declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") { request ->
             assertEquals(HttpMethod.Post, request.method)
             assertEquals(ContentType.Application.FormUrlEncoded, request.body.contentType)
             @OptIn(KtorExperimentalAPI::class)
@@ -69,7 +69,7 @@ class DiscordBackEndTest : KoinBaseTest(
 
     @Test
     fun `Test Discord token retrieval fails on wrong authcode`() {
-        declareClientHandler(onlyMatchUrl = "https://discordapp.com/api/v6/oauth2/token") {
+        declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") {
             respondError(
                 HttpStatusCode.BadRequest,
                 """{"error":"invalid_grant"}""",
@@ -88,7 +88,7 @@ class DiscordBackEndTest : KoinBaseTest(
 
     @Test
     fun `Test Discord token retrieval fails on other error`() {
-        declareClientHandler(onlyMatchUrl = "https://discordapp.com/api/v6/oauth2/token") {
+        declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") {
             respondError(HttpStatusCode.BadRequest, """{"error":"¯\\_(ツ)_/¯"}""")
         }
 
@@ -103,7 +103,7 @@ class DiscordBackEndTest : KoinBaseTest(
 
     @Test
     fun `Test Discord info retrieval`() {
-        declareClientHandler(onlyMatchUrl = "https://discordapp.com/api/v6/users/@me") { req ->
+        declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/users/@me") { req ->
             assertEquals("Bearer veryserioustoken", req.headers["Authorization"])
             val data = mapOf(
                 "id" to "myVeryId",

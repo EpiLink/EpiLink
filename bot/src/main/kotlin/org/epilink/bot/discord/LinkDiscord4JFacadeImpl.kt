@@ -8,20 +8,19 @@
  */
 package org.epilink.bot.discord
 
-import discord4j.core.DiscordClient
+import discord4j.common.util.Snowflake
 import discord4j.core.DiscordClientBuilder
-import discord4j.core.`object`.entity.PrivateChannel
-import discord4j.core.`object`.entity.TextChannel
+import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.User
-import discord4j.core.`object`.util.Permission
-import discord4j.core.`object`.util.Snowflake
+import discord4j.core.`object`.entity.channel.MessageChannel
+import discord4j.core.`object`.entity.channel.PrivateChannel
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
-import discord4j.core.event.domain.lifecycle.ReadyEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
+import discord4j.rest.util.Permission
 import kotlinx.coroutines.*
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
@@ -31,8 +30,6 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KClass
 
 /**
@@ -40,11 +37,12 @@ import kotlin.reflect.KClass
  */
 internal class LinkDiscord4JFacadeImpl(
     private val discordClientId: String,
-    token: String
+    private val token: String
 ) : LinkDiscordClientFacade, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.bot.discord4j")
     private val roleManager: LinkRoleManager by inject()
     private val commands: LinkDiscordCommands by inject()
+    private val messages: LinkDiscordMessages by inject()
 
     /**
      * Coroutine scope used for firing things in events
@@ -57,10 +55,10 @@ internal class LinkDiscord4JFacadeImpl(
     /**
      * The actual Discord client
      */
-    private val client = DiscordClientBuilder.create(token).build().apply {
-        eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
-        eventDispatcher.onEvent(MessageCreateEvent::class) { handle() }
-    }
+    private var cclient: GatewayDiscordClient? = null
+
+    private val client
+        get() = cclient ?: error("Discord client uninitialized")
 
     override suspend fun sendDirectMessage(discordId: String, embed: DiscordEmbed) {
         sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle()) { from(embed) }
@@ -68,19 +66,31 @@ internal class LinkDiscord4JFacadeImpl(
 
     override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed) {
         val channel =
-            client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? TextChannel ?: error("Not a text channel")
+            client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? MessageChannel
+                ?: error("Not a message channel")
+        sendWelcomeMessageIfEmptyDmChannel(channel)
         channel.createEmbed { it.from(embed) }.awaitSingle()
     }
 
+    private suspend inline fun sendWelcomeMessageIfEmptyDmChannel(channel: MessageChannel) {
+        if (channel is PrivateChannel && channel.lastMessageId.isEmpty) {
+            channel.createEmbed { it.from(messages.getWelcomeChooseLanguageEmbed()) }.awaitSingle()
+        }
+    }
+
     private suspend fun sendDirectMessage(discordUser: User, embed: EmbedCreateSpec.() -> Unit) =
-        discordUser.getCheckedPrivateChannel()
+        discordUser.getCheckedPrivateChannel().also { sendWelcomeMessageIfEmptyDmChannel(it) }
             .createEmbed(embed).awaitSingle()
 
     override suspend fun getGuilds(): List<String> =
         client.guilds.map { it.id.asString() }.collectList().awaitSingle()
 
     override suspend fun start() {
-        client.loginAndAwaitReady()
+        cclient = DiscordClientBuilder.create(token).build().login().awaitSingle().apply {
+            eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
+            eventDispatcher.onEvent(MessageCreateEvent::class) { handle() }
+        }
+
         logger.info("Discord bot launched, invite link: " + getInviteLink())
     }
 
@@ -202,7 +212,7 @@ internal class LinkDiscord4JFacadeImpl(
             Permission.ATTACH_FILES,
             Permission.ADD_REACTIONS
         ).map { it.value }.sum().toString()
-        return "https://discordapp.com/api/oauth2/authorize?client_id=$discordClientId&scope=bot&permissions=$permissions"
+        return "https://discord.com/api/oauth2/authorize?client_id=$discordClientId&scope=bot&permissions=$permissions"
     }
 
     /**
@@ -214,10 +224,10 @@ internal class LinkDiscord4JFacadeImpl(
 
     private suspend fun MessageCreateEvent.handle() {
         commands.handleMessage(
-            message.content.orElse(null) ?: return,
+            message.content.ifEmpty { return },
             message.author.orElse(null)?.id?.asString() ?: return,
             message.channelId.asString(),
-            message.guild.awaitFirstOrNull()?.id?.asString() ?: return
+            message.guild.awaitFirstOrNull()?.id?.asString()
         )
     }
 
@@ -245,27 +255,6 @@ internal class LinkDiscord4JFacadeImpl(
         }
 
     /**
-     * Logs into the Discord client, suspending until a Ready event is received.
-     */
-    private suspend fun DiscordClient.loginAndAwaitReady() {
-        suspendCoroutine<Unit> { cont ->
-            this.eventDispatcher.on(ReadyEvent::class.java)
-                .take(1)
-                .subscribe({
-                    logger.debug { "Discord client has signaled that it is ready" }
-                    cont.resume(Unit)
-                }, {
-                    // I don't think that can happen, but let's log it either way
-                    logger.error("Unexpected exception in Discord ready event receiver", it)
-                })
-            this.login()
-                .doOnError {
-                    logger.error("Encountered general Discord error", it)
-                }.subscribe()
-        }
-    }
-
-    /**
      * Awaits the completion of a Publisher<Void>
      */
     private suspend fun Publisher<Void>.await() {
@@ -273,6 +262,6 @@ internal class LinkDiscord4JFacadeImpl(
     }
 
     private val ClientException.errorCode: String?
-        get() = this.errorResponse?.fields?.get("code")?.toString()
+        get() = this.errorResponse.orElse(null)?.fields?.get("code")?.toString()
 
 }

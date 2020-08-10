@@ -25,13 +25,13 @@ interface LinkDiscordMessages {
     /**
      * Get the embed to send to a user about why connecting failed
      */
-    fun getCouldNotJoinEmbed(guildName: String, reason: String): DiscordEmbed
+    fun getCouldNotJoinEmbed(language: String, guildName: String, reason: String): DiscordEmbed
 
     /**
      * Get the initial server message sent upon connection with the server not knowing who the person is, or null if no
      * message should be sent.
      */
-    fun getGreetingsEmbed(guildId: String, guildName: String): DiscordEmbed?
+    fun getGreetingsEmbed(language: String, guildId: String, guildName: String): DiscordEmbed?
 
     /**
      * Send an identity access notification to the given Discord ID with the given information, or null if no message
@@ -42,226 +42,239 @@ interface LinkDiscordMessages {
      * @param author The author of the request (bot name or human name)
      * @param reason The reason behind this identity access
      */
-    fun getIdentityAccessEmbed(automated: Boolean, author: String, reason: String): DiscordEmbed?
+    fun getIdentityAccessEmbed(language: String, automated: Boolean, author: String, reason: String): DiscordEmbed?
 
     /**
      * Get the ban notification embed, or null if privacy settings have ban notifications disabled.
      */
-    fun getBanNotification(banReason: String, banExpiry: Instant?): DiscordEmbed?
+    fun getBanNotification(language: String, banReason: String, banExpiry: Instant?): DiscordEmbed?
 
     /**
-     * Embed for replying to a command where the sender is not an admin
+     * Get an error command reply for a generic command in a specific language. Two sub-keys are automatically used:
+     * `key.title` and `key.description`, where key is the [key] argument. The [objects] are used for formatting the
+     * description only.
      */
-    fun getNotAnAdminCommandReply(): DiscordEmbed
-
-    /**
-     * Embed for replying to a command where the sender is not registered
-     */
-    fun getNotRegisteredCommandReply(): DiscordEmbed
-
-    /**
-     * Embed for replying to a command where the sender does not have their identity stored
-     */
-    fun getAdminWithNoIdentityCommandReply(): DiscordEmbed
-
-    /**
-     * Embed for replying to a command where the server is not monitored
-     */
-    fun getServerNotMonitoredCommandReply(): DiscordEmbed
-
-    /**
-     * Embed for an invalid command name in a valid command.
-     */
-    fun getInvalidCommandReply(commandName: String): DiscordEmbed
+    fun getErrorCommandReply(language: String, key: String, vararg objects: Any): DiscordEmbed
 
     /**
      * Embed for an invalid target given in a command body.
      */
-    fun getWrongTargetCommandReply(target: String): DiscordEmbed
+    fun getWrongTargetCommandReply(language: String, target: String): DiscordEmbed
 
     /**
      * Generic embed for a successful command result.
      */
-    fun getSuccessCommandReply(message: String): DiscordEmbed
+    fun getSuccessCommandReply(language: String, messageKey: String, vararg messageArgs: Any): DiscordEmbed
 
     /**
      * Embed for the help message. Simply shows the URL to the documentation
      */
-    fun getHelpMessage(): DiscordEmbed
+    fun getHelpMessage(language: String, withAdminHelp: Boolean): DiscordEmbed
+
+    /**
+     * Embed for the e!lang command's help message.
+     */
+    fun getLangHelpEmbed(language: String): DiscordEmbed
+
+    /**
+     * Get the "welcome please choose a language" embed in the default language of the instance.
+     */
+    fun getWelcomeChooseLanguageEmbed(): DiscordEmbed
 }
 
 private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/epilink256.png"
-private const val unknownUserLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png"
+private const val unknownUserLogoUrl =
+    "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png"
 private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/idnotify256.png"
 private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/ban256.png"
 private const val targetsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands?id=user-target"
 private const val commandsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands"
-
-private val poweredByEpiLink = DiscordEmbedFooter("Powered by EpiLink", logoUrl)
+private const val errorRed = "#8A0303"
+private const val helpGrey = "#CCD6DD"
+private const val helloBlue = "#3771C8"
+private const val notificationOrange = "#FF6600"
+private const val okGreen = "#2B9B2B"
 
 internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     private val config: LinkDiscordConfig by inject()
-
+    private val i18n: LinkDiscordMessagesI18n by inject()
     private val privacyConfig: LinkPrivacy by inject()
 
-    override fun getCouldNotJoinEmbed(guildName: String, reason: String) =
-        DiscordEmbed(
-            title = ":x: Could not authenticate on $guildName",
-            description = "Failed to authenticate you on $guildName. Please contact an administrator if you think that should not be happening.",
-            fields = listOf(DiscordEmbedField("Reason", reason, true)),
-            footer = poweredByEpiLink,
-            color = "red"
-        )
+    private val DiscordI18nContext.poweredByEpiLink
+        get() = DiscordEmbedFooter(i18n["poweredBy"], logoUrl)
 
-    override fun getGreetingsEmbed(guildId: String, guildName: String): DiscordEmbed? {
+    private fun <R> String.ctx(block: DiscordI18nContext.() -> R): R =
+        DiscordI18nContext(this).run(block)
+
+    override fun getCouldNotJoinEmbed(language: String, guildName: String, reason: String) = language.ctx {
+        DiscordEmbed(
+            title = i18n["cnj.title"].f(guildName),
+            description = i18n["cnj.description"].f(guildName),
+            fields = listOf(DiscordEmbedField(i18n["cnj.reason"], reason, true)),
+            footer = poweredByEpiLink,
+            color = errorRed
+        )
+    }
+
+    override fun getGreetingsEmbed(language: String, guildId: String, guildName: String): DiscordEmbed? = language.ctx {
         val guildConfig = config.getConfigForGuild(guildId)
         if (!guildConfig.enableWelcomeMessage)
-            return null
-        return guildConfig.welcomeEmbed ?: DiscordEmbed(
-            title = ":closed_lock_with_key: Authentication required for $guildName",
-            description =
-            """
-                **Welcome to $guildName**. Access to this server is restricted. Please log in using the link below to get full access to the server's channels.
-                """.trimIndent(),
+            null
+        else guildConfig.welcomeEmbed ?: DiscordEmbed(
+            title = i18n["greet.title"].f(guildName),
+            description = i18n["greet.welcome"].f(guildName),
             fields = run {
                 val ml = mutableListOf<DiscordEmbedField>()
                 val welcomeUrl = config.welcomeUrl
                 if (welcomeUrl != null)
-                    ml += DiscordEmbedField("Log in", welcomeUrl)
+                    ml += DiscordEmbedField(i18n["greet.logIn"], welcomeUrl)
                 ml += DiscordEmbedField(
-                    "Need help?",
-                    "Contact the administrators of $guildName if you need help with the procedure."
+                    i18n["greet.needHelp"],
+                    i18n["greet.contact"].f(guildName)
                 )
                 ml
             },
             thumbnail = unknownUserLogoUrl,
             footer = poweredByEpiLink,
-            color = "#3771c8"
+            color = helloBlue
         )
     }
 
     override fun getIdentityAccessEmbed(
+        language: String,
         automated: Boolean,
         author: String,
         reason: String
-    ): DiscordEmbed? {
+    ): DiscordEmbed? = language.ctx {
         if (privacyConfig.shouldNotify(automated)) {
-            val str = buildString {
-                append("Your identity was accessed")
-                if (privacyConfig.shouldDiscloseIdentity(automated)) {
-                    append(" by *$author*")
-                }
-                if (automated) {
-                    append(" automatically")
-                }
-                appendln(".")
-            }
-            return DiscordEmbed(
-                title = "Identity access notification",
+            val discloseId = privacyConfig.shouldDiscloseIdentity(automated)
+            val authorKey = if (discloseId) "Author" else ""
+            val autoKey = if (automated) "Auto" else ""
+            val str = i18n["ida.access$authorKey$autoKey"].let { if (discloseId) it.f(author) else it }
+            DiscordEmbed(
+                title = i18n["ida.title"],
                 description = str,
                 fields = listOf(
-                    DiscordEmbedField("Reason", reason, false),
+                    DiscordEmbedField(i18n["ida.reason"], reason, false),
                     if (automated) {
-                        DiscordEmbedField(
-                            "Automated access",
-                            "This access was conducted automatically by a bot. No administrator has accessed your identity.",
-                            false
-                        )
+                        DiscordEmbedField(i18n["ida.auto.title"], i18n["ida.auto.description"], false)
                     } else {
-                        DiscordEmbedField(
-                            "I need help!",
-                            "Contact an administrator if you believe that this action was conducted against the Terms of Services.",
-                            false
-                        )
+                        DiscordEmbedField(i18n["ida.needHelp.title"], i18n["ida.needHelp.description"], false)
                     }
                 ),
-                color = "#ff6600",
+                color = notificationOrange,
                 thumbnail = idNotifyLogoUrl,
                 footer = poweredByEpiLink
             )
-        } else return null
+        } else null
     }
 
-    override fun getBanNotification(banReason: String, banExpiry: Instant?): DiscordEmbed? =
-        if (privacyConfig.notifyBans) {
-            DiscordEmbed(
-                title = ":no_entry_sign: You have been banned",
-                description = "You have been banned on EpiLink. All of your roles have been removed. For more" +
-                        " information, please contact an administrator.",
-                fields = listOf(
-                    DiscordEmbedField("Reason", banReason),
-                    DiscordEmbedField(
-                        "Expires on",
-                        banExpiry?.let { "Expires on ${it.getDate()} at ${it.getTime()} (UTC+0)" }
-                            ?: "This ban does not expire."
-                    )
-                ),
-                color = "#d40000",
-                thumbnail = banLogoUrl,
-                footer = poweredByEpiLink
-            )
-        } else {
-            null
+    override fun getBanNotification(language: String, banReason: String, banExpiry: Instant?): DiscordEmbed? =
+        language.ctx {
+            if (privacyConfig.notifyBans) {
+                DiscordEmbed(
+                    title = i18n["bn.title"],
+                    description = i18n["bn.description"],
+                    fields = listOf(
+                        DiscordEmbedField(i18n["bn.reason"], banReason),
+                        DiscordEmbedField(
+                            i18n["bn.expiry.title"],
+                            banExpiry?.let { i18n["bn.expiry.date"].f(it.getDate(), it.getTime()) }
+                                ?: i18n["bn.expiry.none"]
+                        )
+                    ),
+                    color = errorRed,
+                    thumbnail = banLogoUrl,
+                    footer = poweredByEpiLink
+                )
+            } else {
+                null
+            }
         }
 
-    override fun getNotAnAdminCommandReply(): DiscordEmbed = DiscordEmbed(
-        title = ":x: Not an administrator",
-        description = "You are not allowed to do that because you are not an administrator.",
-        color = "#8A0303",
-        footer = poweredByEpiLink
-    )
+    override fun getErrorCommandReply(
+        language: String,
+        key: String,
+        vararg objects: Any
+    ): DiscordEmbed = language.ctx {
+        DiscordEmbed(
+            title = i18n["$key.title"],
+            description = i18n["$key.description"].f(objects),
+            color = errorRed,
+            footer = poweredByEpiLink
+        )
+    }
 
-    override fun getNotRegisteredCommandReply(): DiscordEmbed = DiscordEmbed(
-        title = ":x: Not registered",
-        description = "Although you are known as an administrator, you do not have an EpiLink account on this instance. Please create one and try again.",
-        color = "#8A0303",
-        footer = poweredByEpiLink
-    )
+    override fun getWrongTargetCommandReply(language: String, target: String): DiscordEmbed = language.ctx {
+        DiscordEmbed(
+            title = i18n["cr.wt.title"],
+            description = i18n["cr.wt.description"].f(target),
+            fields = listOf(
+                DiscordEmbedField(
+                    i18n["cr.wt.help.title"],
+                    i18n["cr.wt.help.description"].f(targetsDocsUrl)
+                )
+            ),
+            color = errorRed,
+            footer = poweredByEpiLink
+        )
+    }
 
-    override fun getAdminWithNoIdentityCommandReply(): DiscordEmbed = DiscordEmbed(
-        title = ":x: Identity not recorded",
-        description = "Although you are a registered administrator, your identity is not recorded in the database. Please enable the Remember my identity option in your user panel and try again.",
-        color = "#8A0303",
-        footer = poweredByEpiLink
-    )
+    override fun getSuccessCommandReply(language: String, messageKey: String, vararg messageArgs: Any): DiscordEmbed =
+        language.ctx {
+            DiscordEmbed(
+                title = i18n["cr.ok.title"],
+                description = i18n[messageKey].f(messageArgs),
+                color = okGreen,
+                footer = poweredByEpiLink
+            )
+        }
 
-    override fun getServerNotMonitoredCommandReply(): DiscordEmbed = DiscordEmbed(
-        title = ":x: Unmonitored server",
-        description = "This server is not monitored by EpiLink. Configure it in the EpiLink configuration file and try again.",
-        color = "#8A0303",
-        footer = poweredByEpiLink
-    )
+    override fun getHelpMessage(language: String, withAdminHelp: Boolean): DiscordEmbed = language.ctx {
+        DiscordEmbed(
+            title = i18n["help.title"],
+            description = i18n["help.description"],
+            fields = if (withAdminHelp) listOf(
+                DiscordEmbedField(
+                    i18n["help.admin.title"],
+                    i18n["help.admin.description"].f(commandsDocsUrl),
+                    false
+                )
+            ) else listOf(),
+            color = helpGrey,
+            footer = poweredByEpiLink
+        )
+    }
 
-    override fun getInvalidCommandReply(commandName: String): DiscordEmbed = DiscordEmbed(
-        title = ":x: Invalid command '$commandName'",
-        description = "The command name '$commandName' does not exist.",
-        color = "#8A0303",
-        footer = poweredByEpiLink
-    )
+    override fun getLangHelpEmbed(language: String): DiscordEmbed = language.ctx {
+        // Allows for the preferred languages to show up before all of the available languages
+        val languages = i18n.preferredLanguages + (i18n.availableLanguages - i18n.preferredLanguages)
+        val languageLines = languages.joinToString("\n") { i18n.get(it, "languageLine") }
+        DiscordEmbed(
+            title = i18n["lang.help.title"],
+            description = i18n["lang.help.description"],
+            fields = listOf(
+                DiscordEmbedField(i18n["lang.help.change.title"], i18n["lang.help.change.description"], false),
+                DiscordEmbedField(i18n["lang.help.clear.title"], i18n["lang.help.clear.description"], false),
+                DiscordEmbedField(i18n["lang.help.availableLanguages"], languageLines, false)
+            ),
+            color = helpGrey,
+            footer = poweredByEpiLink
+        )
+    }
 
-    override fun getWrongTargetCommandReply(target: String): DiscordEmbed = DiscordEmbed(
-        title = ":x: Invalid target",
-        description = "The target you specified ($target, `$target`) is invalid.",
-        fields = listOf(DiscordEmbedField(":grey_question: Need help on targets?", "See $targetsDocsUrl for more information")),
-        color = "#8A0303",
-        footer = poweredByEpiLink
-    )
-
-    override fun getSuccessCommandReply(message: String): DiscordEmbed = DiscordEmbed(
-        title = ":white_check_mark: Success",
-        description = message,
-        color = "#2B9B2B",
-        footer = poweredByEpiLink
-    )
-
-    override fun getHelpMessage(): DiscordEmbed = DiscordEmbed(
-        title = ":grey_question: EpiLink Help",
-        description = """
-            Hello there! Some administrative actions can be performed through Discord. For more information on the commands supported by EpiLink, see $commandsDocsUrl 
-        """.trimIndent(),
-        color = "#CCD6DD",
-        footer = poweredByEpiLink
-    )
+    override fun getWelcomeChooseLanguageEmbed(): DiscordEmbed = i18n.defaultLanguage.ctx {
+        DiscordEmbed(
+            title = i18n["welcomeLang.current"],
+            description = i18n["welcomeLang.description"] + "\n\n" +
+                    (i18n.preferredLanguages - i18n.defaultLanguage).joinToString("\n\n") {
+                        i18n.get(it, "welcomeLang.change")
+                    },
+            color = helloBlue
+            // No powered by epilink footer because this embed is sent right before another one. Having a "powered
+            // by epilink" footer on both is obnoxious.
+        )
+    }
 }
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")

@@ -18,7 +18,7 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.sessions.*
-import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkPermissionChecks
@@ -31,7 +31,7 @@ import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.RegistrationContinuation
 import org.epilink.bot.http.data.RegistrationInformation
 import org.epilink.bot.http.sessions.RegisterSession
-import org.epilink.bot.toErrorData
+import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
@@ -51,7 +51,7 @@ interface LinkRegistrationApi {
 internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.registration")
     private val discordBackEnd: LinkDiscordBackEnd by inject()
-    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
+    private val idProvider: LinkIdentityProvider by inject()
     private val roleManager: LinkRoleManager by inject()
     private val userApi: LinkUserApi by inject()
     private val userCreator: LinkUserCreator by inject()
@@ -86,59 +86,57 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                         }
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ApiErrorResponse(
+                            IncompleteRegistrationRequest.toResponse(
                                 "Missing session header",
-                                StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
+                                "reg.msh"
                             )
                         )
-                    } else if (discordId == null || discordUsername == null || email == null || microsoftUid == null) {
+                    } else if (discordId == null || discordUsername == null || email == null || idpId == null) {
                         logger.debug {
                             """
                             Incomplete registration process for session ${call.request.header("RegistrationSessionId")}
                             discordId = $discordId
                             discordUsername = $discordUsername
                             email = $email
-                            microsoftUid = $microsoftUid
+                            idpId = $idpId
                             """.trimIndent()
                         }
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ApiErrorResponse(
-                                "Incomplete registration process",
-                                StandardErrorCodes.IncompleteRegistrationRequest.toErrorData()
-                            )
+                            IncompleteRegistrationRequest.toResponse()
                         )
                     } else {
                         val regSessionId = call.request.header("RegistrationSessionId")
                         logger.debug { "Completing registration session for $regSessionId" }
                         val options: AdditionalRegistrationOptions =
                             call.receiveCatching() ?: return@post
-                        val u = userCreator.createUser(discordId, microsoftUid, email, options.keepIdentity)
+                        val u = userCreator.createUser(discordId, idpId, email, options.keepIdentity)
                         roleManager.invalidateAllRoles(u.discordId, true)
                         with(userApi) { loginAs(call, u, discordUsername, discordAvatarUrl) }
                         logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
                         call.respond(
                             HttpStatusCode.Created,
-                            apiSuccess("Account created, logged in.")
+                            apiSuccess("Account created, logged in.", "reg.acc")
                         )
                     }
                 }
             }
 
             @ApiEndpoint("POST /register/authcode/discord")
-            @ApiEndpoint("POST /register/authcode/msft")
+            @ApiEndpoint("POST /register/authcode/idProvider")
             post("authcode/{service}") {
                 when (val service = call.parameters["service"]) {
                     null -> error("Invalid service") // Should not happen
                     "discord" -> processDiscordAuthCode(call, call.receive())
-                    "msft" -> processMicrosoftAuthCode(call, call.receive())
+                    "idProvider" -> processIdProviderAuthCode(call, call.receive())
                     else -> {
                         logger.debug { "Attempted to register under unknown service $service" }
                         call.respond(
                             HttpStatusCode.NotFound,
-                            ApiErrorResponse(
+                            UnknownService.toResponse(
                                 "Invalid service: $service",
-                                StandardErrorCodes.UnknownService.toErrorData()
+                                "reg.isv",
+                                mapOf("service" to service)
                             )
                         )
                     }
@@ -149,37 +147,29 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
     }
 
     /**
-     * Take a Microsoft authorization code, consume it and apply the information retrieve form it to the current
+     * Take a Identity Provider authorization code, consume it and apply the information retrieve form it to the current
      * registration session
      */
-    private suspend fun processMicrosoftAuthCode(call: ApplicationCall, authcode: RegistrationAuthCode) {
+    private suspend fun processIdProviderAuthCode(call: ApplicationCall, authcode: RegistrationAuthCode) {
         val session = call.sessions.getOrSet { RegisterSession() }
-        logger.debug { "Get Microsoft token from authcode ${authcode.code}" }
-        // Get token
-        val token = microsoftBackEnd.getMicrosoftToken(authcode.code, authcode.redirectUri)
+        logger.debug { "Get IDP identity token from authcode ${authcode.code}" }
         // Get information
-        val (id, email) = microsoftBackEnd.getMicrosoftInfo(token)
-        logger.debug { "Processing Microsoft info for registration for $id ($email)" }
-        val adv = perms.isMicrosoftUserAllowedToCreateAccount(id, email)
+        val (id, email) = idProvider.getUserIdentityInfo(authcode.code, authcode.redirectUri)
+        logger.debug { "Processing IDP info for registration for $id ($email)" }
+        val adv = perms.isIdentityProviderUserAllowedToCreateAccount(id, email)
         if (adv is Disallowed) {
-            logger.debug { "Microsoft user $id ($email) is not allowed to create an account: " + adv.reason }
+            logger.debug { "IDP user $id ($email) is not allowed to create an account: " + adv.reason }
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiErrorResponse(
-                    adv.reason,
-                    StandardErrorCodes.AccountCreationNotAllowed.toErrorData()
-                )
+                AccountCreationNotAllowed.toResponse(adv.reason, adv.reasonI18n, adv.reasonI18nData)
             )
             return
         }
-        logger.debug { "Microsoft registration information OK: continue " }
-        val newSession = session.copy(email = email, microsoftUid = id)
+        logger.debug { "IDP registration information OK: continue " }
+        val newSession = session.copy(email = email, idpId = id)
         call.sessions.set(newSession)
         call.respond(
-            ApiSuccessResponse(
-                "Connected to Microsoft",
-                RegistrationContinuation("continue", newSession.toRegistrationInformation())
-            )
+            ApiSuccessResponse.of(RegistrationContinuation("continue", newSession.toRegistrationInformation()))
         )
     }
 
@@ -200,9 +190,10 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
             logger.debug { "User already exists: logging in" }
             with(userApi) { loginAs(call, user, username, avatarUrl) }
             call.respond(
-                ApiSuccessResponse(
+                ApiSuccessResponse.of(
                     "Logged in",
-                    RegistrationContinuation("login", null)
+                    "reg.lgi",
+                    data = RegistrationContinuation("login", null)
                 )
             )
         } else {
@@ -211,10 +202,7 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
                 logger.debug { "Discord user $id cannot create account: " + adv.reason }
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiErrorResponse(
-                        adv.reason,
-                        StandardErrorCodes.AccountCreationNotAllowed.toErrorData()
-                    )
+                    AccountCreationNotAllowed.toResponse(adv.reason, adv.reasonI18n, adv.reasonI18nData)
                 )
                 return
             }
@@ -222,16 +210,13 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
             val newSession = session.copy(discordUsername = username, discordId = id, discordAvatarUrl = avatarUrl)
             call.sessions.set(newSession)
             call.respond(
-                ApiSuccessResponse(
-                    "Connected to Discord",
-                    RegistrationContinuation("continue", newSession.toRegistrationInformation())
-                )
+                ApiSuccessResponse.of(RegistrationContinuation("continue", newSession.toRegistrationInformation()))
             )
         }
     }
 
     private suspend fun ApplicationCall.respondRegistrationStatus(session: RegisterSession) {
-        respond(ApiSuccessResponse(null, session.toRegistrationInformation()))
+        respond(ApiSuccessResponse.of(session.toRegistrationInformation()))
     }
 
     private suspend inline fun <reified T : Any> ApplicationCall.receiveCatching(): T? = try {

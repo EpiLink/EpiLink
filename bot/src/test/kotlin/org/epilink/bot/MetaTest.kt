@@ -10,6 +10,7 @@ package org.epilink.bot
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
@@ -19,19 +20,18 @@ import io.ktor.server.testing.withTestApplication
 import io.mockk.every
 import org.epilink.bot.config.LinkContactInformation
 import org.epilink.bot.config.LinkFooterUrl
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkDiscordBackEnd
-import org.epilink.bot.http.LinkMicrosoftBackEnd
+import org.epilink.bot.http.LinkIdentityProvider
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkMetaApiImpl
 import org.koin.dsl.module
 import org.koin.test.get
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import org.koin.test.mock.declare
+import kotlin.test.*
 
 class MetaTest : KoinBaseTest(
     module {
@@ -42,20 +42,21 @@ class MetaTest : KoinBaseTest(
 ) {
     @Test
     fun `Test meta information gathering`() {
+        defaultAssets()
         mockHere<LinkServerEnvironment> {
             every { name } returns "EpiLink Test Instance"
         }
         mockHere<LinkDiscordBackEnd> {
             every { getAuthorizeStub() } returns "I am a Discord authorize stub"
         }
-        mockHere<LinkMicrosoftBackEnd> {
+        mockHere<LinkIdentityProvider> {
             every { getAuthorizeStub() } returns "I am a Microsoft authorize stub"
         }
         mockHere<LinkLegalTexts> {
             every { idPrompt } returns "My id prompt text is the best"
         }
+        mockHere<LinkIdProviderConfiguration> { every { name } returns "the_name" }
         mockHere<LinkWebServerConfiguration> {
-            every { logo } returns "https://amazinglogo"
             every { footers } returns listOf(
                 LinkFooterUrl("Hello", "https://hello"),
                 LinkFooterUrl("Heeeey", "/macarena")
@@ -71,9 +72,11 @@ class MetaTest : KoinBaseTest(
             val data = fromJson<ApiSuccess>(call.response).data
             assertNotNull(data)
             assertEquals("EpiLink Test Instance", data["title"])
-            assertEquals("https://amazinglogo", data.getValue("logo"))
+            assertEquals("LogoURL", data.getValue("logo"))
+            assertEquals("BackgroundURL", data.getValue("background"))
+            assertEquals("IDPLogoURL", data.getValue("providerIcon"))
             assertEquals("I am a Discord authorize stub", data.getString("authorizeStub_discord"))
-            assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_msft"))
+            assertEquals("I am a Microsoft authorize stub", data.getString("authorizeStub_idProvider"))
             assertEquals("My id prompt text is the best", data.getString("idPrompt"))
             val footers = data.getListOfMaps("footerUrls")
             assertEquals(2, footers.size)
@@ -88,6 +91,7 @@ class MetaTest : KoinBaseTest(
 
     @Test
     fun `Test ToS retrieval`() {
+        defaultAssets()
         val tos = "<p>ABCDEFG</p>"
         mockHere<LinkLegalTexts> {
             every { termsOfServices } returns LegalText.Html(tos)
@@ -103,6 +107,7 @@ class MetaTest : KoinBaseTest(
 
     @Test
     fun `Test ToS PDF retrieval`() {
+        defaultAssets()
         val tos = byteArrayOf(1, 2, 3)
         mockHere<LinkLegalTexts> {
             every { termsOfServices } returns LegalText.Pdf(tos)
@@ -119,6 +124,7 @@ class MetaTest : KoinBaseTest(
 
     @Test
     fun `Test PP retrieval`() {
+        defaultAssets()
         val pp = "<p>Privacy policyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</p>"
         mockHere<LinkLegalTexts> {
             every { privacyPolicy } returns LegalText.Html(pp)
@@ -134,6 +140,7 @@ class MetaTest : KoinBaseTest(
 
     @Test
     fun `Test PP PDF retrieval`() {
+        defaultAssets()
         val pp = byteArrayOf(1, 2, 3)
         mockHere<LinkLegalTexts> {
             every { privacyPolicy } returns LegalText.Pdf(pp)
@@ -146,6 +153,64 @@ class MetaTest : KoinBaseTest(
             assertNotNull(data)
             assertTrue(pp.contentEquals(data))
         }
+    }
+
+    private val assetEndpoints = listOf("logo", "background", "idpLogo")
+    private val assetUrls = mapOf("logo" to "LogoURL", "background" to "BackgroundURL", "idpLogo" to "IDPLogoURL")
+
+    @Test
+    fun `Test asset retrieval (url redirect)`() {
+        defaultAssets()
+        withTestEpiLink {
+            for ((assetUrlFragment, expected) in assetUrls) {
+                val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$assetUrlFragment")
+                call.assertStatus(HttpStatusCode.Found)
+                assertEquals(expected, call.response.headers["Location"])
+            }
+        }
+    }
+
+    @Test
+    fun `Test asset retrieval (direct)`() {
+        val assets = declare {
+            LinkAssets(
+                ResourceAsset.File(byteArrayOf(1, 2, 3), ContentType.Image.JPEG),
+                ResourceAsset.File(byteArrayOf(4, 5, 6), ContentType.Image.PNG),
+                ResourceAsset.File(byteArrayOf(7, 8, 9), ContentType.Image.GIF)
+            )
+        }
+        withTestEpiLink {
+            for ((assetUrl, asset) in listOf(
+                "logo" to assets.logo as ResourceAsset.File,
+                "background" to assets.background as ResourceAsset.File,
+                "idpLogo" to assets.idpLogo as ResourceAsset.File
+            )) {
+                val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$assetUrl")
+                call.assertStatus(OK)
+                assertEquals(asset.contentType, call.response.contentType())
+                // toList() otherwise check fails (equals() isn't implemented in JVM for byte arrays)
+                assertEquals(asset.contents.toList(), call.response.byteContent?.toList())
+            }
+        }
+    }
+
+    @Test
+    fun `Test asset retrieval (no asset)`() {
+        declare { LinkAssets(ResourceAsset.None, ResourceAsset.None, ResourceAsset.None) }
+        withTestEpiLink {
+            for (urlFragment in assetEndpoints) {
+                val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$urlFragment")
+                assertFalse(call.requestHandled)
+            }
+        }
+    }
+
+    private fun defaultAssets() = declare {
+        LinkAssets(
+            ResourceAsset.Url("LogoURL"),
+            ResourceAsset.Url("BackgroundURL"),
+            ResourceAsset.Url("IDPLogoURL")
+        )
     }
 
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =

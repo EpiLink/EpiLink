@@ -16,20 +16,22 @@ import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
 import io.ktor.response.respond
+import io.ktor.response.respondBytes
+import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.route
-import org.epilink.bot.LegalText
-import org.epilink.bot.LinkLegalTexts
-import org.epilink.bot.LinkServerEnvironment
+import org.epilink.bot.*
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.ApiEndpoint
 import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.LinkDiscordBackEnd
-import org.epilink.bot.http.LinkMicrosoftBackEnd
+import org.epilink.bot.http.LinkIdentityProvider
 import org.epilink.bot.http.data.InstanceInformation
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.slf4j.LoggerFactory
 import java.time.Duration
 
 /**
@@ -44,18 +46,14 @@ interface LinkMetaApi {
 }
 
 internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
-    /**
-     * The environment the back end lives in
-     */
+    private val logger = LoggerFactory.getLogger("epilink.api.meta")
     private val env: LinkServerEnvironment by inject()
-
     private val legal: LinkLegalTexts by inject()
-
     private val discordBackEnd: LinkDiscordBackEnd by inject()
-
-    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
-
+    private val idProvider: LinkIdentityProvider by inject()
+    private val assets: LinkAssets by inject()
     private val wsCfg: LinkWebServerConfiguration by inject()
+    private val providerConfig: LinkIdProviderConfiguration by inject()
 
     override fun install(route: Route) =
         with(route) { meta() }
@@ -65,7 +63,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
             rateLimited(limit = 50, timeBeforeReset = Duration.ofMinutes(1)) {
                 @ApiEndpoint("GET /api/v1/meta/info")
                 get("info") {
-                    call.respond(ApiSuccessResponse(data = getInstanceInformation()))
+                    call.respond(ApiSuccessResponse.of(getInstanceInformation()))
                 }
 
                 @ApiEndpoint("GET /api/v1/meta/tos")
@@ -77,7 +75,25 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
                 get("privacy") {
                     call.respond(legal.privacyPolicy.asResponseContent())
                 }
+
+                serveAsset("logo", assets.logo)
+                serveAsset("background", assets.background)
+                serveAsset("idpLogo", assets.idpLogo)
             }
+        }
+    }
+
+    private fun Route.serveAsset(name: String, asset: ResourceAsset) {
+        when (asset) {
+            ResourceAsset.None -> {
+                /* nothing */
+            }
+            is ResourceAsset.Url -> get(name) {
+                call.respondRedirect(asset.url)
+            }.also { logger.debug { "Will serve asset $name as a URL redirect" } }
+            is ResourceAsset.File -> get(name) {
+                call.respondBytes(asset.contents, asset.contentType)
+            }.also { logger.debug { "Will serve asset $name as a file" } }
         }
     }
 
@@ -87,9 +103,12 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
     private fun getInstanceInformation(): InstanceInformation =
         InstanceInformation(
             title = env.name,
-            logo = wsCfg.logo,
-            authorizeStub_msft = microsoftBackEnd.getAuthorizeStub(),
+            logo = assets.logo.asUrl("logo"),
+            background = assets.background.asUrl("background"),
+            authorizeStub_idProvider = idProvider.getAuthorizeStub(),
             authorizeStub_discord = discordBackEnd.getAuthorizeStub(),
+            providerName = providerConfig.name,
+            providerIcon = assets.idpLogo.asUrl("idpLogo"),
             idPrompt = legal.idPrompt,
             footerUrls = wsCfg.footers,
             contacts = wsCfg.contacts
@@ -97,7 +116,7 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
 }
 
 private fun LegalText.asResponseContent(): OutgoingContent.ByteArrayContent =
-    when(this) {
+    when (this) {
         is LegalText.Pdf -> ByteArrayContent(data, ContentType.Application.Pdf, OK)
         is LegalText.Html -> TextContent(text, ContentType.Text.Html, OK)
     }

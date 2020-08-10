@@ -8,7 +8,7 @@ This document reflects the API as it is implemented in the back-end, although it
 
 ## Rate limiting
 
-EpiLink follows [Discord's way of rate limiting](https://discordapp.com/developers/docs/topics/rate-limits), except that the `Retry-After` header and `retry_after` JSON values are *always* an integer number of seconds. All endpoints are rate-limited, the exact rates depending on the endpoint.
+EpiLink follows [Discord's way of rate limiting](https://discord.com/developers/docs/topics/rate-limits), except that the `Retry-After` header and `retry_after` JSON values are *always* an integer number of seconds. All endpoints are rate-limited, the exact rates depending on the endpoint.
 
 The rate limiting is based on three factors (keys):
 
@@ -17,6 +17,57 @@ The rate limiting is based on three factors (keys):
 * Major parameter (additional key)
 
 Note that 429 errors *never* return API responses, they always return a JSON object with three values, `message`, `retry_after` (in seconds, not milliseconds like Discord) and `global`.
+
+## I18n
+
+Messages are always sent in plain English. Additionally, an I18n key may be given (`..._i18n`) that may be used to show a localized message, and a dictionary (`..._i18n_data`) is provided for values that should be inserted in the localized message.
+
+Note that all error codes have an implicit I18n key, `err.code`, where code is the error code's ID (e.g. `err.101`). (This is why ErrorData does not have an I18n key.)
+
+### I18n keys
+
+I18n keys are what you find in the fields that end with `_i18n`. They can also need additional information, which is 
+given in the field that ends with `_i18n_data` in the form of a dictionary. For example:
+
+```json5
+{
+  /* ... */
+  "message_i18n": "reg.isv",
+  "message_i18n_data": {
+    "service": "my service"
+  }
+}
+``` 
+
+In the following table, words surrounded by `%` correspond to an entry in the data dictionary (the keys themselves in
+the data dictionary do *not* have `%`). Apart from `err.***` keys, the following keys can be returned:
+
+| Key | English version |
+|:---:| --------------- |
+| bm.ubi | Unknown ban ID |
+| bm.mid | Identity Provider ID hash does not match given ban ID. |
+| ms.nea | This account does not have an email address. |
+| oa.iac | Invalid authorization code |
+| use.slo | Successfully logged out. |
+| use.slm | Successfully linked Identity Provider account. |
+| use.sdi | Successfully deleted identity. |
+| pc.ala | This Identity Provider account is already linked to another account |
+| pc.cba | This Identity Provider account is banned (reason: %reason%) |
+| pc.jba | You are banned from joining any server at the moment. (Ban reason: %reason%) |
+| pc.erj | This e-mail address was rejected. Are you sure you are using the correct Identity Provider account? |
+| pc.dae | This Discord account already exists |
+| sc.ani | You need to have your identity recorded to perform administrative tasks. |
+| adm.mir | Missing reason. |
+| adm.iet | Invalid expiry timestamp. |
+| adm.ibi | Invalid ban ID. |
+| adm.nbi | No ban with given ID found. |
+| adm.hnc | Identity Provider ID hash does not correspond. |
+| adm.brk | Ban revoked. |
+| reg.msh | Missing session header. |
+| reg.acc | Account created, logged in. |
+| reg.isv | Invalid service: %service% |
+| reg.lgi | Logged in |
+
 
 ## Details
 
@@ -31,6 +82,8 @@ Note that 429 errors *never* return API responses, they always return a JSON obj
 {
   "success": true, // or false
   "message": "Hello", // nullable
+  "message_i18n": "...", // I18n key for the message, null if and only if message is null
+  "message_i18n_data":  { /* ... */ }, // I18n map for the data
   "data": {} // nullable, depends on the request
 }
 ```
@@ -82,7 +135,7 @@ These codes are for situations where an external API call failed.
 | Code | Description |
 |:----:| ----------- |
 | 201 | Something went wrong with a Discord API call |
-| 202 | Something went wrong with a Microsoft API call |
+| 202 | Something went wrong with an Identity Provider API call |
 
 
 ### 3xx codes
@@ -128,21 +181,25 @@ These endpoints can be used to retrieve information from the back-end that is us
 {
   "title": "Title of the EpiLink instance",
   "logo": "https://url.to/instance/logo", // nullable
-  "authorizeStub_msft": "...",
+  "background": "https://url.to/instance/background", // nullable
+  "authorizeStub_idProvider": "...",
   "authorizeStub_discord": "...",
+  "providerName": "...",
+  "providerIcon": "...", // nullable
   "idPrompt": "...",
   "footerUrls": [ /* ... */ ] ,
   "contacts": [ /* ... */ ]
 }
 ```
-
-The `authorizeStub` values are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to escape it for HTTP! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
-
-`idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. It is inline HTML that is meant to be embedded within a web page.
-
-`footerUrls` is a list of [FooterUrl](#footerurl) objects, each describing a link that should be displayed in the footer. These links are customized by the back-end.
-
-`contacts` is a list of [ContactInformation](#contactinformation) objects, each describing a person that can be contacted (e.g. an instance maintainer). May be empty. *(since version 0.2.0)*
+* `title` is the name of the instance
+* `logo` is a URL to the logo of the instance, either absolute (`https://...`) or with a trailing slash (in which case it will always be `/api/v1/meta/logo`)
+* `background` is a URL to the background of the instance that should be shown on the login page, either absolute (`https://...`) or with a trailing slash (in which case it will always be `/api/v1/meta/background`)
+* The `authorizeStub` values are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to encode it as a URI component to properly escape special characters! (i.e. append `&redirect_uri=https%3A%2F%2Fmyexample.com%2F...` to the `authorizeStub` field).
+* `providerName` is the name of the identity provider.
+* `providerIcon` is a URL to the logo of the identity provider, similar to `logo` and `background`.
+* `idPrompt` is the text that should be shown below the "I want EpiLink to remember my identity" checkbox. It is inline HTML that is meant to be embedded within a web page.
+* `footerUrls` is a list of [FooterUrl](#footerurl) objects, each describing a link that should be displayed in the footer. These links are customized by the back-end.
+* `contacts` is a list of [ContactInformation](#contactinformation) objects, each describing a person that can be contacted (e.g. an instance maintainer). May be empty. *(since version 0.2.0)*
 
 #### FooterUrl
 
@@ -212,6 +269,20 @@ Example:
 
 (or a PDF file's contents)
 
+### GET /meta/logo, background and idpLogo
+
+```http request
+GET /api/v1/meta/logo
+###
+GET /api/v1/meta/background
+```
+
+> **DOES NOT RETURN AN API RESPONSE.** This endpoint returns an image in some specific circumstances.
+
+Returns an image if the image is hosted directly by the back-end. The behavior is undefined if the image is not hosted by the back-end.
+
+Instead of relying on these endpoints, you should instead rely on the `background`, `logo` and `providerIcon` (for `idpLogo`) information you get from the [meta information endpoint](#get-metainfo).
+
 ## Registration (/register)
 
 Registration state is maintained with a `RegisterSessionId` header, which you SHOULD include in all calls.
@@ -229,8 +300,8 @@ The OAuth2 design is like so:
 The registration process roughly looks like this:
 
 * Get a `SessionRegisterId`, which you can get from any endpoint. We recommend using [the `/register/info`](#get-information---get-registerinfo) endpoint
-* Provide a Microsoft or Discord authorization code using [the `/register/authcode/service`](#post-registerauthcodeservice) endpoints
-* Provide the other authorization code using the other authorization code endpoint. (e.g. if you started with Discord, provide the Microsoft code next)
+* Provide an ID Provider or Discord authorization code using [the `/register/authcode/service`](#post-registerauthcodeservice) endpoints
+* Provide the other authorization code using the other authorization code endpoint. (e.g. if you started with Discord, provide the ID Provider code next)
 * Complete the registration by calling [the `/register` endpoint](#post-register) with whether or not the user wants to have their identity kept in the system. The account has been created, congrats!
 
 At any point, a registration session can be cancelled using the [DELETE `/register`](#delete-register) endpoint.
@@ -255,7 +326,7 @@ Each field represents some information about the current process.
  
 * `discordUsername` is the Discord username associated with the current registration process, or null if no Discord account is recorded in the current registration process. 
 * `discordAvatarUrl` is a URL to the avatar of the Discord user. This may be null if the user does not have an avatar, or if no Discord account is recorded in the current registration process.
-* `email` is the user's email address (as provided by the Microsoft Graph API), or null if no Microsoft account is recorded in the current registration process.
+* `email` is the user's email address (as provided by the OpenID Connect ID Token), or null if the ID Provider account has not been recorded in the current registration process.
 
 #### RegistrationAuthCode
 
@@ -324,7 +395,7 @@ Aborts the registration attempt and clears all session information on the back-e
 
 **Continue the register process with the given authcode for the user.**
 
-Where service can be `msft` or `discord`
+Where service can be `idProvider` or `discord`
 
 ```http request
 POST /api/v1/register/authcode/service
@@ -396,7 +467,7 @@ Contains information about all of the ID Accesses of a user.
 {
     "manualAuthorsDisclosed": true, // or false
     "accesses": [
-        // IdAccess objects    
+        // IdAccess objects
     ]
 }
 ```
@@ -456,7 +527,7 @@ Returns an [IdAccessLogs](#idaccesslogs) object about the currently logged in us
 
 ### POST /user/identity
 
-**Add a Microsoft ID to the account if the identity was previously not registered**
+**Add an identity to the account if the identity was previously not registered**
 
 ```http request
 POST /api/v1/user/identity
@@ -466,7 +537,7 @@ Content-Type: application/json # mandatory
 
 The request content is a JSON [RegistrationAuthCode](#registrationauthcode).
 
-This endpoint uses the provided Microsoft authorization code to record the e-mail address of the account in the database. Note that the Microsoft account retrieved via the authorization code must be the one that was used for creating the account in the first place -- otherwise, the operation fails with [a 112 error code](#error-codes).
+This endpoint uses the provided ID Provider authorization code to record the e-mail address of the account in the database. Note that the ID Provider account retrieved via the authorization code must be the one that was used for creating the account in the first place -- otherwise, the operation fails with [a 112 error code](#error-codes).
 
 Returns a classic success [API response](#apiresponse) if successful (with HTTP Code 200), or an API error otherwise.
 
@@ -524,14 +595,14 @@ All endpoints are checked: the caller must have admins permissions (by specifyin
 ```json5
 {
   "discordId": "...",
-  "msftIdHash": "...", 
+  "idpIdHash": "...", 
   "created": "...",
   "identifiable": true
 }
 ```
 
 - `discordId`: The Discord ID of the user (which you most probably already know)
-- `msftIdHash`: The Microsoft ID hash of the user (URL-safe Base64)
+- `idpIdHash`: The Identity Provider ID hash of the user (URL-safe Base64)
 - `created`: A ISO-8601 Instant of when the account was created, always in UTC (the `Z` at the end).
 - `identifiable`: True or false, whether the user can be identified through an ID access or not.
 
@@ -609,58 +680,58 @@ Where `{targetid}` is the Discord ID of the person.
 
 This endpoint returns a [RegisteredUserInfo](#registereduserinformation) about the target user.
 
-### GET /admin/ban/{msftHash}
+### GET /admin/ban/{idpIdHash}
 
-**Get the bans of a user using their Microsoft ID hash.**
+**Get the bans of a user using their ID Provider ID hash.**
 
 ```http request
-GET /admin/ban/{msftHash}
+GET /admin/ban/{idpIdHash}
 ```
 
-Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid).
+Where `{idpIdHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Identity Provier ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid).
 
 Returns a [UserBans](#userbans) object.
 
-### GET /admin/ban/{msftHash}/{banId}
+### GET /admin/ban/{idpIdHash}/{banId}
 
 **Get a single ban of a specific user**
 
 ```http request
-GET /admin/ban/{msftHash}/{banId}
+GET /admin/ban/{idpIdHash}/{banId}
 ```
 
-Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid) and `{banId}` is the ID of the specific ban that needs to be retrieved.
+Where `{idpIdHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Identity Provider ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid) and `{banId}` is the ID of the specific ban that needs to be retrieved.
 
 If any of the following is true:
 
 * No ban exists with the given ban ID
 * The ban ID is incorrect (not properly formatted)
-* The ban exists but does not correspond to the given `msftHash`
+* The ban exists but does not correspond to the given `idpIdHash`
 
-A 404 (if the ban does not exist or does not correspond to the `msftHash) or 400 (if the ID is not formatted properly, i.e. not an integer number) error is returned with [error code 403](#4xx-codes).
+A 404 (if the ban does not exist or does not correspond to the `idpIdHash`) or 400 (if the ID is not formatted properly, i.e. not an integer number) error is returned with [error code 403](#4xx-codes).
 
 Returns a [BanInfo](#baninfo) object.
 
-### POST /admin/ban/{msftHash}/{banId}/revoke
+### POST /admin/ban/{idpIdHash}/{banId}/revoke
 
 **Revoke a ban**
 
 ```http request
-POST /admin/ban/{msftHash}/{banId}/revoke
+POST /admin/ban/{idpIdHash}/{banId}/revoke
 ```
 
-Where `{msftHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Microsoft ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid) and `{banId}` is the ID of the specific ban that needs to be retrieved.
+Where `{idpIdHash}` is the Base64 (URL safe) encoded SHA256 hash of the user's Identity Provider ID. You can retrieve this value for current users by calling [this endpoint](#get-adminuseruserid) and `{banId}` is the ID of the specific ban that needs to be retrieved.
 
 Revokes the ban, making it effectively ignored. If the ban was active before being revoked, the user's roles are re-evaluated.
 
-May return a 400 HTTP error with error code 403 if the ID does not make sense (similar to what [the GET does](#get-adminbanmsfthashbanid)).
+May return a 400 HTTP error with error code 403 if the ID does not make sense (similar to what [the GET does](#get-adminbanidpidhashbanid)).
 
-### POST /admin/ban/{msftHash}
+### POST /admin/ban/{idpIdHash}
 
 **Ban someone.**
 
 ```http request
-POST /admin/ban/{msftHash}
+POST /admin/ban/{idpIdHash}
 SessionId: abcdef12345 # mandatory
 Content-Type: application/json # mandatory
 ```

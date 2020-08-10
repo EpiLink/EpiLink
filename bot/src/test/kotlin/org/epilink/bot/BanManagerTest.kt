@@ -33,13 +33,14 @@ class BanManagerTest : KoinBaseTest(
         val embed = mockk<DiscordEmbed>()
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { recordBan(idHash, null, "the_author", "the description") } returns ban
-            coEvery { getUserFromMsftIdHash(any()) } returns u
+            coEvery { getUserFromIdpIdHash(any()) } returns u
         }
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRoles("targetid") } returns mockk()
         }
+        declareNoOpI18n()
         mockHere<LinkDiscordMessages> {
-            every { getBanNotification("the description", null) } returns embed
+            every { getBanNotification(any(), "the description", null) } returns embed
         }
         val dms = mockHere<LinkDiscordMessageSender> {
             every { sendDirectMessageLater("targetid", embed) } returns mockk()
@@ -61,11 +62,10 @@ class BanManagerTest : KoinBaseTest(
             coEvery { getBan(any()) } returns null
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 revokeBan("blabla", 12345)
             }
             assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
-            assertTrue(exc.isEndUserAtFault)
         }
     }
 
@@ -73,18 +73,17 @@ class BanManagerTest : KoinBaseTest(
     fun `Test revoke ban that does not correspond to msft id hash`() {
         mockHere<LinkDatabaseFacade> {
             coEvery { getBan(12) } returns mockk {
-                every { msftIdHash } returns byteArrayOf(1, 2, 3)
+                every { idpIdHash } returns byteArrayOf(1, 2, 3)
             }
         }
         mockHere<LinkBanLogic> {
             every { isBanActive(any()) } returns true
         }
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<LinkEndpointUserException> {
                 revokeBan("nope", 12)
             }
             assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
-            assertTrue(exc.isEndUserAtFault)
             assertTrue(exc.message!!.contains("hash"))
         }
     }
@@ -94,7 +93,7 @@ class BanManagerTest : KoinBaseTest(
         val idHash = byteArrayOf(1, 2, 3, 4)
         val idHashStr = Base64.getUrlEncoder().encodeToString(idHash)
         val initialBan = mockk<LinkBan> {
-            every { msftIdHash } returns idHash
+            every { idpIdHash } returns idHash
         }
         mockHere<LinkBanLogic> {
             every { isBanActive(initialBan) } returns true
@@ -102,7 +101,7 @@ class BanManagerTest : KoinBaseTest(
         val dbf = mockHere<LinkDatabaseFacade> {
             coEvery { getBan(12) } returns initialBan
             coEvery { revokeBan(12) } just runs
-            coEvery { getUserFromMsftIdHash(any()) } returns mockk {
+            coEvery { getUserFromIdpIdHash(any()) } returns mockk {
                 every { discordId } returns "discordid"
             }
         }

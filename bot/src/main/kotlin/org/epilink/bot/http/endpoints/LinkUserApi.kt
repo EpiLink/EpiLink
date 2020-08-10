@@ -20,9 +20,12 @@ import io.ktor.sessions.clear
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
-import org.epilink.bot.LinkEndpointException
+import org.epilink.bot.LinkEndpointUserException
 import org.epilink.bot.StandardErrorCodes
-import org.epilink.bot.db.*
+import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.LinkIdManager
+import org.epilink.bot.db.LinkUser
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.debug
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
@@ -55,7 +58,7 @@ interface LinkUserApi {
 internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.user")
     private val roleManager: LinkRoleManager by inject()
-    private val microsoftBackEnd: LinkMicrosoftBackEnd by inject()
+    private val idProvider: LinkIdentityProvider by inject()
     private val sessionChecks: LinkSessionChecks by inject()
     private val idManager: LinkIdManager by inject()
     private val dbFacade: LinkDatabaseFacade by inject()
@@ -75,7 +78,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
             get {
                 val session = call.sessions.get<ConnectedSession>()!!
                 logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
-                call.respond(HttpStatusCode.OK, ApiSuccessResponse(data = session.toUserInformation(call.user)))
+                call.respond(HttpStatusCode.OK, ApiSuccessResponse.of(session.toUserInformation(call.user)))
             }
 
             @ApiEndpoint("GET /api/v1/user/idaccesslogs")
@@ -85,14 +88,14 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 logger.debug { "Generating access logs for ${user.discordId}" }
                 call.respond(
                     HttpStatusCode.OK,
-                    ApiSuccessResponse(data = idManager.getIdAccessLogs(user))
+                    ApiSuccessResponse.of(idManager.getIdAccessLogs(user))
                 )
             }
 
             @ApiEndpoint("POST /api/v1/user/logout")
             post("logout") {
                 call.sessions.clear<ConnectedSession>()
-                call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out"))
+                call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out.", "use.slo"))
             }
 
             @ApiEndpoint("POST /api/v1/user/identity")
@@ -104,14 +107,14 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 logger.debug {
                     "User ${user.discordId} has asked for a relink with authcode ${auth.code}."
                 }
-                val microsoftToken = microsoftBackEnd.getMicrosoftToken(auth.code, auth.redirectUri)
+                // Consume the authorization code, just in case
+                val (guid, email) = idProvider.getUserIdentityInfo(auth.code, auth.redirectUri)
                 if (dbFacade.isUserIdentifiable(user)) {
-                    throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyKnown, isEndUserAtFault = true)
+                    throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyKnown)
                 }
-                val userInfo = microsoftBackEnd.getMicrosoftInfo(microsoftToken)
-                idManager.relinkMicrosoftIdentity(user, userInfo.email, userInfo.guid)
+                idManager.relinkIdentity(user, email, guid)
                 roleManager.invalidateAllRoles(user.discordId, true)
-                call.respond(apiSuccess("Successfully relinked Microsoft account"))
+                call.respond(apiSuccess("Successfully linked Identity Provider account.", "use.slm"))
             }
 
             @ApiEndpoint("DELETE /api/v1/user/identity")
@@ -121,9 +124,9 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 if (dbFacade.isUserIdentifiable(user)) {
                     idManager.deleteUserIdentity(user)
                     roleManager.invalidateAllRoles(user.discordId)
-                    call.respond(apiSuccess("Successfully deleted identity"))
+                    call.respond(apiSuccess("Successfully deleted identity", "use.sdi"))
                 } else {
-                    throw LinkEndpointException(StandardErrorCodes.IdentityAlreadyUnknown, isEndUserAtFault = true)
+                    throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyUnknown)
                 }
             }
         }

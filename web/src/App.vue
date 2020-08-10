@@ -9,7 +9,7 @@
 
 -->
 <template>
-    <div id="app">
+    <div id="app" :style="backgroundCss">
         <div id="main-view">
             <div id="content" :class="{ expanded }">
                 <transition name="fade" mode="out-in">
@@ -68,15 +68,15 @@
 </template>
 
 <script>
-    import { mapState } from 'vuex';
+    import {mapState} from 'vuex';
 
-    import LinkError   from './components/Error';
+    import LinkError from './components/Error';
     import LinkLoading from './components/Loading';
-    import LinkRoute   from "./components/Route";
+    import LinkRoute from "./components/Route";
 
     export default {
         name: 'link-app',
-        components: { LinkRoute, LinkError, LinkLoading },
+        components: {LinkRoute, LinkError, LinkLoading},
 
         mounted() {
             this.load();
@@ -122,7 +122,23 @@
             },
             instanceLogo() {
                 const meta = this.$store.state.meta;
-                return meta && meta.logo;
+                const logoUrl = meta && meta.logo;
+                if (logoUrl)
+                    return logoUrl.startsWith('/api/v1/') ? BACKEND_URL + logoUrl.substring(7) : logoUrl;
+                else
+                    return false;
+            },
+            background() {
+                const meta = this.$store.state.meta;
+                const bgUrl = meta && meta.background;
+                if (bgUrl)
+                    return bgUrl.startsWith('/api/v1/') ? BACKEND_URL + bgUrl.substring(7) : bgUrl;
+                else
+                    return false;
+            },
+            backgroundCss() {
+                const bg = this.background
+                return bg && {background: 'center/cover url(' + bg + ')'}
             }
         },
         methods: {
@@ -152,7 +168,9 @@
                 this.load();
             },
             updateTitle() {
-                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${this.$t('layout.navigation.' + this.$route.name)}`;
+                const providerName = this.$store.meta && this.$store.meta.providerName || "Identity Provider";
+                const routeName = this.$t('layout.navigation.' + this.$route.name, {provider: providerName});
+                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${routeName}`;
             }
         },
         watch: {

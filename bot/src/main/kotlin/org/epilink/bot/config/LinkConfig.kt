@@ -43,6 +43,10 @@ data class LinkConfiguration(
      */
     val tokens: LinkTokens,
     /**
+     * The OIDC Identity Provider to use
+     */
+    val idProvider: LinkIdProviderConfiguration,
+    /**
      * Discord-related configurations, defined using a [LinkDiscordConfig] object
      */
     val discord: LinkDiscordConfig,
@@ -118,15 +122,38 @@ data class LinkWebServerConfiguration(
      */
     val footers: List<LinkFooterUrl> = listOf(),
     /**
-     * Logo URL that is passed to the front-end
+     * Logo resource asset that is passed to the front-end
      */
-    val logo: String? = null,
+    val logo: ResourceAssetConfig? = ResourceAssetConfig(),
+    /**
+     * Background resource asset that is passed to the front-end
+     */
+    val background: ResourceAssetConfig? = ResourceAssetConfig(),
     /**
      * Contact information for instance maintainers
      *
      * @since 0.2.0
      */
     val contacts: List<LinkContactInformation> = listOf()
+)
+
+/**
+ * Configuration entry for an asset. An asset is either a URL or a local file with its path and optionally its content
+ * type
+ */
+data class ResourceAssetConfig(
+    /**
+     * The URL to the asset
+     */
+    val url: String? = null,
+    /**
+     * The file for this asset
+     */
+    val file: String? = null,
+    /**
+     * The content type for the file
+     */
+    val contentType: String? = null
 )
 
 /**
@@ -178,17 +205,13 @@ data class LinkTokens(
      */
     val discordOAuthSecret: String,
     /**
-     * Microsoft/Azure AD Client Id
+     * Identity provider OpenID Connect / OAuth 2 Client Id
      */
-    val msftOAuthClientId: String,
+    val idpOAuthClientId: String,
     /**
-     * Microsoft/Azure Ad Client Secret
+     * Identity provider OpenID Connect / OAuth 2 Client Secret
      */
-    val msftOAuthSecret: String,
-    /**
-     * Microsoft tenant. Check the maintainer guide for more information.
-     */
-    val msftTenant: String
+    val idpOAuthSecret: String
 )
 
 /**
@@ -212,7 +235,16 @@ data class LinkDiscordConfig(
     /**
      * The list of Discord servers that should be monitored by EpiLink
      */
-    val servers: List<LinkDiscordServerSpec> = listOf()
+    val servers: List<LinkDiscordServerSpec> = listOf(),
+    /**
+     * The default language to use in the bot
+     */
+    val defaultLanguage: String = "en",
+    /**
+     * The preferred languages list. Used for the first "change your language" prompt (only preferred languages are
+     * shown) + preferred languages are shown first in the e!lang list.
+     */
+    val preferredLanguages: List<String> = listOf(defaultLanguage)
 )
 
 
@@ -332,6 +364,28 @@ data class LinkLegalConfiguration(
     val identityPromptText: String? = null
 )
 
+/**
+ * Configuration for the identity provider
+ */
+data class LinkIdProviderConfiguration(
+    /**
+     * Url of the issuer/authority (without the .well-known/openid-configuration
+     */
+    val url: String,
+    /**
+     * The name of the identity provider
+     */
+    val name: String,
+    /**
+     * Asset for the identity provider's icon, possibly null
+     */
+    val icon: ResourceAssetConfig?,
+    /**
+     * Enable backwards compat, for msft only.
+     */
+    val microsoftBackwardsCompatibility: Boolean = false
+)
+
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
     registerModule(KotlinModule())
 }
@@ -350,7 +404,8 @@ fun loadConfigFromFile(path: Path): LinkConfiguration =
  */
 fun LinkConfiguration.isConfigurationSane(
     @Suppress("UNUSED_PARAMETER") args: CliArgs,
-    rulebook: Rulebook
+    rulebook: Rulebook,
+    availableDiscordLanguages: Set<String>
 ): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
     if (redis == null) {
@@ -361,12 +416,37 @@ fun LinkConfiguration.isConfigurationSane(
     report += legal.check()
     report += discord.check()
     report += discord.checkCoherenceWithRulebook(rulebook)
+    report += discord.checkCoherenceWithLanguages(availableDiscordLanguages)
 
-    // Warn if the tenant is broad (common, consumers, organizations) and no e-mail validation is in place
-    if (tokens.msftTenant in setOf("common", "consumers", "organizations") && rulebook.validator == null) {
-        report += ConfigWarning("You are using a non-specific Microsoft tenant (that allows anyone to log in) without e-mail validation: people from domains you do not trust may be accepted by EpiLink!")
+    return report
+}
+
+/**
+ * Check the coherence of the configuration with the available languages
+ */
+fun LinkDiscordConfig.checkCoherenceWithLanguages(available: Set<String>): List<ConfigReportElement> {
+    val languages = available.joinToString(", ")
+    val report = mutableListOf<ConfigReportElement>()
+    if (defaultLanguage !in available) {
+        report += ConfigError(
+            true,
+            "The default language you chose ($defaultLanguage) is not available. The available languages are $languages"
+        )
     }
 
+    val unavailablePreferredLanguages = preferredLanguages - available
+    if (unavailablePreferredLanguages.isNotEmpty()) {
+        report += ConfigError(
+            true,
+            "The preferred languages contain unavailable languages (${unavailablePreferredLanguages.joinToString(", ")}). The available languages are $languages"
+        )
+    }
+    if (defaultLanguage !in preferredLanguages) {
+        report += ConfigError(
+            true,
+            "The preferred languages list ${preferredLanguages.joinToString(", ")} must contain the default language ($defaultLanguage)."
+        )
+    }
     return report
 }
 
@@ -398,11 +478,11 @@ fun LinkTokens.check(): List<ConfigReportElement> {
     if (discordToken == "...") {
         report += ConfigError(true, "discordToken was left with its default value: please provide a bot token!")
     }
-    if (msftOAuthClientId == "...") {
-        report += ConfigError(true, "msftOauthClientId was left with its default value: please provide a client ID!")
+    if (idpOAuthClientId == "...") {
+        report += ConfigError(true, "idpOAuthClientId was left with its default value: please provide a client ID!")
     }
-    if (msftOAuthSecret == "...") {
-        report += ConfigError(true, "msftOAuthSecret was left with its default value: please provide a secret!")
+    if (idpOAuthSecret == "...") {
+        report += ConfigError(true, "idpOAuthSecret was left with its default value: please provide a secret!")
     }
     return report
 }
@@ -413,7 +493,10 @@ fun LinkTokens.check(): List<ConfigReportElement> {
 fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
     val reports = mutableListOf<ConfigReportElement>()
     if (this.frontendUrl?.endsWith("/") == false) { // Equality check because left side can be null
-        reports += ConfigError(true, "The frontendUrl value in the server config must have a trailing slash (add a / at the end of your URL)")
+        reports += ConfigError(
+            true,
+            "The frontendUrl value in the server config must have a trailing slash (add a / at the end of your URL)"
+        )
     }
     return reports
 }
