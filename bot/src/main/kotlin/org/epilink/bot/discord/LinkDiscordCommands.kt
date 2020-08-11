@@ -139,7 +139,14 @@ interface Command {
      * [requireMonitoredServer] is false. If not null, this guild is monitored if [requireMonitoredServer]
      * is true.
      */
-    suspend fun run(fullCommand: String, commandBody: String, sender: LinkUser?, senderId: String, channelId: String, guildId: String?)
+    suspend fun run(
+        fullCommand: String,
+        commandBody: String,
+        sender: LinkUser?,
+        senderId: String,
+        channelId: String,
+        guildId: String?
+    )
 }
 
 internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
@@ -174,7 +181,10 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
                 client.sendChannelMessage(channelId, msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.snm"))
                     .also { logger.debugReject("server not monitored", message, senderId, channelId, serverId) }
             is UnknownCommand ->
-                client.sendChannelMessage(channelId, msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.ic", a.name))
+                client.sendChannelMessage(
+                    channelId,
+                    msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.ic", a.name, titleObjects = listOf(a.name))
+                )
                     .also { logger.debugReject("unknown command", message, senderId, channelId, serverId) }
             is Accept -> {
                 // Do the thing
