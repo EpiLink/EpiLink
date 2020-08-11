@@ -54,7 +54,7 @@ interface LinkDiscordMessages {
      * `key.title` and `key.description`, where key is the [key] argument. The [objects] are used for formatting the
      * description only.
      */
-    fun getErrorCommandReply(language: String, key: String, vararg objects: Any): DiscordEmbed
+    fun getErrorCommandReply(language: String, key: String, vararg objects: Any, titleObjects: List<Any> = listOf()): DiscordEmbed
 
     /**
      * Embed for an invalid target given in a command body.
@@ -195,10 +195,11 @@ internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     override fun getErrorCommandReply(
         language: String,
         key: String,
-        vararg objects: Any
+        vararg objects: Any,
+        titleObjects: List<Any>
     ): DiscordEmbed = language.ctx {
         DiscordEmbed(
-            title = i18n["$key.title"],
+            title = i18n["$key.title"].f(*titleObjects.toTypedArray()),
             description = i18n["$key.description"].f(*objects),
             color = errorRed,
             footer = poweredByEpiLink
