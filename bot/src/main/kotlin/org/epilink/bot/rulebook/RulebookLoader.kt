@@ -77,20 +77,20 @@ suspend fun shouldUseCache(originalFile: Path): CacheAdvisory = withContext(Disp
 }
 
 @Suppress("BlockingMethodInNonBlockingContext") // withContext(Dispatchers.IO) so we don't care
-internal suspend fun CompiledScript<*>.writeScriptTo(path: Path): Unit = withContext(Dispatchers.IO) {
+internal suspend fun CompiledScript.writeScriptTo(path: Path): Unit = withContext(Dispatchers.IO) {
     ObjectOutputStream(Files.newOutputStream(path)).use { out ->
         out.writeObject(this@writeScriptTo)
     }
 }
 
 @Suppress("BlockingMethodInNonBlockingContext") // withContext(Dispatchers.IO) so we don't care
-internal suspend fun readScriptFrom(path: Path): CompiledScript<*> = withContext(Dispatchers.IO) {
+internal suspend fun readScriptFrom(path: Path): CompiledScript = withContext(Dispatchers.IO) {
     ObjectInputStream(Files.newInputStream(path)).use { ins ->
-        ins.readObject() as KJvmCompiledScript<*>
+        ins.readObject() as KJvmCompiledScript
     }
 }
 
-internal suspend fun compileRules(source: SourceCode): CompiledScript<*> = withContext(Dispatchers.Default) {
+internal suspend fun compileRules(source: SourceCode): CompiledScript = withContext(Dispatchers.Default) {
     val compileConfig = createJvmCompilationConfigurationFromTemplate<RulebookScript> {
         jvm {
             dependenciesFromCurrentContext(wholeClasspath = true)
@@ -104,7 +104,7 @@ internal suspend fun compileRules(source: SourceCode): CompiledScript<*> = withC
     }
 }
 
-internal suspend fun evaluateRules(from: CompiledScript<*>): Rulebook {
+internal suspend fun evaluateRules(from: CompiledScript): Rulebook {
     val builder = RulebookBuilder()
     val evalConfig = createJvmEvaluationConfigurationFromTemplate<RulebookScript> {
         implicitReceivers(builder)

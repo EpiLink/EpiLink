@@ -73,7 +73,7 @@ class LinkDiscordBackEnd(
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val received = ex.response.call.receive<String>()
+                val received = ex.response!!.call.receive<String>()
                 logger.debug { "Failed: received $received" }
                 val data = ObjectMapper().readValue<Map<String, Any?>>(received)
                 val error = data["error"] as? String

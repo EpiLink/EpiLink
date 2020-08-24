@@ -16,12 +16,12 @@ version = "0.5.1"
 
 compileKotlin {
     kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-XXLanguage:+NewInference"]
+    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn"]
 }
 
 compileTestKotlin {
     kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-XXLanguage:+NewInference"]
+    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn"]
 }
 
 application {
@@ -29,11 +29,10 @@ application {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-scripting-common:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-scripting-jvm:$kotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-scripting-jvm-host-embeddable:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-scripting-jvm-host:$kotlinVersion"
 
     implementation "io.ktor:ktor-server-netty:$ktorVersion"
     implementation "io.ktor:ktor-auth:$ktorVersion"
