@@ -47,9 +47,9 @@ EpiLink allows you to define a tenant in the configuration file directly, so jus
 
 #### Registering EpiLink
 
-Go to the [Azure portal](https://portal.azure.com) and log in with your Microsoft account ([which one?](#choosing-an-account-and-tenants)). Go to the Azure Active Directory view, then "App Registrations" and "New registration".
+Go to the [Azure portal](https://portal.azure.com) and log in with your Microsoft account ([which one?](#choosing-an-account-and-tenant)). Go to the Azure Active Directory view, then "App Registrations" and "New registration".
 
-Carefully choose the "Supported account types field" ([help](#choosing-an-account-and-tenants)). The registering process can take some time, just be patient. Once done, you will be redirected to your app's page.
+Carefully choose the "Supported account types field" ([help](#choosing-an-account-and-tenant)). The registering process can take some time, just be patient. Once done, you will be redirected to your app's page.
 
 You will need to create a secret manually, as Azure AD does not create one for you automatically. Simply go to Certificates & Secrets and click on New client secret. Note that the secret will not be visible once you leave the page, so copy it then and not later!
 

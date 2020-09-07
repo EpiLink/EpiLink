@@ -160,7 +160,7 @@ idProvider:
   icon: { ... }
 ```
 
-* `url`: the [authority/issuer URL](MaintainerGuide.md#discovery-process)
+* `url`: the [authority/issuer URL](IdentityProviders.md#discovery-process)
 * `name`: the name of the identity provider, only used for displaying it to the user
 * `icon`: the icon for the identity provider, only used for displaying it to the user. Follows the same format as the background/logo entry in the [server configuration](#http-server-settings). 
 
@@ -175,7 +175,7 @@ tokens:
     idpOAuthSecret: ...
 ```
 
-The first step is to set up the credential EpiLink will use to contact your [Identity Provider](IdentityProvider.md) and Discord APIs.
+The first step is to set up the credential EpiLink will use to contact your [Identity Provider](IdentityProviders.md) and Discord APIs.
 
 #### Discord
 
@@ -375,7 +375,7 @@ Here is what you can do using the administrative actions provided by EpiLink:
 
 - [Get information about a user](Api.md#get-adminuseruserid)
 - [Get a user's true identity](Api.md#post-adminidrequest)
-- [Ban a user](Api.md#post-adminbanidphash), [get previous bans](Api.md#get-adminbanidphash) and [revoke them](Api.md#post-adminbanidphashbanidrevoke)
+- [Ban a user](Api.md#post-adminbanidpidhash), [get previous bans](Api.md#get-adminbanidpidhash) and [revoke them](Api.md#post-adminbanidpidhashbanidrevoke)
 - [Generate a GDPR report about a user](Api.md#post-admingdprreporttargetid)
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
