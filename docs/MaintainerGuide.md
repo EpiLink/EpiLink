@@ -203,7 +203,7 @@ You should also add redirection URIs based on where the front-end is served. The
 
 ```yaml
 discord:
-  welomeUrl: ~
+  welcomeUrl: ~
   commandsPrefix: ...
   defaultLanguage: ...
   preferredLanguages: [...]
