@@ -24,7 +24,8 @@ import org.koin.test.KoinTest
 import org.koin.test.get
 import kotlin.test.*
 
-class FrontEndHandlingTest : KoinBaseTest(
+class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
+    LinkFrontEndHandler::class,
     module {
         single<LinkFrontEndHandler> { spyk(LinkFrontEndHandlerImpl()) }
     }

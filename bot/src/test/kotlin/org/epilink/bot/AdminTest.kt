@@ -47,7 +47,8 @@ private class BanImpl(
     override val reason: String
 ) : LinkBan
 
-class AdminTest : KoinBaseTest(
+class AdminTest : KoinBaseTest<Unit>(
+    Unit::class,
     module {
         single<LinkAdminApi> { LinkAdminApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }

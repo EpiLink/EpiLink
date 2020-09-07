@@ -11,6 +11,7 @@ package org.epilink.bot.db
 import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.IdentityAlreadyKnown
 import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessages
@@ -84,6 +85,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     private val i18n: LinkDiscordMessagesI18n by inject()
     private val discordSender: LinkDiscordMessageSender by inject()
     private val privacy: LinkPrivacy by inject()
+    private val idpConfig: LinkIdProviderConfiguration by inject()
 
 
     @UsesTrueIdentity
@@ -110,7 +112,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
         if (!knownHash.contentEquals(newHash)) {
             // Upgrade path: For some accounts, the MS Graph API returned an ID format that does not correspond to the
             // OIDC ID (old: non-padded + no hyphens, new: padded with hyphens). Updates to the OIDC-style ID
-            if (associatedIdpId.startsWith("00000000-0000-0000-")) {
+            if (idpConfig.microsoftBackwardsCompatibility && associatedIdpId.startsWith("00000000-0000-0000-")) {
                 // Convert the new ID format to the old one and compare
                 val oldIdFormat = associatedIdpId.substringAfter("00000000-0000-0000-").replace("-", "")
                 if (oldIdFormat.hashSha256().contentEquals(knownHash)) {

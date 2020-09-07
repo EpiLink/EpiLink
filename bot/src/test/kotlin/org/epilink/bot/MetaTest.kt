@@ -33,7 +33,8 @@ import org.koin.test.get
 import org.koin.test.mock.declare
 import kotlin.test.*
 
-class MetaTest : KoinBaseTest(
+class MetaTest : KoinBaseTest<Unit>(
+    Unit::class,
     module {
         single<LinkMetaApi> { LinkMetaApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }

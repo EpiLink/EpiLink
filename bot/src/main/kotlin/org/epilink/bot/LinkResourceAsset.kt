@@ -67,6 +67,7 @@ sealed class ResourceAsset {
 fun ResourceAsset.asUrl(name: String): String? = when (this) {
     ResourceAsset.None -> null
     is ResourceAsset.Url -> url
+    // TODO test
     is ResourceAsset.File -> "/api/v1/meta/$name"
 }
 

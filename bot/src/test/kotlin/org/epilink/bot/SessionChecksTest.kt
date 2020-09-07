@@ -35,7 +35,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SessionChecksTest : KoinBaseTest(
+class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
+    LinkSessionChecks::class,
     module {
         single<LinkSessionChecks> { LinkSessionChecksImpl() }
     }
@@ -112,8 +113,8 @@ class SessionChecksTest : KoinBaseTest(
             every { context } returns call
             every { finish() } just runs
         }
-        runBlocking {
-            assertFalse(get<LinkSessionChecks>().verifyUser(context))
+        test {
+            assertFalse(verifyUser(context))
             val captured = mr.slot.captured
             assertTrue(captured is ApiErrorResponse)
             assertEquals(300, captured.data!!.code)
@@ -139,8 +140,8 @@ class SessionChecksTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
-        runBlocking {
-            assertFalse(get<LinkSessionChecks>().verifyUser(context))
+        test {
+            assertFalse(verifyUser(context))
             val captured = mr.slot.captured
             assertTrue(captured is ApiErrorResponse)
             assertEquals(300, captured.data!!.code)

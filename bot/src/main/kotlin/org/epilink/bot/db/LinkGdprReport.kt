@@ -62,6 +62,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
     private val env: LinkServerEnvironment by inject()
     private val idpCfg: LinkIdProviderConfiguration by inject()
 
+    // TODO test
     override suspend fun getFullReport(user: LinkUser, requester: String): String =
         """
         |# ${env.name} GDPR report for user ${user.discordId}
@@ -85,6 +86,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         |(1): More information may be *temporarily* stored in caches, and is not included here. This information may contain your Discord username, avatar and roles. This information is stored temporarily and will be deleted after some time.
         """.trimMargin()
 
+    // TODO test
     override fun getUserInfoReport(user: LinkUser): String = with(user) {
         """
         ## User information
@@ -100,6 +102,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
     private fun ByteArray.encodeBase64Url() =
         java.util.Base64.getUrlEncoder().encodeToString(this)
 
+    // TODO test
     @OptIn(UsesTrueIdentity::class) // Reports true identity, so huh, yeah
     override suspend fun getTrueIdentityReport(user: LinkUser, requester: String): String = with(user) {
         if (dbf.isUserIdentifiable(this)) {
@@ -127,6 +130,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         }
     }
 
+    // TODO test
     override suspend fun getBanReport(user: LinkUser): String =
         """
         |## Ban information
@@ -136,6 +140,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         |${makeBansList(user) ?: "No known bans."}
         """.trimMargin()
 
+    // TODO test
     private suspend fun makeBansList(user: LinkUser): String? {
         val bans = dbf.getBansFor(user.idpIdHash)
         return if (bans.isEmpty()) {
@@ -152,6 +157,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         }
     }
 
+    // TODO test
     override suspend fun getIdentityAccessesReport(user: LinkUser): String =
         """
         |## ID Accesses information
@@ -176,6 +182,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         }
     }
 
+    // TODO
     override suspend fun getLanguagePreferencesReport(user: LinkUser): String {
         val language = dbf.getLanguagePreference(user.discordId) ?: "None"
         return """

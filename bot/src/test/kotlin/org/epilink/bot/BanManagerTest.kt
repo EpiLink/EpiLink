@@ -17,7 +17,8 @@ import org.koin.dsl.module
 import java.util.*
 import kotlin.test.*
 
-class BanManagerTest : KoinBaseTest(
+class BanManagerTest : KoinBaseTest<LinkBanManager>(
+    LinkBanManager::class,
     module {
         single<LinkBanManager> { LinkBanManagerImpl() }
     }
@@ -115,9 +116,5 @@ class BanManagerTest : KoinBaseTest(
             dbf.revokeBan(12)
             rm.invalidateAllRoles("discordid")
         }
-    }
-
-    private fun test(body: suspend LinkBanManager.() -> Unit) {
-        runBlocking { body(get()) }
     }
 }

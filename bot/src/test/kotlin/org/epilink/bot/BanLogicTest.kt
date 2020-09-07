@@ -19,7 +19,8 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class BanLogicTest : KoinBaseTest(
+class BanLogicTest : KoinBaseTest<LinkBanLogic>(
+    LinkBanLogic::class,
     module {
         single<LinkBanLogic> { LinkBanLogicImpl() }
     }
@@ -65,9 +66,5 @@ class BanLogicTest : KoinBaseTest(
         test {
             assertTrue(isBanActive(ban))
         }
-    }
-
-    private fun test(block: LinkBanLogic.() -> Unit) {
-        block(get())
     }
 }

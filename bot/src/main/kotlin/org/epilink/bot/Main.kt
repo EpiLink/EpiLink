@@ -160,7 +160,8 @@ fun main(args: Array<String>) = mainBody("epilink") {
     }
 }
 
-private fun runBlockingWithScope(block: suspend CoroutineScope.() -> Unit) = runBlocking { coroutineScope { block() } }
+private fun runBlockingWithScope(block: suspend CoroutineScope.() -> Unit) =
+    runBlocking { withContext(Dispatchers.Default) { coroutineScope { block() } } }
 
 private fun checkConfig(
     cfg: LinkConfiguration,

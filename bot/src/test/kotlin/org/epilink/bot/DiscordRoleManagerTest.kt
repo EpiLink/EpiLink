@@ -26,7 +26,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class DiscordRoleManagerTest : KoinBaseTest(
+class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
+    LinkRoleManager::class,
     module {
         single<LinkRoleManager> { LinkRoleManagerImpl() }
     }
@@ -48,9 +49,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dm = mockHere<LinkDiscordMessages> {
             every { getCouldNotJoinEmbed(any(), "There", "This is my reason") } returns mockk()
         }
-        runBlocking {
-            val rm = get<LinkRoleManager>()
-            rm.getRolesForUser("userid", mockk(), true, listOf("Hello"))
+        test {
+            assertTrue(getRolesForUser("userid", mockk(), true, listOf("Hello")).isEmpty())
         }
         coVerifyAll {
             pc.canUserJoinServers(any())
@@ -67,9 +67,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val cfg = mockHere<LinkDiscordConfig> {
             every { servers } returns listOf(mockk { every { id } returns "otherid" })
         }
-        runBlocking {
-            val rm = get<LinkRoleManager>()
-            rm.handleNewUser("guildid", "My Awesome Guild", "userid")
+        test {
+            handleNewUser("guildid", "My Awesome Guild", "userid")
         }
         coVerifyAll {
             cfg.servers
@@ -99,9 +98,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { sendDirectMessage("jacques", mockem) } just runs
         }
-        runBlocking {
-            val rm = get<LinkRoleManager>()
-            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+        test {
+            handleNewUser("guildid", "My Awesome Guild", "jacques")
         }
         coVerifyAll {
             cfg.servers
@@ -130,9 +128,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dm = mockHere<LinkDiscordMessages> {
             every { getGreetingsEmbed(any(), "guildid", "My Awesome Guild") } returns null
         }
-        runBlocking {
-            val rm = get<LinkRoleManager>()
-            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+        test {
+            handleNewUser("guildid", "My Awesome Guild", "jacques")
         }
         coVerifyAll {
             cfg.servers

@@ -167,6 +167,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             updateRolesOnGuilds(memberId, listOf(guildId), true)
     }
 
+    // TODO test this
     override fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean): Job =
         scope.launch {
             ruleMediator.invalidateCache(discordId)

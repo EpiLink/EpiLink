@@ -21,7 +21,8 @@ import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.*
 
-class UpdateCommandTest : KoinBaseTest(
+class UpdateCommandTest : KoinBaseTest<Command>(
+    Command::class,
     module {
         single<Command> { UpdateCommand() }
     }
@@ -186,9 +187,5 @@ class UpdateCommandTest : KoinBaseTest(
 
     private operator fun String.unaryPlus(): LinkUser = mockk {
         every { discordId } returns this@unaryPlus
-    }
-
-    private fun test(block: suspend Command.() -> Unit) {
-        runBlocking { get<Command>().block() }
     }
 }

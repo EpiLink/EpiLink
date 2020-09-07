@@ -129,9 +129,18 @@ class LinkServerEnvironment(
 
         single {
             LinkIdentityProvider(
-                identityProviderMetadata,
                 cfg.tokens.idpOAuthClientId,
-                cfg.tokens.idpOAuthSecret
+                cfg.tokens.idpOAuthSecret,
+                identityProviderMetadata.tokenUrl,
+                identityProviderMetadata.authorizeUrl
+            )
+        }
+
+        single {
+            LinkJwtVerifier(
+                cfg.tokens.idpOAuthClientId,
+                identityProviderMetadata.jwksUri,
+                identityProviderMetadata.idClaim
             )
         }
 

@@ -20,7 +20,8 @@ import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.*
 
-class PermissionChecksTest : KoinBaseTest(
+class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
+    LinkPermissionChecks::class,
     module {
         single<LinkPermissionChecks> { LinkPermissionChecksImpl() }
     }
@@ -187,9 +188,4 @@ class PermissionChecksTest : KoinBaseTest(
             assertEquals(AdminStatus.Admin, result)
         }
     }
-
-    private fun <R> test(block: suspend LinkPermissionChecks.() -> R) =
-        runBlocking {
-            block(get())
-        }
 }

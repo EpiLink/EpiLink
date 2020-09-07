@@ -184,8 +184,7 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
                 client.sendChannelMessage(
                     channelId,
                     msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.ic", a.name, titleObjects = listOf(a.name))
-                )
-                    .also { logger.debugReject("unknown command", message, senderId, channelId, serverId) }
+                ).also { logger.debugReject("unknown command", message, senderId, channelId, serverId) }
             is Accept -> {
                 // Do the thing
                 a.command.run(message, a.commandBody, a.user, senderId, channelId, serverId).also {

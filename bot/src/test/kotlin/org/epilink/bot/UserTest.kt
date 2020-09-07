@@ -36,7 +36,8 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class UserTest : KoinBaseTest(
+class UserTest : KoinBaseTest<Unit>(
+    Unit::class,
     module {
         single<LinkUserApi> { LinkUserApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }

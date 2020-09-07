@@ -35,7 +35,8 @@ import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.*
 
-class BackEndTest : KoinBaseTest(
+class BackEndTest : KoinBaseTest<Unit>(
+    Unit::class,
     module {
         single<CacheClient> { MemoryCacheClient() }
     }

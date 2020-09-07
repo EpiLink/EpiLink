@@ -10,6 +10,7 @@ package org.epilink.bot
 
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.DiscordEmbed
@@ -22,7 +23,8 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class IdAccessorTest : KoinBaseTest(
+class IdAccessorTest : KoinBaseTest<LinkIdManager>(
+    LinkIdManager::class,
     module {
         single<LinkIdManager> { LinkIdManagerImpl() }
     }
@@ -93,6 +95,9 @@ class IdAccessorTest : KoinBaseTest(
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
+        }
+        mockHere<LinkIdProviderConfiguration> {
+            coEvery { microsoftBackwardsCompatibility } returns false
         }
         test {
             val exc = assertFailsWith<LinkEndpointUserException> {
@@ -220,9 +225,4 @@ class IdAccessorTest : KoinBaseTest(
             assertTrue(IdAccess(true, "EpiLink Bot", "Another reason", inst2.toString()) in al.accesses)
         }
     }
-
-    private fun <R> test(block: suspend LinkIdManager.() -> R) =
-        runBlocking {
-            block(get())
-        }
 }
