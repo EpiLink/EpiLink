@@ -570,6 +570,8 @@ Upon success, triggers a role update.
 
 All endpoints are checked: the caller must have admins permissions (by specifying the caller's Discord ID as an "admin") *and* be identifiable.
 
+?> Administrative endpoints [can be disabled in the HTTP configuration](MaintainerGuide.md#http-server-settings) and may not be available.
+
 ### Objects
 
 #### IdRequest

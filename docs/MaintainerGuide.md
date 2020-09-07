@@ -119,6 +119,7 @@ server:
   proxyType: None # or XForwarded, or Forwarded
   logo: ~ # optional
   background: ~ # optional
+  enableAdminEndpoints: true # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -144,6 +145,7 @@ server:
     * To use a logo from a URL, use `logo: { url: "https://..." }`
     * To use a logo that's stored next to the configuration file, use `logo: { file: mylogo.png }`
 * `background` *(optional, null by default)*: The background of this instance, used by the front-end. When null (or `~`), a default grey background is used. The syntax is the same as for the `logo`. 
+* `enableAdminEndpoints` *(optional, true by default)*: True to enable [administrative endpoints](Api.md#administrative-endpoints-admin), false to disable them.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 
@@ -369,7 +371,7 @@ You may also want to specify `contacts` in the [server configuration](#http-serv
 
 ## Administration
 
-?> Administrative actions are only available since version 0.3.0
+?> Administrative actions are only available since version 0.3.0 and can be disabled since version 0.6.0
 
 Here is what you can do using the administrative actions provided by EpiLink: 
 
@@ -377,6 +379,8 @@ Here is what you can do using the administrative actions provided by EpiLink:
 - [Get a user's true identity](Api.md#post-adminidrequest)
 - [Ban a user](Api.md#post-adminbanidpidhash), [get previous bans](Api.md#get-adminbanidpidhash) and [revoke them](Api.md#post-adminbanidpidhashbanidrevoke)
 - [Generate a GDPR report about a user](Api.md#post-admingdprreporttargetid)
+
+You can also disable administrative options in the [HTTP server configuration](#http-server-settings).
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
 
