@@ -87,7 +87,7 @@ data class LinkDiscordServerSpec(
     /**
      * Roles that EpiLink will never remove on this server only. (they "stick" to the person once added)
      */
-    val stickyRoles: List<String>
+    val stickyRoles: List<String> = listOf()
 )
 
 /**
