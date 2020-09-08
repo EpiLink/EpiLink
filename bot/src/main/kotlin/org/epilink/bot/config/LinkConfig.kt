@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.epilink.bot.CliArgs
-import org.epilink.bot.discord.StandardRoles
 import org.epilink.bot.rulebook.Rulebook
 import java.nio.file.Files
 import java.nio.file.Path

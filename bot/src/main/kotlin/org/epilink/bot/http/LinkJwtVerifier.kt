@@ -17,7 +17,10 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
 import org.koin.core.KoinComponent
 
-class LinkJwtVerifier(clientId: String, jwksUri: String, val idClaim: String) : KoinComponent {
+/**
+ * This class is responsible for verifying JWT tokens using a JWKS for keys.
+ */
+class LinkJwtVerifier(clientId: String, jwksUri: String, private val idClaim: String) : KoinComponent {
     private val jwtConsumer = JwtConsumerBuilder().apply {
         setRequireExpirationTime()
         setRequireIssuedAt()
@@ -35,6 +38,9 @@ class LinkJwtVerifier(clientId: String, jwksUri: String, val idClaim: String) : 
 
     // maybe return something else in case of a failure? (the current JWT exception is fine, but that does make us rely
     // on this particular jwt library)
+    /**
+     * Process a specific JWT and return the info retrieved. Throws an exception if the JWT is invalid.
+     */
     suspend fun process(jwt: String): UserIdentityInfo {
         val claims = withContext(Dispatchers.Default) { jwtConsumer.processToClaims(jwt) }
         return UserIdentityInfo(
