@@ -212,6 +212,7 @@ discord:
     - id: ...
       ...
     - ...
+  stickyRoles: [...] # optional
 ```
 
 * `welcomeUrl`: The URL the bot will send in the default welcome message. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can use a custom embed instead of the default one with `welcomeEmbed` in each server -- the `welcomeUrl` value is ignored for servers which use a custom welcome embed. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
@@ -220,6 +221,7 @@ discord:
 * `preferredLanguages` *(optional, `[defaultLanguage]` by default)*: The languages EpiLink will prioritize over others. When sending a DM to users for the first time, these are the languages that will be used, and the languages in the list will appear above all others in the language list sent by `e!lang`. This list must contain at least the default language. *(since version 0.5.0)*
 * `roles` *(optional, empty list `[]` by default)*: A list of [custom roles specifications](#discord-custom-roles-configuration). You can omit it if you do not use custom roles.
 * `servers`: A list of [server configurations](#discord-server-configuration).
+* `stickyRoles`: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to all servers. The same option also exists for individual servers.
 
 Depending on the situation, a server may or may not be *monitored*. A *monitored* server is one where EpiLink is actively managing authentication.
 
@@ -254,12 +256,14 @@ Each server needs one entry in the "servers" field of the Discord configuration.
   enableWelcomeMessage: true
   welcomeEmbed:
     ...
+  stickyRoles: [...] # optional
 ```
 
 * `id`: The ID of the server this entry represents
 * `roles`: The [role specifications](#discord-server-role-specification) for the server.
 * `enableWelcomeMessage` *(optional, true by default)*: True if a welcome message should be sent to users who join the server but are not authenticated. False if no welcome message should be sent. The exact content of the message is determined
 * `welcomeEmbed`: The embed that is sent to users who join a Discord server but are not authenticated through this EpiLink instance. Use the [Discord embed configuration](#discord-embed-configuration) to configure it, or set it to `~` (or remove it entirely) to use the default message.
+* `stickyRoles`: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to this server only. The same option also exists for all servers.
 
 #### Discord server role specification
 

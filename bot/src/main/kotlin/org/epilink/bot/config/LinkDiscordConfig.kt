@@ -34,7 +34,11 @@ data class LinkDiscordConfig(
      * The preferred languages list. Used for the first "change your language" prompt (only preferred languages are
      * shown) + preferred languages are shown first in the e!lang list.
      */
-    val preferredLanguages: List<String> = listOf(defaultLanguage)
+    val preferredLanguages: List<String> = listOf(defaultLanguage),
+    /**
+     * Roles that EpiLink will never remove on all servers. (they "stick" to the person once added)
+     */
+    val stickyRoles: List<String> = listOf()
 )
 
 /**
@@ -79,7 +83,11 @@ data class LinkDiscordServerSpec(
     /**
      * The role mapping. Keys are EpiLink roles, values are Discord roles.
      */
-    val roles: Map<String, String>
+    val roles: Map<String, String>,
+    /**
+     * Roles that EpiLink will never remove on this server only. (they "stick" to the person once added)
+     */
+    val stickyRoles: List<String>
 )
 
 /**

@@ -83,7 +83,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                 LinkDiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = true,
-                    roles = mockk()
+                    roles = mockk(),
+                    stickyRoles = listOf()
                 )
             )
         }
@@ -117,7 +118,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                 LinkDiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = false,
-                    roles = mockk()
+                    roles = mockk(),
+                    stickyRoles = listOf()
                 )
             )
         }
@@ -146,7 +148,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                 LinkDiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = false,
-                    roles = mockk()
+                    roles = mockk(),
+                    stickyRoles = listOf()
                 )
             )
         }
@@ -442,10 +445,14 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                         "eladd" to "addMe",
                         "eladd2" to "addMeToo",
                         "elrem" to "removeMe",
-                        "elrem2" to "removeMeToo"
+                        "elrem2" to "removeMeToo",
+                        "sr1" to "dontRemoveMe",
+                        "sr2" to "dontRemoveMeEither"
                     )
+                    every { stickyRoles } returns listOf("sr1")
                 }
             )
+            every { stickyRoles } returns listOf("sr2")
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
@@ -454,4 +461,6 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         coVerify { dcf.manageRoles("userid", "guildid", setOf("addMe", "addMeToo"), setOf("removeMe", "removeMeToo")) }
         confirmVerified(dcf)
     }
+
+
 }
