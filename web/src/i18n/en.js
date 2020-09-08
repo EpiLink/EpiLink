@@ -137,7 +137,7 @@ export default {
             erj: 'This e-mail address was rejected. Are you sure you are using the correct {provider} account?',
             dae: 'This Discord account already exists.',
             cba: 'This {provider} account is banned (reason: {reason})',
-            ala: 'This {provider} account is already linked to another account'
+            ala: 'This {provider} account is already linked to another account. If an administrator asks you, give them this identifier: {idpIdHashHex}.'
         },
         reg: {
             msh: 'Missing session header.',

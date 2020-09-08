@@ -51,7 +51,7 @@ the data dictionary do *not* have `%`). Apart from `err.***` keys, the following
 | use.slo | Successfully logged out. |
 | use.slm | Successfully linked Identity Provider account. |
 | use.sdi | Successfully deleted identity. |
-| pc.ala | This Identity Provider account is already linked to another account |
+| pc.ala | This Identity Provider account is already linked to another account (hex-formatted ID hash: %idpIdHashHex%) |
 | pc.cba | This Identity Provider account is banned (reason: %reason%) |
 | pc.jba | You are banned from joining any server at the moment. (Ban reason: %reason%) |
 | pc.erj | This e-mail address was rejected. Are you sure you are using the correct Identity Provider account? |

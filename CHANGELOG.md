@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Added the ability to disable admin endpoints
 * Added sticky roles
+* Added an initial logging entry that contains the version.
+* Added half of the Identity Provider ID Hash's hex representation to the "already linked" error message.
 
 ### Changed
 

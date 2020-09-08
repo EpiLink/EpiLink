@@ -134,7 +134,7 @@ export default {
             erj: "Cette adresse e-mail a été rejetée. Êtes-vous sûr d'utiliser le bon compte {provider} ?",
             dae: 'Ce compte Discord existe déjà.',
             cba: 'Ce compte {provider} est banni (raison : {reason})',
-            ala: 'Ce compte {provider} est déjà lié à un autre compte.'
+            ala: 'Ce compte {provider} est déjà lié à un autre compte. Si un administrateur vous le demande, donnez lui cet identifiant: {idpIdHashHex}.'
         },
         reg: {
             msh: 'En-tête de session manquant.',
