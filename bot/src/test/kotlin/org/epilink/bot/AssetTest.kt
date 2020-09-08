@@ -33,4 +33,19 @@ class AssetTest {
         val a = runBlocking { loadAsset(ResourceAssetConfig(), "E", Paths.get("")) }
         assertEquals(ResourceAsset.None, a)
     }
+
+    @Test
+    fun `Test asset as url - none`() {
+        assertNull(ResourceAsset.None.asUrl("a name"))
+    }
+
+    @Test
+    fun `Test asset as url - url`() {
+        assertEquals("YUP", ResourceAsset.Url("YUP").asUrl("a name"))
+    }
+
+    @Test
+    fun `Test asset as url - file`() {
+        assertEquals("/api/v1/meta/a name", ResourceAsset.File(byteArrayOf(), null).asUrl("a name"))
+    }
 }

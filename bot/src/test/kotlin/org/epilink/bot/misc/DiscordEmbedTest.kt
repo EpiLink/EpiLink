@@ -12,14 +12,8 @@ import discord4j.core.spec.EmbedCreateSpec
 import discord4j.discordjson.json.EmbedData
 import discord4j.rest.util.Color
 import org.epilink.bot.LinkException
-import org.epilink.bot.discord.DiscordEmbed
-import org.epilink.bot.discord.DiscordEmbedAuthor
-import org.epilink.bot.discord.DiscordEmbedFooter
-import org.epilink.bot.discord.from
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNull
+import org.epilink.bot.discord.*
+import kotlin.test.*
 
 class DiscordEmbedTest {
     @Test
@@ -91,7 +85,28 @@ class DiscordEmbedTest {
         }
     }
 
-    // TODO test embeds
+    @Test
+    fun `Test embed creation - fields`() {
+        val embed = DiscordEmbed(
+            fields = listOf(
+                DiscordEmbedField(name = "First field", value = "abcd", true),
+                DiscordEmbedField(name = "Second field", value = "efgh", false)
+            )
+        )
+        EmbedCreateSpec().apply { from(embed) }.asRequest().let {
+            val fields = it.fields().get()
+            assertEquals(2, fields.size)
+            // Field 1
+            val field1 = fields[0]
+            assertTrue(field1.inline().get())
+            assertEquals("First field", field1.name())
+            assertEquals("abcd", field1.value())
+            val field2 = fields[1]
+            assertFalse(field2.inline().get())
+            assertEquals("Second field", field2.name())
+            assertEquals("efgh", field2.value())
+        }
+    }
 
     private fun <T> embedFromAndTest(embed: DiscordEmbed, expected: T, actual: EmbedData.() -> T) =
         EmbedCreateSpec().apply { from(embed) }.asRequest().let {

@@ -131,7 +131,6 @@ private fun ResultWithDiagnostics<*>.handleFailure(): Nothing {
  *
  * If checkCache is set to true, a cache version may be loaded or written to if possible.
  */
-// TODO test?
 suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.Default) {
     val script = compileRules(source)
     evaluateRules(script)

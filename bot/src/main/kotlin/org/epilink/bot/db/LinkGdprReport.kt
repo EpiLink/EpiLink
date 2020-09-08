@@ -51,7 +51,7 @@ interface LinkGdprReport {
     /**
      * Generate a report on the user's language preferences
      */
-    suspend fun getLanguagePreferencesReport(user: LinkUser): String
+    suspend fun getLanguagePreferencesReport(id: String): String
 }
 
 internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
@@ -62,7 +62,6 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
     private val env: LinkServerEnvironment by inject()
     private val idpCfg: LinkIdProviderConfiguration by inject()
 
-    // TODO test
     override suspend fun getFullReport(user: LinkUser, requester: String): String =
         """
         |# ${env.name} GDPR report for user ${user.discordId}
@@ -79,14 +78,12 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         |
         |${getIdentityAccessesReport(user)}
         |
-        |${getLanguagePreferencesReport(user)}
+        |${getLanguagePreferencesReport(user.discordId)}
         |
-        |(end of report)
-        |   
+        |------
         |(1): More information may be *temporarily* stored in caches, and is not included here. This information may contain your Discord username, avatar and roles. This information is stored temporarily and will be deleted after some time.
         """.trimMargin()
 
-    // TODO test
     override fun getUserInfoReport(user: LinkUser): String = with(user) {
         """
         ## User information
@@ -102,7 +99,6 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
     private fun ByteArray.encodeBase64Url() =
         java.util.Base64.getUrlEncoder().encodeToString(this)
 
-    // TODO test
     @OptIn(UsesTrueIdentity::class) // Reports true identity, so huh, yeah
     override suspend fun getTrueIdentityReport(user: LinkUser, requester: String): String = with(user) {
         if (dbf.isUserIdentifiable(this)) {
@@ -130,7 +126,6 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         }
     }
 
-    // TODO test
     override suspend fun getBanReport(user: LinkUser): String =
         """
         |## Ban information
@@ -140,7 +135,6 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         |${makeBansList(user) ?: "No known bans."}
         """.trimMargin()
 
-    // TODO test
     private suspend fun makeBansList(user: LinkUser): String? {
         val bans = dbf.getBansFor(user.idpIdHash)
         return if (bans.isEmpty()) {
@@ -148,7 +142,7 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         } else {
             bans.joinToString("\n") {
                 """
-                |- Ban ${if (it.revoked) "(revoked, inactive)" else if (banLogic.isBanActive(it)) "(active)" else "(expired/inactive)"}
+                |- Ban ${if (it.revoked) "(revoked, inactive)" else if (banLogic.isBanActive(it)) "(active)" else "(expired, inactive)"}
                 |  - Reason: ${it.reason}
                 |  - Issued on: ${it.issued}
                 |  - Expires on: ${it.expiresOn ?: "Does not expire"}
@@ -157,7 +151,6 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
         }
     }
 
-    // TODO test
     override suspend fun getIdentityAccessesReport(user: LinkUser): String =
         """
         |## ID Accesses information
@@ -169,26 +162,28 @@ internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
 
     private suspend fun makeIdAccessList(user: LinkUser): String? {
         val idAccesses = dbf.getIdentityAccessesFor(user)
+
         return if (idAccesses.isEmpty()) {
             null
         } else {
             idAccesses.joinToString("\n") {
+                val requester = if (privacy.shouldDiscloseIdentity(it.automated)) it.authorName else "(undisclosed)"
+                val automatedString = if (it.automated) "automatically" else "manually"
                 """
-                |- ID Access made on ${it.timestamp} ${if (it.automated) "automatically" else "manually"}
-                |  - Requester: ${if (privacy.shouldDiscloseIdentity(it.automated)) it.authorName else "(undisclosed)"}
+                |- ID Access made on ${it.timestamp} $automatedString
+                |  - Requester: $requester
                 |  - Reason: ${it.reason}
                 """.trimMargin()
             }
         }
     }
 
-    // TODO
-    override suspend fun getLanguagePreferencesReport(user: LinkUser): String {
-        val language = dbf.getLanguagePreference(user.discordId) ?: "None"
+    override suspend fun getLanguagePreferencesReport(id: String): String {
+        val language = dbf.getLanguagePreference(id) ?: "None"
         return """
             |## Language preferences
             |
-            |You set your language preference using the "e!lang" command in Discord.
+            |You can set and clear your language preferences using the "e!lang" command in Discord.
             |
             |Language preference: $language
         """.trimMargin()
