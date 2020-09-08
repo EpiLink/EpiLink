@@ -86,7 +86,8 @@ license {
     header rootProject.file("LHEADER")
     // Exclude front-end test files
     exclude("frontend/*")
-    exclude("build/*")
+    // Generated file
+    exclude("org/epilink/bot/Version.kt")
 }
 
 /* ############################################################
