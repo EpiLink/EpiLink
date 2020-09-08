@@ -36,6 +36,9 @@ import kotlin.system.exitProcess
 
 private val logger = LoggerFactory.getLogger("epilink.main")
 
+private const val DOCS = "https://epilink.zoroark.guru"
+private const val BUGS = "https://github.com/EpiLink/EpiLink/issues"
+
 /**
  * CLI Arguments class for EpiLink
  */
@@ -86,6 +89,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
         return@mainBody
     }
 
+    logger.info("EpiLink version $VERSION, starting right up! See $DOCS for documentation. Report issues and suggestions at $BUGS and join our Discord server for help.")
     if (cliArgs.verbose) {
         val ctx = LoggerFactory.getILoggerFactory() as LoggerContext
         ctx.getLogger("epilink").level = Level.DEBUG
