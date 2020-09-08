@@ -86,6 +86,7 @@ license {
     header rootProject.file("LHEADER")
     // Exclude front-end test files
     exclude("frontend/*")
+    exclude("build/*")
 }
 
 /* ############################################################
