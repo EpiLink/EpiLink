@@ -8,21 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-* Added the ability to disable admin endpoints
-* Added sticky roles
-* Added an initial logging entry that contains the version.
-* Added half of the Identity Provider ID Hash's hex representation to the "already linked" error message.
-* Added an administration endpoint for deleting users
+* Added the ability to disable admin endpoints ([#227](https://github.com/EpiLink/EpiLink/issues/227))
+* Added sticky roles ([#228](https://github.com/EpiLink/EpiLink/issues/228))
+* Added an initial logging entry that contains the version. ([#230](https://github.com/EpiLink/EpiLink/issues/230))
+* Added half of the Identity Provider ID Hash's hex representation to the "already linked" error message. ([#226](https://github.com/EpiLink/EpiLink/issues/226))
+* Added an administration endpoint for deleting users ([#220](https://github.com/EpiLink/EpiLink/issues/220) / [#7](https://github.com/EpiLink/EpiLink/issues/7))
+* Added a configurable cooldown for identity removal ([#169](https://github.com/EpiLink/EpiLink/issues/169))
+* Added a search endpoint ([#229](https://github.com/EpiLink/EpiLink/pull/229))
 
 ### Changed
 
-* Dependencies updated
-* Slight adjustments to the GDPR report
+* Dependencies updated ([#221](https://github.com/EpiLink/EpiLink/issues/221))
+* Slight adjustments to the GDPR report ([#229](https://github.com/EpiLink/EpiLink/issues/229))
 
 ### Fixed
 
-* Fix rulebooks failing silently if an exception was thrown during initial execution
-* Fix potential database locking issues for SQLite
+* Fix rulebooks failing silently if an exception was thrown during initial execution ([#232](https://github.com/EpiLink/EpiLink/issues/232))
+* Fix potential database locking issues for SQLite ([#229](https://github.com/EpiLink/EpiLink/pull/229))
+* Fixed avatar-less users icons on the front-end ([#222](https://github.com/EpiLink/EpiLink/issues/222))
+* Fixed the maintenance front-end message not working on Chromium (or at least Edge Chromium) ([#225](https://github.com/EpiLink/EpiLink/issues/225))
 
 ## [0.5.1] - 2020-08-11
 

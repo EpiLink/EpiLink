@@ -127,6 +127,7 @@ These codes are specific for the registration and identity modification processe
 | 110 | This account already has its identity recorded in the database (for the `/user/identity` endpoint) |
 | 111 | This account's identity cannot be removed, because it is not present in the database (for the `/user/identity` endpoint) |
 | 112 | This account's identity does not match the one retrieved via the authcode (different IDs). |
+| 113 | This account's identity cannot be removed because it is currently on cooldown. |
 
 ### 2xx codes
 
