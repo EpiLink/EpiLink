@@ -139,4 +139,9 @@ interface LinkDatabaseFacade {
      * format changes or other backwards-compatibility concerns.
      */
     suspend fun updateIdpId(user: LinkUser, newIdHash: ByteArray)
+
+    /**
+     * Removes the given user
+     */
+    suspend fun deleteUser(user: LinkUser)
 }

@@ -18,6 +18,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.`java-time`.timestamp
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 
@@ -229,6 +230,20 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         val u = user.asExposed()
         newSuspendedTransaction(db = db) {
             u.idpIdHash = newIdHash
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    override suspend fun deleteUser(user: LinkUser) {
+        val u = user.asExposed()
+        newSuspendedTransaction(db = db) {
+            // True identity
+            u.trueIdentity?.delete()
+            // Language
+            ExposedDiscordLanguages.deleteWhere { ExposedDiscordLanguages.discordId eq u.discordId }
+            // Delete bans
+            ExposedBans.deleteWhere { ExposedBans.idpIdHash eq u.idpIdHash }
+            u.delete()
         }
     }
 }

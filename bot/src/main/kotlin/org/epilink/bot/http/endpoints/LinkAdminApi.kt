@@ -17,10 +17,7 @@ import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.http.content.TextContent
 import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.routing.route
+import io.ktor.routing.*
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
@@ -93,22 +90,36 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
             }
         }
 
-        @ApiEndpoint("GET /api/v1/admin/user/{targetId}")
-        @OptIn(UsesTrueIdentity::class)
-        get("user/{targetId}") {
-            val targetId = call.parameters["targetId"]!!
-            val user = dbf.getUser(targetId)
-            if (user == null) {
-                call.respond(NotFound, TargetUserDoesNotExist.toResponse())
-            } else {
-                val identifiable = dbf.isUserIdentifiable(user)
-                val info = RegisteredUserInfo(
-                    targetId,
-                    user.idpIdHash.encodeUrlSafeBase64(),
-                    user.creationDate.toString(),
-                    identifiable
-                )
-                call.respond(ApiSuccessResponse.of(info))
+        route("user/{targetId}") {
+            @ApiEndpoint("GET /api/v1/admin/user/{targetId}")
+            @OptIn(UsesTrueIdentity::class)
+            get {
+                val targetId = call.parameters["targetId"]!!
+                val user = dbf.getUser(targetId)
+                if (user == null) {
+                    call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+                } else {
+                    val identifiable = dbf.isUserIdentifiable(user)
+                    val info = RegisteredUserInfo(
+                        targetId,
+                        user.idpIdHash.encodeUrlSafeBase64(),
+                        user.creationDate.toString(),
+                        identifiable
+                    )
+                    call.respond(ApiSuccessResponse.of(info))
+                }
+            }
+
+            @ApiEndpoint("DELETE /api/v1/admin/user/{targetId}")
+            delete {
+                val targetId = call.parameters["targetId"]!!
+                val user = dbf.getUser(targetId)
+                if (user == null) {
+                    call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+                } else {
+                    dbf.deleteUser(user)
+                    call.respond(apiSuccess("User deleted", "adm.ud"))
+                }
             }
         }
 
@@ -156,7 +167,10 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                             ban == null ->
                                 call.respond(NotFound, InvalidId.toResponse("No ban with given ID found.", "adm.nbi"))
                             !ban.idpIdHash.contentEquals(idpHashBytes) ->
-                                call.respond(NotFound, InvalidId.toResponse("Identity Provider ID hash does not correspond.", "adm.hnc"))
+                                call.respond(
+                                    NotFound,
+                                    InvalidId.toResponse("Identity Provider ID hash does not correspond.", "adm.hnc")
+                                )
                             else ->
                                 call.respond(OK, ApiSuccessResponse.of(ban.toBanInfo()))
                         }

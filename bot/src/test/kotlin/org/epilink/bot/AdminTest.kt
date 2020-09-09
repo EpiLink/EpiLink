@@ -506,6 +506,44 @@ class AdminTest : KoinBaseTest<Unit>(
         }
     }
 
+    @Test
+    fun `Test deleting a user`() {
+        val u = mockk<LinkUser>()
+        declare(named("admins")) { listOf("adminid") }
+        val dbf = mockHere<LinkDatabaseFacade> {
+            coEvery { getUser("yep") } returns u
+            coEvery { deleteUser(u) } just runs
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Delete, "/api/v1/admin/user/yep") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(OK)
+                fromJson<ApiSuccess>(response)
+            }
+        }
+        coVerify { dbf.deleteUser(u) }
+    }
+
+    @Test
+    fun `Test deleting a nonexistant user`() {
+        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getUser("yep") } returns null
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Delete, "/api/v1/admin/user/yep") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(NotFound)
+                val data = fromJson<ApiError>(response)
+                assertEquals(402, data.data.code)
+            }
+        }
+    }
+
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             with(get<LinkBackEnd>()) {
