@@ -44,7 +44,9 @@ sealed class ApiResponse<T>(
 }
 
 /**
- * Sent upon a successful operation, with optionally a message and attached data
+ * Sent upon a successful operation, with optionally a message and attached data.
+ *
+ * Create instances of this by using the [of] functions
  */
 class ApiSuccessResponse<T> private constructor(
     message: String? = null,

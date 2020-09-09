@@ -41,6 +41,8 @@ interface LinkAdminApi {
     fun install(route: Route)
 }
 
+private val hexCharacters = setOf('a', 'b', 'c', 'd', 'e', 'f', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0')
+
 internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val sessionChecks: LinkSessionChecks by inject()
     private val dbf: LinkDatabaseFacade by inject()
@@ -206,6 +208,18 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 )
                 val report = gdprReport.getFullReport(target, adminId)
                 call.respond(TextContent(report, ContentType.Text.Markdown, OK))
+            }
+        }
+
+        route("search") {
+            get("hash16/{searchTerm}") {
+                val targetId = call.parameters["searchTerm"]!!.toLowerCase()
+                if (targetId.any { it !in hexCharacters}) {
+                    call.respond(BadRequest, InvalidAdminRequest.toResponse("Invalid hex string", "adm.ihs"))
+                } else {
+                    val results = dbf.searchUserByPartialHash(targetId).map { it.discordId }
+                    call.respond(OK, ApiSuccessResponse.of(data = mapOf("results" to results)))
+                }
             }
         }
     }

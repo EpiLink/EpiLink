@@ -4,7 +4,7 @@
 
 This is documentation of the backend API of EpiLink.
 
-This document reflects the API as it is implemented in the back-end, although it may not be fully accurate.
+This document describes the API as it is implemented in the back-end, although it may not be fully accurate.
 
 ## Rate limiting
 
@@ -655,6 +655,16 @@ Contains additional information used when banning someone.
 * `reason` The reason for the ban
 * `expiresOn` The expiry timestamp (ISO 8601) for the ban, or null if the ban does not expire.
 
+#### SearchResult
+
+```json5
+{
+  "result": [ /* ... */ ]
+}
+```
+
+* `result`: A list of the matching users' Discord ID. May be empty.
+
 ### POST /admin/idrequest
 
 **Request the identity of a user.** This will notify the "target" user (following the instance's privacy settings).
@@ -671,7 +681,7 @@ Returns a [IdRequestResult](#idrequestresult) upon success. [Error code 430](#4x
 
 ### GET /admin/user/{userid}
 
-**Retrieve user information.** This is different from the `/user` endpoint.
+**Retrieve user information.** This is different from the `/user` (non-admin) endpoint.
 
 ```http request
 GET /api/v1/admin/user/{targetid}
@@ -681,6 +691,17 @@ SessionId: abcdef1234 # mandatory
 Where `{targetid}` is the Discord ID of the person. 
 
 This endpoint returns a [RegisteredUserInfo](#registereduserinformation) about the target user.
+
+### DELETE /admin/user/{userid}
+
+**Deletes a user entirely from the database.**
+
+```http request
+DELETE /api/v1/admin/user/{targetid}
+SessionId: abcdef1234 # mandatory
+```
+
+Where `{targetId}` is the Discord ID of the person.
 
 ### GET /admin/ban/{idpIdHash}
 
@@ -758,3 +779,21 @@ Where `{targetId}` is the Discord ID of the person you want to generate a GDPR r
 > **DOES NOT RETURN AN API RESPONSE.** This endpoint returns a Markdown document directly. `Content-Type: text/markdown`
 
 Returns the report directly as a Markdown document. May also return an API error in case the Discord ID is invalid. Generates an ID access request (which is included in the report) in order to add the user's identity in the report.
+
+### GET /admin/search/{criteria}/{term}
+
+**Search for users**
+
+```http request
+GET /admin/search/{criteria}/{term}
+SessionId: abcdef1234 # mandatory
+```
+
+This range of endpoints can be used to look for users. In all cases, the returned object is a 
+[SearchResult](#searchresult) object.
+
+Replace `{criteria}` by:
+
+- `hash16`: Search users by a hex representation of their Identity Provider hashed ID. The search term can be a substring of the actual id.
+
+* `{term}` should be replaced by the search term.

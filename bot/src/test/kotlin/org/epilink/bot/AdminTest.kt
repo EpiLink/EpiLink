@@ -28,6 +28,7 @@ import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.adminObjAttribute
 import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkAdminApiImpl
+import org.epilink.bot.rulebook.getList
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.get
@@ -540,6 +541,45 @@ class AdminTest : KoinBaseTest<Unit>(
                 assertStatus(NotFound)
                 val data = fromJson<ApiError>(response)
                 assertEquals(402, data.data.code)
+            }
+        }
+    }
+
+    @Test
+    fun `Test partial hash retrieval`() {
+        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { searchUserByPartialHash("fe1234") } returns listOf(
+                mockk { every { discordId } returns "user1" },
+                mockk { every { discordId } returns "user2" }
+            )
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/search/hash16/fe1234") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(OK)
+                val data = fromJson<ApiSuccess>(response)
+                val results = data.data!!.getList("results")
+                assertEquals(listOf("user1", "user2"), results)
+            }
+        }
+    }
+
+    @Test
+    fun `Test partial hash retrieval invalid hex`() {
+        declare(named("admins")) { listOf("adminid") }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/search/hash16/gggg") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(BadRequest)
+                val data = fromJson<ApiError>(response)
+                assertEquals(400, data.data.code)
+                assertEquals("Invalid hex string", data.message)
+                assertEquals("adm.ihs", data.message_i18n)
             }
         }
     }

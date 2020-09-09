@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.db.exposed
 
+import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.LinkException
 import org.epilink.bot.db.*
 import org.jetbrains.exposed.dao.IntEntity
@@ -246,6 +247,11 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             u.delete()
         }
     }
+
+    override suspend fun searchUserByPartialHash(partialHashHex: String): List<LinkUser> =
+        newSuspendedTransaction(db = db) {
+            ExposedUser.all().filter { Hex.encodeHexString(it.idpIdHash).contains(partialHashHex) }
+        }.toList()
 }
 
 /**

@@ -144,4 +144,6 @@ interface LinkDatabaseFacade {
      * Removes the given user
      */
     suspend fun deleteUser(user: LinkUser)
+
+    suspend fun searchUserByPartialHash(partialHashHex: String): List<LinkUser>
 }
