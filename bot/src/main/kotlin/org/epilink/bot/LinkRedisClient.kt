@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.withContext
-import org.epilink.bot.db.RelinkCooldownStorage
+import org.epilink.bot.db.UnlinkCooldownStorage
 import org.epilink.bot.discord.CacheResult
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.discord.StandardRoles
@@ -57,9 +57,9 @@ class LinkRedisClient(uri: String) : CacheClient {
         )
     }
 
-    override fun newRelinkCooldownStorage(prefix: String): RelinkCooldownStorage {
+    override fun newUnlinkCooldownStorage(prefix: String): UnlinkCooldownStorage {
         logger.debug("Creating Redis-backed relink cooldown storage for prefix $prefix")
-        return RedisRelinkCooldownStorage(connection ?: throwCallStartFirst(), prefix)
+        return RedisUnlinkCooldownStorage(connection ?: throwCallStartFirst(), prefix)
     }
 
     private fun throwCallStartFirst(): Nothing =
@@ -242,14 +242,17 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
         redis.exists(key).awaitSingle() == 1L
 }
 
-class RedisRelinkCooldownStorage(
+/**
+ * Implementation of RelinkCooldownStorage for Redis.
+ */
+class RedisUnlinkCooldownStorage(
     connection: StatefulRedisConnection<String, String>,
     private val prefix: String
-) : RelinkCooldownStorage {
+) : UnlinkCooldownStorage {
     private val redis = connection.reactive()
     private fun buildKey(id: String) = "$prefix$id"
 
-    override suspend fun canRelink(userId: String): Boolean {
+    override suspend fun canUnlink(userId: String): Boolean {
         // The user can relink if there are no cooldown keys
         return redis.exists(buildKey(userId)).awaitSingle() == 0L
     }

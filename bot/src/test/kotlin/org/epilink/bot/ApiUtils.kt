@@ -77,7 +77,7 @@ class DummyCacheClient(private val sessionStorageProvider: () -> SessionStorage)
 
     override fun newSessionStorage(prefix: String): SessionStorage = sessionStorageProvider()
 
-    override fun newRelinkCooldownStorage(prefix: String): RelinkCooldownStorage {
+    override fun newUnlinkCooldownStorage(prefix: String): UnlinkCooldownStorage {
         error("Not supported")
     }
 }

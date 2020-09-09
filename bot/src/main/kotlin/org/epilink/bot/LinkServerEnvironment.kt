@@ -71,7 +71,7 @@ class LinkServerEnvironment(
         // GDPR report generation utility
         single<LinkGdprReport> { LinkGdprReportImpl() }
         // Cooldown utility for preventing relink abuse
-        single<LinkRelinkCooldown> { LinkRelinkCooldownImpl() }
+        single<LinkUnlinkCooldown> { LinkUnlinkCooldownImpl() }
     }
 
     /**

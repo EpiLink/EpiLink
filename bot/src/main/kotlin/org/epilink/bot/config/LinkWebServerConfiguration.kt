@@ -49,10 +49,9 @@ data class LinkWebServerConfiguration(
      */
     val enableAdminEndpoints: Boolean = true,
     /**
-     * Number of seconds a user needs to wait after a relink (or a link-sensitive event like a ban) in order to relink
-     * (or delink) again
+     * Number of seconds a user needs to wait after a relink (or a link-sensitive event like a ban) in order to unlink
      */
-    val relinkCooldown: Long = 3600L
+    val unlinkCooldown: Long = 3600L
 )
 
 /**

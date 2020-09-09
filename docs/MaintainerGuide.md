@@ -76,7 +76,7 @@ cacheRulebook: true
 
 * `db`: This is the location of the SQLite database. Use a full, absolute path instead of a relative path just to be on the safe side.
 
-* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion), `el_reg_` (EpiLink REGistration), `el_rc_` (EpiLink Rule Cache) and `el_rlc_` (EpiLink ReLink Cooldown) prefixes for all of its keys. 
+* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion), `el_reg_` (EpiLink REGistration), `el_rc_` (EpiLink Rule Cache) and `el_ulc_` (EpiLink UnLink Cooldown) prefixes for all of its keys. 
 
 ?> This value can also be `~` to use an in-memory storage, but this is **not recommended** and should only be used for development purposes. Values are never cleared from the memory when using in-memory storage, resulting in leaks everywhere. Keys are not timed out either, nor are they saved in-between runs, so really only use that when you want to test or develop on EpiLink.
 
@@ -120,7 +120,7 @@ server:
   logo: ~ # optional
   background: ~ # optional
   enableAdminEndpoints: true # optional
-  relinkCooldown: 3600 # optional
+  unlinkCooldown: 3600 # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -147,7 +147,7 @@ server:
     * To use a logo that's stored next to the configuration file, use `logo: { file: mylogo.png }`
 * `background` *(optional, null by default)*: The background of this instance, used by the front-end. When null (or `~`), a default grey background is used. The syntax is the same as for the `logo`. 
 * `enableAdminEndpoints` *(optional, true by default)*: True to enable [administrative endpoints](Api.md#administrative-endpoints-admin), false to disable them.
-* `relinkCooldown` *(optional, 3600 seconds (1 hour) by default)*: The amount of time users have to wait before being able to remove their identities. This cooldown is activated or refreshed when users:
+* `unlinkCooldown` *(optional, 3600 seconds (1 hour) by default)*: The amount of time users have to wait before being able to remove their identities. This cooldown is activated or refreshed when users:
     * Have their identity accessed
     * Relink their identity
     * Have a new ban added to them

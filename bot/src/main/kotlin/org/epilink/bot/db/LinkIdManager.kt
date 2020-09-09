@@ -69,7 +69,7 @@ interface LinkIdManager {
     /**
      * Delete the identity of the user with the given Discord ID from the database, or throw a
      * [LinkEndpointUserException] if no such identity exists or the identity deletion is
-     * [on cooldown][LinkRelinkCooldown].
+     * [on cooldown][LinkUnlinkCooldown].
      *
      * @param user The user whose identity we should remove
      * @throws LinkEndpointUserException If the user does not have any identity recorded in the first place.
@@ -86,7 +86,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     private val discordSender: LinkDiscordMessageSender by inject()
     private val privacy: LinkPrivacy by inject()
     private val idpConfig: LinkIdProviderConfiguration by inject()
-    private val cooldown: LinkRelinkCooldown by inject()
+    private val cooldown: LinkUnlinkCooldown by inject()
 
 
     @UsesTrueIdentity
@@ -146,7 +146,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     override suspend fun deleteUserIdentity(user: LinkUser) {
         if (!facade.isUserIdentifiable(user))
             throw LinkEndpointUserException(IdentityAlreadyUnknown)
-        if (!cooldown.canRelink(user.discordId))
+        if (!cooldown.canUnlink(user.discordId))
             throw LinkEndpointUserException(IdentityRemovalOnCooldown)
         facade.eraseIdentity(user)
     }

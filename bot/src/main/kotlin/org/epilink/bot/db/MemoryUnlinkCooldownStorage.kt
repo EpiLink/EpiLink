@@ -11,10 +11,13 @@ package org.epilink.bot.db
 import java.time.Duration
 import java.time.Instant
 
-class MemoryRelinkCooldownStorage : RelinkCooldownStorage {
+/**
+ * In-memory implementation of [UnlinkCooldownStorage]
+ */
+class MemoryUnlinkCooldownStorage : UnlinkCooldownStorage {
     private val map = HashMap<String, Instant>()
 
-    override suspend fun canRelink(userId: String): Boolean {
+    override suspend fun canUnlink(userId: String): Boolean {
         val stopsAt = map[userId] ?: return true
         return if (stopsAt <= Instant.now()) {
             map.remove(userId)

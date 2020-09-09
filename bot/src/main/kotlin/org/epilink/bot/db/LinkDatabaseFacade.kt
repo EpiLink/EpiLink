@@ -145,5 +145,9 @@ interface LinkDatabaseFacade {
      */
     suspend fun deleteUser(user: LinkUser)
 
+    /**
+     * Search users who have the given string in their hash (in hex representation). The [partialHashHex] argument must
+     * be lowercase.
+     */
     suspend fun searchUserByPartialHash(partialHashHex: String): List<LinkUser>
 }

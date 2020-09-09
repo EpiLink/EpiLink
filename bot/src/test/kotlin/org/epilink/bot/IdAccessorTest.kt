@@ -9,7 +9,6 @@
 package org.epilink.bot
 
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.db.*
@@ -17,7 +16,6 @@ import org.epilink.bot.discord.DiscordEmbed
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.http.data.IdAccess
-import org.koin.core.get
 import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
@@ -45,7 +43,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
         val dm = mockHere<LinkDiscordMessages> {
             every { getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn") } returns embed
         }
-        val cd = mockHere<LinkRelinkCooldown> { coEvery { refreshCooldown("targetid") } just runs }
+        val cd = mockHere<LinkUnlinkCooldown> { coEvery { refreshCooldown("targetid") } just runs }
         test {
             val id = accessIdentity(u, false, "authorrr", "reasonnn")
             assertEquals("identity", id)
@@ -122,7 +120,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
             coEvery { isUserIdentifiable(u) } returns false
             coEvery { recordNewIdentity(u, "mynewemail@email.com") } just runs
         }
-        val rcd = mockHere<LinkRelinkCooldown> {
+        val rcd = mockHere<LinkUnlinkCooldown> {
             coEvery { refreshCooldown("targetId") } just runs
         }
         test {
@@ -157,8 +155,8 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
         }
-        mockHere<LinkRelinkCooldown> {
-            coEvery { canRelink("targetId") } returns false
+        mockHere<LinkUnlinkCooldown> {
+            coEvery { canUnlink("targetId") } returns false
         }
         test {
             val exc = assertFailsWith<LinkEndpointUserException> {
@@ -178,8 +176,8 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
             coEvery { isUserIdentifiable(u) } returns true
             coEvery { eraseIdentity(u) } just runs
         }
-        mockHere<LinkRelinkCooldown> {
-            coEvery { canRelink("targetId") } returns true
+        mockHere<LinkUnlinkCooldown> {
+            coEvery { canUnlink("targetId") } returns true
         }
         test {
             deleteUserIdentity(u)

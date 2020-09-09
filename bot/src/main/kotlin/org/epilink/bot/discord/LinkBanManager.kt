@@ -13,7 +13,7 @@ import org.epilink.bot.StandardErrorCodes.InvalidId
 import org.epilink.bot.db.LinkBan
 import org.epilink.bot.db.LinkBanLogic
 import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.db.LinkRelinkCooldown
+import org.epilink.bot.db.LinkUnlinkCooldown
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import java.time.Instant
@@ -54,7 +54,7 @@ internal class LinkBanManagerImpl : LinkBanManager, KoinComponent {
     private val messages: LinkDiscordMessages by inject()
     private val i18n: LinkDiscordMessagesI18n by inject()
     private val sender: LinkDiscordMessageSender by inject()
-    private val cooldown: LinkRelinkCooldown by inject()
+    private val cooldown: LinkUnlinkCooldown by inject()
 
     override suspend fun ban(idpHashBase64: String, expiresOn: Instant?, author: String, reason: String): LinkBan {
         val actualHash = Base64.getUrlDecoder().decode(idpHashBase64)
