@@ -262,7 +262,7 @@ class RedisUnlinkCooldownStorage(
             redis.del(buildKey(userId)).awaitSingle()
         else {
             redis.setnx(buildKey(userId), "true").awaitSingle()
-            redis.expire(userId, seconds).awaitSingle()
+            redis.expire(buildKey(userId), seconds).awaitSingle()
         }
     }
 }
