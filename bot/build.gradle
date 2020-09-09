@@ -12,7 +12,7 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
-version = "0.5.1"
+version = "0.6.0"
 
 compileKotlin {
     kotlinOptions.jvmTarget = "11"

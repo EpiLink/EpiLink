@@ -1,6 +1,6 @@
 ![logo](logo.svg)
 
-# EpiLink <small>0.5.1</small>
+# EpiLink <small>0.6.0</small>
 
 > Only allow people you trust on your Discord servers
 
