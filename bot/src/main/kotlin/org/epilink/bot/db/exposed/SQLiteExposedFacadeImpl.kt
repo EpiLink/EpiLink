@@ -18,7 +18,8 @@ import java.sql.Connection
  */
 class SQLiteExposedFacadeImpl(db: String) : ExposedDatabaseFacade() {
     override val db = Database.connect(
-        "jdbc:sqlite:$db",
+        // journal_mode=WAL   Prevents some locking errors. See https://www.sqlite.org/wal.html
+        "jdbc:sqlite:$db?journal_mode=WAL",
         driver = "org.sqlite.JDBC"
     ).apply {
         // Required for SQLite
