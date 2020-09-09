@@ -9,6 +9,7 @@
 package org.epilink.bot.commands
 
 import io.mockk.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.LinkUser
@@ -103,6 +104,7 @@ class UpdateCommandTest : KoinBaseTest<Command>(
                 channelId = "channel",
                 guildId = "guild" // unused
             )
+            delay(2000)
         }
         coVerify {
             f.sendChannelMessage("channel", embed)
@@ -138,6 +140,7 @@ class UpdateCommandTest : KoinBaseTest<Command>(
                 channelId = "channel",
                 guildId = "guild" // unused
             )
+            delay(2000)
         }
         coVerify {
             f.sendChannelMessage("channel", embed)
@@ -176,6 +179,7 @@ class UpdateCommandTest : KoinBaseTest<Command>(
                 channelId = "channel",
                 guildId = "guild" // unused
             )
+            delay(2000)
         }
         coVerify {
             f.sendChannelMessage("channel", embed)
