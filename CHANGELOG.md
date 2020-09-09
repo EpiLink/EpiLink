@@ -12,11 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added sticky roles
 * Added an initial logging entry that contains the version.
 * Added half of the Identity Provider ID Hash's hex representation to the "already linked" error message.
+* Added an administration endpoint for deleting users
 
 ### Changed
 
 * Dependencies updated
 * Slight adjustments to the GDPR report
+
+### Fixed
+
+* Fix rulebooks failing silently if an exception was thrown during initial execution
+* Fix potential database locking issues for SQLite
 
 ## [0.5.1] - 2020-08-11
 
