@@ -47,7 +47,12 @@ data class LinkWebServerConfiguration(
     /**
      * True if administrative endpoints should be enabled, false if they should be disabled.
      */
-    val enableAdminEndpoints: Boolean = true
+    val enableAdminEndpoints: Boolean = true,
+    /**
+     * Number of seconds a user needs to wait after a relink (or a link-sensitive event like a ban) in order to relink
+     * (or delink) again
+     */
+    val relinkCooldown: Long = 3600L
 )
 
 /**

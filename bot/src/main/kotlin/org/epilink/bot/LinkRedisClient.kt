@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.withContext
+import org.epilink.bot.db.RelinkCooldownStorage
 import org.epilink.bot.discord.CacheResult
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.discord.StandardRoles
@@ -43,7 +44,7 @@ class LinkRedisClient(uri: String) : CacheClient {
     override fun newSessionStorage(prefix: String): SessionStorage {
         logger.debug("Creating Redis-backed storage for prefix $prefix")
         return RedisSessionStorage(
-            connection ?: throw LinkException("Redis client is not connected yet. Call start() first."),
+            connection ?: throwCallStartFirst(),
             prefix
         )
     }
@@ -51,10 +52,18 @@ class LinkRedisClient(uri: String) : CacheClient {
     override fun newRuleMediator(prefix: String): RuleMediator {
         logger.debug("Creating Redis-backed caching rule mediator for prefix $prefix")
         return RedisRuleMediator(
-            connection ?: throw LinkException("Redis client is not connected yet. Call start() first."),
+            connection ?: throwCallStartFirst(),
             prefix
         )
     }
+
+    override fun newRelinkCooldownStorage(prefix: String): RelinkCooldownStorage {
+        logger.debug("Creating Redis-backed relink cooldown storage for prefix $prefix")
+        return RedisRelinkCooldownStorage(connection ?: throwCallStartFirst(), prefix)
+    }
+
+    private fun throwCallStartFirst(): Nothing =
+        throw LinkException("Redis client is not connected yet. Call start() first.")
 }
 
 /**
@@ -231,4 +240,26 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
     private suspend fun cacheExists(key: String) =
         // There exists a matching key
         redis.exists(key).awaitSingle() == 1L
+}
+
+class RedisRelinkCooldownStorage(
+    connection: StatefulRedisConnection<String, String>,
+    private val prefix: String
+) : RelinkCooldownStorage {
+    private val redis = connection.reactive()
+    private fun buildKey(id: String) = "$prefix$id"
+
+    override suspend fun canRelink(userId: String): Boolean {
+        // The user can relink if there are no cooldown keys
+        return redis.exists(buildKey(userId)).awaitSingle() == 0L
+    }
+
+    override suspend fun refreshCooldown(userId: String, seconds: Long) {
+        if (seconds <= 0)
+            redis.del(buildKey(userId)).awaitSingle()
+        else {
+            redis.setnx(buildKey(userId), "true").awaitSingle()
+            redis.expire(userId, seconds).awaitSingle()
+        }
+    }
 }

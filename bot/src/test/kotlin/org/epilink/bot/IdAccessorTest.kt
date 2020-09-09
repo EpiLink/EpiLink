@@ -45,6 +45,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
         val dm = mockHere<LinkDiscordMessages> {
             every { getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn") } returns embed
         }
+        val cd = mockHere<LinkRelinkCooldown> { coEvery { refreshCooldown("targetid") } just runs }
         test {
             val id = accessIdentity(u, false, "authorrr", "reasonnn")
             assertEquals("identity", id)
@@ -53,6 +54,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
             dm.getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn")
             dms.sendDirectMessageLater("targetid", embed)
             dbf.getUserEmailWithAccessLog(u, false, "authorrr", "reasonnn")
+            cd.refreshCooldown("targetid")
         }
     }
 
@@ -113,16 +115,23 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
         val id = "This looks quite alright"
         val hash = id.sha256()
         val u = mockk<LinkUser> {
+            every { discordId } returns "targetId"
             every { idpIdHash } returns hash
         }
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
             coEvery { recordNewIdentity(u, "mynewemail@email.com") } just runs
         }
+        val rcd = mockHere<LinkRelinkCooldown> {
+            coEvery { refreshCooldown("targetId") } just runs
+        }
         test {
             relinkIdentity(u, "mynewemail@email.com", id)
         }
-        coVerify { df.recordNewIdentity(u, "mynewemail@email.com") }
+        coVerify {
+            df.recordNewIdentity(u, "mynewemail@email.com")
+            rcd.refreshCooldown("targetId")
+        }
     }
 
 
@@ -143,11 +152,34 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
 
     @OptIn(UsesTrueIdentity::class)
     @Test
+    fun `Test identity removal on cooldown`() {
+        val u = mockk<LinkUser> { every { discordId } returns "targetId" }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(u) } returns true
+        }
+        mockHere<LinkRelinkCooldown> {
+            coEvery { canRelink("targetId") } returns false
+        }
+        test {
+            val exc = assertFailsWith<LinkEndpointUserException> {
+                deleteUserIdentity(u)
+            }
+            assertEquals(113, exc.errorCode.code)
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
     fun `Test identity removal success`() {
-        val u = mockk<LinkUser>()
+        val u = mockk<LinkUser> {
+            coEvery { discordId } returns "targetId"
+        }
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
             coEvery { eraseIdentity(u) } just runs
+        }
+        mockHere<LinkRelinkCooldown> {
+            coEvery { canRelink("targetId") } returns true
         }
         test {
             deleteUserIdentity(u)

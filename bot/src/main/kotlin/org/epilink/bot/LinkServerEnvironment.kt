@@ -70,6 +70,8 @@ class LinkServerEnvironment(
         single<LinkUserCreator> { LinkUserCreatorImpl() }
         // GDPR report generation utility
         single<LinkGdprReport> { LinkGdprReportImpl() }
+        // Cooldown utility for preventing relink abuse
+        single<LinkRelinkCooldown> { LinkRelinkCooldownImpl() }
     }
 
     /**

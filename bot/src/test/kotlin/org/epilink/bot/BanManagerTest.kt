@@ -39,6 +39,9 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRoles("targetid") } returns mockk()
         }
+        val cd = mockHere<LinkRelinkCooldown> {
+            coEvery { refreshCooldown("targetid") } just runs
+        }
         declareNoOpI18n()
         mockHere<LinkDiscordMessages> {
             every { getBanNotification(any(), "the description", null) } returns embed
@@ -54,6 +57,7 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
             df.recordBan(idHash, null, "the_author", "the description")
             rm.invalidateAllRoles("targetid")
             dms.sendDirectMessageLater("targetid", embed)
+            cd.refreshCooldown("targetid")
         }
     }
 

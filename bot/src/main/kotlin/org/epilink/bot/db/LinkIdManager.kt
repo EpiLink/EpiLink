@@ -9,8 +9,7 @@
 package org.epilink.bot.db
 
 import org.epilink.bot.*
-import org.epilink.bot.StandardErrorCodes.IdentityAlreadyKnown
-import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
+import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.discord.LinkDiscordMessageSender
@@ -69,7 +68,8 @@ interface LinkIdManager {
 
     /**
      * Delete the identity of the user with the given Discord ID from the database, or throw a
-     * [LinkEndpointUserException] if no such identity exists.
+     * [LinkEndpointUserException] if no such identity exists or the identity deletion is
+     * [on cooldown][LinkRelinkCooldown].
      *
      * @param user The user whose identity we should remove
      * @throws LinkEndpointUserException If the user does not have any identity recorded in the first place.
@@ -86,6 +86,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     private val discordSender: LinkDiscordMessageSender by inject()
     private val privacy: LinkPrivacy by inject()
     private val idpConfig: LinkIdProviderConfiguration by inject()
+    private val cooldown: LinkRelinkCooldown by inject()
 
 
     @UsesTrueIdentity
@@ -98,6 +99,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
         val embed = messages.getIdentityAccessEmbed(i18n.getLanguage(user.discordId), automated, author, reason)
         if (embed != null)
             discordSender.sendDirectMessageLater(user.discordId, embed)
+        cooldown.refreshCooldown(user.discordId)
         return facade.getUserEmailWithAccessLog(user, automated, author, reason)
     }
 
@@ -124,6 +126,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
             } else throw LinkEndpointUserException(NewIdentityDoesNotMatch)
         }
         facade.recordNewIdentity(user, email)
+        cooldown.refreshCooldown(user.discordId)
     }
 
     override suspend fun getIdAccessLogs(user: LinkUser): IdAccessLogs =
@@ -142,7 +145,9 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     @UsesTrueIdentity
     override suspend fun deleteUserIdentity(user: LinkUser) {
         if (!facade.isUserIdentifiable(user))
-            throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyUnknown)
+            throw LinkEndpointUserException(IdentityAlreadyUnknown)
+        if (!cooldown.canRelink(user.discordId))
+            throw LinkEndpointUserException(IdentityRemovalOnCooldown)
         facade.eraseIdentity(user)
     }
 }

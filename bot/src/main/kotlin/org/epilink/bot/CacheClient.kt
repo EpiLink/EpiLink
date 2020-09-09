@@ -10,6 +10,7 @@ package org.epilink.bot
 
 import io.ktor.sessions.SessionStorage
 import io.ktor.sessions.SessionStorageMemory
+import org.epilink.bot.db.RelinkCooldownStorage
 import org.epilink.bot.discord.NoCacheRuleMediator
 import org.epilink.bot.discord.RuleMediator
 
@@ -31,6 +32,8 @@ interface CacheClient {
      * Create a new session storage that will use this client for storage
      */
     fun newSessionStorage(prefix: String): SessionStorage
+
+    fun newRelinkCooldownStorage(prefix: String): RelinkCooldownStorage
 }
 
 /**
@@ -52,5 +55,8 @@ class MemoryCacheClient : CacheClient {
         return SessionStorageMemory()
     }
 
+    override fun newRelinkCooldownStorage(prefix: String): RelinkCooldownStorage {
+        return org.epilink.bot.db.MemoryRelinkCooldownStorage()
+    }
 }
 

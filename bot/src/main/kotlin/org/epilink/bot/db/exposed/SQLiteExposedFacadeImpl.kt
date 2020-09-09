@@ -11,7 +11,11 @@ package org.epilink.bot.db.exposed
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transactionManager
+import org.sqlite.SQLiteConfig
 import java.sql.Connection
+
+// Can be increased in extreme load scenarios
+private const val BUSY_TIMEOUT_SQLITE = 60000
 
 /**
  * Implementation of [LinkDatabaseFacade] that uses Exposed with a SQLite database
@@ -19,8 +23,17 @@ import java.sql.Connection
 class SQLiteExposedFacadeImpl(db: String) : ExposedDatabaseFacade() {
     override val db = Database.connect(
         // journal_mode=WAL   Prevents some locking errors. See https://www.sqlite.org/wal.html
-        "jdbc:sqlite:$db?journal_mode=WAL",
-        driver = "org.sqlite.JDBC"
+        "jdbc:sqlite:$db",
+        driver = "org.sqlite.JDBC",
+        setupConnection = {
+            SQLiteConfig().apply {
+                // This configuration makes SQLite faster and/or less buggy in concurrent access scenarios
+                setSharedCache(true)
+                setJournalMode(SQLiteConfig.JournalMode.WAL)
+                busyTimeout = BUSY_TIMEOUT_SQLITE
+                apply(it)
+            }
+        }
     ).apply {
         // Required for SQLite
         transactionManager.defaultIsolationLevel =
