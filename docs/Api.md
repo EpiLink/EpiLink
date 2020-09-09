@@ -796,4 +796,4 @@ Replace `{criteria}` by:
 
 - `hash16`: Search users by a hex representation of their Identity Provider hashed ID. The search term can be a substring of the actual id.
 
-* `{term}` should be replaced by the search term.
+`{term}` should be replaced by the search term.
