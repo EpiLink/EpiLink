@@ -94,7 +94,7 @@ EpiLink should typically be ran like so: `path/to/epilink path/to/config/file/ep
 
 The most important part of EpiLink is the configuration file.
 
-The reference configuration has all the information you need. This page has more details on what to fill in, when and where.
+?> The [reference configuration file](https://github.com/EpiLink/EpiLink/blob/master/bot/config/epilink_config.yaml) has all the information you need. This page has more details on what to fill in, when and where.
 
 The standard name for the configuration file is `epilink_config.yaml`, although this is just a convention and you can
 use any name you like.
