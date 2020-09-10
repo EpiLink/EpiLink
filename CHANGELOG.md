@@ -229,7 +229,7 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
 [Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.0...dev
-[0.5.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.0
+[0.6.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.0
 [0.5.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.1
 [0.5.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.0
 [0.4.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.4.0
