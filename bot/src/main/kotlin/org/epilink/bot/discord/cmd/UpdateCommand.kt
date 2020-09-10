@@ -88,10 +88,10 @@ class UpdateCommand : Command, KoinComponent {
     private fun startUpdate(targets: List<String>) = updateLauncherScope.launch {
         targets.asSequence().chunked(10).forEach { part ->
             part.map {
-                async { roleManager.invalidateAllRoles(it, false).join() }
+                it to async(SupervisorJob()) { roleManager.invalidateAllRoles(it, false).join() }
             }.forEach {
-                try { it.await() } catch(e: Exception) {
-                    logger.error("Exception caught during role update for user $it", e)
+                try { it.second.await() } catch(e: Exception) {
+                    logger.error("Exception caught during role update for user ${it.first}", e)
                 }
             }
         }
