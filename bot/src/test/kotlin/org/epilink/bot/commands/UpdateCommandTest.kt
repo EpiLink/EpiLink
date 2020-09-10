@@ -87,7 +87,9 @@ class UpdateCommandTest : KoinBaseTest<Command>(
             coEvery { getMembersWithRole("Rooole ID", "guild") } returns fakeList
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles(any()) } returns mockk()
+            coEvery { invalidateAllRoles(any()) } returns mockk {
+                coEvery { join() } just runs
+            }
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
@@ -123,7 +125,9 @@ class UpdateCommandTest : KoinBaseTest<Command>(
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.User("targetid")
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles("targetid") } returns mockk()
+            coEvery { invalidateAllRoles("targetid") } returns mockk {
+                coEvery { join() } just runs
+            }
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
@@ -162,7 +166,9 @@ class UpdateCommandTest : KoinBaseTest<Command>(
             coEvery { getMembers("guild") } returns fakeList
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles(any()) } returns mockk()
+            coEvery { invalidateAllRoles(any()) } returns mockk {
+                coEvery { join() } just runs
+            }
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
