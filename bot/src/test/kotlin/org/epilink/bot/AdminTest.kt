@@ -22,6 +22,7 @@ import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
+import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkSessionChecks
@@ -515,6 +516,9 @@ class AdminTest : KoinBaseTest<Unit>(
             coEvery { getUser("yep") } returns u
             coEvery { deleteUser(u) } just runs
         }
+        val rm = mockHere<LinkRoleManager> {
+            coEvery { invalidateAllRoles("yep") } returns mockk()
+        }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Delete, "/api/v1/admin/user/yep") {
@@ -524,7 +528,10 @@ class AdminTest : KoinBaseTest<Unit>(
                 fromJson<ApiSuccess>(response)
             }
         }
-        coVerify { dbf.deleteUser(u) }
+        coVerify {
+            dbf.deleteUser(u)
+            rm.invalidateAllRoles("yep")
+        }
     }
 
     @Test

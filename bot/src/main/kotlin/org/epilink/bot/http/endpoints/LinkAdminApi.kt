@@ -21,6 +21,7 @@ import io.ktor.routing.*
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
+import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
 import org.epilink.bot.http.data.*
 import org.epilink.bot.toResponse
@@ -50,6 +51,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val banLogic: LinkBanLogic by inject()
     private val banManager: LinkBanManager by inject()
     private val gdprReport: LinkGdprReport by inject()
+    private val roleManager: LinkRoleManager by inject()
 
     override fun install(route: Route) {
         with(route) { admin() }
@@ -120,6 +122,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     call.respond(NotFound, TargetUserDoesNotExist.toResponse())
                 } else {
                     dbf.deleteUser(user)
+                    roleManager.invalidateAllRoles(targetId)
                     call.respond(apiSuccess("User deleted", "adm.ud"))
                 }
             }
