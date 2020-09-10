@@ -22,12 +22,14 @@ import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
+import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.adminObjAttribute
 import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkAdminApiImpl
+import org.epilink.bot.rulebook.getList
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.get
@@ -47,7 +49,8 @@ private class BanImpl(
     override val reason: String
 ) : LinkBan
 
-class AdminTest : KoinBaseTest(
+class AdminTest : KoinBaseTest<Unit>(
+    Unit::class,
     module {
         single<LinkAdminApi> { LinkAdminApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }
@@ -501,6 +504,89 @@ class AdminTest : KoinBaseTest(
                 assertStatus(NotFound)
                 val data = fromJson<ApiError>(response)
                 assertEquals(402, data.data.code)
+            }
+        }
+    }
+
+    @Test
+    fun `Test deleting a user`() {
+        val u = mockk<LinkUser>()
+        declare(named("admins")) { listOf("adminid") }
+        val dbf = mockHere<LinkDatabaseFacade> {
+            coEvery { getUser("yep") } returns u
+            coEvery { deleteUser(u) } just runs
+        }
+        val rm = mockHere<LinkRoleManager> {
+            coEvery { invalidateAllRoles("yep") } returns mockk()
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Delete, "/api/v1/admin/user/yep") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(OK)
+                fromJson<ApiSuccess>(response)
+            }
+        }
+        coVerify {
+            dbf.deleteUser(u)
+            rm.invalidateAllRoles("yep")
+        }
+    }
+
+    @Test
+    fun `Test deleting a nonexistant user`() {
+        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { getUser("yep") } returns null
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Delete, "/api/v1/admin/user/yep") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(NotFound)
+                val data = fromJson<ApiError>(response)
+                assertEquals(402, data.data.code)
+            }
+        }
+    }
+
+    @Test
+    fun `Test partial hash retrieval`() {
+        declare(named("admins")) { listOf("adminid") }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { searchUserByPartialHash("fe1234") } returns listOf(
+                mockk { every { discordId } returns "user1" },
+                mockk { every { discordId } returns "user2" }
+            )
+        }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/search/hash16/fe1234") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(OK)
+                val data = fromJson<ApiSuccess>(response)
+                val results = data.data!!.getList("results")
+                assertEquals(listOf("user1", "user2"), results)
+            }
+        }
+    }
+
+    @Test
+    fun `Test partial hash retrieval invalid hex`() {
+        declare(named("admins")) { listOf("adminid") }
+        withTestEpiLink {
+            val sid = setupSession(sessionStorage, "adminid")
+            handleRequest(HttpMethod.Get, "/api/v1/admin/search/hash16/gggg") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(BadRequest)
+                val data = fromJson<ApiError>(response)
+                assertEquals(400, data.data.code)
+                assertEquals("Invalid hex string", data.message)
+                assertEquals("adm.ihs", data.message_i18n)
             }
         }
     }

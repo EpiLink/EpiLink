@@ -9,20 +9,20 @@
 package org.epilink.bot
 
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.DiscordEmbed
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.http.data.IdAccess
-import org.koin.core.get
 import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class IdAccessorTest : KoinBaseTest(
+class IdAccessorTest : KoinBaseTest<LinkIdManager>(
+    LinkIdManager::class,
     module {
         single<LinkIdManager> { LinkIdManagerImpl() }
     }
@@ -43,6 +43,7 @@ class IdAccessorTest : KoinBaseTest(
         val dm = mockHere<LinkDiscordMessages> {
             every { getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn") } returns embed
         }
+        val cd = mockHere<LinkUnlinkCooldown> { coEvery { refreshCooldown("targetid") } just runs }
         test {
             val id = accessIdentity(u, false, "authorrr", "reasonnn")
             assertEquals("identity", id)
@@ -51,6 +52,7 @@ class IdAccessorTest : KoinBaseTest(
             dm.getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn")
             dms.sendDirectMessageLater("targetid", embed)
             dbf.getUserEmailWithAccessLog(u, false, "authorrr", "reasonnn")
+            cd.refreshCooldown("targetid")
         }
     }
 
@@ -94,6 +96,9 @@ class IdAccessorTest : KoinBaseTest(
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
         }
+        mockHere<LinkIdProviderConfiguration> {
+            coEvery { microsoftBackwardsCompatibility } returns false
+        }
         test {
             val exc = assertFailsWith<LinkEndpointUserException> {
                 relinkIdentity(u, "this doesn't matter", "That is definitely not okay")
@@ -108,16 +113,23 @@ class IdAccessorTest : KoinBaseTest(
         val id = "This looks quite alright"
         val hash = id.sha256()
         val u = mockk<LinkUser> {
+            every { discordId } returns "targetId"
             every { idpIdHash } returns hash
         }
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
             coEvery { recordNewIdentity(u, "mynewemail@email.com") } just runs
         }
+        val rcd = mockHere<LinkUnlinkCooldown> {
+            coEvery { refreshCooldown("targetId") } just runs
+        }
         test {
             relinkIdentity(u, "mynewemail@email.com", id)
         }
-        coVerify { df.recordNewIdentity(u, "mynewemail@email.com") }
+        coVerify {
+            df.recordNewIdentity(u, "mynewemail@email.com")
+            rcd.refreshCooldown("targetId")
+        }
     }
 
 
@@ -138,11 +150,34 @@ class IdAccessorTest : KoinBaseTest(
 
     @OptIn(UsesTrueIdentity::class)
     @Test
+    fun `Test identity removal on cooldown`() {
+        val u = mockk<LinkUser> { every { discordId } returns "targetId" }
+        mockHere<LinkDatabaseFacade> {
+            coEvery { isUserIdentifiable(u) } returns true
+        }
+        mockHere<LinkUnlinkCooldown> {
+            coEvery { canUnlink("targetId") } returns false
+        }
+        test {
+            val exc = assertFailsWith<LinkEndpointUserException> {
+                deleteUserIdentity(u)
+            }
+            assertEquals(113, exc.errorCode.code)
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
     fun `Test identity removal success`() {
-        val u = mockk<LinkUser>()
+        val u = mockk<LinkUser> {
+            coEvery { discordId } returns "targetId"
+        }
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
             coEvery { eraseIdentity(u) } just runs
+        }
+        mockHere<LinkUnlinkCooldown> {
+            coEvery { canUnlink("targetId") } returns true
         }
         test {
             deleteUserIdentity(u)
@@ -220,9 +255,4 @@ class IdAccessorTest : KoinBaseTest(
             assertTrue(IdAccess(true, "EpiLink Bot", "Another reason", inst2.toString()) in al.accesses)
         }
     }
-
-    private fun <R> test(block: suspend LinkIdManager.() -> R) =
-        runBlocking {
-            block(get())
-        }
 }

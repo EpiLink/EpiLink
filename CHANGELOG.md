@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] 
+
+## [0.6.0] - 2020-09-10
+
+### Added
+
+* Added the ability to disable admin endpoints ([#227](https://github.com/EpiLink/EpiLink/issues/227))
+* Added sticky roles ([#228](https://github.com/EpiLink/EpiLink/issues/228))
+* Added an initial logging entry that contains the version. ([#230](https://github.com/EpiLink/EpiLink/issues/230))
+* Added half of the Identity Provider ID Hash's hex representation to the "already linked" error message. ([#226](https://github.com/EpiLink/EpiLink/issues/226))
+* Added an administration endpoint for deleting users ([#220](https://github.com/EpiLink/EpiLink/issues/220) / [#7](https://github.com/EpiLink/EpiLink/issues/7))
+* Added a configurable cooldown for identity removal ([#169](https://github.com/EpiLink/EpiLink/issues/169))
+* Added a search endpoint ([#229](https://github.com/EpiLink/EpiLink/pull/229))
+
+### Changed
+
+* Dependencies updated ([#221](https://github.com/EpiLink/EpiLink/issues/221))
+* Slight adjustments to the GDPR report ([#229](https://github.com/EpiLink/EpiLink/issues/229))
+
+### Fixed
+
+* Fix rulebooks failing silently if an exception was thrown during initial execution ([#232](https://github.com/EpiLink/EpiLink/issues/232))
+* Fix potential database locking issues for SQLite ([#229](https://github.com/EpiLink/EpiLink/pull/229))
+* Fixed avatar-less users icons on the front-end ([#222](https://github.com/EpiLink/EpiLink/issues/222))
+* Fixed the maintenance front-end message not working on Chromium (or at least Edge Chromium) ([#225](https://github.com/EpiLink/EpiLink/issues/225))
+
 ## [0.5.1] - 2020-08-11
 
 ### Fixed
@@ -202,7 +228,8 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.5.1...dev
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.0...dev
+[0.6.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.0
 [0.5.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.1
 [0.5.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.0
 [0.4.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.4.0

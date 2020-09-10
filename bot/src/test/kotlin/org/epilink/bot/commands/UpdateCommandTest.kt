@@ -9,6 +9,7 @@
 package org.epilink.bot.commands
 
 import io.mockk.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.LinkUser
@@ -21,7 +22,8 @@ import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.*
 
-class UpdateCommandTest : KoinBaseTest(
+class UpdateCommandTest : KoinBaseTest<Command>(
+    Command::class,
     module {
         single<Command> { UpdateCommand() }
     }
@@ -56,7 +58,14 @@ class UpdateCommandTest : KoinBaseTest(
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.RoleNotFound("Rooole")
         }
         declareNoOpI18n()
-        mockHere<LinkDiscordMessages> { every { getWrongTargetCommandReply(any(), "HELLO I AM COMMAND BODY") } returns embed }
+        mockHere<LinkDiscordMessages> {
+            every {
+                getWrongTargetCommandReply(
+                    any(),
+                    "HELLO I AM COMMAND BODY"
+                )
+            } returns embed
+        }
         val f = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } just runs }
         test {
             run(
@@ -85,7 +94,9 @@ class UpdateCommandTest : KoinBaseTest(
             coEvery { getMembersWithRole("Rooole ID", "guild") } returns fakeList
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles(any()) } returns mockk()
+            coEvery { invalidateAllRoles(any()) } returns mockk {
+                coEvery { join() } just runs
+            }
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
@@ -102,6 +113,7 @@ class UpdateCommandTest : KoinBaseTest(
                 channelId = "channel",
                 guildId = "guild" // unused
             )
+            delay(2000)
         }
         coVerify {
             f.sendChannelMessage("channel", embed)
@@ -120,7 +132,9 @@ class UpdateCommandTest : KoinBaseTest(
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.User("targetid")
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles("targetid") } returns mockk()
+            coEvery { invalidateAllRoles("targetid") } returns mockk {
+                coEvery { join() } just runs
+            }
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
@@ -137,6 +151,7 @@ class UpdateCommandTest : KoinBaseTest(
                 channelId = "channel",
                 guildId = "guild" // unused
             )
+            delay(2000)
         }
         coVerify {
             f.sendChannelMessage("channel", embed)
@@ -158,7 +173,9 @@ class UpdateCommandTest : KoinBaseTest(
             coEvery { getMembers("guild") } returns fakeList
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles(any()) } returns mockk()
+            coEvery { invalidateAllRoles(any()) } returns mockk {
+                coEvery { join() } just runs
+            }
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
@@ -175,6 +192,7 @@ class UpdateCommandTest : KoinBaseTest(
                 channelId = "channel",
                 guildId = "guild" // unused
             )
+            delay(2000)
         }
         coVerify {
             f.sendChannelMessage("channel", embed)
@@ -184,11 +202,52 @@ class UpdateCommandTest : KoinBaseTest(
         }
     }
 
-    private operator fun String.unaryPlus(): LinkUser = mockk {
-        every { discordId } returns this@unaryPlus
+    @Test
+    fun `Test one update crash does not crash everything else`() {
+        // Target resolution
+        val parsedTarget = TargetParseResult.Success.Everyone
+        mockHere<LinkDiscordTargets> {
+            every { parseDiscordTarget("HELLO I AM COMMAND BODY") } returns parsedTarget
+            coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.Everyone
+        }
+        // Role update
+        val fakeList = List(26) { ('a' + it).toString() }
+        mockHere<LinkDiscordClientFacade> {
+            coEvery { getMembers("guild") } returns fakeList
+        }
+        var eFailed = false
+        val rm = mockHere<LinkRoleManager> {
+            coEvery { invalidateAllRoles(any()) } returns mockk {
+                coEvery { join() } just runs
+            }
+            coEvery { invalidateAllRoles("e") } answers { eFailed = true; error("oh no") }
+        }
+        // Message reply
+        val embed = mockk<DiscordEmbed>()
+        declareNoOpI18n()
+        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any(), any(), 26) } returns embed }
+        val f = softMockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } just runs }
+        // (soft mock because already defined above)
+        test {
+            run(
+                fullCommand = "",
+                commandBody = "HELLO I AM COMMAND BODY",
+                sender = +"user",
+                senderId = "user",
+                channelId = "channel",
+                guildId = "guild" // unused
+            )
+            delay(2000)
+        }
+        assertTrue(eFailed, "The e discordId did not throw")
+        coVerify {
+            f.sendChannelMessage("channel", embed)
+            for (c in 'a'..'z')
+                rm.invalidateAllRoles(c.toString())
+        }
     }
 
-    private fun test(block: suspend Command.() -> Unit) {
-        runBlocking { get<Command>().block() }
+    private operator fun String.unaryPlus(): LinkUser = mockk {
+        every { discordId } returns this@unaryPlus
     }
 }

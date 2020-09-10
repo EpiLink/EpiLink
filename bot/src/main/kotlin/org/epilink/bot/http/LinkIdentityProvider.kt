@@ -10,63 +10,52 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.client.HttpClient
-import io.ktor.client.call.receive
-import io.ktor.client.features.ClientRequestException
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.content.TextContent
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.features.*
+import io.ktor.client.request.*
+import io.ktor.content.*
 import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.LinkEndpointInternalException
 import org.epilink.bot.LinkEndpointUserException
-import org.epilink.bot.StandardErrorCodes.*
+import org.epilink.bot.StandardErrorCodes.IdentityProviderApiFailure
+import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.getList
 import org.epilink.bot.rulebook.getString
-import org.jose4j.jwk.HttpsJwks
-import org.jose4j.jwt.consumer.JwtConsumerBuilder
-import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
-
 
 /**
  * This class is responsible for communicating with OIDC APIs, determined from the given metadata
  */
 class LinkIdentityProvider(
-    private val metadata: IdentityProviderMetadata,
     private val clientId: String,
-    private val clientSecret: String
+    private val clientSecret: String,
+    private val tokenUrl: String,
+    authorizeUrl: String
 ) : KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.identityProvider")
-    private val authStub = metadata.authorizeUrl + "?" +
+    private val authStub = "$authorizeUrl?" +
             listOf(
                 "client_id=${clientId}",
                 "response_type=code",
+                /*
+                 * Only useful for Microsoft, which prompts the "select an account" screen, since users may have
+                 * multiple accounts (e.g. their work account and their personal account)
+                 *
+                 * From the RFC 6749:
+                 * > The authorization server MUST ignore unrecognized request parameters.
+                 * So we can leave it in, servers that do not support that parameter will ignore it.
+                 */
                 "prompt=select_account",
                 "scope=openid%20profile%20email"
             ).joinToString("&")
 
     private val client: HttpClient by inject()
-
-    private val jwtConsumer = JwtConsumerBuilder().apply {
-        setRequireExpirationTime()
-        setRequireIssuedAt()
-        // Not present for Google
-        // setRequireNotBefore()
-        setAllowedClockSkewInSeconds(30)
-        setRequireSubject()
-        setExpectedAudience(clientId)
-        // Does not work for MS, since the issuer is different for every tenant
-        // setExpectedIssuer(metadata.issuer)
-        setVerificationKeyResolver(
-            HttpsJwksVerificationKeyResolver(HttpsJwks(metadata.jwksUri))
-        )
-    }.build()
+    private val jwtVerifier: LinkJwtVerifier by inject()
 
     /**
      * Consume the authcode and return the user info from the retrieved ID token.
@@ -78,19 +67,18 @@ class LinkIdentityProvider(
      */
     suspend fun getUserIdentityInfo(code: String, redirectUri: String): UserIdentityInfo {
         val res = runCatching {
-            client.post<String>(metadata.tokenUrl.also { logger.error(it) }) {
+            client.post<String>(tokenUrl) {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 body = TextContent(
                     ParametersBuilder().apply {
-                        //append("scope", "openid profile email")
                         appendOauthParameters(clientId, clientSecret, code, redirectUri)
-                    }.build().formUrlEncode().also { logger.error(it) },
+                    }.build().formUrlEncode(),
                     ContentType.Application.FormUrlEncoded
                 )
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val received = ex.response.call.receive<String>()
+                val received = ex.response!!.call.receive<String>()
                 logger.debug { "Failed: received $received" }
                 val data = ObjectMapper().readValue<Map<String, Any?>>(received)
                 when (val error = data["error"] as? String) {
@@ -117,19 +105,7 @@ class LinkIdentityProvider(
                 IdentityProviderApiFailure,
                 "Did not receive any ID token from the identity provider"
             )
-        val claims = withContext(Dispatchers.Default) { jwtConsumer.processToClaims(jwt) }
-        return UserIdentityInfo(
-            claims.getClaimValueAsString(metadata.idClaim) ?: throw LinkEndpointUserException(
-                AccountHasNoId,
-                "This user does not have an ID",
-                "ms.nid"
-            ),
-            claims.getClaimValueAsString("email") ?: throw LinkEndpointUserException(
-                AccountHasNoEmailAddress,
-                "This account does not have an email address",
-                "ms.nea"
-            )
-        )
+        return jwtVerifier.process(jwt)
     }
 
     /**

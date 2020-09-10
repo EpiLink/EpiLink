@@ -9,8 +9,8 @@
 package org.epilink.bot.db
 
 import org.epilink.bot.*
-import org.epilink.bot.StandardErrorCodes.IdentityAlreadyKnown
-import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
+import org.epilink.bot.StandardErrorCodes.*
+import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessages
@@ -68,7 +68,8 @@ interface LinkIdManager {
 
     /**
      * Delete the identity of the user with the given Discord ID from the database, or throw a
-     * [LinkEndpointUserException] if no such identity exists.
+     * [LinkEndpointUserException] if no such identity exists or the identity deletion is
+     * [on cooldown][LinkUnlinkCooldown].
      *
      * @param user The user whose identity we should remove
      * @throws LinkEndpointUserException If the user does not have any identity recorded in the first place.
@@ -84,6 +85,8 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     private val i18n: LinkDiscordMessagesI18n by inject()
     private val discordSender: LinkDiscordMessageSender by inject()
     private val privacy: LinkPrivacy by inject()
+    private val idpConfig: LinkIdProviderConfiguration by inject()
+    private val cooldown: LinkUnlinkCooldown by inject()
 
 
     @UsesTrueIdentity
@@ -96,6 +99,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
         val embed = messages.getIdentityAccessEmbed(i18n.getLanguage(user.discordId), automated, author, reason)
         if (embed != null)
             discordSender.sendDirectMessageLater(user.discordId, embed)
+        cooldown.refreshCooldown(user.discordId)
         return facade.getUserEmailWithAccessLog(user, automated, author, reason)
     }
 
@@ -110,7 +114,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
         if (!knownHash.contentEquals(newHash)) {
             // Upgrade path: For some accounts, the MS Graph API returned an ID format that does not correspond to the
             // OIDC ID (old: non-padded + no hyphens, new: padded with hyphens). Updates to the OIDC-style ID
-            if (associatedIdpId.startsWith("00000000-0000-0000-")) {
+            if (idpConfig.microsoftBackwardsCompatibility && associatedIdpId.startsWith("00000000-0000-0000-")) {
                 // Convert the new ID format to the old one and compare
                 val oldIdFormat = associatedIdpId.substringAfter("00000000-0000-0000-").replace("-", "")
                 if (oldIdFormat.hashSha256().contentEquals(knownHash)) {
@@ -122,6 +126,7 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
             } else throw LinkEndpointUserException(NewIdentityDoesNotMatch)
         }
         facade.recordNewIdentity(user, email)
+        cooldown.refreshCooldown(user.discordId)
     }
 
     override suspend fun getIdAccessLogs(user: LinkUser): IdAccessLogs =
@@ -140,7 +145,9 @@ internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     @UsesTrueIdentity
     override suspend fun deleteUserIdentity(user: LinkUser) {
         if (!facade.isUserIdentifiable(user))
-            throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyUnknown)
+            throw LinkEndpointUserException(IdentityAlreadyUnknown)
+        if (!cooldown.canUnlink(user.discordId))
+            throw LinkEndpointUserException(IdentityRemovalOnCooldown)
         facade.eraseIdentity(user)
     }
 }

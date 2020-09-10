@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.db.exposed
 
+import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.LinkException
 import org.epilink.bot.db.*
 import org.jetbrains.exposed.dao.IntEntity
@@ -18,6 +19,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.`java-time`.timestamp
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 
@@ -231,6 +233,25 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
             u.idpIdHash = newIdHash
         }
     }
+
+    @OptIn(UsesTrueIdentity::class)
+    override suspend fun deleteUser(user: LinkUser) {
+        val u = user.asExposed()
+        newSuspendedTransaction(db = db) {
+            // True identity
+            u.trueIdentity?.delete()
+            // Language
+            ExposedDiscordLanguages.deleteWhere { ExposedDiscordLanguages.discordId eq u.discordId }
+            // Delete bans
+            ExposedBans.deleteWhere { ExposedBans.idpIdHash eq u.idpIdHash }
+            u.delete()
+        }
+    }
+
+    override suspend fun searchUserByPartialHash(partialHashHex: String): List<LinkUser> =
+        newSuspendedTransaction(db = db) {
+            ExposedUser.all().filter { Hex.encodeHexString(it.idpIdHash).contains(partialHashHex) }
+        }.toList()
 }
 
 /**

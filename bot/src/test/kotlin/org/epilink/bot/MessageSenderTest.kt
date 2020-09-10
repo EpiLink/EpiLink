@@ -18,7 +18,8 @@ import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.*
 
-class MessageSenderTest : KoinBaseTest(
+class MessageSenderTest : KoinBaseTest<LinkDiscordMessageSender>(
+    LinkDiscordMessageSender::class,
     module {
         single<LinkDiscordMessageSender> { LinkDiscordMessageSenderImpl() }
     }
@@ -29,9 +30,8 @@ class MessageSenderTest : KoinBaseTest(
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { sendDirectMessage("userid", embed) } just runs
         }
-        runBlocking {
-            get<LinkDiscordMessageSender>().sendDirectMessageLater("userid", embed)
-                .join()
+        test {
+            sendDirectMessageLater("userid", embed).join()
             coVerify {
                 dcf.sendDirectMessage("userid", embed)
             }

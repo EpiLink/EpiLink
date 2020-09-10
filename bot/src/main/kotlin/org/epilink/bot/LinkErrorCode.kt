@@ -105,6 +105,11 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
      */
     NewIdentityDoesNotMatch(112, "This account's identity does not match the new one"),
 
+    /**
+     * This account's identity cannot be removed because it is on cooldown to prevent abuse.
+     */
+    IdentityRemovalOnCooldown(113, "This account's identity cannot be removed at this time: please wait before retrying."),
+
     // ************ 2xx: External services errors ************
     /**
      * Sent in case of a back-end call to the Discord API that failed with no decipherable reason

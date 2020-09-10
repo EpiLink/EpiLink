@@ -20,7 +20,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class DiscordMessagesI18nTest : KoinBaseTest(
+class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
+    LinkDiscordMessagesI18n::class,
     module {
         single<LinkDiscordMessagesI18n> {
             LinkDiscordMessagesI18nImpl(
@@ -52,6 +53,14 @@ class DiscordMessagesI18nTest : KoinBaseTest(
     fun `Test key fallback`() {
         test {
             assertEquals("Au revoir", get("two", "goodbye"))
+        }
+    }
+
+    @Test
+    fun `Test key second fallback`() {
+        // Key not found in the current language nor in the default language
+        test {
+            assertEquals("seeyoulater", get("two", "seeyoulater"))
         }
     }
 
@@ -96,9 +105,5 @@ class DiscordMessagesI18nTest : KoinBaseTest(
             coEvery { getLanguagePreference("did") } returns "two"
         }
         test { assertEquals("two", getLanguage("did")) }
-    }
-
-    private fun test(block: suspend LinkDiscordMessagesI18n.() -> Unit) {
-        runBlocking { get<LinkDiscordMessagesI18n>().block() }
     }
 }

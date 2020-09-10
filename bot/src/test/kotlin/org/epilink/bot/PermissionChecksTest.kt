@@ -12,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.db.*
 import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.get
@@ -20,7 +21,8 @@ import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.*
 
-class PermissionChecksTest : KoinBaseTest(
+class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
+    LinkPermissionChecks::class,
     module {
         single<LinkPermissionChecks> { LinkPermissionChecksImpl() }
     }
@@ -61,6 +63,11 @@ class PermissionChecksTest : KoinBaseTest(
             val adv = isIdentityProviderUserAllowedToCreateAccount("hey", "emailemail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
             assertTrue(adv.reason.contains("already"), "Reason should contain word already")
+            assertEquals("pc.ala", adv.reasonI18n)
+            assertEquals(
+                mapOf("idpIdHashHex" to Hex.encodeHexString(hey).let { it.substring(0, it.length / 2) }),
+                adv.reasonI18nData
+            )
         }
     }
 
@@ -69,7 +76,7 @@ class PermissionChecksTest : KoinBaseTest(
         val hey = "hey".sha256()
         mockHere<LinkDatabaseFacade> {
             coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
-            coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "badboi"})
+            coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "badboi" })
         }
         mockHere<LinkBanLogic> {
             every { isBanActive(any()) } returns true
@@ -152,7 +159,7 @@ class PermissionChecksTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test admin not an admin check fails`() {
-        val user = mockk<LinkUser> { every { discordId } returns "discordIdNotAdmin"}
+        val user = mockk<LinkUser> { every { discordId } returns "discordIdNotAdmin" }
         declare(named("admins")) { listOf("notme", "notyou") }
         test {
             val result = canPerformAdminActions(user)
@@ -163,7 +170,7 @@ class PermissionChecksTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test admin not identifiable check fails`() {
-        val user = mockk<LinkUser> { every { discordId } returns "notyou"}
+        val user = mockk<LinkUser> { every { discordId } returns "notyou" }
         declare(named("admins")) { listOf("notme", "notyou") }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(user) } returns false
@@ -177,7 +184,7 @@ class PermissionChecksTest : KoinBaseTest(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test admin check success`() {
-        val user = mockk<LinkUser> { every { discordId } returns "notyou"}
+        val user = mockk<LinkUser> { every { discordId } returns "notyou" }
         declare(named("admins")) { listOf("notme", "notyou") }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(user) } returns true
@@ -187,9 +194,4 @@ class PermissionChecksTest : KoinBaseTest(
             assertEquals(AdminStatus.Admin, result)
         }
     }
-
-    private fun <R> test(block: suspend LinkPermissionChecks.() -> R) =
-        runBlocking {
-            block(get())
-        }
 }

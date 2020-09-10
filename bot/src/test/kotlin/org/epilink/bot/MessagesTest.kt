@@ -12,19 +12,19 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.LinkDiscordConfig
+import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
-import org.epilink.bot.discord.DiscordEmbed
-import org.epilink.bot.discord.LinkDiscordMessages
-import org.epilink.bot.discord.LinkDiscordMessagesI18n
-import org.epilink.bot.discord.LinkDiscordMessagesImpl
+import org.epilink.bot.discord.*
 import org.koin.dsl.module
 import org.koin.test.get
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class MessagesTest : KoinBaseTest(
+class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
+    LinkDiscordMessages::class,
     module {
         single<LinkDiscordMessages> { LinkDiscordMessagesImpl() }
     }
@@ -56,16 +56,11 @@ class MessagesTest : KoinBaseTest(
                 }
             )
         }
-        val keySlot = slot<String>()
         mockHere<LinkDiscordMessagesI18n> {
             coEvery { getLanguage(any()) } returns ""
-            every { get(any(), capture(keySlot)) } answers {
-                keySlot.captured.let {
-                    if(it == "greet.title" || it == "greet.welcome")
-                        "$it::%s"
-                    else it
-                }
-            }
+            defaultMock()
+            every { get(any(), "greet.title") } returns "greet.title::%s"
+            every { get(any(), "greet.welcome") } returns "greet.welcome::%s"
         }
         val dm = get<LinkDiscordMessages>()
         val embed = dm.getGreetingsEmbed("", "guildid", "My Guild")
@@ -128,9 +123,8 @@ class MessagesTest : KoinBaseTest(
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(true) } returns true
         }
-        val keySlot = slot<String>()
         mockHere<LinkDiscordMessagesI18n> {
-            every { get(any(), capture(keySlot)) } answers { keySlot.captured }
+            defaultMock()
             every { get(any(), "ida.accessAuthorAuto") } returns "authorauto::%s"
         }
         val dm = get<LinkDiscordMessages>()
@@ -146,9 +140,8 @@ class MessagesTest : KoinBaseTest(
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(false) } returns true
         }
-        val keySlot = slot<String>()
         mockHere<LinkDiscordMessagesI18n> {
-            every { get(any(), capture(keySlot)) } answers { keySlot.captured }
+            defaultMock()
             every { get(any(), "ida.accessAuthor") } returns "author::%s"
         }
         val dm = get<LinkDiscordMessages>()
@@ -187,9 +180,8 @@ class MessagesTest : KoinBaseTest(
         mockHere<LinkPrivacy> {
             every { notifyBans } returns true
         }
-        val keySlot = slot<String>()
         mockHere<LinkDiscordMessagesI18n> {
-            every { get(any(), capture(keySlot)) } answers { keySlot.captured }
+            defaultMock()
             every { get(any(), "bn.expiry.date") } returns "date::%s::%s"
         }
         val dm = get<LinkDiscordMessages>()
@@ -197,5 +189,61 @@ class MessagesTest : KoinBaseTest(
         assertNotNull(embed)
         assertEquals("You are now banned, RIP.", embed.fields[0].value)
         assertEquals("date::2020-02-03::13:37", embed.fields[1].value)
+    }
+
+    @Test
+    fun `Test error command reply`() {
+        mockHere<LinkDiscordMessagesI18n> {
+            defaultMock()
+            every { get(any(), "kkk.title") } returns "title::%s::%s"
+            every { get(any(), "kkk.description") } returns "desc::%s::%s"
+        }
+        test {
+            val embed =
+                getErrorCommandReply("", "kkk", titleObjects = listOf("to1", "to2"), objects = arrayOf("obj1", "obj2"))
+            assertEquals("#8A0303", embed.color)
+            assertEquals("title::to1::to2", embed.title)
+            assertEquals("desc::obj1::obj2", embed.description)
+        }
+    }
+
+    @Test
+    fun `Test wrong target command reply`() {
+        mockHere<LinkDiscordMessagesI18n> {
+            defaultMock()
+            every { get(any(), "cr.wt.description") } returns "description::%s"
+            every { get(any(), "cr.wt.help.description") } returns "helpDescription::%s"
+        }
+        test {
+            val embed = getWrongTargetCommandReply("", "le target")
+            assertEquals("#8A0303", embed.color)
+            assertEquals("cr.wt.title", embed.title)
+            assertEquals("description::le target", embed.description)
+            assertEquals("cr.wt.help.title", embed.fields[0].name)
+            assertTrue(embed.fields[0].value.startsWith("helpDescription::https://"), "help description has a url")
+        }
+    }
+
+    @Test
+    fun `Test config for guild found`() {
+        val server = mockk<LinkDiscordServerSpec> { every { id } returns "id2" }
+        val cfg = mockk<LinkDiscordConfig> {
+            every { servers } returns listOf(
+                mockk { every { id } returns "id1" },
+                server
+            )
+        }
+        assertSame(server, cfg.getConfigForGuild("id2"))
+    }
+
+    @Test
+    fun `Test config for guild not found`() {
+        val cfg = mockk<LinkDiscordConfig> {
+            every { servers } returns listOf(
+                mockk { every { id } returns "id1" },
+                mockk { every { id } returns "id2" }
+            )
+        }
+        assertFailsWith<LinkException> { cfg.getConfigForGuild("id3") }
     }
 }

@@ -22,7 +22,8 @@ import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.Test
 
-class HelpCommandTest : KoinBaseTest(
+class HelpCommandTest : KoinBaseTest<Command>(
+    Command::class,
     module {
         single<Command> { HelpCommand() }
     }
@@ -36,9 +37,5 @@ class HelpCommandTest : KoinBaseTest(
         test {
             run("e!help", "", null, "", "1234", "")
         }
-    }
-
-    private fun test(block: suspend Command.() -> Unit) {
-        runBlocking { get<Command>().block() }
     }
 }

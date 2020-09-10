@@ -24,15 +24,15 @@ import org.koin.test.KoinTest
 import org.koin.test.get
 import kotlin.test.*
 
-class DiscordBackEndTest : KoinBaseTest(
+class DiscordBackEndTest : KoinBaseTest<LinkDiscordBackEnd>(
+    LinkDiscordBackEnd::class,
     module {
         single { LinkDiscordBackEnd("DiscordClientId", "DiscordSecret") }
     }
 ) {
     @Test
-    fun `Test Discord auth stub`() {
-        val dbe = get<LinkDiscordBackEnd>()
-        dbe.getAuthorizeStub().apply {
+    fun `Test Discord auth stub`() = test {
+        getAuthorizeStub().apply {
             assertTrue(contains("client_id=DiscordClientId"), "Expected a client ID")
             assertTrue(contains("scope=identify"), "Expected the scope to be set to identify")
             assertTrue(contains("response_type=code"), "Expected the response type to be code")
@@ -41,6 +41,7 @@ class DiscordBackEndTest : KoinBaseTest(
             assertFalse(contains("redirect_uri"), "Expected redirect_uri to be absent")
         }
     }
+
 
     @Test
     fun `Test Discord token retrieval`() {
@@ -61,9 +62,8 @@ class DiscordBackEndTest : KoinBaseTest(
             )
         }
 
-        val dbe = get<LinkDiscordBackEnd>()
-        runBlocking {
-            assertEquals("DiscordAccessToken", dbe.getDiscordToken("DiscordAuthCode", "redir"))
+        test {
+            assertEquals("DiscordAccessToken", getDiscordToken("DiscordAuthCode", "redir"))
         }
     }
 
@@ -77,10 +77,9 @@ class DiscordBackEndTest : KoinBaseTest(
             )
         }
 
-        runBlocking {
-            val dbe = get<LinkDiscordBackEnd>()
+        test {
             val exc = assertFailsWith<LinkEndpointException> {
-                dbe.getDiscordToken("Authcode", "Redir")
+                getDiscordToken("Authcode", "Redir")
             }
             assertEquals(StandardErrorCodes.InvalidAuthCode, exc.errorCode)
         }
@@ -92,10 +91,9 @@ class DiscordBackEndTest : KoinBaseTest(
             respondError(HttpStatusCode.BadRequest, """{"error":"¯\\_(ツ)_/¯"}""")
         }
 
-        runBlocking {
-            val dbe = get<LinkDiscordBackEnd>()
+        test {
             val exc = assertFailsWith<LinkEndpointException> {
-                dbe.getDiscordToken("Auth", "Re")
+                getDiscordToken("Auth", "Re")
             }
             assertEquals(StandardErrorCodes.DiscordApiFailure, exc.errorCode)
         }
@@ -118,15 +116,14 @@ class DiscordBackEndTest : KoinBaseTest(
             )
         }
 
-        runBlocking {
-            val dbe = get<LinkDiscordBackEnd>()
+        test {
             assertEquals(
                 DiscordUserInfo(
                     id = "myVeryId",
                     username = "usseeer#9876",
                     avatarUrl = "https://cdn.discordapp.com/avatars/myVeryId/haaash.png?size=256"
                 ),
-                dbe.getDiscordInfo("veryserioustoken")
+                getDiscordInfo("veryserioustoken")
             )
         }
     }

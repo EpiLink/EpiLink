@@ -139,4 +139,15 @@ interface LinkDatabaseFacade {
      * format changes or other backwards-compatibility concerns.
      */
     suspend fun updateIdpId(user: LinkUser, newIdHash: ByteArray)
+
+    /**
+     * Removes the given user
+     */
+    suspend fun deleteUser(user: LinkUser)
+
+    /**
+     * Search users who have the given string in their hash (in hex representation). The [partialHashHex] argument must
+     * be lowercase.
+     */
+    suspend fun searchUserByPartialHash(partialHashHex: String): List<LinkUser>
 }

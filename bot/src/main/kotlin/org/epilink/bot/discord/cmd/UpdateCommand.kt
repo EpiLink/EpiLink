@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.discord.cmd
 
+import kotlinx.coroutines.*
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.debug
 import org.epilink.bot.discord.*
@@ -25,6 +26,7 @@ class UpdateCommand : Command, KoinComponent {
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()
     private val i18n: LinkDiscordMessagesI18n by inject()
+    private val updateLauncherScope = CoroutineScope(SupervisorJob())
 
     override val name: String
         get() = "update"
@@ -78,8 +80,20 @@ class UpdateCommand : Command, KoinComponent {
                 return
             }
         }
-        toInvalidate.forEach { roleManager.invalidateAllRoles(it, false) }
+        startUpdate(toInvalidate)
         val (message, replace) = messageAndReplace
         client.sendChannelMessage(channelId, msg.getSuccessCommandReply(i18n.getLanguage(senderId), message, *replace))
+    }
+
+    private fun startUpdate(targets: List<String>) = updateLauncherScope.launch {
+        targets.asSequence().chunked(10).forEach { part ->
+            part.map {
+                it to async(SupervisorJob()) { roleManager.invalidateAllRoles(it, false).join() }
+            }.forEach {
+                try { it.second.await() } catch(e: Exception) {
+                    logger.error("Exception caught during role update for user ${it.first}", e)
+                }
+            }
+        }
     }
 }

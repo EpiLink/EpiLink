@@ -20,7 +20,8 @@ import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.Test
 
-class LangCommandTest : KoinBaseTest(
+class LangCommandTest : KoinBaseTest<Command>(
+    Command::class,
     module {
         single<Command> { LangCommand() }
     }
@@ -87,9 +88,5 @@ class LangCommandTest : KoinBaseTest(
             i18n.setLanguage("iid", "lll")
             dcf.sendChannelMessage("1234", embed)
         }
-    }
-
-    private fun test(block: suspend Command.() -> Unit) {
-        runBlocking { get<Command>().block() }
     }
 }

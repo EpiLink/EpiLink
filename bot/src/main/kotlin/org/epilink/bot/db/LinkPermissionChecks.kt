@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.db
 
+import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.KoinComponent
@@ -84,7 +85,11 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
     override suspend fun isIdentityProviderUserAllowedToCreateAccount(idpId: String, email: String): DatabaseAdvisory {
         val hash = idpId.hashSha256()
         if (facade.isIdentityAccountAlreadyLinked(hash))
-            return Disallowed("This identity provider account is already linked to another account", "pc.ala")
+            return Disallowed(
+                "This identity provider account is already linked to another account",
+                "pc.ala",
+                mapOf("idpIdHashHex" to hash.toHexString().let { it.substring(0, it.length / 2) })
+            )
         if (rulebook.validator?.invoke(email) == false) { // == false because the left side can be true or null
             return Disallowed(
                 "This e-mail address was rejected. Are you sure you are using the correct identity provider account?",
@@ -103,6 +108,9 @@ internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
         }
         return Allowed
     }
+
+    private fun ByteArray.toHexString(): String =
+        Hex.encodeHexString(this)
 
     override suspend fun canUserJoinServers(dbUser: LinkUser): DatabaseAdvisory {
         val activeBan = facade.getBansFor(dbUser.idpIdHash).firstOrNull { banLogic.isBanActive(it) }

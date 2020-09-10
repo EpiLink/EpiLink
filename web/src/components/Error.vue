@@ -47,7 +47,7 @@
                 }
                 const error = this.error.toString();
 
-                if (error.toLowerCase().includes('network')) {
+                if (error.toLowerCase().includes('network') || error.toLowerCase().includes('failed to fetch')) {
                     return this.$t('error.network');
                 }
 

@@ -134,7 +134,7 @@ export default {
             erj: "Cette adresse e-mail a été rejetée. Êtes-vous sûr d'utiliser le bon compte {provider} ?",
             dae: 'Ce compte Discord existe déjà.',
             cba: 'Ce compte {provider} est banni (raison : {reason})',
-            ala: 'Ce compte {provider} est déjà lié à un autre compte.'
+            ala: 'Ce compte {provider} est déjà lié à un autre compte. Si un administrateur vous le demande, donnez lui cet identifiant: {idpIdHashHex}.'
         },
         reg: {
             msh: 'En-tête de session manquant.',
@@ -149,6 +149,7 @@ export default {
             '110': "L'identité de ce compte est déjà connue dans la base de données.",
             '111': "L'identité de ce compte est déjà absente de la base de données.",
             '112': "L'identifiant du compte ne correspond pas au nouveau compte.",
+            '113': "Vous ne pouvez pas retirer votre identité pour le moment. Merci de patienter quelques heures et de réessayer.",
             '201': "Une erreur est survenue lors d'un appel à l'API de Discord",
             '202': "Une erreur est survenue lors d'un appel à l'API de {provider}",
             '300': "Vous avez besoin d'être connecté pour accéder à cette ressource",

@@ -17,7 +17,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 
-class DiscordTargetTest : KoinBaseTest(
+class DiscordTargetTest : KoinBaseTest<LinkDiscordTargets>(
+    LinkDiscordTargets::class,
     module {
         single<LinkDiscordTargets> { LinkDiscordTargetsImpl() }
     }
@@ -77,6 +78,17 @@ class DiscordTargetTest : KoinBaseTest(
     }
 
     @Test
+    fun `Test resolve role by name not found`() = test {
+        mockHere<LinkDiscordClientFacade> {
+            coEvery { getRoleIdByName("Role50", "servid") } returns null
+        }
+        assertEquals(
+            TargetResult.RoleNotFound("Role50"),
+            resolveDiscordTarget(TargetParseResult.Success.RoleByName("Role50"), "servid")
+        )
+    }
+
+    @Test
     fun `Test resolve role by id`() = test {
         assertEquals(
             TargetResult.Role("09876"),
@@ -90,9 +102,5 @@ class DiscordTargetTest : KoinBaseTest(
             TargetResult.Everyone,
             resolveDiscordTarget(TargetParseResult.Success.Everyone, "" /* unused */)
         )
-    }
-
-    private fun test(block: suspend LinkDiscordTargets.() -> Unit) {
-        runBlocking { block(get()) }
     }
 }
