@@ -2,9 +2,52 @@
 
 This page will guide you through the configuration of a working EpiLink instance.
 
-?> This page mainly goes through [a basic check-list](#getting-started), [deployment](#deployment), [instance configuration](#configuration) and [administrative actions](#administration). Other information, especially regarding [Identity Provider setup](IdentityProviders.md), [Discord commands](DiscordCommands.md), [Rulebooks](Rulebooks.md) and [Rulebooks testing](IRT.md) is available in other pages.
+?> This page mainly goes through [a basic check-list](#checklist), [deployment](#deployment), [instance configuration](#configuration) and [administrative actions](#administration). Other information, especially regarding [Identity Provider setup](IdentityProviders.md), [Discord commands](DiscordCommands.md), [Rulebooks](Rulebooks.md) and [Rulebooks testing](IRT.md) is available in other pages.
 
-## Getting started
+## Introduction
+
+EpiLink is a project that contains multiple subprojects, specifically:
+
+- The front-end, which is what the users see when they navigate on the website
+- The back-end, which users typically don't interact with. Administration endpoints are available for instance maintainers.
+- The Discord bot, which sends messages to users. Users can also use the bot to change their language settings.
+
+### How can I add this to my server?
+
+EpiLink is **not** a ready-to-use just-add-it-to-your-Discord-server style bot. It is a full host-it-yourself website and service that must be hosted by *you* entirely. As such, there is no "EpiLink" bot, *your* instance will have *its own* bot. This allows us to focus on developing the bot and lets you control all of the data managed by the bot.
+
+Once you host EpiLink on your own server, a 
+
+### What EpiLink does
+
+#### Matching accounts and anonymity
+
+At its core, EpiLink matches an Identity Provider account to a Discord account. The Identity Provider can be any service that provides OpenID Connect compatibility. A typical example would be a Microsoft Azure tenant, or a school using G Suite.
+
+EpiLink allows users to remain anonymous to some extent. Should the user choose this option, their e-mail address will not be recorded in the database, but a hash of the user's ID is remembered (even if the user decides not to be anonymous) and there are still checks in place to ensure that they actually have the right to join servers. The hash is remembered for banning purposes (bans are against an identity provider account instead of a Discord account).
+
+If the user decides to not be anonymous, their e-mail address is stored in the database. This enables determining custom roles based on the user's e-mail address.
+
+In a nutshell:
+
+- Anonymous: guaranteed to be a valid user, but it is not known who it is exactly. A hash is stored for "pseudonymously" matching the Identity Provider account
+- Identified (not anonymous): guaranteed to be a valid, e-mail address is stored and can be retrieved.
+
+Retrieving the identity of a user, even if it was done automatically, generates an "id access notification" that is stored in the database. A message can also be sent to the user. This increases trust from the user: they know that no one stalked their identity as they would have otherwise received a notification.
+
+?> Refer to the following pages for more information: [Identity Providers](IdentityProviders.md), [Identity retrieval](Api.md#post-useridentity), [ID access notification configuration](#privacy-configuration)
+
+#### Role management
+
+EpiLink can manage the roles of your users. In a nutshell, whenever a user joins a server (or their roles need to be updated for any reason), EpiLink determines their EpiLink roles, maps them to actual Discord roles, and applies them.
+
+EpiLink roles are *not* Discord roles, they are intermediate role names that are then mapped to actual Discord roles for each server. For example, the user John may have the EpiLink roles `american`, `nice_person` and `student`. Each of these roles is then mapped to an actual Discord roles in each server's configuration (for example `american => 894572638928`). This allows EpiLink to be extremely versatile, allowing you to apply roles across multiple servers very easily.
+
+"Determining the EpiLink roles" consists in a range of different things:
+
+- Some EpiLink roles are automatic: for example, the special role `_identified` is given to all users who have their e-mail address stored in the database (i.e. are not anonymous).
+
+## Checklist
 
 Go through all of these steps before going public with your instance:
 
@@ -76,7 +119,7 @@ cacheRulebook: true
 
 * `db`: This is the location of the SQLite database. Use a full, absolute path instead of a relative path just to be on the safe side.
 
-* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion), `el_reg_` (EpiLink REGistration) and `el_rc_` (EpiLink Rule Cache) prefixes for all of its keys. 
+* `redis`: The [Redis URI](https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details#uri-syntax) to the Redis server that should be used for temporary session storage. EpiLink uses the `el_ses_` (EpiLink SESsion), `el_reg_` (EpiLink REGistration), `el_rc_` (EpiLink Rule Cache) and `el_ulc_` (EpiLink UnLink Cooldown) prefixes for all of its keys. 
 
 ?> This value can also be `~` to use an in-memory storage, but this is **not recommended** and should only be used for development purposes. Values are never cleared from the memory when using in-memory storage, resulting in leaks everywhere. Keys are not timed out either, nor are they saved in-between runs, so really only use that when you want to test or develop on EpiLink.
 
@@ -119,6 +162,8 @@ server:
   proxyType: None # or XForwarded, or Forwarded
   logo: ~ # optional
   background: ~ # optional
+  enableAdminEndpoints: true # optional
+  unlinkCooldown: 3600 # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -144,6 +189,11 @@ server:
     * To use a logo from a URL, use `logo: { url: "https://..." }`
     * To use a logo that's stored next to the configuration file, use `logo: { file: mylogo.png }`
 * `background` *(optional, null by default)*: The background of this instance, used by the front-end. When null (or `~`), a default grey background is used. The syntax is the same as for the `logo`. 
+* `enableAdminEndpoints` *(optional, true by default)*: True to enable [administrative endpoints](Api.md#administrative-endpoints-admin), false to disable them. *(since version 0.6.0)*
+* `unlinkCooldown` *(optional, 3600 seconds (1 hour) by default)*: The amount of time users have to wait before being able to remove their identities.  *(since version 0.6.0)* This cooldown is activated or refreshed when users:
+    * Have their identity accessed
+    * Relink their identity
+    * Have a new ban added to them
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 
@@ -160,7 +210,7 @@ idProvider:
   icon: { ... }
 ```
 
-* `url`: the [authority/issuer URL](MaintainerGuide.md#discovery-process)
+* `url`: the [authority/issuer URL](IdentityProviders.md#discovery-process)
 * `name`: the name of the identity provider, only used for displaying it to the user
 * `icon`: the icon for the identity provider, only used for displaying it to the user. Follows the same format as the background/logo entry in the [server configuration](#http-server-settings). 
 
@@ -175,7 +225,7 @@ tokens:
     idpOAuthSecret: ...
 ```
 
-The first step is to set up the credential EpiLink will use to contact your [Identity Provider](IdentityProvider.md) and Discord APIs.
+The first step is to set up the credential EpiLink will use to contact your [Identity Provider](IdentityProviders.md) and Discord APIs.
 
 #### Discord
 
@@ -201,7 +251,7 @@ You should also add redirection URIs based on where the front-end is served. The
 
 ```yaml
 discord:
-  welomeUrl: ~
+  welcomeUrl: ~
   commandsPrefix: ...
   defaultLanguage: ...
   preferredLanguages: [...]
@@ -210,6 +260,7 @@ discord:
     - id: ...
       ...
     - ...
+  stickyRoles: [...] # optional
 ```
 
 * `welcomeUrl`: The URL the bot will send in the default welcome message. This should be the registration page, or any other URL which would lead the user to authenticate themselves. This URL is global (same for all servers) and is only used in the default welcome message. You can use a custom embed instead of the default one with `welcomeEmbed` in each server -- the `welcomeUrl` value is ignored for servers which use a custom welcome embed. Can also be `~` if you do not need/want the welcome URL (e.g. you do not know it from the back-end configuration, or all of your welcome messages are customized).
@@ -218,6 +269,7 @@ discord:
 * `preferredLanguages` *(optional, `[defaultLanguage]` by default)*: The languages EpiLink will prioritize over others. When sending a DM to users for the first time, these are the languages that will be used, and the languages in the list will appear above all others in the language list sent by `e!lang`. This list must contain at least the default language. *(since version 0.5.0)*
 * `roles` *(optional, empty list `[]` by default)*: A list of [custom roles specifications](#discord-custom-roles-configuration). You can omit it if you do not use custom roles.
 * `servers`: A list of [server configurations](#discord-server-configuration).
+* `stickyRoles`: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to all servers. The same option also exists for individual servers. *(since version 0.6.0)*
 
 Depending on the situation, a server may or may not be *monitored*. A *monitored* server is one where EpiLink is actively managing authentication.
 
@@ -252,12 +304,14 @@ Each server needs one entry in the "servers" field of the Discord configuration.
   enableWelcomeMessage: true
   welcomeEmbed:
     ...
+  stickyRoles: [...] # optional
 ```
 
 * `id`: The ID of the server this entry represents
 * `roles`: The [role specifications](#discord-server-role-specification) for the server.
 * `enableWelcomeMessage` *(optional, true by default)*: True if a welcome message should be sent to users who join the server but are not authenticated. False if no welcome message should be sent. The exact content of the message is determined
 * `welcomeEmbed`: The embed that is sent to users who join a Discord server but are not authenticated through this EpiLink instance. Use the [Discord embed configuration](#discord-embed-configuration) to configure it, or set it to `~` (or remove it entirely) to use the default message.
+* `stickyRoles`: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to this server only. The same option also exists for all servers. *(since version 0.6.0)*
 
 #### Discord server role specification
 
@@ -369,14 +423,16 @@ You may also want to specify `contacts` in the [server configuration](#http-serv
 
 ## Administration
 
-?> Administrative actions are only available since version 0.3.0
+?> Administrative actions are only available since version 0.3.0 and can be disabled since version 0.6.0
 
 Here is what you can do using the administrative actions provided by EpiLink: 
 
 - [Get information about a user](Api.md#get-adminuseruserid)
 - [Get a user's true identity](Api.md#post-adminidrequest)
-- [Ban a user](Api.md#post-adminbanidphash), [get previous bans](Api.md#get-adminbanidphash) and [revoke them](Api.md#post-adminbanidphashbanidrevoke)
+- [Ban a user](Api.md#post-adminbanidpidhash), [get previous bans](Api.md#get-adminbanidpidhash) and [revoke them](Api.md#post-adminbanidpidhashbanidrevoke)
 - [Generate a GDPR report about a user](Api.md#post-admingdprreporttargetid)
+
+You can also disable administrative options in the [HTTP server configuration](#http-server-settings).
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
 

@@ -10,7 +10,7 @@
 -->
 <template>
     <div class="user">
-        <img class="avatar" alt="Avatar" :src="user.avatar" />
+        <img class="avatar" alt="Avatar" :src="user.avatar || 'https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png'" />
         <div class="username">
             <span>{{ user.username | nick }}</span>
             <span class="tag">{{ user.username | tag }}</span>

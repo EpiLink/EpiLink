@@ -11,6 +11,7 @@ package org.epilink.bot.rulebook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.nio.file.Files
@@ -24,6 +25,8 @@ import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
+
+private val logger = LoggerFactory.getLogger("epilink.rulebook.loader")
 
 /**
  * Execute the string as a Rulebook script, and return the rulebook that was created form it.
@@ -77,20 +80,20 @@ suspend fun shouldUseCache(originalFile: Path): CacheAdvisory = withContext(Disp
 }
 
 @Suppress("BlockingMethodInNonBlockingContext") // withContext(Dispatchers.IO) so we don't care
-internal suspend fun CompiledScript<*>.writeScriptTo(path: Path): Unit = withContext(Dispatchers.IO) {
+internal suspend fun CompiledScript.writeScriptTo(path: Path): Unit = withContext(Dispatchers.IO) {
     ObjectOutputStream(Files.newOutputStream(path)).use { out ->
         out.writeObject(this@writeScriptTo)
     }
 }
 
 @Suppress("BlockingMethodInNonBlockingContext") // withContext(Dispatchers.IO) so we don't care
-internal suspend fun readScriptFrom(path: Path): CompiledScript<*> = withContext(Dispatchers.IO) {
+internal suspend fun readScriptFrom(path: Path): CompiledScript = withContext(Dispatchers.IO) {
     ObjectInputStream(Files.newInputStream(path)).use { ins ->
-        ins.readObject() as KJvmCompiledScript<*>
+        ins.readObject() as KJvmCompiledScript
     }
 }
 
-internal suspend fun compileRules(source: SourceCode): CompiledScript<*> = withContext(Dispatchers.Default) {
+internal suspend fun compileRules(source: SourceCode): CompiledScript = withContext(Dispatchers.Default) {
     val compileConfig = createJvmCompilationConfigurationFromTemplate<RulebookScript> {
         jvm {
             dependenciesFromCurrentContext(wholeClasspath = true)
@@ -104,14 +107,18 @@ internal suspend fun compileRules(source: SourceCode): CompiledScript<*> = withC
     }
 }
 
-internal suspend fun evaluateRules(from: CompiledScript<*>): Rulebook {
+internal suspend fun evaluateRules(from: CompiledScript): Rulebook {
     val builder = RulebookBuilder()
     val evalConfig = createJvmEvaluationConfigurationFromTemplate<RulebookScript> {
         implicitReceivers(builder)
     }
-    BasicJvmScriptingHost().evaluator(from, evalConfig).onFailure {
+    val returned = BasicJvmScriptingHost().evaluator(from, evalConfig).onFailure {
         it.handleFailure()
+    }.valueOrThrow().returnValue
+    if (returned is ResultValue.Error) {
+        returned.handleFailure()
     }
+
     return builder.buildRulebook()
 }
 
@@ -124,6 +131,11 @@ private fun ResultWithDiagnostics<*>.handleFailure(): Nothing {
         report.exception?.printStackTrace()
     }
     error("Failed to load rulebook")
+}
+
+private fun ResultValue.Error.handleFailure(): Nothing {
+    logger.error("Error on rulebook execution", this.error)
+    error("Rulebook execution failed with an exception")
 }
 
 /**

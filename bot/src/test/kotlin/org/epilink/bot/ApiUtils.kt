@@ -22,10 +22,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
-import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.db.LinkIdManager
-import org.epilink.bot.db.LinkUser
-import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
@@ -79,6 +76,10 @@ class DummyCacheClient(private val sessionStorageProvider: () -> SessionStorage)
     }
 
     override fun newSessionStorage(prefix: String): SessionStorage = sessionStorageProvider()
+
+    override fun newUnlinkCooldownStorage(prefix: String): UnlinkCooldownStorage {
+        error("Not supported")
+    }
 }
 
 // Not strictly necessary, but we require SimplifiedSessionStorage objects in tests

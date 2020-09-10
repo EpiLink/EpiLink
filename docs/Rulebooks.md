@@ -44,7 +44,7 @@ The validation takes this form:
 
 ```kotlin
 emailValidator { email ->
-    ...
+    // ...
 }
 ```
 

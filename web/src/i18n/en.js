@@ -137,7 +137,7 @@ export default {
             erj: 'This e-mail address was rejected. Are you sure you are using the correct {provider} account?',
             dae: 'This Discord account already exists.',
             cba: 'This {provider} account is banned (reason: {reason})',
-            ala: 'This {provider} account is already linked to another account'
+            ala: 'This {provider} account is already linked to another account. If an administrator asks you, give them this identifier: {idpIdHashHex}.'
         },
         reg: {
             msh: 'Missing session header.',
@@ -152,6 +152,7 @@ export default {
             '110': 'The identity of this account is already registered in the database',
             '111': 'The identity of this account already does not exist in the database',
             '112': 'This account\'s identity does not match the new one',
+            '113': 'You cannot remove your identity at this time. Please wait for a few hours and try again.',
             '201': 'Something went wrong with a Discord API call',
             '202': 'Something went wrong with a {provider} API call',
             '300': 'You need authentication to be able to access this resource',

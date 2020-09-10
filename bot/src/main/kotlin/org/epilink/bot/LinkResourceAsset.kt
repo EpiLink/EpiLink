@@ -88,7 +88,11 @@ suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): Res
     if (asset.file != null) {
         if (asset.url != null) error("Cannot define both a file and a url for the $name asset")
         return ResourceAsset.File(
-            withContext(Dispatchers.IO) { Files.readAllBytes(root.resolve(asset.file)) },
+            withContext(Dispatchers.IO) {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                // Blocking here is fine
+                Files.readAllBytes(root.resolve(asset.file))
+            },
             asset.contentType?.let { ContentType.parse(it) })
     }
     if (asset.url != null)

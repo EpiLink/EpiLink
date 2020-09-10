@@ -26,7 +26,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class DiscordRoleManagerTest : KoinBaseTest(
+class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
+    LinkRoleManager::class,
     module {
         single<LinkRoleManager> { LinkRoleManagerImpl() }
     }
@@ -48,9 +49,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dm = mockHere<LinkDiscordMessages> {
             every { getCouldNotJoinEmbed(any(), "There", "This is my reason") } returns mockk()
         }
-        runBlocking {
-            val rm = get<LinkRoleManager>()
-            rm.getRolesForUser("userid", mockk(), true, listOf("Hello"))
+        test {
+            assertTrue(getRolesForUser("userid", mockk(), true, listOf("Hello")).isEmpty())
         }
         coVerifyAll {
             pc.canUserJoinServers(any())
@@ -67,9 +67,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val cfg = mockHere<LinkDiscordConfig> {
             every { servers } returns listOf(mockk { every { id } returns "otherid" })
         }
-        runBlocking {
-            val rm = get<LinkRoleManager>()
-            rm.handleNewUser("guildid", "My Awesome Guild", "userid")
+        test {
+            handleNewUser("guildid", "My Awesome Guild", "userid")
         }
         coVerifyAll {
             cfg.servers
@@ -84,7 +83,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
                 LinkDiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = true,
-                    roles = mockk()
+                    roles = mockk(),
+                    stickyRoles = listOf()
                 )
             )
         }
@@ -99,9 +99,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { sendDirectMessage("jacques", mockem) } just runs
         }
-        runBlocking {
-            val rm = get<LinkRoleManager>()
-            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+        test {
+            handleNewUser("guildid", "My Awesome Guild", "jacques")
         }
         coVerifyAll {
             cfg.servers
@@ -119,7 +118,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
                 LinkDiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = false,
-                    roles = mockk()
+                    roles = mockk(),
+                    stickyRoles = listOf()
                 )
             )
         }
@@ -130,9 +130,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
         val dm = mockHere<LinkDiscordMessages> {
             every { getGreetingsEmbed(any(), "guildid", "My Awesome Guild") } returns null
         }
-        runBlocking {
-            val rm = get<LinkRoleManager>()
-            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+        test {
+            handleNewUser("guildid", "My Awesome Guild", "jacques")
         }
         coVerifyAll {
             cfg.servers
@@ -149,7 +148,8 @@ class DiscordRoleManagerTest : KoinBaseTest(
                 LinkDiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = false,
-                    roles = mockk()
+                    roles = mockk(),
+                    stickyRoles = listOf()
                 )
             )
         }
@@ -445,10 +445,14 @@ class DiscordRoleManagerTest : KoinBaseTest(
                         "eladd" to "addMe",
                         "eladd2" to "addMeToo",
                         "elrem" to "removeMe",
-                        "elrem2" to "removeMeToo"
+                        "elrem2" to "removeMeToo",
+                        "sr1" to "dontRemoveMe",
+                        "sr2" to "dontRemoveMeEither"
                     )
+                    every { stickyRoles } returns listOf("sr1")
                 }
             )
+            every { stickyRoles } returns listOf("sr2")
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
@@ -457,4 +461,6 @@ class DiscordRoleManagerTest : KoinBaseTest(
         coVerify { dcf.manageRoles("userid", "guildid", setOf("addMe", "addMeToo"), setOf("removeMe", "removeMeToo")) }
         confirmVerified(dcf)
     }
+
+
 }

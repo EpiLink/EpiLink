@@ -24,6 +24,7 @@ import io.ktor.sessions.header
 import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.UnknownError
+import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
@@ -69,16 +70,12 @@ interface LinkBackEnd {
 internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
 
     private val logger = LoggerFactory.getLogger("epilink.api")
-
     private val cacheClient: CacheClient by inject()
-
     private val registrationApi: LinkRegistrationApi by inject()
-
     private val metaApi: LinkMetaApi by inject()
-
     private val userApi: LinkUserApi by inject()
-
     private val adminApi: LinkAdminApi by inject()
+    private val wsCfg: LinkWebServerConfiguration by inject()
 
     override fun Application.installFeatures() {
         /*
@@ -115,7 +112,7 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
                     proceed()
                 }
             } catch (ex: LinkEndpointException) {
-                when(ex) {
+                when (ex) {
                     is LinkEndpointUserException -> {
                         logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
                         call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
@@ -142,7 +139,8 @@ internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
             userApi.install(this)
             registrationApi.install(this)
             metaApi.install(this)
-            adminApi.install(this)
+            if (wsCfg.enableAdminEndpoints)
+                adminApi.install(this)
         }
     }
 }

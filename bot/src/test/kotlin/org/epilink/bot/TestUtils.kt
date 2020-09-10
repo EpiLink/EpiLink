@@ -21,8 +21,11 @@ import io.ktor.server.testing.TestApplicationCall
 import io.ktor.server.testing.TestApplicationRequest
 import io.ktor.server.testing.TestApplicationResponse
 import io.ktor.server.testing.setBody
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import org.epilink.bot.config.*
+import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.koin.test.KoinTest
 import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
@@ -57,7 +60,7 @@ fun KoinTest.declareClientHandler(onlyMatchUrl: String? = null, handler: MockReq
     declare {
         HttpClient(MockEngine) {
             engine {
-                addHandler(onlyMatchUrl?.let<String, MockRequestHandler> {
+                addHandler(onlyMatchUrl?.let {
                     { request ->
                         when (request.url.fullUrl) {
                             onlyMatchUrl -> handler(request)
@@ -112,4 +115,12 @@ fun String.sha256(): ByteArray {
 fun TestApplicationRequest.setJsonBody(json: String) {
     addHeader("Content-Type", "application/json")
     setBody(json)
+}
+
+/**
+ * Mocks the default behavior for the get message: it will return the second argument (the i18n key)
+ */
+fun LinkDiscordMessagesI18n.defaultMock() {
+    val keySlot = slot<String>()
+    every { get(any(), capture(keySlot)) } answers { keySlot.captured }
 }

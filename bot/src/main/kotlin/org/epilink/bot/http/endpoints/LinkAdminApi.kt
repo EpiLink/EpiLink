@@ -17,10 +17,7 @@ import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.http.content.TextContent
 import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.routing.route
+import io.ktor.routing.*
 import org.epilink.bot.StandardErrorCodes.*
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
@@ -43,6 +40,8 @@ interface LinkAdminApi {
      */
     fun install(route: Route)
 }
+
+private val hexCharacters = setOf('a', 'b', 'c', 'd', 'e', 'f', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0')
 
 internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val sessionChecks: LinkSessionChecks by inject()
@@ -93,22 +92,36 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
             }
         }
 
-        @ApiEndpoint("GET /api/v1/admin/user/{targetId}")
-        @OptIn(UsesTrueIdentity::class)
-        get("user/{targetId}") {
-            val targetId = call.parameters["targetId"]!!
-            val user = dbf.getUser(targetId)
-            if (user == null) {
-                call.respond(NotFound, TargetUserDoesNotExist.toResponse())
-            } else {
-                val identifiable = dbf.isUserIdentifiable(user)
-                val info = RegisteredUserInfo(
-                    targetId,
-                    user.idpIdHash.encodeUrlSafeBase64(),
-                    user.creationDate.toString(),
-                    identifiable
-                )
-                call.respond(ApiSuccessResponse.of(info))
+        route("user/{targetId}") {
+            @ApiEndpoint("GET /api/v1/admin/user/{targetId}")
+            @OptIn(UsesTrueIdentity::class)
+            get {
+                val targetId = call.parameters["targetId"]!!
+                val user = dbf.getUser(targetId)
+                if (user == null) {
+                    call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+                } else {
+                    val identifiable = dbf.isUserIdentifiable(user)
+                    val info = RegisteredUserInfo(
+                        targetId,
+                        user.idpIdHash.encodeUrlSafeBase64(),
+                        user.creationDate.toString(),
+                        identifiable
+                    )
+                    call.respond(ApiSuccessResponse.of(info))
+                }
+            }
+
+            @ApiEndpoint("DELETE /api/v1/admin/user/{targetId}")
+            delete {
+                val targetId = call.parameters["targetId"]!!
+                val user = dbf.getUser(targetId)
+                if (user == null) {
+                    call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+                } else {
+                    dbf.deleteUser(user)
+                    call.respond(apiSuccess("User deleted", "adm.ud"))
+                }
             }
         }
 
@@ -156,7 +169,10 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                             ban == null ->
                                 call.respond(NotFound, InvalidId.toResponse("No ban with given ID found.", "adm.nbi"))
                             !ban.idpIdHash.contentEquals(idpHashBytes) ->
-                                call.respond(NotFound, InvalidId.toResponse("Identity Provider ID hash does not correspond.", "adm.hnc"))
+                                call.respond(
+                                    NotFound,
+                                    InvalidId.toResponse("Identity Provider ID hash does not correspond.", "adm.hnc")
+                                )
                             else ->
                                 call.respond(OK, ApiSuccessResponse.of(ban.toBanInfo()))
                         }
@@ -192,6 +208,18 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                 )
                 val report = gdprReport.getFullReport(target, adminId)
                 call.respond(TextContent(report, ContentType.Text.Markdown, OK))
+            }
+        }
+
+        route("search") {
+            get("hash16/{searchTerm}") {
+                val targetId = call.parameters["searchTerm"]!!.toLowerCase()
+                if (targetId.any { it !in hexCharacters}) {
+                    call.respond(BadRequest, InvalidAdminRequest.toResponse("Invalid hex string", "adm.ihs"))
+                } else {
+                    val results = dbf.searchUserByPartialHash(targetId).map { it.discordId }
+                    call.respond(OK, ApiSuccessResponse.of(data = mapOf("results" to results)))
+                }
             }
         }
     }

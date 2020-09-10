@@ -8,13 +8,12 @@
  */
 package org.epilink.bot.misc
 
+import discord4j.core.spec.EmbedCreateSpec
+import discord4j.discordjson.json.EmbedData
 import discord4j.rest.util.Color
 import org.epilink.bot.LinkException
-import org.epilink.bot.discord.DiscordEmbed
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNull
+import org.epilink.bot.discord.*
+import kotlin.test.*
 
 class DiscordEmbedTest {
     @Test
@@ -41,4 +40,77 @@ class DiscordEmbedTest {
     fun `Test embed invalid named color`() {
         assertFailsWith<LinkException> { DiscordEmbed(color = "nope").d4jColor }
     }
+
+    @Test
+    fun `Test embed creation - title`() {
+        embedFromAndTest(DiscordEmbed(title = "a"), "a") { title().get() }
+    }
+
+    @Test
+    fun `Test embed creation - description`() {
+        embedFromAndTest(DiscordEmbed(description = "a"), "a") { description().get() }
+    }
+
+    @Test
+    fun `Test embed creation - url`() {
+        embedFromAndTest(DiscordEmbed(url = "a"), "a") { url().get() }
+    }
+
+    @Test
+    fun `Test embed creation - color`() {
+        embedFromAndTest(DiscordEmbed(color = "#FFFFFF"), 0xFFFFFF) { color().get() }
+    }
+
+    @Test
+    fun `Test embed creation - footer`() {
+        embedFromAndTest(DiscordEmbed(footer = DiscordEmbedFooter("a", "b")), "a" to "b") {
+            footer().get().text() to footer().get().iconUrl().get()
+        }
+    }
+
+    @Test
+    fun `Test embed creation - image`() {
+        embedFromAndTest(DiscordEmbed(image = "a"), "a") { image().get().url().get() }
+    }
+
+    @Test
+    fun `Test embed creation - thumbnail`() {
+        embedFromAndTest(DiscordEmbed(thumbnail = "a"), "a") { thumbnail().get().url().get() }
+    }
+
+    @Test
+    fun `Test embed creation - author`() {
+        embedFromAndTest(DiscordEmbed(author = DiscordEmbedAuthor("a", "b", "c")), "a" to "b" to "c") {
+            author().get().name().get() to author().get().url().get() to author().get().iconUrl().get()
+        }
+    }
+
+    @Test
+    fun `Test embed creation - fields`() {
+        val embed = DiscordEmbed(
+            fields = listOf(
+                DiscordEmbedField(name = "First field", value = "abcd", true),
+                DiscordEmbedField(name = "Second field", value = "efgh", false)
+            )
+        )
+        EmbedCreateSpec().apply { from(embed) }.asRequest().let {
+            val fields = it.fields().get()
+            assertEquals(2, fields.size)
+            // Field 1
+            val field1 = fields[0]
+            assertTrue(field1.inline().get())
+            assertEquals("First field", field1.name())
+            assertEquals("abcd", field1.value())
+            val field2 = fields[1]
+            assertFalse(field2.inline().get())
+            assertEquals("Second field", field2.name())
+            assertEquals("efgh", field2.value())
+        }
+    }
+
+    private fun <T> embedFromAndTest(embed: DiscordEmbed, expected: T, actual: EmbedData.() -> T) =
+        EmbedCreateSpec().apply { from(embed) }.asRequest().let {
+            assertEquals(expected, actual(it))
+        }
+
 }

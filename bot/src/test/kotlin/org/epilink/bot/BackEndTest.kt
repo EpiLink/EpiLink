@@ -24,6 +24,7 @@ import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.Sessions
 import io.mockk.*
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
+import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.endpoints.LinkAdminApi
@@ -35,7 +36,8 @@ import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.*
 
-class BackEndTest : KoinBaseTest(
+class BackEndTest : KoinBaseTest<Unit>(
+    Unit::class,
     module {
         single<CacheClient> { MemoryCacheClient() }
     }
@@ -142,7 +144,16 @@ class BackEndTest : KoinBaseTest(
     }
 
     @Test
-    fun `Test module installation`() {
+    fun `Test module installation, admin enabled`() {
+        testModuleInstallation(true)
+    }
+
+    @Test
+    fun `Test module installation, admin disabled`() {
+        testModuleInstallation(false)
+    }
+
+    private fun testModuleInstallation(enableAdminEndpoints: Boolean) {
         val back = declare<LinkBackEnd> {
             spyk(LinkBackEndImpl()) {
                 every { any<Application>().installFeatures() } just runs
@@ -152,7 +163,10 @@ class BackEndTest : KoinBaseTest(
         val user = mockHere<LinkUserApi> { every { install(any()) } just runs }
         val meta = mockHere<LinkMetaApi> { every { install(any()) } just runs }
         val register = mockHere<LinkRegistrationApi> { every { install(any()) } just runs }
-        val admin = mockHere<LinkAdminApi> { every { install(any()) } just runs }
+        val admin = if (enableAdminEndpoints) {
+            mockHere<LinkAdminApi> { every { install(any()) } just runs }
+        } else null
+        mockHere<LinkWebServerConfiguration> { every { this@mockHere.enableAdminEndpoints } returns enableAdminEndpoints }
         withTestApplication({
             with(get<LinkBackEnd>()) { epilinkApiModule() }
         }) { }
@@ -165,7 +179,8 @@ class BackEndTest : KoinBaseTest(
             user.install(any())
             meta.install(any())
             register.install(any())
-            admin.install(any())
+            if (enableAdminEndpoints)
+                admin!!.install(any())
         }
     }
 }

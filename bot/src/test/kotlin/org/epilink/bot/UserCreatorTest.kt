@@ -17,7 +17,8 @@ import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.*
 
-class UserCreatorTest : KoinBaseTest(
+class UserCreatorTest : KoinBaseTest<LinkUserCreator>(
+    LinkUserCreator::class,
     module {
         single<LinkUserCreator> { LinkUserCreatorImpl() }
     }
@@ -77,9 +78,4 @@ class UserCreatorTest : KoinBaseTest(
         }
         coVerify { pc.isDiscordUserAllowedToCreateAccount("discordid") }
     }
-
-    private fun <R> test(block: suspend LinkUserCreator.() -> R) =
-        runBlocking {
-            block(get())
-        }
 }

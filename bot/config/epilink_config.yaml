@@ -54,6 +54,13 @@ server:
     - name: My Footer URL
       url: "https://example.com"
 
+  # True to enable /api/v1/admin endpoints, false to disable them. Optional, true by default.
+  #enableAdminEndpoints: true
+
+  # Cooldown between an identity-sensitive event (e.g. ban, adding the identity, identity access) and users being able
+  # to remove their identity in seconds. Optional, 3600 seconds (1 hour) by default
+  #unlinkCooldown: 3600
+
 # Name and location of the EpiLink SQLite database
 db: epilink.db
 
@@ -140,11 +147,17 @@ discord:
   # The default language that will be used if users did not define a role for themselves
   #defaultLanguage: en
 
-  # The list of preferred languages that will be shown before all others in EpiLink's language-related messages. Must include the default language.
+  # The list of preferred languages that will be shown before all others in EpiLink's language-related messages. Must
+  # include the default language.
   #preferredLanguages: [en]
 
   # See the documentation on custom roles for more details on this option. You can omit it if you do not need it.
   roles: []
+
+  # List of EpiLink roles that the bot can add but will NOT remove (they "stick" to users), even if it is determined
+  # that they should not be there. This one applies to all servers, you can also use this option on individual servers.
+  # Optional, empty list by default.
+  #stickyRoles: []
 
   # The list of servers where EpiLink should do its magic. Note that you must add the bot to these servers in order
   # for all of this to work (an invite link is sent in the logs when starting EpiLink so you can add the bot to your
@@ -162,6 +175,8 @@ discord:
       # True if the server should send a message to unknown users who join the server, false otherwise.
       # (optional, true by default)
       enableWelcomeMessage: true
+      # Same as the stickyRoles in discord:, but applies only to this server. Optional, empty list by default.
+      #stickyRoles: []
       # The embed to be displayed when the user first joins. If null, displays a default message.
       # (nullable, optional with null by default). You can remove this entire section if you don't need a custom embed.
       #welcomeEmbed:

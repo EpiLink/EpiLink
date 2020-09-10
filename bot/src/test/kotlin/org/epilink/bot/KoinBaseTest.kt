@@ -8,17 +8,23 @@
  */
 package org.epilink.bot
 
+import kotlinx.coroutines.runBlocking
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
 import org.koin.test.KoinTest
+import org.koin.test.get
+import kotlin.reflect.KClass
 import kotlin.test.*
 
 /**
  * A base for all classes that run tests that use Koin. This class (and its subclasses) automatically start and stop
  * Koin.
+ *
+ * Classes that do not use the [test] function can use [Unit] and `Unit::class` as the type for this class.
  */
-open class KoinBaseTest(
+open class KoinBaseTest<T : Any>(
+    private val kclass: KClass<T>,
     private val module: Module
 ) : KoinTest {
 
@@ -48,4 +54,6 @@ open class KoinBaseTest(
         stopKoin()
     }
 
+    fun <R> test(block: suspend T.() -> R): R =
+        runBlocking { block(getKoin().get(kclass)) }
 }

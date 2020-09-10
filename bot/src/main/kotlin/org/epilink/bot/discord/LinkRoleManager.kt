@@ -167,8 +167,10 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
             updateRolesOnGuilds(memberId, listOf(guildId), true)
     }
 
+    // TODO test this
     override fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean): Job =
         scope.launch {
+            logger.info("Invalidating roles for $discordId")
             ruleMediator.invalidateCache(discordId)
             updateRolesOnGuilds(discordId, facade.getGuilds(), tellUserIfFailed)
         }
@@ -216,11 +218,13 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         logger.debug { "Updating roles for $discordId in $guildId: they should have ${roles.joinToString(", ")}" }
         val serverConfig = config.getConfigForGuild(guildId)
         val toObtain = roles.mapNotNull { serverConfig.roles[it] }.toSet()
-        val toRemove = serverConfig.roles.values.toSet().minus(toObtain)
+        val toRemove = serverConfig.roles
+            .filterKeys { it !in serverConfig.stickyRoles && it !in config.stickyRoles}
+            .values - toObtain
         logger.debug {
             "For $discordId in $guildId: remove ${toRemove.joinToString(", ")} and add ${toObtain.joinToString(", ")}"
         }
-        facade.manageRoles(discordId, guildId, toObtain, toRemove)
+        facade.manageRoles(discordId, guildId, toObtain, toRemove.toSet())
     }
 
     @OptIn(UsesTrueIdentity::class)

@@ -64,7 +64,7 @@ fun LinkLegalConfiguration.load(cfg: Path): LinkLegalTexts {
  *
  * @property contentType The content type of the enclosed text
  */
-sealed class LegalText(@Suppress("MemberVisibilityCanBePrivate") val contentType: ContentType) {
+sealed class LegalText(val contentType: ContentType) {
     /**
      * HTML formatted text available as a string
      *
