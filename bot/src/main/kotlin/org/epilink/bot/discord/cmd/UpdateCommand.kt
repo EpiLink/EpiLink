@@ -90,7 +90,9 @@ class UpdateCommand : Command, KoinComponent {
             part.map {
                 async { roleManager.invalidateAllRoles(it, false).join() }
             }.forEach {
-                it.await()
+                try { it.await() } catch(e: Exception) {
+                    logger.error("Exception caught during role update for user $it", e)
+                }
             }
         }
     }
