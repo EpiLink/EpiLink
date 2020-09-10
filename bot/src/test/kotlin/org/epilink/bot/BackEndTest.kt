@@ -166,7 +166,7 @@ class BackEndTest : KoinBaseTest<Unit>(
         val admin = if (enableAdminEndpoints) {
             mockHere<LinkAdminApi> { every { install(any()) } just runs }
         } else null
-        val wsCfg = mockHere<LinkWebServerConfiguration> { every { this@mockHere.enableAdminEndpoints } returns enableAdminEndpoints }
+        mockHere<LinkWebServerConfiguration> { every { this@mockHere.enableAdminEndpoints } returns enableAdminEndpoints }
         withTestApplication({
             with(get<LinkBackEnd>()) { epilinkApiModule() }
         }) { }
