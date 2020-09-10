@@ -11,4 +11,4 @@
 
 [Docs](#epilink) [GitHub repository](https://github.com/EpiLink/EpiLink) [Discord server](https://discord.gg/CpHmSUt)
 
-![](/bg.jpg)
+![](bg.jpg)
