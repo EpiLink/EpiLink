@@ -162,5 +162,13 @@ fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
             "The frontendUrl value in the server config must have a trailing slash (add a / at the end of your URL)"
         )
     }
+    reports += ConfigInfo("Admin endpoints (/api/v1/admin/...) are ${if (enableAdminEndpoints) "enabled" else "disabled"}")
+    when(rateLimitingProfile) {
+        RateLimitingProfile.Lenient ->
+            reports += ConfigWarning("Rate limiting profile set to Lenient, which may not be strict enough to protect EpiLink from DoS attacks.")
+        RateLimitingProfile.Disabled ->
+            reports += ConfigError(false, "Rate limiting profile set to Disabled. Spam protection is disabled, this leaves your server open for abuse!")
+        else -> { /* nothing to report */ }
+    }
     return reports
 }
