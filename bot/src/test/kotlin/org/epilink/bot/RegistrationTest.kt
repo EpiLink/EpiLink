@@ -17,6 +17,8 @@ import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.mockk.*
+import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
@@ -37,6 +39,9 @@ class RegistrationTest : KoinBaseTest<Unit>(
         single<LinkBackEnd> { LinkBackEndImpl() }
         single<LinkRegistrationApi> { LinkRegistrationApiImpl() }
         single<CacheClient> { MemoryCacheClient() }
+        single<LinkWebServerConfiguration> {
+            mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
+        }
     }
 ) {
     @Test
@@ -73,7 +78,9 @@ class RegistrationTest : KoinBaseTest<Unit>(
             coEvery { getUserIdentityInfo("fake mac", "fake mur") } returns UserIdentityInfo("fakeguid", "fakemail")
         }
         mockHere<LinkPermissionChecks> {
-            coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Disallowed("Cheh dans ta tronche", "ch.eh")
+            coEvery {
+                isIdentityProviderUserAllowedToCreateAccount(any(), any())
+            } returns Disallowed("Cheh dans ta tronche", "ch.eh")
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/idProvider") {

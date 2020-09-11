@@ -164,6 +164,7 @@ server:
   background: ~ # optional
   enableAdminEndpoints: true # optional
   unlinkCooldown: 3600 # optional
+  rateLimitingProfile: Harsh # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -194,6 +195,11 @@ server:
     * Have their identity accessed
     * Relink their identity
     * Have a new ban added to them
+* `rateLimitingProfile` *(optional, `Harsh` by default)*: The profile that should be used for rate-limiting (which partially protects against spam and abuse). *(since version 0.6.1)* Available options are, from weakest to strongest:
+    * `Disabled`: Disabled rate-limiting entirely. Not recommended.
+    * `Lenient`: The most forgiving profile, good for high-usage scenarios.
+    * `Standard`: A moderate rate-limiting profile. Recommended for instances which host a lot of users (5000+) on the regular.
+    * `Harsh`: The strictes rate-limiting profile. Recommended for smaller instances when in low-usage scenarios. Should be scaled up to `Standard` or `Lenient` if necessary.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 

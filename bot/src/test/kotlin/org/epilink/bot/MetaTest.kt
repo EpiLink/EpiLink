@@ -18,10 +18,8 @@ import io.ktor.server.testing.contentType
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.mockk.every
-import org.epilink.bot.config.LinkContactInformation
-import org.epilink.bot.config.LinkFooterUrl
-import org.epilink.bot.config.LinkIdProviderConfiguration
-import org.epilink.bot.config.LinkWebServerConfiguration
+import io.mockk.mockk
+import org.epilink.bot.config.*
 import org.epilink.bot.http.LinkBackEnd
 import org.epilink.bot.http.LinkBackEndImpl
 import org.epilink.bot.http.LinkDiscordBackEnd
@@ -39,6 +37,9 @@ class MetaTest : KoinBaseTest<Unit>(
         single<LinkMetaApi> { LinkMetaApiImpl() }
         single<LinkBackEnd> { LinkBackEndImpl() }
         single<CacheClient> { MemoryCacheClient() }
+        single<LinkWebServerConfiguration> {
+            mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
+        }
     }
 ) {
     @Test
@@ -57,7 +58,7 @@ class MetaTest : KoinBaseTest<Unit>(
             every { idPrompt } returns "My id prompt text is the best"
         }
         mockHere<LinkIdProviderConfiguration> { every { name } returns "the_name" }
-        mockHere<LinkWebServerConfiguration> {
+        softMockHere<LinkWebServerConfiguration> {
             every { footers } returns listOf(
                 LinkFooterUrl("Hello", "https://hello"),
                 LinkFooterUrl("Heeeey", "/macarena")

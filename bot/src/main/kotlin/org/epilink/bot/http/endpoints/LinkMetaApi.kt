@@ -8,19 +8,12 @@
  */
 package org.epilink.bot.http.endpoints
 
-import guru.zoroark.ratelimit.rateLimited
-import io.ktor.application.call
-import io.ktor.http.ContentType
+import io.ktor.application.*
+import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.http.content.ByteArrayContent
-import io.ktor.http.content.OutgoingContent
-import io.ktor.http.content.TextContent
-import io.ktor.response.respond
-import io.ktor.response.respondBytes
-import io.ktor.response.respondRedirect
-import io.ktor.routing.Route
-import io.ktor.routing.get
-import io.ktor.routing.route
+import io.ktor.http.content.*
+import io.ktor.response.*
+import io.ktor.routing.*
 import org.epilink.bot.*
 import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkWebServerConfiguration
@@ -32,7 +25,6 @@ import org.epilink.bot.http.data.InstanceInformation
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
-import java.time.Duration
 
 /**
  * Interface for the /meta API route
@@ -59,27 +51,25 @@ internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
         with(route) { meta() }
 
     private fun Route.meta() {
-        route("/api/v1/meta") {
-            rateLimited(limit = 50, timeBeforeReset = Duration.ofMinutes(1)) {
-                @ApiEndpoint("GET /api/v1/meta/info")
-                get("info") {
-                    call.respond(ApiSuccessResponse.of(getInstanceInformation()))
-                }
-
-                @ApiEndpoint("GET /api/v1/meta/tos")
-                get("tos") {
-                    call.respond(legal.termsOfServices.asResponseContent())
-                }
-
-                @ApiEndpoint("GET /api/v1/meta/privacy")
-                get("privacy") {
-                    call.respond(legal.privacyPolicy.asResponseContent())
-                }
-
-                serveAsset("logo", assets.logo)
-                serveAsset("background", assets.background)
-                serveAsset("idpLogo", assets.idpLogo)
+        limitedRoute("/api/v1/meta", wsCfg.rateLimitingProfile.metaApi) {
+            @ApiEndpoint("GET /api/v1/meta/info")
+            get("info") {
+                call.respond(ApiSuccessResponse.of(getInstanceInformation()))
             }
+
+            @ApiEndpoint("GET /api/v1/meta/tos")
+            get("tos") {
+                call.respond(legal.termsOfServices.asResponseContent())
+            }
+
+            @ApiEndpoint("GET /api/v1/meta/privacy")
+            get("privacy") {
+                call.respond(legal.privacyPolicy.asResponseContent())
+            }
+
+            serveAsset("logo", assets.logo)
+            serveAsset("background", assets.background)
+            serveAsset("idpLogo", assets.idpLogo)
         }
     }
 

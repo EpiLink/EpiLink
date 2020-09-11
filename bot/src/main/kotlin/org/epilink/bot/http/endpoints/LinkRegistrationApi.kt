@@ -8,17 +8,15 @@
  */
 package org.epilink.bot.http.endpoints
 
-import guru.zoroark.ratelimit.rateLimited
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
+import io.ktor.application.*
 import io.ktor.features.ContentTransformationException
-import io.ktor.http.HttpStatusCode
-import io.ktor.request.header
-import io.ktor.request.receive
-import io.ktor.response.respond
+import io.ktor.http.*
+import io.ktor.request.*
+import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.sessions.*
 import org.epilink.bot.StandardErrorCodes.*
+import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkPermissionChecks
@@ -35,7 +33,6 @@ import org.epilink.bot.toResponse
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import org.slf4j.LoggerFactory
-import java.time.Duration
 
 /**
  * Route for the registration endpoints
@@ -57,91 +54,89 @@ internal class LinkRegistrationApiImpl : LinkRegistrationApi, KoinComponent {
     private val userCreator: LinkUserCreator by inject()
     private val perms: LinkPermissionChecks by inject()
     private val dbFacade: LinkDatabaseFacade by inject()
+    private val wsCfg: LinkWebServerConfiguration by inject()
 
     override fun install(route: Route) {
         with(route) { registration() }
     }
 
-    private fun Route.registration() = route("/api/v1/register") {
-        rateLimited(limit = 10, timeBeforeReset = Duration.ofMinutes(1)) {
-            @ApiEndpoint("GET /api/v1/register/info")
-            get("info") {
-                val session = call.sessions.getOrSet { RegisterSession() }
-                call.respondRegistrationStatus(session)
-            }
+    private fun Route.registration() = limitedRoute("/api/v1/register", wsCfg.rateLimitingProfile.registrationApi) {
+        @ApiEndpoint("GET /api/v1/register/info")
+        get("info") {
+            val session = call.sessions.getOrSet { RegisterSession() }
+            call.respondRegistrationStatus(session)
+        }
 
-            @ApiEndpoint("DELETE /api/v1/register")
-            delete {
-                logger.debug { "Clearing registry session ${call.request.header("RegistrationSessionId")}" }
-                call.sessions.clear<RegisterSession>()
-                call.respond(HttpStatusCode.OK)
-            }
+        @ApiEndpoint("DELETE /api/v1/register")
+        delete {
+            logger.debug { "Clearing registry session ${call.request.header("RegistrationSessionId")}" }
+            call.sessions.clear<RegisterSession>()
+            call.respond(HttpStatusCode.OK)
+        }
 
-            @ApiEndpoint("POST /api/v1/register")
-            post {
-                with(call.sessions.get<RegisterSession>()) {
-                    if (this == null) {
-                        logger.debug {
-                            "Missing/unknown session header for call from reg. session ${call.request.header("RegistrationSessionId")}"
-                        }
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            IncompleteRegistrationRequest.toResponse(
-                                "Missing session header",
-                                "reg.msh"
-                            )
+        @ApiEndpoint("POST /api/v1/register")
+        post {
+            with(call.sessions.get<RegisterSession>()) {
+                if (this == null) {
+                    logger.debug {
+                        "Missing/unknown session header for call from reg. session ${call.request.header("RegistrationSessionId")}"
+                    }
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        IncompleteRegistrationRequest.toResponse(
+                            "Missing session header",
+                            "reg.msh"
                         )
-                    } else if (discordId == null || discordUsername == null || email == null || idpId == null) {
-                        logger.debug {
-                            """
+                    )
+                } else if (discordId == null || discordUsername == null || email == null || idpId == null) {
+                    logger.debug {
+                        """
                             Incomplete registration process for session ${call.request.header("RegistrationSessionId")}
                             discordId = $discordId
                             discordUsername = $discordUsername
                             email = $email
                             idpId = $idpId
                             """.trimIndent()
-                        }
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            IncompleteRegistrationRequest.toResponse()
-                        )
-                    } else {
-                        val regSessionId = call.request.header("RegistrationSessionId")
-                        logger.debug { "Completing registration session for $regSessionId" }
-                        val options: AdditionalRegistrationOptions =
-                            call.receiveCatching() ?: return@post
-                        val u = userCreator.createUser(discordId, idpId, email, options.keepIdentity)
-                        roleManager.invalidateAllRoles(u.discordId, true)
-                        with(userApi) { loginAs(call, u, discordUsername, discordAvatarUrl) }
-                        logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
-                        call.respond(
-                            HttpStatusCode.Created,
-                            apiSuccess("Account created, logged in.", "reg.acc")
-                        )
                     }
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        IncompleteRegistrationRequest.toResponse()
+                    )
+                } else {
+                    val regSessionId = call.request.header("RegistrationSessionId")
+                    logger.debug { "Completing registration session for $regSessionId" }
+                    val options: AdditionalRegistrationOptions =
+                        call.receiveCatching() ?: return@post
+                    val u = userCreator.createUser(discordId, idpId, email, options.keepIdentity)
+                    roleManager.invalidateAllRoles(u.discordId, true)
+                    with(userApi) { loginAs(call, u, discordUsername, discordAvatarUrl) }
+                    logger.debug { "Completed registration session. $regSessionId logged in and reg session cleared." }
+                    call.respond(
+                        HttpStatusCode.Created,
+                        apiSuccess("Account created, logged in.", "reg.acc")
+                    )
                 }
             }
+        }
 
-            @ApiEndpoint("POST /register/authcode/discord")
-            @ApiEndpoint("POST /register/authcode/idProvider")
-            post("authcode/{service}") {
-                when (val service = call.parameters["service"]) {
-                    null -> error("Invalid service") // Should not happen
-                    "discord" -> processDiscordAuthCode(call, call.receive())
-                    "idProvider" -> processIdProviderAuthCode(call, call.receive())
-                    else -> {
-                        logger.debug { "Attempted to register under unknown service $service" }
-                        call.respond(
-                            HttpStatusCode.NotFound,
-                            UnknownService.toResponse(
-                                "Invalid service: $service",
-                                "reg.isv",
-                                mapOf("service" to service)
-                            )
+        @ApiEndpoint("POST /register/authcode/discord")
+        @ApiEndpoint("POST /register/authcode/idProvider")
+        post("authcode/{service}") {
+            when (val service = call.parameters["service"]) {
+                null -> error("Invalid service") // Should not happen
+                "discord" -> processDiscordAuthCode(call, call.receive())
+                "idProvider" -> processIdProviderAuthCode(call, call.receive())
+                else -> {
+                    logger.debug { "Attempted to register under unknown service $service" }
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        UnknownService.toResponse(
+                            "Invalid service: $service",
+                            "reg.isv",
+                            mapOf("service" to service)
                         )
-                    }
+                    )
                 }
-
             }
         }
     }

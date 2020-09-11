@@ -20,6 +20,8 @@ import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
+import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
 import org.epilink.bot.discord.LinkRoleManager
@@ -63,6 +65,9 @@ class AdminTest : KoinBaseTest<Unit>(
                     true
                 }
             }
+        }
+        single<LinkWebServerConfiguration> {
+            mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
         }
     }
 ) {

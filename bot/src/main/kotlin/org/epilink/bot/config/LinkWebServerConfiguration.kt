@@ -51,7 +51,11 @@ data class LinkWebServerConfiguration(
     /**
      * Number of seconds a user needs to wait after a relink (or a link-sensitive event like a ban) in order to unlink
      */
-    val unlinkCooldown: Long = 3600L
+    val unlinkCooldown: Long = 3600L,
+    /**
+     * Rate limiting profile
+     */
+    val rateLimitingProfile: RateLimitingProfile = RateLimitingProfile.Harsh
 )
 
 /**
@@ -72,6 +76,49 @@ enum class ProxyType {
      * Proxy used with the standard Forwarded header
      */
     Forwarded
+}
+
+/**
+ * Represents the calls/minutes allowed under different rate limiting profiles
+ */
+@Suppress("unused")
+enum class RateLimitingProfile(
+    /**
+     * Calls/minutes for the meta API. Applies to all users per IP address
+     */
+    val metaApi: Int,
+    /**
+     * Calls/minutes for the user API. Applies to individual users per IP address.
+     */
+    val userApi: Int,
+    /**
+     * Calls/minutes for the registration API. Applies to all users per IP address.
+     */
+    val registrationApi: Int,
+    /**
+     * Calls/minutes for the administration API. Applies to all users per IP address.
+     */
+    val adminApi: Int
+) {
+    /**
+     * Disables rate limiting entirely
+     */
+    Disabled(-1, -1, -1, -1),
+
+    /**
+     * Lenient profile for high-usage periods.
+     */
+    Lenient(300, 30, 150, 30),
+
+    /**
+     * Standard rate limiting profile, recommended for instances which host a lot of users on the regular.
+     */
+    Standard(100, 20, 100, 30),
+
+    /**
+     * Harsh rate limiting profile, recommended for regular use.
+     */
+    Harsh(50, 10, 20, 30)
 }
 
 /**

@@ -18,6 +18,8 @@ The rate limiting is based on three factors (keys):
 
 Note that 429 errors *never* return API responses, they always return a JSON object with three values, `message`, `retry_after` (in seconds, not milliseconds like Discord) and `global`.
 
+?> Note that since version 0.6.1, rate limiting can be disabled, meaning that you may not receive the rate-limiting headers at all. If that is the case, you can assume that rate limiting is disabled.
+
 ## I18n
 
 Messages are always sent in plain English. Additionally, an I18n key may be given (`..._i18n`) that may be used to show a localized message, and a dictionary (`..._i18n_data`) is provided for values that should be inserted in the localized message.

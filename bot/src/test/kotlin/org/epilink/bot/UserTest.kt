@@ -19,6 +19,8 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
+import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.UsesTrueIdentity
@@ -49,6 +51,9 @@ class UserTest : KoinBaseTest<Unit>(
                     true
                 }
             }
+        }
+        single<LinkWebServerConfiguration> {
+            mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
         }
     }
 ) {
