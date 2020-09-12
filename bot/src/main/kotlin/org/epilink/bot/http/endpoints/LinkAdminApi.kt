@@ -123,7 +123,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     call.respond(NotFound, TargetUserDoesNotExist.toResponse())
                 } else {
                     dbf.deleteUser(user)
-                    roleManager.invalidateAllRoles(targetId)
+                    roleManager.invalidateAllRolesLater(targetId)
                     call.respond(apiSuccess("User deleted", "adm.ud"))
                 }
             }

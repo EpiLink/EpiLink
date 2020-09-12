@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
 import org.epilink.bot.db.UnlinkCooldownStorage
 import org.epilink.bot.discord.CacheResult
 import org.epilink.bot.discord.RuleMediator
+import org.epilink.bot.discord.RuleResult
 import org.epilink.bot.discord.StandardRoles
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.rulebook.Rule
@@ -148,7 +149,7 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
         discordName: String,
         discordDisc: String,
         identity: String?
-    ): List<String> =
+    ): RuleResult = runCatching {
         when (val cachedResult = getCachedRoles(rule, discordId)) {
             null -> {
                 logger.debug { "No cached results or cache disabled for rule $rule (ID $discordId): running rule" }
@@ -159,6 +160,7 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
                 cachedResult
             }
         }
+    }.fold({ RuleResult.Success(it) }) { RuleResult.Failure(it) }
 
     private suspend fun execAndCacheRule(
         rule: Rule,

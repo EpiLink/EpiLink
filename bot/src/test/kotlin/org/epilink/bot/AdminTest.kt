@@ -522,7 +522,7 @@ class AdminTest : KoinBaseTest<Unit>(
             coEvery { deleteUser(u) } just runs
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles("yep") } returns mockk()
+            coEvery { invalidateAllRolesLater("yep") } returns mockk()
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
@@ -535,7 +535,7 @@ class AdminTest : KoinBaseTest<Unit>(
         }
         coVerify {
             dbf.deleteUser(u)
-            rm.invalidateAllRoles("yep")
+            rm.invalidateAllRolesLater("yep")
         }
     }
 

@@ -35,7 +35,7 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
             coEvery { getUserFromIdpIdHash(any()) } returns u
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles("targetid") } returns mockk()
+            coEvery { invalidateAllRolesLater("targetid") } returns mockk()
         }
         val cd = mockHere<LinkUnlinkCooldown> {
             coEvery { refreshCooldown("targetid") } just runs
@@ -53,7 +53,7 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
         }
         coVerify {
             df.recordBan(idHash, null, "the_author", "the description")
-            rm.invalidateAllRoles("targetid")
+            rm.invalidateAllRolesLater("targetid")
             dms.sendDirectMessageLater("targetid", embed)
             cd.refreshCooldown("targetid")
         }
@@ -109,14 +109,14 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
             }
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles("discordid") } returns mockk()
+            coEvery { invalidateAllRolesLater("discordid") } returns mockk()
         }
         test {
             revokeBan(idHashStr, 12)
         }
         coVerify {
             dbf.revokeBan(12)
-            rm.invalidateAllRoles("discordid")
+            rm.invalidateAllRolesLater("discordid")
         }
     }
 }

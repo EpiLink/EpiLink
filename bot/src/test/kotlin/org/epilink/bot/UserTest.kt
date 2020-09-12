@@ -174,7 +174,7 @@ class UserTest : KoinBaseTest<Unit>(
             coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
         val rm = mockHere<LinkRoleManager> {
-            every { invalidateAllRoles("userid", true) } returns mockk()
+            every { invalidateAllRolesLater("userid", true) } returns mockk()
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false
@@ -195,7 +195,7 @@ class UserTest : KoinBaseTest<Unit>(
             }
         }
         coVerify {
-            rm.invalidateAllRoles(any(), true)
+            rm.invalidateAllRolesLater(any(), true)
             ida.relinkIdentity(any(), email, "MyMicrosoftId")
             sessionChecks.verifyUser(any())
         }
@@ -297,7 +297,7 @@ class UserTest : KoinBaseTest<Unit>(
             coEvery { deleteUserIdentity(match { it.discordId == "userid" }) } just runs
         }
         val rm = mockHere<LinkRoleManager> {
-            every { invalidateAllRoles("userid") } returns mockk()
+            every { invalidateAllRolesLater("userid") } returns mockk()
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid")
@@ -311,7 +311,7 @@ class UserTest : KoinBaseTest<Unit>(
         }
         coVerify {
             ida.deleteUserIdentity(any())
-            rm.invalidateAllRoles(any())
+            rm.invalidateAllRolesLater(any())
             sessionChecks.verifyUser(any())
         }
     }

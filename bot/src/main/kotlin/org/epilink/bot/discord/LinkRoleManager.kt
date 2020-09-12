@@ -91,7 +91,12 @@ interface LinkRoleManager {
      * @param tellUserIfFailed True if the user should be notified in case of a failure, false if such failure should
      * be silent
      */
-    fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean = false): Job
+    fun invalidateAllRolesLater(discordId: String, tellUserIfFailed: Boolean = false): Job
+
+    /**
+     * Identical to [invalidateAllRolesLater], but executes in the current coroutine instead of starting a new one.
+     */
+    suspend fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean = false)
 
     /**
      * Get the role list for a user. The user may have an EpiLink or not, the user may be banned or not.
@@ -176,12 +181,17 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     }
 
     // TODO test this
-    override fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean): Job =
+    override fun invalidateAllRolesLater(discordId: String, tellUserIfFailed: Boolean): Job =
         scope.launch {
-            logger.info("Invalidating roles for $discordId")
-            ruleMediator.invalidateCache(discordId)
-            updateRolesOnGuilds(discordId, facade.getGuilds(), tellUserIfFailed)
+            invalidateAllRoles(discordId, tellUserIfFailed)
         }
+
+    // TODO test this
+    override suspend fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean) {
+        logger.info("Invalidating roles for $discordId")
+        ruleMediator.invalidateCache(discordId)
+        updateRolesOnGuilds(discordId, facade.getGuilds(), tellUserIfFailed)
+    }
 
     override suspend fun getRulesRelevantForGuilds(
         vararg guilds: String
@@ -231,7 +241,7 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         logger.debug { "Updating roles for $discordId in $guildId: they should have ${roles.joinToString(", ")}" }
         val serverConfig = config.getConfigForGuild(guildId)
         val toObtain = roles.mapNotNull { serverConfig.roles[it] }.toSet()
-        val stickyRoles = if(applyStickyRoles) serverConfig.stickyRoles.toSet() + config.stickyRoles else setOf()
+        val stickyRoles = if (applyStickyRoles) serverConfig.stickyRoles.toSet() + config.stickyRoles else setOf()
         // This line means remove everything except sticky roles and what the user should have
         val toRemove = serverConfig.roles.filterKeys { it !in stickyRoles }.values - toObtain
         logger.debug {
@@ -277,36 +287,51 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
                 if (rulesInfo.isEmpty())
                     baseSet to true
                 else
-                    baseSet.union(computeAllowedUserRoles(dbUser, identifiable, rulesInfo)) to true
+                    baseSet.union(
+                        computeAllowedUserRoles(dbUser, identifiable, rulesInfo)
+                            ?: error("Cannot continue due to previous rule errors")
+                    ) to true
             }
         }
     }
 
     // Computes the roles (based on rules) for a user who we assume is known and allowed.
+    // Returns null if there was an error
     @UsesTrueIdentity
     private suspend fun computeAllowedUserRoles(
         dbUser: LinkUser,
         identifiable: Boolean,
         rulesInfo: Collection<RuleWithRequestingGuilds>
-    ): Set<String> {
+    ): Set<String>? {
         val userId = dbUser.discordId
         // Use cached values directly
         val (cachedRules, cachedRoles) = getCachedRulesAndRoles(rulesInfo, userId)
-        return rulesInfo.filter { it.rule !in cachedRules }.let { remaining ->
+        val ruleResults = rulesInfo.filter { it.rule !in cachedRules }.let { remaining ->
             remaining.runAll(
                 facade.getDiscordUserInfo(userId),
                 if (identifiable) roleUpdateIdAccess(dbUser, remaining) else null
             )
         }.union(cachedRoles)
+        if (ruleResults.all { it is RuleResult.Success })
+            return ruleResults.flatMap { (it as RuleResult.Success).roles }.toSet()
+        // Error handling
+        logger.error("Encountered errors on running rules")
+        for (failure in ruleResults.filterIsInstance<RuleResult.Failure>().withIndex()) {
+            logger.error("Error #${failure.index}", failure.value)
+        }
+        return null
     }
 
     // Runs all of the rules in the given list
     @UsesTrueIdentity
-    private suspend fun List<RuleWithRequestingGuilds>.runAll(info: DiscordUserInfo, identity: String?) =
+    private suspend fun List<RuleWithRequestingGuilds>.runAll(
+        info: DiscordUserInfo,
+        identity: String?
+    ): List<RuleResult> =
         coroutineScope {
             map {
                 async { ruleMediator.runRule(it.rule, info.id, info.username, info.discriminator, identity) }
-            }.awaitAll().flatten().toSet()
+            }.awaitAll()
         }
 
     // Tries all the rules for caching, and returns a pair with the rules where the cache was hit, and the resulting

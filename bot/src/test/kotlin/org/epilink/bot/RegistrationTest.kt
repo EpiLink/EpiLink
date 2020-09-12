@@ -217,7 +217,7 @@ class RegistrationTest : KoinBaseTest<Unit>(
             }
         }
         val bot = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles(any(), true) } returns mockk()
+            coEvery { invalidateAllRolesLater(any(), true) } returns mockk()
         }
         val lua = mockHere<LinkUserApi> {
             every { loginAs(any(), any(), "no", "maybe") } just runs
@@ -256,7 +256,7 @@ class RegistrationTest : KoinBaseTest<Unit>(
             }
             coVerify {
                 uc.createUser("yes", "fakeguid", "fakemail", true)
-                bot.invalidateAllRoles(any(), true)
+                bot.invalidateAllRolesLater(any(), true)
             }
         }
     }

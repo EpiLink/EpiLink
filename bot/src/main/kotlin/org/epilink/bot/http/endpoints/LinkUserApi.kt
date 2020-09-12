@@ -109,7 +109,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
                 throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyKnown)
             }
             idManager.relinkIdentity(user, email, guid)
-            roleManager.invalidateAllRoles(user.discordId, true)
+            roleManager.invalidateAllRolesLater(user.discordId, true)
             call.respond(apiSuccess("Successfully linked Identity Provider account.", "use.slm"))
         }
 
@@ -119,7 +119,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
             val user = call.user
             if (dbFacade.isUserIdentifiable(user)) {
                 idManager.deleteUserIdentity(user)
-                roleManager.invalidateAllRoles(user.discordId)
+                roleManager.invalidateAllRolesLater(user.discordId)
                 call.respond(apiSuccess("Successfully deleted identity", "use.sdi"))
             } else {
                 throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyUnknown)
