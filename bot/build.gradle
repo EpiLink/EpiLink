@@ -67,6 +67,8 @@ dependencies {
 
     implementation "org.bitbucket.b_c:jose4j:$jose4jVersion"
 
+    implementation "org.apache.commons:commons-dbcp2:$dbcp2Version"
+
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'
