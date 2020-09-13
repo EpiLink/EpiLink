@@ -37,7 +37,7 @@ Here are the available commands:
 
 This is an admin command.
 
-The `update` command can be used to refresh the roles of a single user or multiple users. The roles are updated *globally*, meaning that refreshing someone will refresh their roles on every server they're on, not just the server they're in at the moment. This is by design to avoid discrepancies between the roles on the servers.
+The `update` command can be used to refresh the roles of a single user or multiple users. Role updates done with this command are *global*, meaning that refreshing someone will refresh their roles on every server they're on, not just the server they're in at the moment. This is by design to avoid discrepancies between servers (e.g. someone having an outdated role on one server but not on the others).
 
 The syntax is:
 
@@ -46,6 +46,8 @@ update <user>
 ```
 
 Where `<user>` is a [user target](#user-target). Note that you must prepend the command with the prefix: this would give `e!update <user>` if you're using the default prefix.
+
+Once the update is done, the bot adds a checkmark reaction on the confirmation message it sent. If an error happened (e.g. a rule failed for some reason), a "danger" reaction is also added.
 
 ### help
 

@@ -16,13 +16,13 @@ EpiLink is a project that contains multiple subprojects, specifically:
 
 EpiLink is **not** a ready-to-use just-add-it-to-your-Discord-server style bot. It is a full host-it-yourself website and service that must be hosted by *you* entirely. As such, there is no "EpiLink" bot, *your* instance will have *its own* bot. This allows us to focus on developing the bot and lets you control all of the data managed by the bot.
 
-Once you host EpiLink on your own server, a 
+Once you host EpiLink on your own server, an invite link will be present in the server's logs. You can use that link to invite the Discord bot to your servers, but the bot will only work if that server [is described in the configuration](#discord-server-configuration). 
 
 ### What EpiLink does
 
 #### Matching accounts and anonymity
 
-At its core, EpiLink matches an Identity Provider account to a Discord account. The Identity Provider can be any service that provides OpenID Connect compatibility. A typical example would be a Microsoft Azure tenant, or a school using G Suite.
+At its core, EpiLink matches an [Identity Provider](IdentityProviders.md) account to a Discord account. The Identity Provider can be any service that supports the [OpenID Connect protocol](https://openid.net/connect/). A typical example would be a [Microsoft Azure tenant](IdentityProviders.md#microsoft), or a [school using G Suite](IdentityProviders.md#google).
 
 EpiLink allows users to remain anonymous to some extent. Should the user choose this option, their e-mail address will not be recorded in the database, but a hash of the user's ID is remembered (even if the user decides not to be anonymous) and there are still checks in place to ensure that they actually have the right to join servers. The hash is remembered for banning purposes (bans are against an identity provider account instead of a Discord account).
 
@@ -35,17 +35,18 @@ In a nutshell:
 
 Retrieving the identity of a user, even if it was done automatically, generates an "id access notification" that is stored in the database. A message can also be sent to the user. This increases trust from the user: they know that no one stalked their identity as they would have otherwise received a notification.
 
-?> Refer to the following pages for more information: [Identity Providers](IdentityProviders.md), [Identity retrieval](Api.md#post-useridentity), [ID access notification configuration](#privacy-configuration)
+?> Refer to the following documentation for more information: [Identity Providers](IdentityProviders.md), [Identity retrieval](Api.md#post-useridentity), [ID access notification configuration](#privacy-configuration)
 
 #### Role management
 
 EpiLink can manage the roles of your users. In a nutshell, whenever a user joins a server (or their roles need to be updated for any reason), EpiLink determines their EpiLink roles, maps them to actual Discord roles, and applies them.
 
-EpiLink roles are *not* Discord roles, they are intermediate role names that are then mapped to actual Discord roles for each server. For example, the user John may have the EpiLink roles `american`, `nice_person` and `student`. Each of these roles is then mapped to an actual Discord roles in each server's configuration (for example `american => 894572638928`). This allows EpiLink to be extremely versatile, allowing you to apply roles across multiple servers very easily.
+EpiLink roles are *not* Discord roles, they are intermediate roles that are then mapped to actual Discord roles for each server. For example, the user John may have the EpiLink roles `american`, `nice_person` and `student`. Each of these roles is then matched to an actual Discord roles in each server's configuration (for example `american => 894572638928` for server A and `american => 917234515` for server B). This allows EpiLink to be extremely versatile, allowing you to apply roles across multiple servers very easily.
 
 "Determining the EpiLink roles" consists in a range of different things:
 
 - Some EpiLink roles are automatic: for example, the special role `_identified` is given to all users who have their e-mail address stored in the database (i.e. are not anonymous).
+- Some roles can be determined through custom "rules", which are small custom scripts that can do pretty much anything (call a web API, check a local file's contents, etc.). These scripts are configured in the [rulebook](Rulebooks.md).
 
 ## Checklist
 
@@ -58,12 +59,13 @@ Go through all of these steps before going public with your instance:
 - [Make sure your reverse proxy configuration is secure](https://docs.zoroark.guru/#/ktor-rate-limit/usage?id=reverse-proxies-and-ip-address-spoofing), specifically the part about overriding the headers the clients send.
 - [Set the reverse proxy headers configuration](#http-server-settings) in EpiLink's configuration
 - Make sure everything still works
+- Ensure that no configuration warning appears in the logs upon starting EpiLink. If some appear, fix them.
 
 After doing all that, you will be good to go! Read on to learn how to do all of these things!
 
 ## Deployment
 
-!> **EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
+!> **EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt. [You must configure the `proxyType` option accordingly](#http-server-settings)
 
 ### Using Docker
 
