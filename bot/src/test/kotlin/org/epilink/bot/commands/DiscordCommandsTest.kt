@@ -216,6 +216,6 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
         }
 
     private fun DiscordEmbed.mockSend(channel: String) =
-        softMockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage(channel, this@mockSend) } just runs } to this
+        softMockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage(channel, this@mockSend) } returns "" } to this
 
 }

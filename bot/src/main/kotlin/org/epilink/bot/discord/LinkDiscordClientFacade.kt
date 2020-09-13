@@ -43,8 +43,9 @@ interface LinkDiscordClientFacade {
      *
      * @param channelId The ID of the channel where the message should be sent
      * @param embed The embed to send to the channel
+     * @return The ID of the sent message
      */
-    suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed)
+    suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed): String
 
     /**
      * Get the guilds the bot is connected to, no matter whether they are monitored or not.
@@ -112,6 +113,11 @@ interface LinkDiscordClientFacade {
      * Retrieve a list of all of the members in a guild.
      */
     suspend fun getMembers(guildId: String): List<String>
+
+    /**
+     * Adds a reaction to the given message
+     */
+    suspend fun addReaction(channelId: String, messageId: String, reactionUnicode: String)
 }
 
 /**

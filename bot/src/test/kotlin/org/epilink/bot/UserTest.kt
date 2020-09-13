@@ -19,6 +19,8 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
+import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.UsesTrueIdentity
@@ -30,6 +32,7 @@ import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.endpoints.LinkUserApiImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.get
 import java.time.Duration
@@ -50,6 +53,10 @@ class UserTest : KoinBaseTest<Unit>(
                 }
             }
         }
+        single<LinkWebServerConfiguration> {
+            mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
+        }
+        single(named("admins")) { listOf("adminid") }
     }
 ) {
     override fun additionalModule(): Module? = module {
@@ -83,6 +90,7 @@ class UserTest : KoinBaseTest<Unit>(
                 assertEquals("Discordian#1234", data.data["username"])
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
                 assertEquals(true, data.data["identifiable"])
+                assertEquals(false, data.data["privileged"])
             }
             coVerify { sessionChecks.verifyUser(any()) }
         }
@@ -111,6 +119,36 @@ class UserTest : KoinBaseTest<Unit>(
                 assertEquals("Discordian#1234", data.data["username"])
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
                 assertEquals(false, data.data["identifiable"])
+                assertEquals(false, data.data["privileged"])
+            }
+            coVerify { sessionChecks.verifyUser(any()) }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user endpoint when admin`() {
+        withTestEpiLink {
+            mockHere<LinkDatabaseFacade> {
+                coEvery { isUserIdentifiable(any()) } returns false
+            }
+            val sid = setupSession(
+                sessionStorage,
+                discId = "adminid",
+                discUsername = "Discordian#1234",
+                discAvatarUrl = "https://veryavatar"
+            )
+            handleRequest(HttpMethod.Get, "/api/v1/user") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val data = fromJson<ApiSuccess>(response)
+                assertNotNull(data.data)
+                assertEquals("adminid", data.data["discordId"])
+                assertEquals("Discordian#1234", data.data["username"])
+                assertEquals("https://veryavatar", data.data["avatarUrl"])
+                assertEquals(false, data.data["identifiable"])
+                assertEquals(true, data.data["privileged"])
             }
             coVerify { sessionChecks.verifyUser(any()) }
         }
@@ -169,7 +207,7 @@ class UserTest : KoinBaseTest<Unit>(
             coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
         val rm = mockHere<LinkRoleManager> {
-            every { invalidateAllRoles("userid", true) } returns mockk()
+            every { invalidateAllRolesLater("userid", true) } returns mockk()
         }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false
@@ -190,7 +228,7 @@ class UserTest : KoinBaseTest<Unit>(
             }
         }
         coVerify {
-            rm.invalidateAllRoles(any(), true)
+            rm.invalidateAllRolesLater(any(), true)
             ida.relinkIdentity(any(), email, "MyMicrosoftId")
             sessionChecks.verifyUser(any())
         }
@@ -292,7 +330,7 @@ class UserTest : KoinBaseTest<Unit>(
             coEvery { deleteUserIdentity(match { it.discordId == "userid" }) } just runs
         }
         val rm = mockHere<LinkRoleManager> {
-            every { invalidateAllRoles("userid") } returns mockk()
+            every { invalidateAllRolesLater("userid") } returns mockk()
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid")
@@ -306,7 +344,7 @@ class UserTest : KoinBaseTest<Unit>(
         }
         coVerify {
             ida.deleteUserIdentity(any())
-            rm.invalidateAllRoles(any())
+            rm.invalidateAllRolesLater(any())
             sessionChecks.verifyUser(any())
         }
     }

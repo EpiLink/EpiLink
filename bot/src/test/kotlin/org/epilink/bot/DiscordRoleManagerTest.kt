@@ -24,6 +24,7 @@ import org.koin.test.get
 import org.koin.test.mock.declare
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
@@ -50,7 +51,9 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
             every { getCouldNotJoinEmbed(any(), "There", "This is my reason") } returns mockk()
         }
         test {
-            assertTrue(getRolesForUser("userid", mockk(), true, listOf("Hello")).isEmpty())
+            val result = getRolesForUser("userid", mockk(), true, listOf("Hello"))
+            assertEquals(setOf(), result.first)
+            assertFalse(result.second, "Expected sticky roles to not be applied")
         }
         coVerifyAll {
             pc.canUserJoinServers(any())
@@ -67,12 +70,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         val cfg = mockHere<LinkDiscordConfig> {
             every { servers } returns listOf(mockk { every { id } returns "otherid" })
         }
-        test {
-            handleNewUser("guildid", "My Awesome Guild", "userid")
-        }
-        coVerifyAll {
-            cfg.servers
-        }
+        test { handleNewUser("guildid", "My Awesome Guild", "userid") }
+        coVerifyAll { cfg.servers }
         confirmVerified(cfg)
     }
 
@@ -257,7 +256,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         val rm = get<LinkRoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
-            assertTrue(roles.isEmpty(), "roles should be empty")
+            assertEquals(setOf(), roles.first, "roles should be empty")
+            assertTrue(roles.second, "Sticky roles should be considered")
         }
     }
 
@@ -273,7 +273,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         val rm = get<LinkRoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
-            assertTrue(roles.isEmpty(), "roles should be empty")
+            assertEquals(setOf(), roles.first, "roles should be empty")
+            assertFalse(roles.second, "Sticky roles should be ignored")
         }
     }
 
@@ -298,7 +299,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         val rm = get<LinkRoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", mockk(), true, listOf("HELLO THERE"))
-            assertTrue(roles.isEmpty(), "roles should be empty")
+            assertEquals(setOf(), roles.first, "roles should be empty")
+            assertFalse(roles.second, "Sticky roles should be ignored")
         }
         coVerify { dcf.sendDirectMessage("userid", embed) }
     }
@@ -317,7 +319,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         val rm = get<LinkRoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
-            assertEquals(setOf("_known", "_notIdentified"), roles)
+            assertEquals(setOf("_known", "_notIdentified"), roles.first)
+            assertTrue(roles.second)
         }
     }
 
@@ -335,7 +338,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         val rm = get<LinkRoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
-            assertEquals(setOf("_known", "_identified"), roles)
+            assertEquals(setOf("_known", "_identified"), roles.first)
+            assertTrue(roles.second)
         }
     }
 
@@ -387,8 +391,9 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
             )
             assertEquals(
                 setOf("_known", "_identified", "sir_email@@", "sirId_userid", "wirId_userid", "wirDisc_disc"),
-                roles
+                roles.first
             )
+            assertTrue(roles.second)
         }
         coVerify { lia.accessIdentity(user, any(), any(), any()) }
     }
@@ -428,12 +433,20 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                 true,
                 listOf()
             )
-            assertEquals(setOf("_known", "_notIdentified", "wirId_userid", "wirDisc_disc"), roles)
+            assertEquals(setOf("_known", "_notIdentified", "wirId_userid", "wirDisc_disc"), roles.first)
+            assertTrue(roles.second)
         }
     }
 
     @Test
-    fun `Test update user with roles`() {
+    fun `Test update user with roles applying sticky roles`() =
+        updateUserWithRolesTest(true)
+
+    @Test
+    fun `Test update user with roles ignoring sticky roles`() =
+        updateUserWithRolesTest(false)
+
+    private fun updateUserWithRolesTest(applySticky: Boolean) {
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { manageRoles(any(), any(), any(), any()) } just runs
         }
@@ -446,8 +459,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                         "eladd2" to "addMeToo",
                         "elrem" to "removeMe",
                         "elrem2" to "removeMeToo",
-                        "sr1" to "dontRemoveMe",
-                        "sr2" to "dontRemoveMeEither"
+                        "sr1" to "maybeRemoveMe",
+                        "sr2" to "maybeRemoveMeAlso"
                     )
                     every { stickyRoles } returns listOf("sr1")
                 }
@@ -456,11 +469,16 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         }
         val rm = get<LinkRoleManager>()
         runBlocking {
-            rm.updateUserWithRoles("userid", "guildid", setOf("eladd", "eladd2", "elneut", "elneut2"))
+            rm.updateUserWithRoles("userid", "guildid", setOf("eladd", "eladd2", "elneut", "elneut2"), applySticky)
         }
-        coVerify { dcf.manageRoles("userid", "guildid", setOf("addMe", "addMeToo"), setOf("removeMe", "removeMeToo")) }
+        coVerify {
+            dcf.manageRoles(
+                "userid", "guildid", setOf("addMe", "addMeToo"),
+                if (applySticky) setOf("removeMe", "removeMeToo")
+                else setOf("removeMe", "removeMeToo", "maybeRemoveMe", "maybeRemoveMeAlso")
+            )
+        }
         confirmVerified(dcf)
     }
-
 
 }

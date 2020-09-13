@@ -14,6 +14,7 @@ import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.`object`.entity.channel.PrivateChannel
+import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
@@ -64,12 +65,12 @@ internal class LinkDiscord4JFacadeImpl(
         sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle()) { from(embed) }
     }
 
-    override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed) {
+    override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed): String {
         val channel =
             client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? MessageChannel
                 ?: error("Not a message channel")
         sendWelcomeMessageIfEmptyDmChannel(channel)
-        channel.createEmbed { it.from(embed) }.awaitSingle()
+        return channel.createEmbed { it.from(embed) }.awaitSingle().id.asString()
     }
 
     private suspend inline fun sendWelcomeMessageIfEmptyDmChannel(channel: MessageChannel) {
@@ -195,6 +196,13 @@ internal class LinkDiscord4JFacadeImpl(
     override suspend fun getMembers(guildId: String): List<String> =
         client.getGuildById(Snowflake.of(guildId)).awaitSingle()
             .members.map { it.id.asString() }.collectList().awaitSingle()
+
+    override suspend fun addReaction(channelId: String, messageId: String, reactionUnicode: String) {
+        client.getMessageById(Snowflake.of(channelId), Snowflake.of(messageId))
+            .awaitSingle()
+            .addReaction(ReactionEmoji.of(null, reactionUnicode, false))
+            .await()
+    }
 
     /**
      * Generates an invite link for the bot and returns it

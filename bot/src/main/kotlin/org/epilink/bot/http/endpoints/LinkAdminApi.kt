@@ -8,17 +8,17 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.call
-import io.ktor.http.ContentType
+import io.ktor.application.*
+import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.http.content.TextContent
-import io.ktor.request.receive
-import io.ktor.response.respond
+import io.ktor.http.content.*
+import io.ktor.request.*
+import io.ktor.response.*
 import io.ktor.routing.*
 import org.epilink.bot.StandardErrorCodes.*
+import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
 import org.epilink.bot.discord.LinkRoleManager
@@ -52,12 +52,13 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val banManager: LinkBanManager by inject()
     private val gdprReport: LinkGdprReport by inject()
     private val roleManager: LinkRoleManager by inject()
+    private val wsCfg: LinkWebServerConfiguration by inject()
 
     override fun install(route: Route) {
         with(route) { admin() }
     }
 
-    private fun Route.admin() = route("/api/v1/admin/") {
+    private fun Route.admin() = limitedRoute("/api/v1/admin/", wsCfg.rateLimitingProfile.adminApi) {
         @OptIn(UsesTrueIdentity::class) // checks if the "admin" has his true identity recorded
         intercept(ApplicationCallPipeline.Features) {
             if (sessionChecks.verifyUser(this) && sessionChecks.verifyAdmin(this)) {
@@ -122,7 +123,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                     call.respond(NotFound, TargetUserDoesNotExist.toResponse())
                 } else {
                     dbf.deleteUser(user)
-                    roleManager.invalidateAllRoles(targetId)
+                    roleManager.invalidateAllRolesLater(targetId)
                     call.respond(apiSuccess("User deleted", "adm.ud"))
                 }
             }
@@ -170,11 +171,17 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
                         val ban = dbf.getBan(banId)
                         when {
                             ban == null ->
-                                call.respond(NotFound, InvalidId.toResponse("No ban with given ID found.", "adm.nbi"))
+                                call.respond(
+                                    NotFound,
+                                    InvalidId.toResponse("No ban with given ID found.", "adm.nbi")
+                                )
                             !ban.idpIdHash.contentEquals(idpHashBytes) ->
                                 call.respond(
                                     NotFound,
-                                    InvalidId.toResponse("Identity Provider ID hash does not correspond.", "adm.hnc")
+                                    InvalidId.toResponse(
+                                        "Identity Provider ID hash does not correspond.",
+                                        "adm.hnc"
+                                    )
                                 )
                             else ->
                                 call.respond(OK, ApiSuccessResponse.of(ban.toBanInfo()))
@@ -217,7 +224,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
         route("search") {
             get("hash16/{searchTerm}") {
                 val targetId = call.parameters["searchTerm"]!!.toLowerCase()
-                if (targetId.any { it !in hexCharacters}) {
+                if (targetId.any { it !in hexCharacters }) {
                     call.respond(BadRequest, InvalidAdminRequest.toResponse("Invalid hex string", "adm.ihs"))
                 } else {
                     val results = dbf.searchUserByPartialHash(targetId).map { it.discordId }

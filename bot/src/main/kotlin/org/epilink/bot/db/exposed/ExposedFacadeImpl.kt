@@ -8,7 +8,14 @@
  */
 package org.epilink.bot.db.exposed
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.commons.codec.binary.Hex
+import org.apache.commons.dbcp2.DataSourceConnectionFactory
+import org.apache.commons.dbcp2.PoolableConnection
+import org.apache.commons.dbcp2.PoolableConnectionFactory
+import org.apache.commons.dbcp2.PoolingDataSource
+import org.apache.commons.pool2.impl.GenericObjectPool
 import org.epilink.bot.LinkException
 import org.epilink.bot.db.*
 import org.jetbrains.exposed.dao.IntEntity
@@ -18,10 +25,12 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.`java-time`.timestamp
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
+import javax.sql.DataSource
 
 // This file is rather long because all of the DAO classes are private in order to make sure that only the facade
 // has access to them
@@ -35,9 +44,12 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
      */
     internal abstract val db: Database
 
+    internal abstract val useMutex: Boolean
+    private val mutex = Mutex()
+
     @OptIn(UsesTrueIdentity::class) // Creation of TrueIdentities table
     override suspend fun start() {
-        newSuspendedTransaction(db = db) {
+        t {
             SchemaUtils.create(
                 ExposedUsers,
                 ExposedTrueIdentities,
@@ -65,52 +77,45 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
      *         }
      */
 
-    override suspend fun getUser(discordId: String): LinkUser? =
-        newSuspendedTransaction(db = db) {
-            ExposedUser.find(ExposedUsers.discordId eq discordId).firstOrNull()
-        }
+    override suspend fun getUser(discordId: String): LinkUser? = t {
+        ExposedUser.find(ExposedUsers.discordId eq discordId).firstOrNull()
+    }
 
-    override suspend fun getUserFromIdpIdHash(idpIdHash: ByteArray): LinkUser? =
-        newSuspendedTransaction(db = db) {
-            ExposedUser.find(ExposedUsers.idpIdHash eq idpIdHash).firstOrNull()
-        }
+    override suspend fun getUserFromIdpIdHash(idpIdHash: ByteArray): LinkUser? = t {
+        ExposedUser.find(ExposedUsers.idpIdHash eq idpIdHash).firstOrNull()
+    }
 
-    override suspend fun doesUserExist(discordId: String): Boolean =
-        newSuspendedTransaction(db = db) {
-            ExposedUser.count(ExposedUsers.discordId eq discordId) > 0
-        }
+    override suspend fun doesUserExist(discordId: String): Boolean = t {
+        ExposedUser.count(ExposedUsers.discordId eq discordId) > 0
+    }
 
-    override suspend fun isIdentityAccountAlreadyLinked(hash: ByteArray): Boolean =
-        newSuspendedTransaction(db = db) {
-            ExposedUser.count(ExposedUsers.idpIdHash eq hash) > 0
-        }
+    override suspend fun isIdentityAccountAlreadyLinked(hash: ByteArray): Boolean = t {
+        ExposedUser.count(ExposedUsers.idpIdHash eq hash) > 0
+    }
 
     override suspend fun recordBan(
         target: ByteArray,
         until: Instant?,
         author: String,
         reason: String
-    ): LinkBan =
-        newSuspendedTransaction(db = db) {
-            ExposedBan.new {
-                idpIdHash = target
-                expiresOn = until
-                issued = Instant.now()
-                this.author = author
-                this.reason = reason
-                revoked = false
-            }
+    ): LinkBan = t {
+        ExposedBan.new {
+            idpIdHash = target
+            expiresOn = until
+            issued = Instant.now()
+            this.author = author
+            this.reason = reason
+            revoked = false
         }
+    }
 
-    override suspend fun getBansFor(hash: ByteArray): List<LinkBan> =
-        newSuspendedTransaction(db = db) {
-            ExposedBan.find(ExposedBans.idpIdHash eq hash).toList()
-        }
+    override suspend fun getBansFor(hash: ByteArray): List<LinkBan> = t {
+        ExposedBan.find(ExposedBans.idpIdHash eq hash).toList()
+    }
 
-    override suspend fun getBan(banId: Int): LinkBan? =
-        newSuspendedTransaction(db = db) {
-            ExposedBan.findById(banId)
-        }
+    override suspend fun getBan(banId: Int): LinkBan? = t {
+        ExposedBan.findById(banId)
+    }
 
     @OptIn(UsesTrueIdentity::class)
     override suspend fun recordNewUser(
@@ -119,33 +124,30 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         newEmail: String,
         keepIdentity: Boolean,
         timestamp: Instant
-    ): LinkUser =
-        newSuspendedTransaction(db = db) {
-            val u = ExposedUser.new {
-                discordId = newDiscordId
-                idpIdHash = newIdpIdHash
-                creationDate = timestamp
-            }
-            if (keepIdentity) {
-                ExposedTrueIdentity.new {
-                    user = u
-                    email = newEmail
-                }
-            }
-            u
+    ): LinkUser = t {
+        val u = ExposedUser.new {
+            discordId = newDiscordId
+            idpIdHash = newIdpIdHash
+            creationDate = timestamp
         }
+        if (keepIdentity) {
+            ExposedTrueIdentity.new {
+                user = u
+                email = newEmail
+            }
+        }
+        u
+    }
 
-    override suspend fun revokeBan(banId: Int) {
-        newSuspendedTransaction(db = db) {
-            val ban = ExposedBan[banId]
-            ban.revoked = true
-        }
+    override suspend fun revokeBan(banId: Int) = t {
+        val ban = ExposedBan[banId]
+        ban.revoked = true
     }
 
     @UsesTrueIdentity
     override suspend fun isUserIdentifiable(user: LinkUser): Boolean {
         val exUser = user.asExposed()
-        return newSuspendedTransaction(db = db) {
+        return t {
             exUser.trueIdentity != null
         }
     }
@@ -158,7 +160,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         reason: String
     ): String {
         val exUser = user.asExposed()
-        return newSuspendedTransaction(db = db) {
+        return t {
             val identity =
                 exUser.trueIdentity?.email
                     ?: throw LinkException("Cannot get true identity of user ${exUser.discordId}")
@@ -176,7 +178,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
 
     override suspend fun getIdentityAccessesFor(user: LinkUser): Collection<LinkIdentityAccess> {
         val exUser = user.asExposed()
-        return newSuspendedTransaction {
+        return t {
             ExposedIdentityAccess.find(ExposedIdentityAccesses.target eq exUser.id).toList()
         }
     }
@@ -184,7 +186,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     @UsesTrueIdentity
     override suspend fun recordNewIdentity(user: LinkUser, newEmail: String) {
         val exUser = user.asExposed()
-        newSuspendedTransaction {
+        t {
             ExposedTrueIdentity.new {
                 this.user = exUser
                 email = newEmail
@@ -195,41 +197,36 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     @UsesTrueIdentity
     override suspend fun eraseIdentity(user: LinkUser) {
         val exUser = user.asExposed()
-        newSuspendedTransaction {
+        t {
             exUser.trueIdentity!! // We don't care about error cases, callers are responsible for checks
                 .delete()
         }
     }
 
-    override suspend fun getLanguagePreference(discordId: String): String? =
-        newSuspendedTransaction(db = db) {
-            ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()?.language
-        }
+    override suspend fun getLanguagePreference(discordId: String): String? = t {
+        ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()?.language
+    }
 
-    override suspend fun recordLanguagePreference(discordId: String, preference: String) {
-        newSuspendedTransaction(db = db) {
-            val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
-            if (x != null) {
-                x.language = preference
-            } else {
-                ExposedDiscordLanguage.new {
-                    this.discordId = discordId
-                    language = preference
-                }
+    override suspend fun recordLanguagePreference(discordId: String, preference: String): Unit = t {
+        val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
+        if (x != null) {
+            x.language = preference
+        } else {
+            ExposedDiscordLanguage.new {
+                this.discordId = discordId
+                language = preference
             }
         }
     }
 
-    override suspend fun clearLanguagePreference(discordId: String) {
-        newSuspendedTransaction(db = db) {
-            val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
-            x?.delete()
-        }
+    override suspend fun clearLanguagePreference(discordId: String): Unit = t {
+        val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
+        x?.delete()
     }
 
     override suspend fun updateIdpId(user: LinkUser, newIdHash: ByteArray) {
         val u = user.asExposed()
-        newSuspendedTransaction(db = db) {
+        t {
             u.idpIdHash = newIdHash
         }
     }
@@ -237,7 +234,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     @OptIn(UsesTrueIdentity::class)
     override suspend fun deleteUser(user: LinkUser) {
         val u = user.asExposed()
-        newSuspendedTransaction(db = db) {
+        t {
             // True identity
             u.trueIdentity?.delete()
             // Language
@@ -248,10 +245,20 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         }
     }
 
-    override suspend fun searchUserByPartialHash(partialHashHex: String): List<LinkUser> =
-        newSuspendedTransaction(db = db) {
-            ExposedUser.all().filter { Hex.encodeHexString(it.idpIdHash).contains(partialHashHex) }
-        }.toList()
+    override suspend fun searchUserByPartialHash(partialHashHex: String): List<LinkUser> = t {
+        ExposedUser.all().filter { Hex.encodeHexString(it.idpIdHash).contains(partialHashHex) }
+    }.toList()
+
+    /**
+     * Convenience method for transactions, automatically applying locks and using the correct database
+     */
+    private suspend fun <R> t(transaction: suspend Transaction.() -> R): R {
+        return if (useMutex) {
+            mutex.withLock { newSuspendedTransaction(db = db, statement = transaction) }
+        } else {
+            newSuspendedTransaction(db = db, statement = transaction)
+        }
+    }
 }
 
 /**
@@ -528,4 +535,11 @@ class ExposedDiscordLanguage(id: EntityID<Int>) : IntEntity(id), LinkDiscordLang
 
     override var discordId by ExposedDiscordLanguages.discordId
     override var language by ExposedDiscordLanguages.language
+}
+
+internal fun pooled(dataSource: DataSource): PoolingDataSource<PoolableConnection> {
+    val factory = PoolableConnectionFactory(DataSourceConnectionFactory(dataSource), null)
+    val pool = GenericObjectPool(factory)
+    factory.pool = pool
+    return PoolingDataSource(pool)
 }

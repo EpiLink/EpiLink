@@ -72,8 +72,14 @@ interface LinkRoleManager {
      * @param guildId The guild in which to update the user
      * @param roles The list of EpiLink roles the user should have. May contain roles that are not configured for the
      * guild.
+     * @param applyStickyRoles True if sticky roles should be considered, false otherwise.
      */
-    suspend fun updateUserWithRoles(discordId: String, guildId: String, roles: Collection<String>)
+    suspend fun updateUserWithRoles(
+        discordId: String,
+        guildId: String,
+        roles: Collection<String>,
+        applyStickyRoles: Boolean
+    )
 
     /**
      * Reset all cached roles and run an update of roles in all of the guilds the bot is connected to for the given
@@ -85,7 +91,12 @@ interface LinkRoleManager {
      * @param tellUserIfFailed True if the user should be notified in case of a failure, false if such failure should
      * be silent
      */
-    fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean = false): Job
+    fun invalidateAllRolesLater(discordId: String, tellUserIfFailed: Boolean = false): Job
+
+    /**
+     * Identical to [invalidateAllRolesLater], but executes in the current coroutine instead of starting a new one.
+     */
+    suspend fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean = false)
 
     /**
      * Get the role list for a user. The user may have an EpiLink or not, the user may be banned or not.
@@ -99,6 +110,8 @@ interface LinkRoleManager {
      * update is stopped silently.
      * @param guildIds The IDs of the guilds where the roles are needed. Only used for displaying guild names to the
      * user in case of an error notification.
+     * @return A pair containing the set of roles and a boolean. If the boolean is true, sticky roles should be applied,
+     * if it is false, sticky roles should be ignored.
      */
     @OptIn(UsesTrueIdentity::class)
     suspend fun getRolesForUser(
@@ -106,7 +119,7 @@ interface LinkRoleManager {
         rulesInfo: Collection<RuleWithRequestingGuilds>,
         tellUserIfFailed: Boolean,
         guildIds: Collection<String>
-    ): Set<String>
+    ): Pair<Set<String>, Boolean>
 }
 
 /**
@@ -143,14 +156,14 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         val rules = getRulesRelevantForGuilds(*whereConnected.toTypedArray())
         logger.debug { "Updating ${discordId}'s roles requires calling the rules ${rules.joinToString(", ") { it.rule.name }}" }
         // Compute the roles
-        val roles = getRolesForUser(discordId, rules, tellUserIfFailed, guilds)
+        val (roles, bypassStickyRules) = getRolesForUser(discordId, rules, tellUserIfFailed, guilds)
         logger.debug {
             "Computed EpiLink roles for $discordId for guilds ${whereConnected.joinToString(", ")}:" +
                     roles.joinToString(", ")
         }
         // Update the roles
         whereConnected.forEach { guildId ->
-            updateUserWithRoles(discordId, guildId, roles)
+            updateUserWithRoles(discordId, guildId, roles, bypassStickyRules)
         }
     }
 
@@ -168,12 +181,17 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     }
 
     // TODO test this
-    override fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean): Job =
+    override fun invalidateAllRolesLater(discordId: String, tellUserIfFailed: Boolean): Job =
         scope.launch {
-            logger.info("Invalidating roles for $discordId")
-            ruleMediator.invalidateCache(discordId)
-            updateRolesOnGuilds(discordId, facade.getGuilds(), tellUserIfFailed)
+            invalidateAllRoles(discordId, tellUserIfFailed)
         }
+
+    // TODO test this
+    override suspend fun invalidateAllRoles(discordId: String, tellUserIfFailed: Boolean) {
+        logger.info("Invalidating roles for $discordId")
+        ruleMediator.invalidateCache(discordId)
+        updateRolesOnGuilds(discordId, facade.getGuilds(), tellUserIfFailed)
+    }
 
     override suspend fun getRulesRelevantForGuilds(
         vararg guilds: String
@@ -214,13 +232,18 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         // .also { println("#### F ####$it") }
     }
 
-    override suspend fun updateUserWithRoles(discordId: String, guildId: String, roles: Collection<String>) {
+    override suspend fun updateUserWithRoles(
+        discordId: String,
+        guildId: String,
+        roles: Collection<String>,
+        applyStickyRoles: Boolean
+    ) {
         logger.debug { "Updating roles for $discordId in $guildId: they should have ${roles.joinToString(", ")}" }
         val serverConfig = config.getConfigForGuild(guildId)
         val toObtain = roles.mapNotNull { serverConfig.roles[it] }.toSet()
-        val toRemove = serverConfig.roles
-            .filterKeys { it !in serverConfig.stickyRoles && it !in config.stickyRoles}
-            .values - toObtain
+        val stickyRoles = if (applyStickyRoles) serverConfig.stickyRoles.toSet() + config.stickyRoles else setOf()
+        // This line means remove everything except sticky roles and what the user should have
+        val toRemove = serverConfig.roles.filterKeys { it !in stickyRoles }.values - toObtain
         logger.debug {
             "For $discordId in $guildId: remove ${toRemove.joinToString(", ")} and add ${toObtain.joinToString(", ")}"
         }
@@ -233,14 +256,14 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         rulesInfo: Collection<RuleWithRequestingGuilds>,
         tellUserIfFailed: Boolean,
         guildIds: Collection<String>
-    ): Set<String> {
+    ): Pair<Set<String>, Boolean> {
         // Get the user. If the user is unknown, return an empty set: they should not have any role
         val dbUser = dbFacade.getUser(userId)
         val adv = dbUser?.let { perms.canUserJoinServers(it) }
         return when {
             dbUser == null ->
                 // Unknown user
-                setOf<String>().also { logger.debug { "Unidentified user $userId roles determined: none" } }
+                setOf<String>().also { logger.debug { "Unidentified user $userId roles determined: none" } } to true
             adv is Disallowed -> {
                 // Disallowed user
                 if (tellUserIfFailed)
@@ -254,45 +277,61 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
                             adv.reason
                         )
                     )
-                setOf<String>().also { logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" } }
+                (setOf<String>() to false)
+                    .also { logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" } }
             }
             // At this point the user is known and allowed
             else -> {
                 val identifiable = dbFacade.isUserIdentifiable(dbUser)
                 val baseSet = getBaseRoleSetForKnown(identifiable)
                 if (rulesInfo.isEmpty())
-                    baseSet
+                    baseSet to true
                 else
-                    baseSet.union(computeAllowedUserRoles(dbUser, identifiable, rulesInfo))
+                    baseSet.union(
+                        computeAllowedUserRoles(dbUser, identifiable, rulesInfo)
+                            ?: error("Cannot continue due to previous rule errors")
+                    ) to true
             }
         }
     }
 
     // Computes the roles (based on rules) for a user who we assume is known and allowed.
+    // Returns null if there was an error
     @UsesTrueIdentity
     private suspend fun computeAllowedUserRoles(
         dbUser: LinkUser,
         identifiable: Boolean,
         rulesInfo: Collection<RuleWithRequestingGuilds>
-    ): Set<String> {
+    ): Set<String>? {
         val userId = dbUser.discordId
         // Use cached values directly
         val (cachedRules, cachedRoles) = getCachedRulesAndRoles(rulesInfo, userId)
-        return rulesInfo.filter { it.rule !in cachedRules }.let { remaining ->
+        val ruleResults = rulesInfo.filter { it.rule !in cachedRules }.let { remaining ->
             remaining.runAll(
                 facade.getDiscordUserInfo(userId),
                 if (identifiable) roleUpdateIdAccess(dbUser, remaining) else null
             )
         }.union(cachedRoles)
+        if (ruleResults.all { it is RuleResult.Success })
+            return ruleResults.flatMap { (it as RuleResult.Success).roles }.toSet()
+        // Error handling
+        logger.error("Encountered errors on running rules")
+        for (failure in ruleResults.filterIsInstance<RuleResult.Failure>().withIndex()) {
+            logger.error("Error #${failure.index}", failure.value)
+        }
+        return null
     }
 
     // Runs all of the rules in the given list
     @UsesTrueIdentity
-    private suspend fun List<RuleWithRequestingGuilds>.runAll(info: DiscordUserInfo, identity: String?) =
+    private suspend fun List<RuleWithRequestingGuilds>.runAll(
+        info: DiscordUserInfo,
+        identity: String?
+    ): List<RuleResult> =
         coroutineScope {
             map {
                 async { ruleMediator.runRule(it.rule, info.id, info.username, info.discriminator, identity) }
-            }.awaitAll().flatten().toSet()
+            }.awaitAll()
         }
 
     // Tries all the rules for caching, and returns a pair with the rules where the cache was hit, and the resulting

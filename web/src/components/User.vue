@@ -12,8 +12,11 @@
     <div class="user">
         <img class="avatar" alt="Avatar" :src="user.avatar || 'https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png'" />
         <div class="username">
-            <span>{{ user.username | nick }}</span>
-            <span class="tag">{{ user.username | tag }}</span>
+            <span class="admin-badge" v-if="user.privileged">ADMIN</span>
+            <span>
+                <span class="username-text">{{ user.username | nick }}</span>
+                <span class="tag">{{ user.username | tag }}</span>
+            </span>
         </div>
         <span class="email" v-if="user.email">{{ user.email }}</span>
     </div>
@@ -60,6 +63,23 @@
 
         @include lato(bold);
         font-size: 30px;
+
+        text-align: center;
+
+        .username-text {
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .admin-badge {
+            background-color: #2DA62D;
+            border-radius: 3px;
+            padding: 8px;
+            font-size: .6em;
+            margin-right: 12px;
+            align-self: center;
+            color: white;
+        }
 
         .tag {
             font-style: italic;

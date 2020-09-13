@@ -88,9 +88,60 @@ class ConfigTestCheck {
     fun `Test no trailing slash at end of front-end URL triggers error`() {
         val config = mockk<LinkWebServerConfiguration> {
             every { frontendUrl } returns "https://whereismy.slash"
+            // Normal config
+            every { rateLimitingProfile } returns RateLimitingProfile.Standard
+            every { enableAdminEndpoints } returns true
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("frontendUrl") })
+    }
+
+    @Test
+    fun `Test lenient rate limiting profile triggers warning`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { rateLimitingProfile } returns RateLimitingProfile.Lenient
+            // Normal config
+            every { frontendUrl } returns "https://my.slash.ishere/"
+            every { enableAdminEndpoints } returns true
+        }
+        val reports = config.check()
+        assertTrue(reports.any { it is ConfigWarning && it.message.contains("Lenient") })
+    }
+
+    @Test
+    fun `Test disabled rate limiting profile triggers non-fatal error`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { rateLimitingProfile } returns RateLimitingProfile.Disabled
+            // Normal config
+            every { frontendUrl } returns "https://my.slash.ishere/"
+            every { enableAdminEndpoints } returns true
+        }
+        val reports = config.check()
+        assertTrue(reports.any { it is ConfigError && !it.shouldFail && it.message.contains("Disabled") })
+    }
+
+    @Test
+    fun `Test enabled admin endpoints message`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { enableAdminEndpoints } returns true
+            // Normal config
+            every { frontendUrl } returns "https://my.slash.ishere/"
+            every { rateLimitingProfile } returns RateLimitingProfile.Standard
+        }
+        val reports = config.check()
+        assertTrue(reports.any { it is ConfigInfo && it.message.contains("endpoints") && it.message.contains("enabled") })
+    }
+
+    @Test
+    fun `Test disabled admin endpoints message`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { enableAdminEndpoints } returns false
+            // Normal config
+            every { frontendUrl } returns "https://my.slash.ishere/"
+            every { rateLimitingProfile } returns RateLimitingProfile.Standard
+        }
+        val reports = config.check()
+        assertTrue(reports.any { it is ConfigInfo && it.message.contains("endpoints") && it.message.contains("disabled") })
     }
 
     private val defaultTokenValue = "..."

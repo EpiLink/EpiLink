@@ -31,7 +31,7 @@ class LangCommandTest : KoinBaseTest<Command>(
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
         mockHere<LinkDiscordMessages> { every { getLangHelpEmbed(any()) } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } just runs }
+        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang", "", null, "", "1234", "")
             dcf.sendChannelMessage("1234", embed)
@@ -44,7 +44,7 @@ class LangCommandTest : KoinBaseTest<Command>(
         declareNoOpI18n()
         val df = mockHere<LinkDatabaseFacade> { coEvery { clearLanguagePreference("iid") } just runs }
         mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any(), "lang.clearSuccess") } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } just runs }
+        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang clear", "clear", null, "iid", "1234", "")
         }
@@ -62,7 +62,7 @@ class LangCommandTest : KoinBaseTest<Command>(
             coEvery { setLanguage("iid", "lll") } returns true
         }
         mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any(), "lang.success") } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } just runs }
+        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang lll", "lll", null, "iid", "1234", "")
         }
@@ -80,7 +80,7 @@ class LangCommandTest : KoinBaseTest<Command>(
             coEvery { setLanguage("iid", "lll") } returns false
         }
         mockHere<LinkDiscordMessages> { every { getErrorCommandReply(any(), "lang.invalidLanguage", "lll") } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } just runs }
+        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang lll", "lll", null, "iid", "1234", "")
         }

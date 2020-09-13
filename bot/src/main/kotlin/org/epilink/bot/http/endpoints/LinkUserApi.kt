@@ -8,20 +8,15 @@
  */
 package org.epilink.bot.http.endpoints
 
-import guru.zoroark.ratelimit.rateLimited
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.call
-import io.ktor.http.HttpStatusCode
-import io.ktor.request.receive
-import io.ktor.response.respond
+import io.ktor.application.*
+import io.ktor.http.*
+import io.ktor.request.*
+import io.ktor.response.*
 import io.ktor.routing.*
-import io.ktor.sessions.clear
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.sessions.*
 import org.epilink.bot.LinkEndpointUserException
 import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.LinkUser
@@ -35,8 +30,8 @@ import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
-import java.time.Duration
 
 /**
  * Route for user APIs
@@ -62,72 +57,74 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     private val sessionChecks: LinkSessionChecks by inject()
     private val idManager: LinkIdManager by inject()
     private val dbFacade: LinkDatabaseFacade by inject()
+    private val wsCfg: LinkWebServerConfiguration by inject()
+    private val admins: List<String> by inject(named("admins"))
 
     override fun install(route: Route) {
         with(route) { user() }
     }
 
-    fun Route.user() = route("/api/v1/user") {
-        rateLimited(limit = 20, timeBeforeReset = Duration.ofMinutes(1)) {
-            intercept(ApplicationCallPipeline.Features) {
-                if (sessionChecks.verifyUser(this)) proceed()
-            }
+    fun Route.user() = limitedRoute("/api/v1/user", wsCfg.rateLimitingProfile.userApi, {
+        request.header("SessionId") ?: ""
+    }) {
+        intercept(ApplicationCallPipeline.Features) {
+            if (sessionChecks.verifyUser(this)) proceed()
+        }
 
-            @ApiEndpoint("GET /api/v1/user")
-            @OptIn(UsesTrueIdentity::class) // returns whether user is identifiable or not
-            get {
-                val session = call.sessions.get<ConnectedSession>()!!
-                logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
-                call.respond(HttpStatusCode.OK, ApiSuccessResponse.of(session.toUserInformation(call.user)))
-            }
+        @ApiEndpoint("GET /api/v1/user")
+        @OptIn(UsesTrueIdentity::class) // returns whether user is identifiable or not
+        get {
+            val session = call.sessions.get<ConnectedSession>()!!
+            logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
+            call.respond(HttpStatusCode.OK, ApiSuccessResponse.of(session.toUserInformation(call.user)))
+        }
 
-            @ApiEndpoint("GET /api/v1/user/idaccesslogs")
-            get("idaccesslogs") {
-                val user = call.user
-                logger.info("Generating access logs for a user")
-                logger.debug { "Generating access logs for ${user.discordId}" }
-                call.respond(
-                    HttpStatusCode.OK,
-                    ApiSuccessResponse.of(idManager.getIdAccessLogs(user))
-                )
-            }
+        @ApiEndpoint("GET /api/v1/user/idaccesslogs")
+        get("idaccesslogs") {
+            val user = call.user
+            logger.info("Generating access logs for a user")
+            logger.debug { "Generating access logs for ${user.discordId}" }
+            call.respond(
+                HttpStatusCode.OK,
+                ApiSuccessResponse.of(idManager.getIdAccessLogs(user))
+            )
+        }
 
-            @ApiEndpoint("POST /api/v1/user/logout")
-            post("logout") {
-                call.sessions.clear<ConnectedSession>()
-                call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out.", "use.slo"))
-            }
+        @ApiEndpoint("POST /api/v1/user/logout")
+        post("logout") {
+            call.sessions.clear<ConnectedSession>()
+            call.respond(HttpStatusCode.OK, apiSuccess("Successfully logged out.", "use.slo"))
+        }
 
-            @ApiEndpoint("POST /api/v1/user/identity")
-            @OptIn(UsesTrueIdentity::class)
-            post("identity") {
-                val auth = call.receive<RegistrationAuthCode>()
-                logger.info("Relinking a user account")
-                val user = call.user
-                logger.debug {
-                    "User ${user.discordId} has asked for a relink with authcode ${auth.code}."
-                }
-                // Consume the authorization code, just in case
-                val (guid, email) = idProvider.getUserIdentityInfo(auth.code, auth.redirectUri)
-                if (dbFacade.isUserIdentifiable(user)) {
-                    throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyKnown)
-                }
-                idManager.relinkIdentity(user, email, guid)
-                roleManager.invalidateAllRoles(user.discordId, true)
-                call.respond(apiSuccess("Successfully linked Identity Provider account.", "use.slm"))
+        @ApiEndpoint("POST /api/v1/user/identity")
+        @OptIn(UsesTrueIdentity::class)
+        post("identity") {
+            val auth = call.receive<RegistrationAuthCode>()
+            logger.info("Relinking a user account")
+            val user = call.user
+            logger.debug {
+                "User ${user.discordId} has asked for a relink with authcode ${auth.code}."
             }
+            // Consume the authorization code, just in case
+            val (guid, email) = idProvider.getUserIdentityInfo(auth.code, auth.redirectUri)
+            if (dbFacade.isUserIdentifiable(user)) {
+                throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyKnown)
+            }
+            idManager.relinkIdentity(user, email, guid)
+            roleManager.invalidateAllRolesLater(user.discordId, true)
+            call.respond(apiSuccess("Successfully linked Identity Provider account.", "use.slm"))
+        }
 
-            @ApiEndpoint("DELETE /api/v1/user/identity")
-            @OptIn(UsesTrueIdentity::class)
-            delete("identity") {
-                val user = call.user
-                if (dbFacade.isUserIdentifiable(user)) {
-                    idManager.deleteUserIdentity(user)
-                    roleManager.invalidateAllRoles(user.discordId)
-                    call.respond(apiSuccess("Successfully deleted identity", "use.sdi"))
-                } else {
-                    throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyUnknown)
-                }
+        @ApiEndpoint("DELETE /api/v1/user/identity")
+        @OptIn(UsesTrueIdentity::class)
+        delete("identity") {
+            val user = call.user
+            if (dbFacade.isUserIdentifiable(user)) {
+                idManager.deleteUserIdentity(user)
+                roleManager.invalidateAllRolesLater(user.discordId)
+                call.respond(apiSuccess("Successfully deleted identity", "use.sdi"))
+            } else {
+                throw LinkEndpointUserException(StandardErrorCodes.IdentityAlreadyUnknown)
             }
         }
     }
@@ -148,5 +145,11 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
 
     @UsesTrueIdentity
     private suspend fun ConnectedSession.toUserInformation(user: LinkUser) =
-        UserInformation(discordId, discordUsername, discordAvatar, dbFacade.isUserIdentifiable(user))
+        UserInformation(
+            discordId,
+            discordUsername,
+            discordAvatar,
+            dbFacade.isUserIdentifiable(user),
+            user.discordId in admins
+        )
 }

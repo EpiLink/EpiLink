@@ -12,7 +12,7 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
-version = "0.6.0"
+version = "0.6.1"
 
 compileKotlin {
     kotlinOptions.jvmTarget = "11"
@@ -66,6 +66,8 @@ dependencies {
     implementation "guru.zoroark:ktor-rate-limit:$krlVersion"
 
     implementation "org.bitbucket.b_c:jose4j:$jose4jVersion"
+
+    implementation "org.apache.commons:commons-dbcp2:$dbcp2Version"
 
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"

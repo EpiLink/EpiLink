@@ -12,6 +12,7 @@ import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.StrongIdentityRule
 import org.epilink.bot.rulebook.run
 import org.slf4j.LoggerFactory
+import java.lang.Exception
 
 private val logger = LoggerFactory.getLogger("epilink.rulemediator")
 
@@ -43,7 +44,7 @@ interface RuleMediator {
         discordName: String,
         discordDisc: String,
         identity: String?
-    ): List<String>
+    ): RuleResult
 
     /**
      * Attempts to hit the cache with the given rule and Discord ID.
@@ -76,6 +77,11 @@ sealed class CacheResult {
     object NotFound : CacheResult()
 }
 
+sealed class RuleResult {
+    data class Success(val roles: List<String>) : RuleResult()
+    class Failure(val exception: Throwable) : RuleResult()
+}
+
 /**
  * A rule mediator implementation that does not use a cache at all.
  */
@@ -86,10 +92,10 @@ class NoCacheRuleMediator : RuleMediator {
         discordName: String,
         discordDisc: String,
         identity: String?
-    ): List<String> =
-        rule.runCatching { run(discordId, discordName, discordDisc, identity) }.getOrElse { ex ->
+    ): RuleResult =
+        rule.runCatching { RuleResult.Success(run(discordId, discordName, discordDisc, identity)) }.getOrElse { ex ->
             logger.error("Failed to apply rule ${rule.name} due to an unexpected exception.", ex)
-            listOf()
+            RuleResult.Failure(ex)
         }
 
     override suspend fun invalidateCache(discordId: String) {

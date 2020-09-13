@@ -9,6 +9,7 @@ build
 node_modules
 
 epilink.db
+*.db-*
 
 .DS_Store
 app.bundle.js

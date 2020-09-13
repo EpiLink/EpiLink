@@ -16,13 +16,13 @@ EpiLink is a project that contains multiple subprojects, specifically:
 
 EpiLink is **not** a ready-to-use just-add-it-to-your-Discord-server style bot. It is a full host-it-yourself website and service that must be hosted by *you* entirely. As such, there is no "EpiLink" bot, *your* instance will have *its own* bot. This allows us to focus on developing the bot and lets you control all of the data managed by the bot.
 
-Once you host EpiLink on your own server, a 
+Once you host EpiLink on your own server, an invite link will be present in the server's logs. You can use that link to invite the Discord bot to your servers, but the bot will only work if that server [is described in the configuration](#discord-server-configuration). 
 
 ### What EpiLink does
 
 #### Matching accounts and anonymity
 
-At its core, EpiLink matches an Identity Provider account to a Discord account. The Identity Provider can be any service that provides OpenID Connect compatibility. A typical example would be a Microsoft Azure tenant, or a school using G Suite.
+At its core, EpiLink matches an [Identity Provider](IdentityProviders.md) account to a Discord account. The Identity Provider can be any service that supports the [OpenID Connect protocol](https://openid.net/connect/). A typical example would be a [Microsoft Azure tenant](IdentityProviders.md#microsoft), or a [school using G Suite](IdentityProviders.md#google).
 
 EpiLink allows users to remain anonymous to some extent. Should the user choose this option, their e-mail address will not be recorded in the database, but a hash of the user's ID is remembered (even if the user decides not to be anonymous) and there are still checks in place to ensure that they actually have the right to join servers. The hash is remembered for banning purposes (bans are against an identity provider account instead of a Discord account).
 
@@ -35,17 +35,18 @@ In a nutshell:
 
 Retrieving the identity of a user, even if it was done automatically, generates an "id access notification" that is stored in the database. A message can also be sent to the user. This increases trust from the user: they know that no one stalked their identity as they would have otherwise received a notification.
 
-?> Refer to the following pages for more information: [Identity Providers](IdentityProviders.md), [Identity retrieval](Api.md#post-useridentity), [ID access notification configuration](#privacy-configuration)
+?> Refer to the following documentation for more information: [Identity Providers](IdentityProviders.md), [Identity retrieval](Api.md#post-useridentity), [ID access notification configuration](#privacy-configuration)
 
 #### Role management
 
 EpiLink can manage the roles of your users. In a nutshell, whenever a user joins a server (or their roles need to be updated for any reason), EpiLink determines their EpiLink roles, maps them to actual Discord roles, and applies them.
 
-EpiLink roles are *not* Discord roles, they are intermediate role names that are then mapped to actual Discord roles for each server. For example, the user John may have the EpiLink roles `american`, `nice_person` and `student`. Each of these roles is then mapped to an actual Discord roles in each server's configuration (for example `american => 894572638928`). This allows EpiLink to be extremely versatile, allowing you to apply roles across multiple servers very easily.
+EpiLink roles are *not* Discord roles, they are intermediate roles that are then mapped to actual Discord roles for each server. For example, the user John may have the EpiLink roles `american`, `nice_person` and `student`. Each of these roles is then matched to an actual Discord roles in each server's configuration (for example `american => 894572638928` for server A and `american => 917234515` for server B). This allows EpiLink to be extremely versatile, allowing you to apply roles across multiple servers very easily.
 
 "Determining the EpiLink roles" consists in a range of different things:
 
 - Some EpiLink roles are automatic: for example, the special role `_identified` is given to all users who have their e-mail address stored in the database (i.e. are not anonymous).
+- Some roles can be determined through custom "rules", which are small custom scripts that can do pretty much anything (call a web API, check a local file's contents, etc.). These scripts are configured in the [rulebook](Rulebooks.md).
 
 ## Checklist
 
@@ -58,12 +59,13 @@ Go through all of these steps before going public with your instance:
 - [Make sure your reverse proxy configuration is secure](https://docs.zoroark.guru/#/ktor-rate-limit/usage?id=reverse-proxies-and-ip-address-spoofing), specifically the part about overriding the headers the clients send.
 - [Set the reverse proxy headers configuration](#http-server-settings) in EpiLink's configuration
 - Make sure everything still works
+- Ensure that no configuration warning appears in the logs upon starting EpiLink. If some appear, fix them.
 
 After doing all that, you will be good to go! Read on to learn how to do all of these things!
 
 ## Deployment
 
-!> **EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt.
+!> **EpiLink requires HTTPS and must be put behind a reverse proxy which passes remote host information in the `X-Forwarded-*` or `Forwarded` headers.** You should use the reverse proxy to add HTTPS via something like Let's Encrypt. [You must configure the `proxyType` option accordingly](#http-server-settings)
 
 ### Using Docker
 
@@ -112,7 +114,7 @@ rulebook: |
 # OR
 rulebookFile: ...
 
-cacheRulebook: true
+cacheRulebook: true # optional
 ```
 
 * `name`: This is the name of your instance. This name is public and should describe your instance. For example "MyAmazingOrg Account Checker".
@@ -164,6 +166,7 @@ server:
   background: ~ # optional
   enableAdminEndpoints: true # optional
   unlinkCooldown: 3600 # optional
+  rateLimitingProfile: Harsh # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -194,6 +197,11 @@ server:
     * Have their identity accessed
     * Relink their identity
     * Have a new ban added to them
+* `rateLimitingProfile` *(optional, `Harsh` by default)*: The profile that should be used for rate-limiting (which partially protects against spam and abuse). *(since version 0.6.1)* Available options are, from weakest to strongest:
+    * `Disabled`: Disabled rate-limiting entirely. Not recommended.
+    * `Lenient`: The most forgiving profile, good for high-usage scenarios.
+    * `Standard`: A moderate rate-limiting profile. Recommended for instances which host a lot of users (5000+) on the regular.
+    * `Harsh`: The strictes rate-limiting profile. Recommended for smaller instances when in low-usage scenarios. Should be scaled up to `Standard` or `Lenient` if necessary.
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 
@@ -269,7 +277,7 @@ discord:
 * `preferredLanguages` *(optional, `[defaultLanguage]` by default)*: The languages EpiLink will prioritize over others. When sending a DM to users for the first time, these are the languages that will be used, and the languages in the list will appear above all others in the language list sent by `e!lang`. This list must contain at least the default language. *(since version 0.5.0)*
 * `roles` *(optional, empty list `[]` by default)*: A list of [custom roles specifications](#discord-custom-roles-configuration). You can omit it if you do not use custom roles.
 * `servers`: A list of [server configurations](#discord-server-configuration).
-* `stickyRoles`: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to all servers. The same option also exists for individual servers. *(since version 0.6.0)*
+* `stickyRoles`: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to all servers. The same option also exists for individual servers. *(since version 0.6.0)* Since version 0.6.1, sticky roles are ignored for banned users (so banned users will lose *all* of their EpiLink roles).
 
 Depending on the situation, a server may or may not be *monitored*. A *monitored* server is one where EpiLink is actively managing authentication.
 
@@ -310,8 +318,8 @@ Each server needs one entry in the "servers" field of the Discord configuration.
 * `id`: The ID of the server this entry represents
 * `roles`: The [role specifications](#discord-server-role-specification) for the server.
 * `enableWelcomeMessage` *(optional, true by default)*: True if a welcome message should be sent to users who join the server but are not authenticated. False if no welcome message should be sent. The exact content of the message is determined
-* `welcomeEmbed`: The embed that is sent to users who join a Discord server but are not authenticated through this EpiLink instance. Use the [Discord embed configuration](#discord-embed-configuration) to configure it, or set it to `~` (or remove it entirely) to use the default message.
-* `stickyRoles`: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to this server only. The same option also exists for all servers. *(since version 0.6.0)*
+* `welcomeEmbed` *(optional, `~` by default)*: The embed that is sent to users who join a Discord server but are not authenticated through this EpiLink instance. Use the [Discord embed configuration](#discord-embed-configuration) to configure it, or set it to `~` (or remove it entirely) to use the default message.
+* `stickyRoles` *(optional, empty list by default)*: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to this server only. The same option also exists for all servers. *(since version 0.6.0)* Since version 0.6.1, sticky roles are ignored for banned users (so banned users will lose *all* of their EpiLink roles).
 
 #### Discord server role specification
 
@@ -433,6 +441,8 @@ Here is what you can do using the administrative actions provided by EpiLink:
 - [Generate a GDPR report about a user](Api.md#post-admingdprreporttargetid)
 
 You can also disable administrative options in the [HTTP server configuration](#http-server-settings).
+
+Users with Discord IDs specified as administrators [in the configuration file](#general-settings) have an "ADMIN" badge on their profile page.
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
 
