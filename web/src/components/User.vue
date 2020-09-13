@@ -64,6 +64,8 @@
         @include lato(bold);
         font-size: 30px;
 
+        text-align: center;
+
         .username-text {
             overflow-wrap: break-word;
             word-break: break-word;
