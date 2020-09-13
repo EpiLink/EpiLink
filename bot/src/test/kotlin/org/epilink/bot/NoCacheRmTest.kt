@@ -10,7 +10,10 @@ package org.epilink.bot
 
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.discord.NoCacheRuleMediator
+import org.epilink.bot.discord.RuleResult
+import org.epilink.bot.rulebook.RuleException
 import org.epilink.bot.rulebook.WeakIdentityRule
+import java.lang.IllegalStateException
 import kotlin.test.*
 
 class NoCacheRmTest {
@@ -22,7 +25,7 @@ class NoCacheRmTest {
             assertEquals("name", this.userDiscordName)
             roles += "hey"
         }
-        assertEquals(listOf("hey"), NoCacheRuleMediator().runRule(rule, "id", "name", "dis", null))
+        assertEquals(RuleResult.Success(listOf("hey")), NoCacheRuleMediator().runRule(rule, "id", "name", "dis", null))
     }
 
     @Test
@@ -30,6 +33,8 @@ class NoCacheRmTest {
         val rule = WeakIdentityRule("e", null) {
             error("oh no")
         }
-        assertEquals(listOf(), NoCacheRuleMediator().runRule(rule, "", "", "", null))
+        val result = NoCacheRuleMediator().runRule(rule, "", "", "", null)
+        assertTrue(result is RuleResult.Failure)
+        assertTrue(result.exception is RuleException)
     }
 }

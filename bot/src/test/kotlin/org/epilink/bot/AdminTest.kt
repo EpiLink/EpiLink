@@ -20,6 +20,8 @@ import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
+import org.epilink.bot.config.LinkWebServerConfiguration
+import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkBanManager
 import org.epilink.bot.discord.LinkRoleManager
@@ -63,6 +65,9 @@ class AdminTest : KoinBaseTest<Unit>(
                     true
                 }
             }
+        }
+        single<LinkWebServerConfiguration> {
+            mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
         }
     }
 ) {
@@ -517,7 +522,7 @@ class AdminTest : KoinBaseTest<Unit>(
             coEvery { deleteUser(u) } just runs
         }
         val rm = mockHere<LinkRoleManager> {
-            coEvery { invalidateAllRoles("yep") } returns mockk()
+            coEvery { invalidateAllRolesLater("yep") } returns mockk()
         }
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
@@ -530,7 +535,7 @@ class AdminTest : KoinBaseTest<Unit>(
         }
         coVerify {
             dbf.deleteUser(u)
-            rm.invalidateAllRoles("yep")
+            rm.invalidateAllRolesLater("yep")
         }
     }
 

@@ -163,7 +163,7 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
         get<List<Command>>(named("discord.commands")).associateBy { it.name }
     }
 
-    override suspend fun handleMessage(message: String, senderId: String, channelId: String, serverId: String?) =
+    override suspend fun handleMessage(message: String, senderId: String, channelId: String, serverId: String?) {
         when (val a = shouldAcceptMessage(message, senderId, serverId)) {
             NotACommand -> {
                 // return silently
@@ -194,6 +194,7 @@ internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
                 }
             }
         }
+    }
 
     // TODO put that logic in a separate class and test it independently
     @OptIn(UsesTrueIdentity::class)

@@ -91,11 +91,15 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        // slight padding to avoid having long usernames sticking to the side of the frame
+        padding: 8px;
     }
 
     #stepper {
         margin-top: 30px;
-        width: 85%;
+        // Previous versions didn't have padding on #idProvider and used 85% here. This precised % value matches the old
+        // size (well, there's a .2 pixel difference, but come on)
+        width: 88.5%;
     }
 
     #login {

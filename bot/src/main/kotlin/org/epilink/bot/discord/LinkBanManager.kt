@@ -61,7 +61,7 @@ internal class LinkBanManagerImpl : LinkBanManager, KoinComponent {
         val ban = dbf.recordBan(actualHash, expiresOn, author, reason)
         val user = dbf.getUserFromIdpIdHash(actualHash)
         if (user != null) {
-            roleManager.invalidateAllRoles(user.discordId)
+            roleManager.invalidateAllRolesLater(user.discordId)
             cooldown.refreshCooldown(user.discordId)
             messages.getBanNotification(i18n.getLanguage(author), reason, expiresOn)?.let {
                 sender.sendDirectMessageLater(user.discordId, it)
@@ -80,7 +80,7 @@ internal class LinkBanManagerImpl : LinkBanManager, KoinComponent {
         dbf.revokeBan(banId)
         if (previouslyActive) {
             val user = dbf.getUserFromIdpIdHash(actualHash) ?: return
-            roleManager.invalidateAllRoles(user.discordId)
+            roleManager.invalidateAllRolesLater(user.discordId)
         }
     }
 }

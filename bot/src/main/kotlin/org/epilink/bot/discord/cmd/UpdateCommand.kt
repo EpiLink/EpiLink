@@ -80,20 +80,37 @@ class UpdateCommand : Command, KoinComponent {
                 return
             }
         }
-        startUpdate(toInvalidate)
         val (message, replace) = messageAndReplace
-        client.sendChannelMessage(channelId, msg.getSuccessCommandReply(i18n.getLanguage(senderId), message, *replace))
+        val messageId = client.sendChannelMessage(
+            channelId,
+            msg.getSuccessCommandReply(i18n.getLanguage(senderId), message, *replace)
+        )
+        startUpdate(toInvalidate, channelId, messageId)
     }
 
-    private fun startUpdate(targets: List<String>) = updateLauncherScope.launch {
+    private fun startUpdate(
+        targets: List<String>,
+        originalChannelId: String,
+        originalMessageId: String
+    ) = updateLauncherScope.launch {
+        var errorsEncountered = false
         targets.asSequence().chunked(10).forEach { part ->
             part.map {
-                it to async(SupervisorJob()) { roleManager.invalidateAllRoles(it, false).join() }
+                delay(20)
+                it to async(SupervisorJob()) { roleManager.invalidateAllRoles(it, false) }
             }.forEach {
-                try { it.second.await() } catch(e: Exception) {
+                try {
+                    it.second.await()
+                } catch (e: Exception) {
                     logger.error("Exception caught during role update for user ${it.first}", e)
+                    errorsEncountered = true
                 }
             }
+        }
+        // All done
+        client.addReaction(originalChannelId, originalMessageId, "✅")
+        if (errorsEncountered) {
+            client.addReaction(originalChannelId, originalMessageId, "⚠")
         }
     }
 }

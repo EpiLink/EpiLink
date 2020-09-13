@@ -18,6 +18,8 @@ The rate limiting is based on three factors (keys):
 
 Note that 429 errors *never* return API responses, they always return a JSON object with three values, `message`, `retry_after` (in seconds, not milliseconds like Discord) and `global`.
 
+?> Note that since version 0.6.1, rate limiting can be disabled, meaning that you may not receive the rate-limiting headers at all. If that is the case, you can assume that rate limiting is disabled.
+
 ## I18n
 
 Messages are always sent in plain English. Additionally, an I18n key may be given (`..._i18n`) that may be used to show a localized message, and a dictionary (`..._i18n_data`) is provided for values that should be inserted in the localized message.
@@ -449,7 +451,8 @@ Contains information about the currently logged in user.
     "discordId": "...",
     "username": "...",
     "avatarUrl": "...", // nullable
-    "identifiable": true // or false
+    "identifiable": true, // or false
+    "privileged": true // or false
 }
 ```
 
@@ -458,7 +461,8 @@ Where:
 * `discordId` is the Discord ID of the user
 * `username` is the Discord username of the user (should be displayed as the normal username in the interface). For example `My awesome name#1234`
 * `avatarUrl` (may be null) is a URL to the Discord avatar of the user, or null if Discord did not reply with any URL.
-* `identifiable` is a boolean. If true, the user has their identity recorded in the database. If false, the user does not have their identity in the database. 
+* `identifiable` is a boolean. If true, the user has their identity recorded in the database. If false, the user does not have their identity in the database.
+* `privileged` true if the user is privileged, false if he is not. May be inaccurate, as the back-end only performs basic checks on the user instead of the more thorough checks that are actually done when using [administrative endpoints](#administrative-endpoints-admin). Should only be used for display purposes (e.g. showing an "admin" badge on the user page).
 
 #### IdAccessLogs
 

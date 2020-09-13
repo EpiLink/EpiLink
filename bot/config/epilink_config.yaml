@@ -61,6 +61,10 @@ server:
   # to remove their identity in seconds. Optional, 3600 seconds (1 hour) by default
   #unlinkCooldown: 3600
 
+  # Rate limiting profile. This can be changed if you expect big loads on your server from a single IP address
+  # Check the maintainer guide for guidance on which profile to choose. Harsh profile by default.
+  #rateLimitingProfile: Harsh
+
 # Name and location of the EpiLink SQLite database
 db: epilink.db
 

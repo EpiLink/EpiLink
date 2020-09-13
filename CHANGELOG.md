@@ -4,7 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] 
+## [0.6.1] - 2020-09-13
+
+Although there is a number of additions that would theoretically count as a minor update, these are very minimal and invisible to all users except maintainers, and do not break anything.
+
+### Added
+
+* Added rate limiting profiles ([#105](https://github.com/EpiLink/EpiLink/issues/105))
+* The Discord bot now adds reactions to messages after a role update is done ([#236](https://github.com/EpiLink/EpiLink/issues/236))
+* Added an admin badge on the user profile page if the user is privileged ([#237](https://github.com/EpiLink/EpiLink/issues/237))
+* Added information on user endpoint on whether the user is privileged or not ([#237](https://github.com/EpiLink/EpiLink/issues/237))
+
+### Fixed
+
+* Fixed long usernames "pushing" UI elements to the right or going out of frame in the user pages ([#237](https://github.com/EpiLink/EpiLink/issues/237))
+* Bypass sticky rules in case of a ban ([#105](https://github.com/EpiLink/EpiLink/issues/235))
+* Fully fix all SQLite related errors ([#237](https://github.com/EpiLink/EpiLink/issues/237))
 
 ## [0.6.0] - 2020-09-10
 
@@ -228,7 +243,8 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.0...dev
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.1...dev
+[0.6.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.1
 [0.6.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.0
 [0.5.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.1
 [0.5.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.0
