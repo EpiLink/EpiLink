@@ -114,7 +114,7 @@ rulebook: |
 # OR
 rulebookFile: ...
 
-cacheRulebook: true
+cacheRulebook: true # optional
 ```
 
 * `name`: This is the name of your instance. This name is public and should describe your instance. For example "MyAmazingOrg Account Checker".
@@ -441,6 +441,8 @@ Here is what you can do using the administrative actions provided by EpiLink:
 - [Generate a GDPR report about a user](Api.md#post-admingdprreporttargetid)
 
 You can also disable administrative options in the [HTTP server configuration](#http-server-settings).
+
+Users with Discord IDs specified as administrators [in the configuration file](#general-settings) have an "ADMIN" badge on their profile page.
 
 !> **No front-end is provided for administrative actions.** We recommend that you get your `SessionId` from your browser and use the APIs manually. They are very simple to use. Also, note that all of what you see in the API page requires a `/api/v1` before the actual path, e.g. `/api/v1/admin/user/...` instead of just `/admin/user/...`.
 
