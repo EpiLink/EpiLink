@@ -238,7 +238,8 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.0...dev
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.1...dev
+[0.6.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.1
 [0.6.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.0
 [0.5.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.1
 [0.5.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.0
