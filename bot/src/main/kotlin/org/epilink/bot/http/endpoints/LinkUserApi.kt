@@ -30,6 +30,7 @@ import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
 
 /**
@@ -57,6 +58,7 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     private val idManager: LinkIdManager by inject()
     private val dbFacade: LinkDatabaseFacade by inject()
     private val wsCfg: LinkWebServerConfiguration by inject()
+    private val admins: List<String> by inject(named("admins"))
 
     override fun install(route: Route) {
         with(route) { user() }
@@ -143,5 +145,11 @@ internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
 
     @UsesTrueIdentity
     private suspend fun ConnectedSession.toUserInformation(user: LinkUser) =
-        UserInformation(discordId, discordUsername, discordAvatar, dbFacade.isUserIdentifiable(user))
+        UserInformation(
+            discordId,
+            discordUsername,
+            discordAvatar,
+            dbFacade.isUserIdentifiable(user),
+            user.discordId in admins
+        )
 }

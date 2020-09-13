@@ -32,6 +32,7 @@ import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.endpoints.LinkUserApiImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.get
 import java.time.Duration
@@ -55,6 +56,7 @@ class UserTest : KoinBaseTest<Unit>(
         single<LinkWebServerConfiguration> {
             mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
         }
+        single(named("admins")) { listOf("adminid") }
     }
 ) {
     override fun additionalModule(): Module? = module {
@@ -88,6 +90,7 @@ class UserTest : KoinBaseTest<Unit>(
                 assertEquals("Discordian#1234", data.data["username"])
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
                 assertEquals(true, data.data["identifiable"])
+                assertEquals(false, data.data["privileged"])
             }
             coVerify { sessionChecks.verifyUser(any()) }
         }
@@ -116,6 +119,36 @@ class UserTest : KoinBaseTest<Unit>(
                 assertEquals("Discordian#1234", data.data["username"])
                 assertEquals("https://veryavatar", data.data["avatarUrl"])
                 assertEquals(false, data.data["identifiable"])
+                assertEquals(false, data.data["privileged"])
+            }
+            coVerify { sessionChecks.verifyUser(any()) }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    @Test
+    fun `Test user endpoint when admin`() {
+        withTestEpiLink {
+            mockHere<LinkDatabaseFacade> {
+                coEvery { isUserIdentifiable(any()) } returns false
+            }
+            val sid = setupSession(
+                sessionStorage,
+                discId = "adminid",
+                discUsername = "Discordian#1234",
+                discAvatarUrl = "https://veryavatar"
+            )
+            handleRequest(HttpMethod.Get, "/api/v1/user") {
+                addHeader("SessionId", sid)
+            }.apply {
+                assertStatus(HttpStatusCode.OK)
+                val data = fromJson<ApiSuccess>(response)
+                assertNotNull(data.data)
+                assertEquals("adminid", data.data["discordId"])
+                assertEquals("Discordian#1234", data.data["username"])
+                assertEquals("https://veryavatar", data.data["avatarUrl"])
+                assertEquals(false, data.data["identifiable"])
+                assertEquals(true, data.data["privileged"])
             }
             coVerify { sessionChecks.verifyUser(any()) }
         }

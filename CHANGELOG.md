@@ -6,13 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.6.1] - 2020-09-13
 
+Although there is a number of additions that would theoretically count as a minor update, these are very minimal and invisible to all users except maintainers, and do not break anything.
+
 ### Added
 
 * Added rate limiting profiles ([#105](https://github.com/EpiLink/EpiLink/issues/105))
 * The Discord bot now adds reactions to messages after a role update is done ([#236](https://github.com/EpiLink/EpiLink/issues/236))
+* Added an admin badge on the user profile page if the user is privileged ([#237](https://github.com/EpiLink/EpiLink/issues/237))
+* Added information on user endpoint on whether the user is privileged or not ([#237](https://github.com/EpiLink/EpiLink/issues/237))
 
 ### Fixed
 
+* Fixed long usernames "pushing" UI elements to the right or going out of frame in the user pages ([#237](https://github.com/EpiLink/EpiLink/issues/237))
 * Bypass sticky rules in case of a ban ([#105](https://github.com/EpiLink/EpiLink/issues/235))
 * Fully fix all SQLite related errors ([#237](https://github.com/EpiLink/EpiLink/issues/237))
 

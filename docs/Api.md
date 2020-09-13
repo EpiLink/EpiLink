@@ -451,7 +451,8 @@ Contains information about the currently logged in user.
     "discordId": "...",
     "username": "...",
     "avatarUrl": "...", // nullable
-    "identifiable": true // or false
+    "identifiable": true, // or false
+    "privileged": true // or false
 }
 ```
 
@@ -460,7 +461,8 @@ Where:
 * `discordId` is the Discord ID of the user
 * `username` is the Discord username of the user (should be displayed as the normal username in the interface). For example `My awesome name#1234`
 * `avatarUrl` (may be null) is a URL to the Discord avatar of the user, or null if Discord did not reply with any URL.
-* `identifiable` is a boolean. If true, the user has their identity recorded in the database. If false, the user does not have their identity in the database. 
+* `identifiable` is a boolean. If true, the user has their identity recorded in the database. If false, the user does not have their identity in the database.
+* `privileged` true if the user is privileged, false if he is not. May be inaccurate, as the back-end only performs basic checks on the user instead of the more thorough checks that are actually done when using [administrative endpoints](#administrative-endpoints-admin). Should only be used for display purposes (e.g. showing an "admin" badge on the user page).
 
 #### IdAccessLogs
 

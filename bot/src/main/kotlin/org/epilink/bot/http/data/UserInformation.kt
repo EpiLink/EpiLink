@@ -17,5 +17,6 @@ data class UserInformation(
     val username: String,
     val avatarUrl: String?,
     @UsesTrueIdentity
-    val identifiable: Boolean
+    val identifiable: Boolean,
+    val privileged: Boolean
 )

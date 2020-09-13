@@ -24,7 +24,7 @@ export default {
                 email
             };
         },
-        setProfile(state, { username, avatarUrl, identifiable }) {
+        setProfile(state, { username, avatarUrl, identifiable, privileged }) {
             console.log(`Logged in as '${username}' (permanent session)`);
 
             state.user = {
@@ -32,7 +32,8 @@ export default {
 
                 username,
                 avatar: avatarUrl,
-                identifiable
+                identifiable,
+                privileged
             };
         },
         setRegistered(state) {
