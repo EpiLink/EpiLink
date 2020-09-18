@@ -76,6 +76,7 @@ suspend inline fun <reified T : Any> httpGetJsonTyped(
  * the class given in the parameters.
  *
  * @param url The URL for the GET request
+ * @param returnType The class representing the type of what the URL is supposed to return.
  * @param basicAuth The Basic authentication credentials to use, or null to not use credentials at all
  * @param bearer The bearer to use in the Authorization header, or null to not do that
  * @param eagerAuthentication If the authentication information should be sent directly or only after the server sends
