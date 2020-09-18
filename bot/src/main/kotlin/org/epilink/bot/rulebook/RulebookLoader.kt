@@ -98,6 +98,7 @@ internal suspend fun compileRules(source: SourceCode): CompiledScript = withCont
         jvm {
             dependenciesFromCurrentContext(wholeClasspath = true)
         }
+        compilerOptions("-jvm-target","11")
         implicitReceivers(RulebookBuilder::class)
         defaultImports("org.epilink.bot.rulebook.*", "io.ktor.http.*")
     }
@@ -140,8 +141,6 @@ private fun ResultValue.Error.handleFailure(): Nothing {
 
 /**
  * Execute the Rulebook script from the given source code, and return the rulebook that was created from it.
- *
- * If checkCache is set to true, a cache version may be loaded or written to if possible.
  */
 suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.Default) {
     val script = compileRules(source)
@@ -169,33 +168,31 @@ private suspend fun loadRulesWithCache(
     adv: CacheAdvisory,
     source: suspend () -> SourceCode,
     logger: Logger?
-): Rulebook {
-    return when (adv) {
-        is CacheAdvisory.DoNotCache -> {
-            logger?.warn("Caching was disabled automatically to avoid potential issues. Try deleting all files next to the rulebook file that have a file name ending in '__cached' ")
-            loadRules(source())
+): Rulebook = when (adv) {
+    is CacheAdvisory.DoNotCache -> {
+        logger?.warn("Caching was disabled automatically to avoid potential issues. Try deleting all files next to the rulebook file that have a file name ending in '__cached' ")
+        loadRules(source())
+    }
+    is CacheAdvisory.WriteCache -> {
+        val compiled = compileRules(source())
+        logger?.info("Writing cache to ${adv.cachePath}. Next startup will be faster. You can disable caching by setting 'cacheRulebook: false' in the configuration file.")
+        runCatching { compiled.writeScriptTo(adv.cachePath) }.onFailure {
+            logger?.error("Failed to write the rulebook cache to ${adv.cachePath}", it)
         }
-        is CacheAdvisory.WriteCache -> {
-            val compiled = compileRules(source())
-            logger?.info("Writing cache to ${adv.cachePath}. Next startup will be faster. You can disable caching by setting 'cacheRulebook: false' in the configuration file.")
-            runCatching { compiled.writeScriptTo(adv.cachePath) }.onFailure {
-                logger?.error("Failed to write the rulebook cache to ${adv.cachePath}", it)
-            }
-            evaluateRules(compiled)
+        evaluateRules(compiled)
+    }
+    is CacheAdvisory.ReadCache -> {
+        logger?.info("Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting 'cacheRulebook: false' in the configuration file.")
+        val compiled = runCatching {
+            readScriptFrom(adv.cachePath)
+        }.getOrElse {
+            logger?.error(
+                "Failed to read cache, using the original rulebook file instead. Try deleting the cached file (${adv.cachePath}).",
+                it
+            )
+            compileRules(source())
         }
-        is CacheAdvisory.ReadCache -> {
-            logger?.info("Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting 'cacheRulebook: false' in the configuration file.")
-            val compiled = runCatching {
-                readScriptFrom(adv.cachePath)
-            }.getOrElse {
-                logger?.error(
-                    "Failed to read cache, using the original rulebook file instead. Try deleting the cached file (${adv.cachePath}).",
-                    it
-                )
-                compileRules(source())
-            }
-            evaluateRules(compiled)
-        }
+        evaluateRules(compiled)
     }
 }
 

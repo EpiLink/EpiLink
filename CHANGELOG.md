@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] (0.6.2)
+
+### Added
+
+* Added new `httpGet` utility functions ([#241](https://github.com/EpiLink/EpiLink/pull/241))
+
+### Changed
+
+* `httpGet` utility functions now have eager authentication on by default ([#241](https://github.com/EpiLink/EpiLink/pull/241))
+
 ## [0.6.1] - 2020-09-13
 
 Although there is a number of additions that would theoretically count as a minor update, these are very minimal and invisible to all users except maintainers, and do not break anything.
