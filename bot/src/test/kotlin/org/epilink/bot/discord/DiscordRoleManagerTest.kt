@@ -13,16 +13,15 @@ import kotlinx.coroutines.runBlocking
 import org.epilink.bot.CacheClient
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.MemoryCacheClient
-import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.config.LinkDiscordConfig
-import org.epilink.bot.config.LinkDiscordRoleSpec
 import org.epilink.bot.config.LinkDiscordServerSpec
+import org.epilink.bot.db.*
+import org.epilink.bot.mockHere
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
 import org.epilink.bot.rulebook.WeakIdentityRule
-import org.epilink.bot.db.*
-import org.epilink.bot.mockHere
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import org.koin.test.get
 import org.koin.test.mock.declare
@@ -198,6 +197,7 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                         "weakrole" to "g1rw",
                         "strongrole" to "g1rs"
                     )
+                    every { requires } returns listOf("WeakRule", "StrongRule")
                 },
                 // Purely standard roles guild
                 mockk {
@@ -206,6 +206,7 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                         "_known" to "g2rk",
                         "_identified" to "g2ri"
                     )
+                    every { requires } returns listOf()
                 },
                 // Purely rule-based roles guild
                 mockk {
@@ -214,17 +215,13 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                         "weakrole" to "g3rw",
                         "otherrole" to "g3ro"
                     )
+                    every { requires } returns listOf("WeakRule", "OtherRule")
                 },
                 // Guild that should be ignored
                 mockk {
                     every { id } returns "guildid4"
+                    every { requires } returns listOf()
                 }
-            )
-
-            every { roles } returns listOf(
-                LinkDiscordRoleSpec("weakrole", rule = "WeakRule"),
-                LinkDiscordRoleSpec("strongrole", rule = "StrongRule"),
-                LinkDiscordRoleSpec("otherrole", rule = "OtherRule")
             )
         }
         runBlocking {

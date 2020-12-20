@@ -197,39 +197,17 @@ internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
         vararg guilds: String
     ): List<RuleWithRequestingGuilds> = withContext(Dispatchers.Default) {
         // Maps role names to their rules in the global config
-        val rolesInGlobalConfig = config.roles.associateBy({ it.name }, { it.rule })
+        // val rolesInGlobalConfig = config.roles.associateBy({ it.name }, { it.rule })
         guilds
             // Get each guild's config, paired with the guild's ID
-            .map { it to config.getConfigForGuild(it) } // List<Pair<Guild ID, Guild config>>
-            // Get the EpiLink roles required by each guild, paired with the guild's ID
-            .flatMap { (id, cfg) -> cfg.roles.keys.map { it to id } } // List<Pair<Role name, Guild ID>>
-            // .also { println("#### 1 #### $it") }
-            // Group using the role name, mapped to the list of guild IDs
-            // Semantics: A map of the role names and the guilds that wish to use these roles
-            .groupBy({ it.first }, { it.second }) // Map<Role name, List<Guild ID>>
-            // .also { println("#### 2 #### $it") }
-            // Get rid of the EpiLink implicit roles (_known, _identified, ...)
-            .minus(StandardRoles.values().map { it.roleName }) // Map<Role name, List<Guild ID>>
-            // .also { println("#### 3 ####$it") }
-            // Map each role to the name of the rule that defines it
-            // Semantics: A list of rules paired with the guilds that require this rule.
-            .mapNotNull {
-                rolesInGlobalConfig[it.key]?.to(it.value)
-                    ?: run { logger.error("Could not find any role in roles config with id ${it.key}"); null }
-            } // List<Pair<Rule name, List<Guild ID>>>
-            // Turn this into a clean map
-            .groupBy({ it.first }, { it.second }) // Map<Rule name, List<List<Guild ID>>>
-            // Clean the set of guild names
-            // Semantics: A map of each rule name and the guilds that require that rule.
-            .mapValues { it.value.flatten().toSet() } // Map<Rule name, Set<Guild ID>>
-            // .also { println("#### 4 ####$it") }
-            // Finally, match each rule name to the actual rule object.
-            // Semantics: The list of each rule paired with the guilds that require that rule.
-            .mapNotNull {
-                rulebook.rules[it.key]?.let { r -> RuleWithRequestingGuilds(r, it.value) }
-                    ?: run { logger.error("Could not find any rule with id ${it.key}"); null }
-            } // List<RuleWithRequestingGuilds>
-        // .also { println("#### F ####$it") }
+            .map { config.getConfigForGuild(it) }
+            .flatMap {
+                it.requires.map { ruleName ->
+                    it to (rulebook.rules[ruleName] ?: error("Rule not found: $ruleName"))
+                }
+            }
+            .groupBy({ it.second }, { it.first.id })
+            .map { (k, v) -> RuleWithRequestingGuilds(k, v.toSet()) }
     }
 
     override suspend fun updateUserWithRoles(

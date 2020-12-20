@@ -27,10 +27,6 @@ data class LinkDiscordConfig(
      */
     val commandsPrefix: String = "e!",
     /**
-     * The list of EpiLink custom roles (list of [LinkDiscordRoleSpec] objects)
-     */
-    val roles: List<LinkDiscordRoleSpec> = listOf(),
-    /**
      * The list of Discord servers that should be monitored by EpiLink
      */
     val servers: List<LinkDiscordServerSpec> = listOf(),
@@ -47,26 +43,6 @@ data class LinkDiscordConfig(
      * Roles that EpiLink will never remove on all servers. (they "stick" to the person once added)
      */
     val stickyRoles: List<String> = listOf()
-)
-
-/**
- * A Discord EpiLink custom role
- *
- * @see LinkDiscordConfig.roles
- */
-data class LinkDiscordRoleSpec(
-    /**
-     * The name of this role
-     */
-    val name: String,
-    /**
-     * The human-friendly name of this role. Only used for display.
-     */
-    val displayName: String? = null,
-    /**
-     * The rule that should be used to determine this role.
-     */
-    val rule: String
 )
 
 /**
@@ -88,6 +64,10 @@ data class LinkDiscordServerSpec(
      * used.
      */
     val welcomeEmbed: DiscordEmbed? = null,
+    /**
+     * The list of rules that must be launched in order to determine the roles in this server
+     */
+    val requires: List<String> = listOf(),
     /**
      * The role mapping. Keys are EpiLink roles, values are Discord roles.
      */
@@ -128,18 +108,6 @@ fun LinkDiscordConfig.checkCoherenceWithLanguages(available: Set<String>): List<
 }
 
 /**
- * Check the general Discord configuration
- */
-fun LinkDiscordConfig.check(): List<ConfigReportElement> {
-    val report = mutableListOf<ConfigReportElement>()
-    roles.map { it.name }.filter { it.startsWith("_") }.forEach {
-        report +=
-            ConfigWarning("A role was registered with the name ${it}, which starts with an underscore. Underscores are reserved for standard EpiLink roles like _known.")
-    }
-    return report
-}
-
-/**
  * Report whether the rulebook and the config have some incoherent elements. Checks include:
  *
  * - Missing rules
@@ -150,18 +118,10 @@ fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<Confi
     val report = mutableListOf<ConfigReportElement>()
     val roleNamesUsedInServers =
         servers.map { it.roles.keys }.flatten().toSet() - StandardRoles.values().map { it.roleName }
-    val rolesDeclaredInRoles = roles
     val rulesDeclared = rulebook.rules.keys
 
-    val roleNamesDeclaredInRoles = rolesDeclaredInRoles.map { it.name }.toSet()
-    val rolesMissingInRoles = roleNamesUsedInServers - roleNamesDeclaredInRoles
-    for (role in rolesMissingInRoles) {
-        report += ConfigError(
-            true,
-            "Role $role is referenced in a server config but is not defined in the Discord roles config"
-        )
-    }
 
+    /* TODO make this work properly, still useful even after the refacto
     val ruleNamesUsedInRoles = rolesDeclaredInRoles.map { it.rule }.toSet()
     val missingRules = ruleNamesUsedInRoles - rulesDeclared
     for (rule in missingRules) {
@@ -170,11 +130,10 @@ fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<Confi
             "Rule $rule is used in a Discord role config but is not defined in the rulebook"
         )
     }
-
     val unusedRules = rulesDeclared - ruleNamesUsedInRoles
     for (rule in unusedRules) {
         report += ConfigWarning("Rule $rule is defined in the rulebook but is never used")
-    }
+    }*/
 
     return report
 }
