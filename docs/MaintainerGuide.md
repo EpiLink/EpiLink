@@ -285,33 +285,16 @@ Depending on the situation, a server may or may not be *monitored*. A *monitored
 * If EpiLink is connected to the server on Discord *but the server is not described* in the EpiLink configuration, then it is **not monitored** (unmonitored server).
 * If EpiLink is *not connected to the server on Discord* but the server is described in the EpiLink configuration, then it is **not monitored** (orphan server).
 
-#### Discord custom roles configuration
-
-```yaml
-- name: myRole
-  displayName: My Role
-  rule: MyRule
-```
-
-This section is used to define roles that are defined by [rules](Rulebooks.md): more specifically, what roles determined by what rules.
-
-Each element is made of:
-
-* `name`: The name of the role. This is the name you add in your rules (`roles += "myRoleName"`), and the one you use in the server role dictionary (`myRoleName: 123455`).
-* `displayName` *(optional)*: The name of the role, as displayed to the user. Unused at the moment.
-* `rule`: The rule that determines this role. This is the name of the rule defined in the [rulebook](Rulebooks.md) that determines if this role should be added. This can be a weak identity or a strong identity rule. A rule can be used for more than one role.
-
 #### Discord server configuration
 
 Each server needs one entry in the "servers" field of the Discord configuration.
 
 ```yaml
 - id: 123456789
-  roles:
-    ...
   enableWelcomeMessage: true
   welcomeEmbed:
     ...
+  requires: [...] # optional
   stickyRoles: [...] # optional
 ```
 
@@ -319,6 +302,7 @@ Each server needs one entry in the "servers" field of the Discord configuration.
 * `roles`: The [role specifications](#discord-server-role-specification) for the server.
 * `enableWelcomeMessage` *(optional, true by default)*: True if a welcome message should be sent to users who join the server but are not authenticated. False if no welcome message should be sent. The exact content of the message is determined
 * `welcomeEmbed` *(optional, `~` by default)*: The embed that is sent to users who join a Discord server but are not authenticated through this EpiLink instance. Use the [Discord embed configuration](#discord-embed-configuration) to configure it, or set it to `~` (or remove it entirely) to use the default message.
+* `requires` *(optional, empty list by default)*: A list of rules that should be launched to determine custom roles for this server. Refer to the [Rulebooks documentation](Rulebooks.md) for more information.
 * `stickyRoles` *(optional, empty list by default)*: A list of EpiLink roles that the bot will *not* remove, even if it is determined that users should not have them. EpiLink will still be able to add them if necessary. This list applies to this server only. The same option also exists for all servers. *(since version 0.6.0)* Since version 0.6.1, sticky roles are ignored for banned users (so banned users will lose *all* of their EpiLink roles).
 
 #### Discord server role specification
