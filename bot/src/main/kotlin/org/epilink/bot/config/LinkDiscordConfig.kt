@@ -116,24 +116,26 @@ fun LinkDiscordConfig.checkCoherenceWithLanguages(available: Set<String>): List<
  */
 fun LinkDiscordConfig.checkCoherenceWithRulebook(rulebook: Rulebook): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
-    val roleNamesUsedInServers =
-        servers.map { it.roles.keys }.flatten().toSet() - StandardRoles.values().map { it.roleName }
+    val ruleNamesUsedInServers =
+        servers.flatMap { it.requires.map { ruleName -> ruleName to it } }
+            .groupBy({ it.first }, { it.second.id })
+
     val rulesDeclared = rulebook.rules.keys
 
 
-    /* TODO make this work properly, still useful even after the refacto
-    val ruleNamesUsedInRoles = rolesDeclaredInRoles.map { it.rule }.toSet()
-    val missingRules = ruleNamesUsedInRoles - rulesDeclared
-    for (rule in missingRules) {
+    val missingRules = ruleNamesUsedInServers - rulesDeclared
+    for ((rule, serversWhereUsed) in missingRules) {
         report += ConfigError(
             true,
-            "Rule $rule is used in a Discord role config but is not defined in the rulebook"
+            "Rule $rule is used in but is not defined in the rulebook. " +
+                    "Used in: ${serversWhereUsed.joinToString(", ")}"
         )
     }
-    val unusedRules = rulesDeclared - ruleNamesUsedInRoles
+
+    val unusedRules = rulesDeclared - ruleNamesUsedInServers.keys
     for (rule in unusedRules) {
         report += ConfigWarning("Rule $rule is defined in the rulebook but is never used")
-    }*/
+    }
 
     return report
 }

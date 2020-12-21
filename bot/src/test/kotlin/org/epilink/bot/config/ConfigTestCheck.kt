@@ -10,6 +10,8 @@ package org.epilink.bot.config
 
 import io.mockk.every
 import io.mockk.mockk
+import org.epilink.bot.rulebook.Rulebook
+import org.epilink.bot.rulebook.WeakIdentityRule
 import kotlin.test.*
 
 class ConfigTestCheck {
@@ -166,7 +168,7 @@ class ConfigTestCheck {
     }
 
     @Test
-    fun `Test default Microsoft client secrt triggers error`() {
+    fun `Test default Microsoft client secret triggers error`() {
         assertContainsSingleError(tokens(msftOAuthSecret = defaultTokenValue).check(), "idpOAuthSecret")
     }
 
@@ -186,13 +188,25 @@ class ConfigTestCheck {
     /**
      * Assert that the report has at least one error whose message must contain the provided substring
      */
-    private fun assertContainsError(report: List<ConfigReportElement>, vararg substring: String) {
+    private fun assertContainsError(
+        report: List<ConfigReportElement>,
+        vararg substring: String,
+        fatal: Boolean? = null
+    ) {
         val messages = report.joinToString(" // ") { it.message }
+        val substrings = substring.joinToString(" // ")
         assertTrue(report.any { el ->
-            substring.all { s ->
-                el.message.contains(s)
-            }
-        }, "None of the messages matched the expected substrings ($messages)")
+            if (el !is ConfigError)
+                false
+            else
+                substring.all { s ->
+                    el.message.contains(s)
+                }.ifTrue {
+                    if (fatal != null)
+                        assertEquals(fatal, el.shouldFail)
+                }
+
+        }, "None of the messages matched the expected substrings (messages: $messages, substrings: $substrings)")
     }
 
     /**
@@ -232,6 +246,68 @@ class ConfigTestCheck {
         assertContainsSingleError(r, "klkl")
     }
 
+    private fun mockServer(id: String, requires: List<String>): LinkDiscordServerSpec =
+        mockk {
+            every { this@mockk.id } returns id
+            every { this@mockk.requires } returns requires
+        }
+
+    private fun mockConfigServers(vararg servers: LinkDiscordServerSpec) =
+        mockk<LinkDiscordConfig> {
+            every { this@mockk.servers } returns servers.toList()
+        }
+
+    @Test
+    fun `checkCoherenceWithRuleBook, nothing wrong`() {
+        val discordConfig = mockConfigServers(
+            mockServer("12345", listOf("Here", "AlsoHere"))
+        )
+        val rulebook = Rulebook(
+            mapOf(
+                "Here" to WeakIdentityRule("Here", null) {},
+                "AlsoHere" to WeakIdentityRule("AlsoHere", null) {}
+            ),
+            null
+        )
+        val result = discordConfig.checkCoherenceWithRulebook(rulebook)
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `checkCoherenceWithRuleBook, rule used in Discord server config but not in rulebook`() {
+        val discordConfig = mockConfigServers(
+            mockServer("12345", listOf("NotHere", "Here"))
+        )
+        val rulebook = Rulebook(
+            mapOf("Here" to WeakIdentityRule("Here", null) {}),
+            null
+        )
+        val result = discordConfig.checkCoherenceWithRulebook(rulebook)
+        assertContainsError(result, "NotHere", "is not defined", "rulebook", "12345")
+    }
+
+    @Test
+    fun `checkCoherenceWithRuleBook, unused rule`()
+    {
+        val discordConfig = mockConfigServers(
+            mockServer("12345", listOf("Here", "KindaLonely"))
+        )
+        val rulebook = Rulebook(
+            mapOf(
+                "Here" to WeakIdentityRule("Here", null) {},
+                "KindaLonely" to WeakIdentityRule("KindaLonely", null) {},
+                "Thonk" to WeakIdentityRule("Thonk", null) {}
+            ),
+            null
+        )
+        val result = discordConfig.checkCoherenceWithRulebook(rulebook)
+        assertEquals(1, result.size)
+        val resultWarning = result[0]
+        assertTrue(resultWarning is ConfigWarning)
+        assertTrue("Thonk" in resultWarning.message && "never used" in resultWarning.message)
+
+    }
+
     private fun languages(
         default: String = "a",
         preferred: List<String> = listOf("a")
@@ -239,4 +315,10 @@ class ConfigTestCheck {
         every { defaultLanguage } returns default
         every { preferredLanguages } returns preferred
     }
+}
+
+private fun Boolean.ifTrue(function: () -> Unit): Boolean {
+    if (this)
+        function()
+    return this
 }
