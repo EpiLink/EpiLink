@@ -70,8 +70,8 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test on join, unmonitored guild`() {
-        val cfg = mockHere<LinkDiscordConfig> {
-            every { servers } returns listOf(mockk { every { id } returns "otherid" })
+        val cfg = mockDiscordConfigHere {
+            server("otherid")
         }
         test { handleNewUser("guildid", "My Awesome Guild", "userid") }
         coVerifyAll { cfg.servers }
@@ -80,15 +80,11 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test on join, unknown user, send greeting`() {
-        val cfg = mockHere<LinkDiscordConfig> {
-            every { servers } returns listOf(
-                LinkDiscordServerSpec(
-                    id = "guildid",
-                    enableWelcomeMessage = true,
-                    roles = mockk(),
-                    stickyRoles = listOf()
-                )
-            )
+        val cfg = mockDiscordConfigHere {
+            server("guildid") {
+                enableWelcomeMessage = true
+                stickyRoles()
+            }
         }
         val mockem = mockk<DiscordEmbed>()
         val db = mockHere<LinkDatabaseFacade> {
@@ -115,15 +111,11 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test on join, unknown user, no greeting`() {
-        val cfg = mockHere<LinkDiscordConfig> {
-            every { servers } returns listOf(
-                LinkDiscordServerSpec(
-                    id = "guildid",
-                    enableWelcomeMessage = false,
-                    roles = mockk(),
-                    stickyRoles = listOf()
-                )
-            )
+        val cfg = mockDiscordConfigHere {
+            server("guildid") {
+                enableWelcomeMessage = false
+                stickyRoles()
+            }
         }
         val db = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("jacques") } returns null
@@ -145,19 +137,15 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test on join, known`() {
-        val cfg = mockHere<LinkDiscordConfig> {
-            every { servers } returns listOf(
-                LinkDiscordServerSpec(
-                    id = "guildid",
-                    enableWelcomeMessage = false,
-                    roles = mockk(),
-                    stickyRoles = listOf()
-                )
-            )
+        val cfg = mockDiscordConfigHere {
+            server("guildid") {
+                enableWelcomeMessage = false
+                stickyRoles()
+            }
         }
-        val usermock: LinkUser = mockk()
+        val userMock: LinkUser = mockk()
         val db = mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("jacques") } returns usermock
+            coEvery { getUser("jacques") } returns userMock
         }
         val rm = declare { spyk(LinkRoleManagerImpl()) }
         coEvery { rm.updateRolesOnGuilds("jacques", listOf("guildid"), true) } just runs
@@ -187,42 +175,27 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                 "FourthRule" to fourthRule
             )
         }
-        mockHere<LinkDiscordConfig> {
-            every { servers } returns listOf(
-                // Typical server with a mix of standard and rule-based roles
-                mockk {
-                    every { id } returns "guildid1"
-                    every { roles } returns mapOf(
-                        "_known" to "g1rk",
-                        "weakrole" to "g1rw",
-                        "strongrole" to "g1rs"
-                    )
-                    every { requires } returns listOf("WeakRule", "StrongRule")
-                },
-                // Purely standard roles guild
-                mockk {
-                    every { id } returns "guildid2"
-                    every { roles } returns mapOf(
-                        "_known" to "g2rk",
-                        "_identified" to "g2ri"
-                    )
-                    every { requires } returns listOf()
-                },
-                // Purely rule-based roles guild
-                mockk {
-                    every { id } returns "guildid3"
-                    every { roles } returns mapOf(
-                        "weakrole" to "g3rw",
-                        "otherrole" to "g3ro"
-                    )
-                    every { requires } returns listOf("WeakRule", "OtherRule")
-                },
-                // Guild that should be ignored
-                mockk {
-                    every { id } returns "guildid4"
-                    every { requires } returns listOf()
-                }
-            )
+        mockDiscordConfigHere {
+            // Typical server with a mix of standard and rule-based roles
+            server("guildid1") {
+                "_known" boundTo "g1rk"
+                "weakrole" boundTo "g1rw"
+                "strongrole" boundTo "g1rs"
+                requires("WeakRule", "StrongRule")
+            }
+            // Purely standard roles guild
+            server("guildid2") {
+                "_known" boundTo "g2rk"
+                "_identified" boundTo "g2ri"
+            }
+            // Purely rule-based roles guild
+            server("guildid3") {
+                "weakrole" boundTo "g3rw"
+                "otherrole" boundTo "g3ro"
+                requires("WeakRule", "OtherRule")
+            }
+            // Guild that should be ignored
+            server("guildid4")
         }
         runBlocking {
             val rm = get<LinkRoleManager>()
@@ -451,22 +424,17 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         val dcf = mockHere<LinkDiscordClientFacade> {
             coEvery { manageRoles(any(), any(), any(), any()) } just runs
         }
-        mockHere<LinkDiscordConfig> {
-            every { servers } returns listOf(
-                mockk {
-                    every { id } returns "guildid"
-                    every { roles } returns mapOf(
-                        "eladd" to "addMe",
-                        "eladd2" to "addMeToo",
-                        "elrem" to "removeMe",
-                        "elrem2" to "removeMeToo",
-                        "sr1" to "maybeRemoveMe",
-                        "sr2" to "maybeRemoveMeAlso"
-                    )
-                    every { stickyRoles } returns listOf("sr1")
-                }
-            )
-            every { stickyRoles } returns listOf("sr2")
+        mockDiscordConfigHere {
+            server("guildid") {
+                "eladd" boundTo "addMe"
+                "eladd2" boundTo "addMeToo"
+                "elrem" boundTo "removeMe"
+                "elrem2" boundTo "removeMeToo"
+                "sr1" boundTo "maybeRemoveMe"
+                "sr2" boundTo "maybeRemoveMeAlso"
+                stickyRoles("sr1")
+            }
+            stickyRoles("sr2")
         }
         val rm = get<LinkRoleManager>()
         runBlocking {

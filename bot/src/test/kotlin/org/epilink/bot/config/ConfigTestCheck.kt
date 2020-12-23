@@ -10,6 +10,7 @@ package org.epilink.bot.config
 
 import io.mockk.every
 import io.mockk.mockk
+import org.epilink.bot.discord.mockDiscordConfig
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.WeakIdentityRule
 import kotlin.test.*
@@ -246,22 +247,11 @@ class ConfigTestCheck {
         assertContainsSingleError(r, "klkl")
     }
 
-    private fun mockServer(id: String, requires: List<String>): LinkDiscordServerSpec =
-        mockk {
-            every { this@mockk.id } returns id
-            every { this@mockk.requires } returns requires
-        }
-
-    private fun mockConfigServers(vararg servers: LinkDiscordServerSpec) =
-        mockk<LinkDiscordConfig> {
-            every { this@mockk.servers } returns servers.toList()
-        }
-
     @Test
     fun `checkCoherenceWithRuleBook, nothing wrong`() {
-        val discordConfig = mockConfigServers(
-            mockServer("12345", listOf("Here", "AlsoHere"))
-        )
+        val discordConfig = mockDiscordConfig {
+            server("12345") { requires("Here", "AlsoHere") }
+        }
         val rulebook = Rulebook(
             mapOf(
                 "Here" to WeakIdentityRule("Here", null) {},
@@ -275,9 +265,9 @@ class ConfigTestCheck {
 
     @Test
     fun `checkCoherenceWithRuleBook, rule used in Discord server config but not in rulebook`() {
-        val discordConfig = mockConfigServers(
-            mockServer("12345", listOf("NotHere", "Here"))
-        )
+        val discordConfig = mockDiscordConfig {
+            server("12345") { requires("NotHere", "Here") }
+        }
         val rulebook = Rulebook(
             mapOf("Here" to WeakIdentityRule("Here", null) {}),
             null
@@ -287,11 +277,10 @@ class ConfigTestCheck {
     }
 
     @Test
-    fun `checkCoherenceWithRuleBook, unused rule`()
-    {
-        val discordConfig = mockConfigServers(
-            mockServer("12345", listOf("Here", "KindaLonely"))
-        )
+    fun `checkCoherenceWithRuleBook, unused rule`() {
+        val discordConfig = mockDiscordConfig {
+            server("12345") { requires("Here", "KindaLonely") }
+        }
         val rulebook = Rulebook(
             mapOf(
                 "Here" to WeakIdentityRule("Here", null) {},

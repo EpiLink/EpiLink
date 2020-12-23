@@ -33,13 +33,10 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test welcome generation does not output when`() {
-        mockHere<LinkDiscordConfig> {
-            every { servers } returns listOf(
-                mockk {
-                    every { id } returns "guildid"
-                    every { enableWelcomeMessage } returns false
-                }
-            )
+        mockDiscordConfigHere {
+            server("guildid") {
+                enableWelcomeMessage = false
+            }
         }
         val dm = get<LinkDiscordMessages>()
         assertNull(dm.getGreetingsEmbed("", "guildid", "My Guild"))
@@ -47,15 +44,12 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test welcome generation outputs sane default message`() {
-        mockHere<LinkDiscordConfig> {
-            every { welcomeUrl } returns "MyVeryTrueUrl"
-            every { servers } returns listOf(
-                mockk {
-                    every { id } returns "guildid"
-                    every { enableWelcomeMessage } returns true
-                    every { welcomeEmbed } returns null
-                }
-            )
+        mockDiscordConfigHere {
+            welcomeUrl = "MyVeryTrueUrl"
+            server("guildid") {
+                enableWelcomeMessage = true
+                welcomeEmbed = null
+            }
         }
         mockHere<LinkDiscordMessagesI18n> {
             coEvery { getLanguage(any()) } returns ""
@@ -77,15 +71,12 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
     @Test
     fun `Test welcome generation outputs custom message`() {
         val embed = DiscordEmbed()
-        mockHere<LinkDiscordConfig> {
-            every { welcomeUrl } returns "YEET"
-            every { servers } returns listOf(
-                mockk {
-                    every { id } returns "guildid"
-                    every { enableWelcomeMessage } returns true
-                    every { welcomeEmbed } returns embed
-                }
-            )
+        mockDiscordConfigHere {
+            welcomeUrl = "YEET"
+            server("guildid") {
+                enableWelcomeMessage = true
+                welcomeEmbed = embed
+            }
         }
         val dm = get<LinkDiscordMessages>()
         val embedReturned = dm.getGreetingsEmbed("", "guildid", "My Guild")
@@ -227,23 +218,19 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test config for guild found`() {
-        val server = mockk<LinkDiscordServerSpec> { every { id } returns "id2" }
-        val cfg = mockk<LinkDiscordConfig> {
-            every { servers } returns listOf(
-                mockk { every { id } returns "id1" },
-                server
-            )
+        lateinit var serverId2: LinkDiscordServerSpec
+        val cfg = mockDiscordConfig {
+            server("id1")
+            serverId2 = server("id2")
         }
-        assertSame(server, cfg.getConfigForGuild("id2"))
+        assertSame(serverId2, cfg.getConfigForGuild("id2"))
     }
 
     @Test
     fun `Test config for guild not found`() {
-        val cfg = mockk<LinkDiscordConfig> {
-            every { servers } returns listOf(
-                mockk { every { id } returns "id1" },
-                mockk { every { id } returns "id2" }
-            )
+        val cfg = mockDiscordConfig{
+            server("id1")
+            server("id2")
         }
         assertFailsWith<LinkException> { cfg.getConfigForGuild("id3") }
     }
