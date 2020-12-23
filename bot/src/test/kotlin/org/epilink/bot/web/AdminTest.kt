@@ -84,7 +84,7 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test manual identity request on identifiable`() {
         declare(named("admins")) { listOf("adminid") }
-        val u = mockk<LinkUser> { every { discordId } returns "discordId" }
+        val u = mockUser("discordId")
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
             coEvery { isUserIdentifiable(u) } returns true
@@ -146,7 +146,7 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test manual identity request on unidentifiable target`() {
         declare(named("admins")) { listOf("adminid") }
-        val u = mockk<LinkUser> { every { discordId } returns "userid" }
+        val u = mockUser("userid")
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
             coEvery { isUserIdentifiable(u) } returns false
@@ -214,11 +214,7 @@ class AdminTest : KoinBaseTest<Unit>(
     fun `Test user info request success`() {
         val instant = Instant.now() - Duration.ofHours(19)
         declare(named("admins")) { listOf("adminid") }
-        val targetMock = mockk<LinkUser> {
-            every { discordId } returns "targetid"
-            every { idpIdHash } returns byteArrayOf(1, 2, 3)
-            every { creationDate } returns instant
-        }
+        val targetMock = mockUser("targetid", byteArrayOf(1, 2, 3), instant)
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("targetid") } returns targetMock
             coEvery { isUserIdentifiable(targetMock) } returns true
@@ -472,7 +468,7 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test generating a GDPR report`() {
         declare(named("admins")) { listOf("adminid") }
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
         }
@@ -516,7 +512,7 @@ class AdminTest : KoinBaseTest<Unit>(
 
     @Test
     fun `Test deleting a user`() {
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         declare(named("admins")) { listOf("adminid") }
         val dbf = mockHere<LinkDatabaseFacade> {
             coEvery { getUser("yep") } returns u

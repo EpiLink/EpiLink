@@ -15,6 +15,7 @@ import org.epilink.bot.db.*
 import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.discord.*
 import org.epilink.bot.mockHere
+import org.epilink.bot.mockUser
 import org.epilink.bot.softMockHere
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -96,7 +97,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     @Test
     fun `Do not accept messages from unidentified admins`() {
         val (dcf, e) = mockErrorMessage("cr.awni").mockSend("5678")
-        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        val u = mockUser("1234")
         declareCommand("hellothere") {}
         test("1234", "90", u) {
             handleMessage("e!hellothere", "1234", "5678", "90")
@@ -107,7 +108,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     @Test
     fun `Accept messages without command body`() {
         val c = declareCommandNoOp("hellothere")
-        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        val u = mockUser("1234")
         test("1234", "90", u, true) {
             handleMessage("e!hellothere", "1234", "5678", "90")
         }
@@ -119,7 +120,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     @Test
     fun `Accept messages with command body`() {
         val c = declareCommandNoOp("hellothere")
-        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        val u = mockUser("1234")
         test("1234", "90", u, true) {
             handleMessage("e!hellothere this is my command's body", "1234", "5678", "90")
         }
@@ -131,7 +132,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     @Test
     fun `Accept messages from users if user command`() {
         val c = declareCommandNoOp("hellothere", PermissionLevel.User)
-        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        val u = mockUser("1234")
         test(null, "90", u) {
             handleMessage("e!hellothere", "1234", "5678", "90")
         }

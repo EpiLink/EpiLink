@@ -32,7 +32,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test automated id access success`() {
-        val u = mockk<LinkUser> { every { discordId } returns "targetid" }
+        val u = mockUser(id = "targetid")
         val dbf = mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
             coEvery { getUserEmailWithAccessLog(u, false, "authorrr", "reasonnn") } returns "identity"
@@ -61,7 +61,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test automated id access user is not identifiable`() {
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
         }
@@ -76,7 +76,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test relink fails on user already identifiable`() {
-        val user = mockk<LinkUser>()
+        val user = mockUser()
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(user) } returns true
         }
@@ -92,9 +92,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     @Test
     fun `Test relink fails on ID mismatch`() {
         val originalHash = "That doesn't look right".sha256()
-        val u = mockk<LinkUser> {
-            every { idpIdHash } returns originalHash
-        }
+        val u = mockUser(idpIdHash = originalHash)
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
         }
@@ -114,10 +112,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     fun `Test relink success`() {
         val id = "This looks quite alright"
         val hash = id.sha256()
-        val u = mockk<LinkUser> {
-            every { discordId } returns "targetId"
-            every { idpIdHash } returns hash
-        }
+        val u = mockUser("targetId", hash)
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
             coEvery { recordNewIdentity(u, "mynewemail@email.com") } just runs
@@ -138,7 +133,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test identity removal with no identity in the first place`() {
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
         }
@@ -153,7 +148,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test identity removal on cooldown`() {
-        val u = mockk<LinkUser> { every { discordId } returns "targetId" }
+        val u = mockUser(id = "targetId")
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
         }
@@ -171,9 +166,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test identity removal success`() {
-        val u = mockk<LinkUser> {
-            coEvery { discordId } returns "targetId"
-        }
+        val u = mockUser("targetId")
         val df = mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
             coEvery { eraseIdentity(u) } just runs
@@ -191,7 +184,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     fun `Test export access logs`() {
         val inst = Instant.now() - Duration.ofHours(5)
         val inst2 = Instant.now() - Duration.ofDays(10)
-        val u = mockk<LinkUser> { every { discordId } returns "userid" }
+        val u = mockUser("userId")
         mockHere<LinkDatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf(
                 mockk {
@@ -226,7 +219,7 @@ class IdAccessorTest : KoinBaseTest<LinkIdManager>(
     fun `Test export access logs with concealed human identity requester`() {
         val inst = Instant.now() - Duration.ofHours(5)
         val inst2 = Instant.now() - Duration.ofDays(10)
-        val u = mockk<LinkUser> { every { discordId } returns "discordId" }
+        val u = mockUser("discordId")
         mockHere<LinkDatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf(
                 mockk {

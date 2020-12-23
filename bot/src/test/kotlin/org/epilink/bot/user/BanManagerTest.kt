@@ -9,13 +9,10 @@
 package org.epilink.bot.user
 
 import io.mockk.*
-import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.LinkEndpointUserException
-import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.*
 import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.*
-import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import java.util.*
 import kotlin.test.*
@@ -30,9 +27,7 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
     fun `Test ban on existing user`() {
         val idHash = byteArrayOf(1, 2, 3, 4)
         val idHashStr = Base64.getEncoder().encodeToString(idHash)
-        val u = mockk<LinkUser> {
-            every { discordId } returns "targetid"
-        }
+        val u = mockUser(id = "targetid")
         val ban = mockk<LinkBan>()
         val embed = mockk<DiscordEmbed>()
         val df = mockHere<LinkDatabaseFacade> {

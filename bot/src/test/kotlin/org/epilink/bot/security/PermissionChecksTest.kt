@@ -15,6 +15,7 @@ import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.*
 import org.epilink.bot.mockHere
+import org.epilink.bot.mockUser
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.sha256
 import org.koin.core.qualifier.named
@@ -160,7 +161,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test admin not an admin check fails`() {
-        val user = mockk<LinkUser> { every { discordId } returns "discordIdNotAdmin" }
+        val user = mockUser("discordIdNotAdmin")
         declare(named("admins")) { listOf("notme", "notyou") }
         test {
             val result = canPerformAdminActions(user)
@@ -171,7 +172,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test admin not identifiable check fails`() {
-        val user = mockk<LinkUser> { every { discordId } returns "notyou" }
+        val user = mockUser("notyou")
         declare(named("admins")) { listOf("notme", "notyou") }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(user) } returns false
@@ -185,7 +186,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test admin check success`() {
-        val user = mockk<LinkUser> { every { discordId } returns "notyou" }
+        val user = mockUser("notyou")
         declare(named("admins")) { listOf("notme", "notyou") }
         mockHere<LinkDatabaseFacade> {
             coEvery { isUserIdentifiable(user) } returns true

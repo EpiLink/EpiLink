@@ -17,6 +17,8 @@ import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.db.*
 import org.epilink.bot.mockHere
+import org.epilink.bot.mockUser
+import org.jetbrains.exposed.sql.idParam
 import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
@@ -33,11 +35,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     fun `Test user info report`() {
         val i = Instant.now()
         val id = byteArrayOf(1, 2, 3, 4)
-        val u = mockk<LinkUser> {
-            every { discordId } returns "1234"
-            every { creationDate } returns i
-            every { idpIdHash } returns id
-        }
+        val u = mockUser("1234", id, i)
         mockHere<LinkIdProviderConfiguration> {
             every { name } returns "testy"
         }
@@ -60,7 +58,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test true identity report (not identifiable)`() {
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         mockHere<LinkDatabaseFacade> { coEvery { isUserIdentifiable(u) } returns false }
         test {
             val s = getTrueIdentityReport(u, "big boi")
@@ -79,7 +77,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test true identity report (identifiable)`() {
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         mockHere<LinkDatabaseFacade> { coEvery { isUserIdentifiable(u) } returns true }
         mockHere<LinkIdManager> {
             coEvery {
@@ -108,9 +106,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @Test
     fun `Test ban report (no bans)`() {
         val idHash = byteArrayOf(1, 2, 3, 4)
-        val u = mockk<LinkUser> {
-            every { idpIdHash } returns idHash
-        }
+        val u = mockUser(idpIdHash = idHash)
         mockHere<LinkDatabaseFacade> {
             coEvery { getBansFor(idHash) } returns listOf()
         }
@@ -131,9 +127,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @Test
     fun `Test ban report (has bans)`() {
         val idHash = byteArrayOf(1, 2, 3, 4)
-        val u = mockk<LinkUser> {
-            every { idpIdHash } returns idHash
-        }
+        val u = mockUser(idpIdHash = idHash)
         val i1 = Instant.now()
         val i2 = Instant.now() - Duration.ofDays(2)
         val i3 = Instant.now() - Duration.ofHours(3)
@@ -178,7 +172,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
 
     @Test
     fun `Test id access report, none`() {
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         mockHere<LinkDatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf()
         }
@@ -207,7 +201,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     }
 
     private fun idAccessReportTest(identityDisclosed: Boolean) {
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         val i1 = Instant.now() - Duration.ofHours(1)
         val i2 = Instant.now() - Duration.ofDays(365)
         mockHere<LinkDatabaseFacade> {
@@ -278,7 +272,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
 
     @Test
     fun `Test entire generation`() {
-        val u = mockk<LinkUser> { every { discordId } returns "le id" }
+        val u = mockUser("le id")
         val gdpr = spyk(LinkGdprReportImpl()) {
             every { getUserInfoReport(u) } returns "#1"
             coEvery { getTrueIdentityReport(u, "E") } returns "#2"

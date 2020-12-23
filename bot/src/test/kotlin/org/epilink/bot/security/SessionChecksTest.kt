@@ -27,6 +27,7 @@ import org.epilink.bot.http.LinkSessionChecksImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.userObjAttribute
 import org.epilink.bot.mockHere
+import org.epilink.bot.mockUser
 import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.Test
@@ -163,7 +164,7 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
-        val u = mockk<LinkUser>()
+        val u = mockUser()
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("userid") } returns u
         }
@@ -243,9 +244,7 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
     }
 
     private fun mockUserAttributes(discordId: String, mockedCall: ApplicationCall): Pair<Attributes, LinkUser> {
-        val u = mockk<LinkUser> {
-            every { this@mockk.discordId } returns discordId
-        }
+        val u = mockUser(discordId)
         val attributes = mockk<Attributes> {
             every { put(any(), any()) } just runs
             every { getOrNull(userObjAttribute) } returns u
