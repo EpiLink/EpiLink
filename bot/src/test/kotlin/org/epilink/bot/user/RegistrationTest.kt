@@ -29,6 +29,8 @@ import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApiImpl
 import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.sessions.RegisterSession
+import org.epilink.bot.rulebook.getMap
+import org.epilink.bot.rulebook.getString
 import org.koin.dsl.module
 import org.koin.test.get
 import kotlin.test.Test
@@ -65,7 +67,8 @@ class RegistrationTest : KoinBaseTest<Unit>(
             assertNotNull(data)
             assertEquals("continue", data.getString("next"))
             // Check that the returned info is what we expect
-            val regInfo = data.getMap("attachment")
+            @Suppress("UNCHECKED_CAST")
+            val regInfo = data.getMap("attachment") as Map<String, *>
             assertEquals("fakemail", regInfo.getString("email"))
             assertEquals(null, regInfo.getValue("discordUsername"))
             assertEquals(null, regInfo.getValue("discordAvatarUrl"))
@@ -117,7 +120,8 @@ class RegistrationTest : KoinBaseTest<Unit>(
             val data = fromJson<ApiSuccess>(call.response).data
             assertEquals("continue", data!!.getString("next"))
             // Check the returned info
-            val regInfo = data.getMap("attachment")
+            @Suppress("UNCHECKED_CAST")
+            val regInfo = data.getMap("attachment") as Map<String, *>
             assertEquals(null, regInfo.getValue("email"))
             assertEquals("no", regInfo.getString("discordUsername"))
             assertEquals("maybe", regInfo.getString("discordAvatarUrl"))

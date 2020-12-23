@@ -17,7 +17,6 @@ import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
-import org.epilink.bot.defaultMock
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import org.koin.test.get

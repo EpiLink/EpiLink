@@ -10,52 +10,29 @@ package org.epilink.bot
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.MockRequestHandler
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.Url
-import io.ktor.http.fullPath
-import io.ktor.http.hostWithPort
-import io.ktor.server.testing.TestApplicationCall
-import io.ktor.server.testing.TestApplicationRequest
-import io.ktor.server.testing.TestApplicationResponse
-import io.ktor.server.testing.setBody
-import io.mockk.every
+import io.ktor.client.*
+import io.ktor.client.engine.mock.*
+import io.ktor.http.*
+import io.ktor.server.testing.*
 import io.mockk.mockk
-import io.mockk.slot
-import org.epilink.bot.config.*
-import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.koin.test.KoinTest
 import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import kotlin.test.assertEquals
 
-val minimalConfig = LinkConfiguration(
-    "Test",
-    server = LinkWebServerConfiguration(0, ProxyType.None, null),
-    db = "",
-    tokens = LinkTokens(
-        discordToken = "",
-        discordOAuthClientId = "",
-        discordOAuthSecret = "",
-        idpOAuthClientId = "",
-        idpOAuthSecret = ""
-    ),
-    idProvider = LinkIdProviderConfiguration(
-        url = "",
-        name = "",
-        icon = null
-    ),
-    discord = LinkDiscordConfig(null),
-    redis = null
-)
-
 // From https://ktor.io/clients/http-client/testing.html
-val Url.hostWithPortIfRequired: String get() = if (port == protocol.defaultPort) host else hostWithPort
-val Url.fullUrl: String get() = "${protocol.name}://$hostWithPortIfRequired$fullPath"
+private val Url.hostWithPortIfRequired: String get() = if (port == protocol.defaultPort) host else hostWithPort
+private val Url.fullUrl: String get() = "${protocol.name}://$hostWithPortIfRequired$fullPath"
 
+/**
+ * Declare a Ktor client handler that will be available as an injected dependency
+ *
+ * @param onlyMatchUrl If non-null, the client will only accept requests that have for destination the given URL
+ * @param handler The handler that will be called to handle the request
+ * @return The constructed mock HTTP client
+ * @receiver A KoinTest class in which the HTTP client will be injected
+ */
 fun KoinTest.declareClientHandler(onlyMatchUrl: String? = null, handler: MockRequestHandler): HttpClient =
     declare {
         HttpClient(MockEngine) {
@@ -72,11 +49,22 @@ fun KoinTest.declareClientHandler(onlyMatchUrl: String? = null, handler: MockReq
         }
     }
 
+/**
+ * Asserts that the status parameter is equal to the status in the call
+ *
+ * @param status The expected status code
+ * @receiver The actual call
+ */
 fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
     val actual = this.response.status()
     assertEquals(status, actual, "Expected status $status, but got $actual instead")
 }
 
+/**
+ * Inject a mock of type [T] in the current Koin environment and run [body] with the mocked object as the receiver.
+ *
+ * Throws an exception if a definition of type [T] already exists in Koin
+ */
 inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T {
     if (getKoin().getOrNull<T>() != null) {
         error("Duplicate definition for ${T::class}. Use softMockHere or combine the definitions.")
@@ -86,41 +74,31 @@ inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): 
 
 /**
  * Similar to mockHere, but if an instance of T is already injected, apply the initializer to it instead of
- * replacing it
+ * replacing it.
  */
 inline fun <reified T : Any> KoinTest.softMockHere(crossinline initializer: T.() -> Unit): T {
     val injected = getKoin().getOrNull<T>()
     return injected?.apply(initializer) ?: mockHere(initializer)
 }
 
-fun Map<String, Any?>.getString(key: String): String =
-    this.getValue(key) as String
-
-@Suppress("UNCHECKED_CAST")
-fun Map<String, Any?>.getMap(key: String): Map<String, Any?> =
-    this.getValue(key) as Map<String, Any?>
-
-@Suppress("UNCHECKED_CAST")
-fun Map<String, Any?>.getListOfMaps(key: String): List<Map<String, Any?>> =
-    this.getValue(key) as List<Map<String, Any?>>
-
+/**
+ * Parses the content of the response as a JSON object representing the given type [T]
+ */
 inline fun <reified T> fromJson(response: TestApplicationResponse): T {
     return jacksonObjectMapper().readValue(response.content!!)
 }
 
+/**
+ * Turn this string into a byte array by digesting it using the SHA-256 algorithm
+ */
 fun String.sha256(): ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(this.toByteArray(StandardCharsets.UTF_8))
 }
 
+/**
+ * Set the body of this request to the given string. This also sets the Content-Type header of this request.
+ */
 fun TestApplicationRequest.setJsonBody(json: String) {
     addHeader("Content-Type", "application/json")
     setBody(json)
-}
-
-/**
- * Mocks the default behavior for the get message: it will return the second argument (the i18n key)
- */
-fun LinkDiscordMessagesI18n.defaultMock() {
-    val keySlot = slot<String>()
-    every { get(any(), capture(keySlot)) } answers { keySlot.captured }
 }
