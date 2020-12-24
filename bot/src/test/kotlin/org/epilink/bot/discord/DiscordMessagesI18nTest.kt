@@ -9,8 +9,10 @@
 package org.epilink.bot.discord
 
 import io.mockk.*
+import org.epilink.bot.DatabaseFeatures
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.mockDatabase
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import kotlin.test.Test
@@ -64,9 +66,7 @@ class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
 
     @Test
     fun `Test set language with valid language`() {
-        val db = mockHere<LinkDatabaseFacade> {
-            coEvery { recordLanguagePreference("did", "two") } just runs
-        }
+        val db = mockDatabase(DatabaseFeatures.recordLanguagePreference("did", "two"))
         test { assertTrue(setLanguage("did", "two")) }
         coVerify { db.recordLanguagePreference("did", "two") }
     }
@@ -83,25 +83,19 @@ class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
 
     @Test
     fun `Test get language no preference`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getLanguagePreference("did") } returns null
-        }
+        mockDatabase(DatabaseFeatures.getLanguagePreference("did", null))
         test { assertEquals("one", getLanguage("did")) }
     }
 
     @Test
     fun `Test get language invalid preference`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getLanguagePreference("did") } returns "LQSDLKJQHSD"
-        }
+        mockDatabase(DatabaseFeatures.getLanguagePreference("did", "LQSDLKJQHSD"))
         test { assertEquals("one", getLanguage("did")) }
     }
 
     @Test
     fun `Test get language valid preference`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getLanguagePreference("did") } returns "two"
-        }
+        mockDatabase(DatabaseFeatures.getLanguagePreference("did", "two"))
         test { assertEquals("two", getLanguage("did")) }
     }
 }

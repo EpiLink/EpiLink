@@ -10,6 +10,11 @@ package org.epilink.bot.user
 
 import io.mockk.*
 import org.epilink.bot.*
+import org.epilink.bot.DatabaseFeatures.getBan
+import org.epilink.bot.DatabaseFeatures.getBansFor
+import org.epilink.bot.DatabaseFeatures.getUserFromIdpIdHash
+import org.epilink.bot.DatabaseFeatures.recordBan
+import org.epilink.bot.DatabaseFeatures.revokeBan
 import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.*
@@ -30,10 +35,10 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
         val u = mockUser(id = "targetid")
         val ban = mockk<LinkBan>()
         val embed = mockk<DiscordEmbed>()
-        val df = mockHere<LinkDatabaseFacade> {
-            coEvery { recordBan(idHash, null, "the_author", "the description") } returns ban
-            coEvery { getUserFromIdpIdHash(any()) } returns u
-        }
+        val db = mockDatabase(
+            recordBan(idHash, null, "the_author", "the description", ban),
+            getUserFromIdpIdHash(idHash, u)
+        )
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRolesLater("targetid") } returns mockk()
         }
@@ -52,7 +57,7 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
             assertSame(ban, realBan)
         }
         coVerify {
-            df.recordBan(idHash, null, "the_author", "the description")
+            db.recordBan(idHash, null, "the_author", "the description")
             rm.invalidateAllRolesLater("targetid")
             dms.sendDirectMessageLater("targetid", embed)
             cd.refreshCooldown("targetid")
@@ -61,9 +66,7 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
 
     @Test
     fun `Test revoke ban that does not exist`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBan(any()) } returns null
-        }
+        mockDatabase(getBan(12345, null))
         test {
             val exc = assertFailsWith<LinkEndpointUserException> {
                 revokeBan("blabla", 12345)
@@ -74,11 +77,10 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
 
     @Test
     fun `Test revoke ban that does not correspond to msft id hash`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBan(12) } returns mockk {
-                every { idpIdHash } returns byteArrayOf(1, 2, 3)
-            }
+        val ban = mockk<LinkBan> {
+            every { idpIdHash } returns byteArrayOf(1, 2, 3)
         }
+        mockDatabase(getBan(12, ban))
         mockHere<LinkBanLogic> {
             every { isBanActive(any()) } returns true
         }
@@ -101,13 +103,10 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
         mockHere<LinkBanLogic> {
             every { isBanActive(initialBan) } returns true
         }
-        val dbf = mockHere<LinkDatabaseFacade> {
-            coEvery { getBan(12) } returns initialBan
-            coEvery { revokeBan(12) } just runs
-            coEvery { getUserFromIdpIdHash(any()) } returns mockk {
-                every { discordId } returns "discordid"
-            }
+        val u = mockk<LinkUser> {
+            every { discordId } returns "discordid"
         }
+        val db = mockDatabase(getBan(12, initialBan), revokeBan(12), getUserFromIdpIdHash(idHash, u))
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRolesLater("discordid") } returns mockk()
         }
@@ -115,7 +114,7 @@ class BanManagerTest : KoinBaseTest<LinkBanManager>(
             revokeBan(idHashStr, 12)
         }
         coVerify {
-            dbf.revokeBan(12)
+            db.revokeBan(12)
             rm.invalidateAllRolesLater("discordid")
         }
     }

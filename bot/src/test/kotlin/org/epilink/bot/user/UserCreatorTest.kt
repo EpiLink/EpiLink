@@ -22,13 +22,10 @@ class UserCreatorTest : KoinBaseTest<LinkUserCreator>(
         single<LinkUserCreator> { LinkUserCreatorImpl() }
     }
 ) {
-
     @Test
     fun `Successful account creation`() {
         val hash = "tested".sha256()
-        val fac = mockHere<LinkDatabaseFacade> {
-            coEvery { recordNewUser("discordid", hash, "eeemail", true, any()) } returns mockk()
-        }
+        val fac = mockDatabase(DatabaseFeatures.recordNewUser("discordid", hash, "eeemail", true, null, mockk()))
         val pc = mockHere<LinkPermissionChecks> {
             coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
@@ -46,7 +43,10 @@ class UserCreatorTest : KoinBaseTest<LinkUserCreator>(
     @Test
     fun `Unsuccessful account creation on msft issue`() {
         val pc = mockHere<LinkPermissionChecks> {
-            coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Disallowed("Hello", "good.bye")
+            coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Disallowed(
+                "Hello",
+                "good.bye"
+            )
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
         }
         test {

@@ -20,11 +20,11 @@ import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.*
+import org.epilink.bot.DatabaseFeatures.isUserIdentifiable
 import org.epilink.bot.web.*
 import org.epilink.bot.web.UnsafeTestSessionStorage
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.config.RateLimitingProfile
-import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkIdManager
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.LinkRoleManager
@@ -74,9 +74,7 @@ class UserTest : KoinBaseTest<Unit>(
     @Test
     fun `Test user endpoint when identifiable`() {
         withTestEpiLink {
-            mockHere<LinkDatabaseFacade> {
-                coEvery { isUserIdentifiable(any()) } returns true
-            }
+            mockDatabase(isUserIdentifiable(null, true))
             val sid = setupSession(
                 sessionStorage,
                 discId = "myDiscordId",
@@ -103,9 +101,7 @@ class UserTest : KoinBaseTest<Unit>(
     @Test
     fun `Test user endpoint when not identifiable`() {
         withTestEpiLink {
-            mockHere<LinkDatabaseFacade> {
-                coEvery { isUserIdentifiable(any()) } returns false
-            }
+            mockDatabase(isUserIdentifiable(null, false))
             val sid = setupSession(
                 sessionStorage,
                 discId = "myDiscordId",
@@ -132,9 +128,7 @@ class UserTest : KoinBaseTest<Unit>(
     @Test
     fun `Test user endpoint when admin`() {
         withTestEpiLink {
-            mockHere<LinkDatabaseFacade> {
-                coEvery { isUserIdentifiable(any()) } returns false
-            }
+            mockDatabase(isUserIdentifiable(null, false))
             val sid = setupSession(
                 sessionStorage,
                 discId = "adminid",
@@ -212,9 +206,7 @@ class UserTest : KoinBaseTest<Unit>(
         val rm = mockHere<LinkRoleManager> {
             every { invalidateAllRolesLater("userid", true) } returns mockk()
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(any()) } returns false
-        }
+        mockDatabase(isUserIdentifiable(null, false))
         val ida = mockHere<LinkIdManager> {
             coEvery { relinkIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId") } just runs
         }
@@ -245,9 +237,7 @@ class UserTest : KoinBaseTest<Unit>(
         val mbe = mockHere<LinkIdentityProvider> {
             coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("", "")
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(any()) } returns true
-        }
+        mockDatabase(isUserIdentifiable(null, true))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid", msIdHash = hashMsftId)
             handleRequest(HttpMethod.Post, "/api/v1/user/identity") {
@@ -275,9 +265,7 @@ class UserTest : KoinBaseTest<Unit>(
         mockHere<LinkIdentityProvider> {
             coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(any()) } returns false
-        }
+        mockDatabase(isUserIdentifiable(null, false))
         mockHere<LinkIdManager> {
             coEvery {
                 relinkIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
@@ -306,9 +294,7 @@ class UserTest : KoinBaseTest<Unit>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test user identity deletion when no identity exists`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(any()) } returns false
-        }
+        mockDatabase(isUserIdentifiable(null, false))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "userid")
             handleRequest(HttpMethod.Delete, "/api/v1/user/identity") {
@@ -326,9 +312,7 @@ class UserTest : KoinBaseTest<Unit>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test user identity deletion success`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(any()) } returns true
-        }
+        mockDatabase(isUserIdentifiable(null, true))
         val ida = mockHere<LinkIdManager> {
             coEvery { deleteUserIdentity(match { it.discordId == "userid" }) } just runs
         }

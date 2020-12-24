@@ -19,6 +19,7 @@ import io.ktor.util.Attributes
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.epilink.bot.DatabaseFeatures.getUser
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.*
 import org.epilink.bot.http.ApiErrorResponse
@@ -26,6 +27,7 @@ import org.epilink.bot.http.LinkSessionChecks
 import org.epilink.bot.http.LinkSessionChecksImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.userObjAttribute
+import org.epilink.bot.mockDatabase
 import org.epilink.bot.mockHere
 import org.epilink.bot.mockUser
 import org.koin.core.get
@@ -137,9 +139,7 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("userid") } returns null
-        }
+        mockDatabase(getUser("userid", null))
         test {
             assertFalse(verifyUser(context))
             val captured = mr.slot.captured
@@ -165,9 +165,7 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
             every { context } returns call
         }
         val u = mockUser()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("userid") } returns u
-        }
+        mockDatabase(getUser("userid", u))
         runBlocking {
             assertTrue(get<LinkSessionChecks>().verifyUser(context))
         }

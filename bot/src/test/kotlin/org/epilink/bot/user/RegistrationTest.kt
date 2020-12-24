@@ -18,6 +18,7 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.mockk.*
 import org.epilink.bot.*
+import org.epilink.bot.DatabaseFeatures.getUser
 import org.epilink.bot.web.ApiError
 import org.epilink.bot.web.ApiSuccess
 import org.epilink.bot.config.LinkWebServerConfiguration
@@ -108,9 +109,7 @@ class RegistrationTest : KoinBaseTest<Unit>(
         mockHere<LinkPermissionChecks> {
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("yes") } returns null
-        }
+        mockDatabase(getUser("yes", null))
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
                 setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
@@ -140,9 +139,7 @@ class RegistrationTest : KoinBaseTest<Unit>(
             coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
             coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
-        }
+        mockDatabase(getUser("yes", mockk { every { discordId } returns "yes" }))
         val lua = mockHere<LinkUserApi> {
             every { loginAs(any(), any(), "no", "maybe") } just runs
         }
@@ -169,9 +166,7 @@ class RegistrationTest : KoinBaseTest<Unit>(
         mockHere<LinkPermissionChecks> {
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Disallowed("Cheh dans ta tête", "ch.eh2")
         }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("yes") } returns null
-        }
+        mockDatabase(getUser("yes", null))
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Post, "/api/v1/register/authcode/discord") {
                 setJsonBody("""{"code":"fake auth","redirectUri":"fake uri"}""")
@@ -214,6 +209,8 @@ class RegistrationTest : KoinBaseTest<Unit>(
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
             coEvery { isIdentityProviderUserAllowedToCreateAccount(any(), any()) } returns Allowed
         }
+        // Kind of a special one since we need to return something depending on what's happening
+        // (so we don't use the handy mockDatabase)
         mockHere<LinkDatabaseFacade> {
             coEvery { getUser("yes") } answers { if (userCreated) mockk() else null }
         }

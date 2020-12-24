@@ -13,11 +13,11 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
-import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.LinkServerEnvironment
+import org.epilink.bot.*
+import org.epilink.bot.DatabaseFeatures.getBansFor
+import org.epilink.bot.DatabaseFeatures.getIdentityAccesses
+import org.epilink.bot.DatabaseFeatures.getLanguagePreference
 import org.epilink.bot.db.*
-import org.epilink.bot.mockHere
-import org.epilink.bot.mockUser
 import org.jetbrains.exposed.sql.idParam
 import org.koin.dsl.module
 import java.time.Duration
@@ -59,7 +59,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @Test
     fun `Test true identity report (not identifiable)`() {
         val u = mockUser()
-        mockHere<LinkDatabaseFacade> { coEvery { isUserIdentifiable(u) } returns false }
+        mockDatabase(DatabaseFeatures.isUserIdentifiable(u, false))
         test {
             val s = getTrueIdentityReport(u, "big boi")
             assertEquals(
@@ -78,7 +78,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @Test
     fun `Test true identity report (identifiable)`() {
         val u = mockUser()
-        mockHere<LinkDatabaseFacade> { coEvery { isUserIdentifiable(u) } returns true }
+        mockDatabase(DatabaseFeatures.isUserIdentifiable(u, true))
         mockHere<LinkIdManager> {
             coEvery {
                 accessIdentity(
@@ -107,9 +107,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     fun `Test ban report (no bans)`() {
         val idHash = byteArrayOf(1, 2, 3, 4)
         val u = mockUser(idpIdHash = idHash)
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(idHash) } returns listOf()
-        }
+        mockDatabase(getBansFor(idHash, listOf()))
         test {
             val s = getBanReport(u)
             assertEquals(
@@ -137,9 +135,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
             mockBan(false, "deuxième cheh", i2, e1),
             mockBan(false, "troisième cheh", i3, null)
         )
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(idHash) } returns bans
-        }
+        mockDatabase(getBansFor(idHash, bans))
         mockHere<LinkBanLogic> {
             every { isBanActive(bans[0]) } returns false
             every { isBanActive(bans[1]) } returns false
@@ -173,9 +169,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @Test
     fun `Test id access report, none`() {
         val u = mockUser()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getIdentityAccessesFor(u) } returns listOf()
-        }
+        mockDatabase(getIdentityAccesses(u, listOf()))
         test {
             val s = getIdentityAccessesReport(u)
             assertEquals(
@@ -204,12 +198,14 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
         val u = mockUser()
         val i1 = Instant.now() - Duration.ofHours(1)
         val i2 = Instant.now() - Duration.ofDays(365)
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getIdentityAccessesFor(u) } returns listOf(
-                mockIdAccess("Michel", "get rekt", i1, false),
-                mockIdAccess("JacquelinBot", "g3t r3kt", i2, true)
+        mockDatabase(
+            getIdentityAccesses(
+                u, listOf(
+                    mockIdAccess("Michel", "get rekt", i1, false),
+                    mockIdAccess("JacquelinBot", "g3t r3kt", i2, true)
+                )
             )
-        }
+        )
         mockHere<LinkPrivacy> {
             every { shouldDiscloseIdentity(any()) } returns identityDisclosed
         }
@@ -234,9 +230,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
 
     @Test
     fun `Test language preferences report, none`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getLanguagePreference("le id") } returns null
-        }
+        mockDatabase(getLanguagePreference("le id", null))
         test {
             val s = getLanguagePreferencesReport("le id")
             assertEquals(
@@ -253,9 +247,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
 
     @Test
     fun `Test language preferences report, has one`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getLanguagePreference("le id") } returns "howdy"
-        }
+        mockDatabase(getLanguagePreference("le id", "howdy"))
         test {
             val s = getLanguagePreferencesReport("le id")
             assertEquals(

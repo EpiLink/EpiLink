@@ -21,6 +21,11 @@ import io.ktor.server.testing.withTestApplication
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.*
+import org.epilink.bot.DatabaseFeatures.deleteUser
+import org.epilink.bot.DatabaseFeatures.getBan
+import org.epilink.bot.DatabaseFeatures.getBansFor
+import org.epilink.bot.DatabaseFeatures.getUser
+import org.epilink.bot.DatabaseFeatures.searchUserByPartialHash
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.db.*
@@ -85,10 +90,7 @@ class AdminTest : KoinBaseTest<Unit>(
     fun `Test manual identity request on identifiable`() {
         declare(named("admins")) { listOf("adminid") }
         val u = mockUser("discordId")
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("userid") } returns u
-            coEvery { isUserIdentifiable(u) } returns true
-        }
+        mockDatabase(DatabaseFeatures.getUser("userid", u), DatabaseFeatures.isUserIdentifiable(u, true))
         val lia = mockHere<LinkIdManager> {
             coEvery {
                 accessIdentity(u, false, "admin.name@email", "thisismyreason")
@@ -122,9 +124,7 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test manual identity request on unknown target`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("userid") } returns null
-        }
+        mockDatabase(DatabaseFeatures.getUser("userid", null))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid", trueIdentity = "admin.name@email")
             handleRequest(HttpMethod.Post, "/api/v1/admin/idrequest") {
@@ -147,10 +147,7 @@ class AdminTest : KoinBaseTest<Unit>(
     fun `Test manual identity request on unidentifiable target`() {
         declare(named("admins")) { listOf("adminid") }
         val u = mockUser("userid")
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("userid") } returns u
-            coEvery { isUserIdentifiable(u) } returns false
-        }
+        mockDatabase(DatabaseFeatures.getUser("userid", u), DatabaseFeatures.isUserIdentifiable(u, false))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid", trueIdentity = "admin.name@email")
             handleRequest(HttpMethod.Post, "/api/v1/admin/idrequest") {
@@ -193,9 +190,7 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test user info request user does not exist`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("targetid") } returns null
-        }
+        mockDatabase(DatabaseFeatures.getUser("targetid", null))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Get, "/api/v1/admin/user/targetid") {
@@ -215,10 +210,10 @@ class AdminTest : KoinBaseTest<Unit>(
         val instant = Instant.now() - Duration.ofHours(19)
         declare(named("admins")) { listOf("adminid") }
         val targetMock = mockUser("targetid", byteArrayOf(1, 2, 3), instant)
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("targetid") } returns targetMock
-            coEvery { isUserIdentifiable(targetMock) } returns true
-        }
+        mockDatabase(
+            DatabaseFeatures.getUser("targetid", targetMock),
+            DatabaseFeatures.isUserIdentifiable(targetMock, true)
+        )
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Get, "/api/v1/admin/user/targetid") {
@@ -257,9 +252,7 @@ class AdminTest : KoinBaseTest<Unit>(
             ),
             BanImpl(1, msftHash, null, now - Duration.ofDays(3), false, "Oops", "Tinkie winkiiiie")
         )
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(msftHash) } returns bans
-        }
+        mockDatabase(getBansFor(msftHash, bans))
         mockHere<LinkBanLogic> {
             // Technically incorrect, as one of the bans mocked above would still be active
             // (this ensures we actually use isBanActive)
@@ -302,9 +295,7 @@ class AdminTest : KoinBaseTest<Unit>(
         val now = Instant.now()
         val ban =
             BanImpl(0, msftHash, now - Duration.ofSeconds(10), now - Duration.ofDays(1), true, "Yeet", "You got gnomed")
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBan(0) } returns ban
-        }
+        mockDatabase(getBan(0, ban))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Get, "/api/v1/admin/ban/$msftHashStr/0") {
@@ -347,9 +338,7 @@ class AdminTest : KoinBaseTest<Unit>(
         val now = Instant.now()
         val ban =
             BanImpl(0, msftHash, now - Duration.ofSeconds(10), now - Duration.ofDays(1), true, "Yeet", "You got gnomed")
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBan(0) } returns ban
-        }
+        mockDatabase(getBan(0, ban))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Get, "/api/v1/admin/ban/sqdfhj/0") {
@@ -366,9 +355,7 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test retrieve specific ban incorrect id`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBan(33333) } returns null
-        }
+        mockDatabase(getBan(33333, null))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Get, "/api/v1/admin/ban/sqdfhj/33333") {
@@ -469,9 +456,7 @@ class AdminTest : KoinBaseTest<Unit>(
     fun `Test generating a GDPR report`() {
         declare(named("admins")) { listOf("adminid") }
         val u = mockUser()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("userid") } returns u
-        }
+        mockDatabase(DatabaseFeatures.getUser("userid", u))
         mockHere<LinkIdManager> {
             coEvery {
                 accessIdentity(match { it.discordId == "adminid" }, true, any(), any())
@@ -495,9 +480,7 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test generating a GDPR report on non-existant user`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser(any()) } returns null
-        }
+        mockDatabase(getUser("yeeeet", null))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Post, "/api/v1/admin/gdprreport/yeeeet") {
@@ -514,10 +497,7 @@ class AdminTest : KoinBaseTest<Unit>(
     fun `Test deleting a user`() {
         val u = mockUser()
         declare(named("admins")) { listOf("adminid") }
-        val dbf = mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("yep") } returns u
-            coEvery { deleteUser(u) } just runs
-        }
+        val db = mockDatabase(getUser("yep", u), deleteUser(u))
         val rm = mockHere<LinkRoleManager> {
             coEvery { invalidateAllRolesLater("yep") } returns mockk()
         }
@@ -531,7 +511,7 @@ class AdminTest : KoinBaseTest<Unit>(
             }
         }
         coVerify {
-            dbf.deleteUser(u)
+            db.deleteUser(u)
             rm.invalidateAllRolesLater("yep")
         }
     }
@@ -539,9 +519,7 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test deleting a nonexistant user`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getUser("yep") } returns null
-        }
+        mockDatabase(getUser("yep", null))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Delete, "/api/v1/admin/user/yep") {
@@ -557,12 +535,10 @@ class AdminTest : KoinBaseTest<Unit>(
     @Test
     fun `Test partial hash retrieval`() {
         declare(named("admins")) { listOf("adminid") }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { searchUserByPartialHash("fe1234") } returns listOf(
-                mockk { every { discordId } returns "user1" },
-                mockk { every { discordId } returns "user2" }
-            )
-        }
+        mockDatabase(searchUserByPartialHash("fe1234", listOf(
+            mockk { every { discordId } returns "user1" },
+            mockk { every { discordId } returns "user2" }
+        )))
         withTestEpiLink {
             val sid = setupSession(sessionStorage, "adminid")
             handleRequest(HttpMethod.Get, "/api/v1/admin/search/hash16/fe1234") {

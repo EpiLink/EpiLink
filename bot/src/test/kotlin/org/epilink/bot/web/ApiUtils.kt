@@ -9,10 +9,7 @@
 package org.epilink.bot.web
 
 import io.ktor.application.ApplicationCall
-import io.ktor.sessions.SessionStorage
-import io.ktor.sessions.defaultSessionSerializer
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
+import io.ktor.sessions.*
 import io.ktor.util.AttributeKey
 import io.ktor.util.KtorExperimentalAPI
 import io.ktor.util.pipeline.PipelineContext
@@ -23,11 +20,15 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.CacheClient
+import org.epilink.bot.DatabaseFeatures.getUser
+import org.epilink.bot.DatabaseFeatures.isUserIdentifiable
+import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
+import org.epilink.bot.mockDatabase
 import org.epilink.bot.softMockHere
 import org.koin.core.scope.Scope
 import org.koin.test.KoinTest
@@ -107,7 +108,7 @@ internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
     KtorExperimentalAPI::class, // We get a choice between a deprecated or an experimental func...
     UsesTrueIdentity::class // for setting up identity mocks
 )
-internal fun KoinTest.setupSession(
+internal fun KoinBaseTest<*>.setupSession(
     sessionStorage: SimplifiedSessionStorage,
     discId: String = "discordid",
     discUsername: String = "discorduser#1234",
@@ -121,12 +122,9 @@ internal fun KoinTest.setupSession(
         every { idpIdHash } returns msIdHash
         every { creationDate } returns created
     }
-    softMockHere<LinkDatabaseFacade> {
-        coEvery { getUser(discId) } returns u
-        if (trueIdentity != null) {
-            coEvery { isUserIdentifiable(u) } returns true
-        }
-    }
+    mockDatabase(getUser(discId, u))
+    if (trueIdentity != null)
+        mockDatabase(isUserIdentifiable(u, true))
     if (trueIdentity != null) {
         softMockHere<LinkIdManager> {
             coEvery { accessIdentity(u, any(), any(), any()) } returns trueIdentity

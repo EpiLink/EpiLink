@@ -12,12 +12,13 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import org.apache.commons.codec.binary.Hex
-import org.epilink.bot.KoinBaseTest
+import org.epilink.bot.*
+import org.epilink.bot.DatabaseFeatures.doesUserExist
+import org.epilink.bot.DatabaseFeatures.getBansFor
+import org.epilink.bot.DatabaseFeatures.isIdentityAccountAlreadyLinked
+import org.epilink.bot.DatabaseFeatures.isUserIdentifiable
 import org.epilink.bot.db.*
-import org.epilink.bot.mockHere
-import org.epilink.bot.mockUser
 import org.epilink.bot.rulebook.Rulebook
-import org.epilink.bot.sha256
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.mock.declare
@@ -31,9 +32,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
 ) {
     @Test
     fun `Test Discord user who already exists cannot create account`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { doesUserExist("discordid") } returns true
-        }
+        mockDatabase(doesUserExist("discordid", true))
         test {
             val adv = isDiscordUserAllowedToCreateAccount("discordid")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
@@ -46,9 +45,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
 
     @Test
     fun `Test Discord user who does not exist should be able to create account`() {
-        mockHere<LinkDatabaseFacade> {
-            coEvery { doesUserExist("discordid") } returns false
-        }
+        mockDatabase(doesUserExist("discordid", false))
         test {
             val adv = isDiscordUserAllowedToCreateAccount("discordid")
             assertEquals(Allowed, adv)
@@ -58,9 +55,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @Test
     fun `Test Microsoft user who already exists cannot create account`() {
         val hey = "hey".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isIdentityAccountAlreadyLinked(hey) } returns true
-        }
+        mockDatabase(isIdentityAccountAlreadyLinked(hey, true))
         test {
             val adv = isIdentityProviderUserAllowedToCreateAccount("hey", "emailemail")
             assertTrue(adv is Disallowed, "Creation should be disallowed")
@@ -76,10 +71,10 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @Test
     fun `Test banned Microsoft user cannot create account`() {
         val hey = "hey".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
-            coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "badboi" })
-        }
+        mockDatabase(
+            isIdentityAccountAlreadyLinked(hey, false),
+            getBansFor(hey, listOf(mockk { every { reason } returns "badboi" }))
+        )
         mockHere<LinkBanLogic> {
             every { isBanActive(any()) } returns true
         }
@@ -97,10 +92,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @Test
     fun `Test Microsoft user with no validator can create account`() {
         val hey = "hey".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
-            coEvery { getBansFor(hey) } returns listOf()
-        }
+        mockDatabase(isIdentityAccountAlreadyLinked(hey, false), getBansFor(hey, listOf()))
         mockHere<Rulebook> {
             every { validator } returns null
         }
@@ -113,9 +105,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @Test
     fun `Test Microsoft user with email rejected cannot create account`() {
         val hey = "hey".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isIdentityAccountAlreadyLinked(hey) } returns false
-        }
+        mockDatabase(isIdentityAccountAlreadyLinked(hey, false))
         mockHere<Rulebook> {
             every { validator } returns { it != "mailmail" }
         }
@@ -130,9 +120,9 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @Test
     fun `Test indefinitely banned user cannot join servers`() {
         val hey = "tested".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(hey) } returns listOf(mockk { every { reason } returns "HELLO THERE" })
-        }
+        mockDatabase(
+            getBansFor(hey, listOf(mockk { every { reason } returns "HELLO THERE" }))
+        )
         mockHere<LinkBanLogic> {
             every { isBanActive(any()) } returns true
         }
@@ -149,9 +139,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     @Test
     fun `Test normal user can join servers`() {
         val hey = "tested".sha256()
-        mockHere<LinkDatabaseFacade> {
-            coEvery { getBansFor(hey) } returns listOf()
-        }
+        mockDatabase(getBansFor(hey, listOf()))
         test {
             val adv = canUserJoinServers(mockk { every { idpIdHash } returns hey })
             assertEquals(Allowed, adv, "Expected allowed")
@@ -174,9 +162,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     fun `Test admin not identifiable check fails`() {
         val user = mockUser("notyou")
         declare(named("admins")) { listOf("notme", "notyou") }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(user) } returns false
-        }
+        mockDatabase(isUserIdentifiable(user, false))
         test {
             val result = canPerformAdminActions(user)
             assertEquals(AdminStatus.AdminNotIdentifiable, result)
@@ -188,9 +174,7 @@ class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     fun `Test admin check success`() {
         val user = mockUser("notyou")
         declare(named("admins")) { listOf("notme", "notyou") }
-        mockHere<LinkDatabaseFacade> {
-            coEvery { isUserIdentifiable(user) } returns true
-        }
+        mockDatabase(isUserIdentifiable(user, true))
         test {
             val result = canPerformAdminActions(user)
             assertEquals(AdminStatus.Admin, result)

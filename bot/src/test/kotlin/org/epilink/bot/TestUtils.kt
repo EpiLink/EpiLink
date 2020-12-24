@@ -14,11 +14,16 @@ import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import io.mockk.coEvery
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import org.epilink.bot.db.*
 import org.koin.test.KoinTest
 import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.time.Instant
 import kotlin.test.assertEquals
 
 // From https://ktor.io/clients/http-client/testing.html
@@ -102,3 +107,111 @@ fun TestApplicationRequest.setJsonBody(json: String) {
     addHeader("Content-Type", "application/json")
     setBody(json)
 }
+
+typealias DatabaseFeature = LinkDatabaseFacade.() -> Unit
+
+
+object DatabaseFeatures {
+    @UsesTrueIdentity
+    fun isUserIdentifiable(who: LinkUser?, result: Boolean): DatabaseFeature = {
+        coEvery { isUserIdentifiable(who ?: any()) } returns result
+    }
+
+    fun recordBan(target: ByteArray, until: Instant?, author: String, reason: String, result: LinkBan): DatabaseFeature = {
+        coEvery { recordBan(target, until, author, reason) } returns result
+    }
+
+    fun getBansFor(idHash: ByteArray, result: List<LinkBan>): DatabaseFeature = {
+        coEvery { getBansFor(idHash) } returns result
+    }
+
+    fun getBan(id: Int, result: LinkBan?): DatabaseFeature = {
+        coEvery { getBan(id) } returns result
+    }
+
+    fun revokeBan(id: Int): DatabaseFeature = {
+        coEvery { revokeBan(id) } just runs
+    }
+
+    fun getIdentityAccesses(user: LinkUser, result: List<LinkIdentityAccess>): DatabaseFeature = {
+        coEvery { getIdentityAccessesFor(user) } returns result
+    }
+
+    fun getLanguagePreference(id: String, result: String?): DatabaseFeature = {
+        coEvery { getLanguagePreference(id) } returns result
+    }
+
+    fun recordLanguagePreference(id: String, new: String): DatabaseFeature = {
+        coEvery { recordLanguagePreference(id, new) } just runs
+    }
+
+    fun clearLanguagePreference(id: String): DatabaseFeature = {
+        coEvery { clearLanguagePreference(id) } just runs
+    }
+
+    fun recordNewUser(
+        newDiscordId: String,
+        newIdpIdHash: ByteArray,
+        newEmail: String,
+        keepIdentity: Boolean,
+        timestamp: Instant?,
+        result: LinkUser
+    ): DatabaseFeature = {
+        coEvery {
+            recordNewUser(newDiscordId, newIdpIdHash, newEmail, keepIdentity, timestamp ?: any())
+        } returns result
+    }
+
+    fun getUser(id: String?, result: LinkUser?): DatabaseFeature = {
+        coEvery { getUser(id ?: any()) } returns result
+    }
+
+    fun getUserFromIdpIdHash(idHash: ByteArray, result: LinkUser?): DatabaseFeature = {
+        coEvery { getUserFromIdpIdHash(idHash) } returns result
+    }
+
+    fun doesUserExist(id: String, result: Boolean): DatabaseFeature = {
+        coEvery { doesUserExist(id) } returns result
+    }
+
+    fun deleteUser(user: LinkUser): DatabaseFeature = {
+        coEvery { deleteUser(user) } just runs
+    }
+
+    fun searchUserByPartialHash(partialHashHex: String, result: List<LinkUser>): DatabaseFeature = {
+        coEvery { searchUserByPartialHash(partialHashHex) } returns result
+    }
+
+    fun isIdentityAccountAlreadyLinked(hash: ByteArray, result: Boolean): DatabaseFeature = {
+        coEvery { isIdentityAccountAlreadyLinked(hash) } returns result
+    }
+
+    @UsesTrueIdentity
+    fun getUserEmailWithAccessLog(
+        user: LinkUser,
+        automated: Boolean,
+        author: String,
+        reason: String,
+        result: String
+    ): DatabaseFeature = {
+        coEvery { getUserEmailWithAccessLog(user, automated, author, reason) } returns result
+    }
+
+    fun recordNewIdentity(user: LinkUser, newEmail: String): DatabaseFeature = {
+        coEvery { recordNewIdentity(user, newEmail) } just runs
+    }
+
+    fun eraseIdentity(user: LinkUser): DatabaseFeature = {
+        coEvery { eraseIdentity(user) } just runs
+    }
+}
+
+data class BasicIdentityAccess(
+    override val authorName: String, override val automated: Boolean,
+    override val reason: String, override val timestamp: Instant
+) : LinkIdentityAccess
+
+fun KoinBaseTest<*>.mockDatabase(vararg features: DatabaseFeature): LinkDatabaseFacade =
+    softMockHere {
+        features.forEach { f -> f() }
+    }

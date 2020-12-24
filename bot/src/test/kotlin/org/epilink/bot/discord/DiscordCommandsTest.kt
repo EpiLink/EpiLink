@@ -9,14 +9,12 @@
 package org.epilink.bot.discord
 
 import io.mockk.*
-import org.epilink.bot.KoinBaseTest
+import org.epilink.bot.*
+import org.epilink.bot.DatabaseFeatures.getUser
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.db.*
 import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.discord.*
-import org.epilink.bot.mockHere
-import org.epilink.bot.mockUser
-import org.epilink.bot.softMockHere
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.mock.declare
@@ -195,9 +193,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
                     every { id } returns server
                 })
         }
-        softMockHere<LinkDatabaseFacade> {
-            coEvery { getUser(any()) } returns user
-        }
+        mockDatabase(getUser(null, user))
         if (user != null) {
             softMockHere<LinkPermissionChecks> {
                 coEvery { canPerformAdminActions(user) } returns
