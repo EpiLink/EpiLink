@@ -13,8 +13,6 @@ import kotlinx.coroutines.runBlocking
 import org.epilink.bot.*
 import org.epilink.bot.DatabaseFeatures.getUser
 import org.epilink.bot.DatabaseFeatures.isUserIdentifiable
-import org.epilink.bot.config.LinkDiscordConfig
-import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.db.*
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook

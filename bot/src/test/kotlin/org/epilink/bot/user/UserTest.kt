@@ -8,21 +8,15 @@
  */
 package org.epilink.bot.user
 
-import io.ktor.application.ApplicationCall
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.routing.routing
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.application.*
+import io.ktor.http.*
+import io.ktor.routing.*
+import io.ktor.server.testing.*
+import io.ktor.sessions.*
+import io.ktor.util.pipeline.*
 import io.mockk.*
 import org.epilink.bot.*
 import org.epilink.bot.DatabaseFeatures.isUserIdentifiable
-import org.epilink.bot.web.*
-import org.epilink.bot.web.UnsafeTestSessionStorage
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.db.LinkIdManager
@@ -34,6 +28,7 @@ import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.endpoints.LinkUserApiImpl
 import org.epilink.bot.http.sessions.ConnectedSession
+import org.epilink.bot.web.*
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -62,7 +57,7 @@ class UserTest : KoinBaseTest<Unit>(
         single(named("admins")) { listOf("adminid") }
     }
 ) {
-    override fun additionalModule(): Module? = module {
+    override fun additionalModule(): Module = module {
         single<CacheClient> { DummyCacheClient { sessionStorage } }
     }
 

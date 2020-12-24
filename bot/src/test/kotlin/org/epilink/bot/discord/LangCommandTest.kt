@@ -8,14 +8,16 @@
  */
 package org.epilink.bot.discord
 
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
 import org.epilink.bot.DatabaseFeatures.clearLanguagePreference
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.discord.cmd.LangCommand
 import org.epilink.bot.mockDatabase
 import org.epilink.bot.mockHere
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import kotlin.test.Test
 
@@ -78,7 +80,15 @@ class LangCommandTest : KoinBaseTest<Command>(
             coEvery { getLanguage(any()) } returns ""
             coEvery { setLanguage("iid", "lll") } returns false
         }
-        mockHere<LinkDiscordMessages> { every { getErrorCommandReply(any(), "lang.invalidLanguage", "lll") } returns embed }
+        mockHere<LinkDiscordMessages> {
+            every {
+                getErrorCommandReply(
+                    any(),
+                    "lang.invalidLanguage",
+                    "lll"
+                )
+            } returns embed
+        }
         val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang lll", "lll", null, "iid", "1234", "")

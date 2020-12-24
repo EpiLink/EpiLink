@@ -8,8 +8,13 @@
  */
 package org.epilink.bot.rulebooks
 
-import org.epilink.bot.rulebook.*
-import kotlin.test.*
+import org.epilink.bot.rulebook.getList
+import org.epilink.bot.rulebook.getMap
+import org.epilink.bot.rulebook.getString
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.assertSame
 
 class RulebookHelpersTest {
     private val innerMap = mapOf("hmmmm" to "yes", "x" to 'y', "E" to 53, "x" to null)

@@ -12,7 +12,7 @@ import io.mockk.*
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
-import kotlin.test.*
+import kotlin.test.Test
 
 class MessageSenderTest : KoinBaseTest<LinkDiscordMessageSender>(
     LinkDiscordMessageSender::class,

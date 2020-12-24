@@ -13,8 +13,8 @@ import org.epilink.bot.*
 import org.epilink.bot.DatabaseFeatures.getUser
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.db.*
-import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.discord.*
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.mock.declare
@@ -211,6 +211,13 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
         }
 
     private fun DiscordEmbed.mockSend(channel: String) =
-        softMockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage(channel, this@mockSend) } returns "" } to this
+        softMockHere<LinkDiscordClientFacade> {
+            coEvery {
+                sendChannelMessage(
+                    channel,
+                    this@mockSend
+                )
+            } returns ""
+        } to this
 
 }

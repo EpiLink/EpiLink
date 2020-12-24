@@ -13,7 +13,9 @@ import io.mockk.mockk
 import org.epilink.bot.discord.mockDiscordConfig
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.WeakIdentityRule
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ConfigTestCheck {
     @Test

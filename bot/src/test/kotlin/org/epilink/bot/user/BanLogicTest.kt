@@ -17,7 +17,9 @@ import org.epilink.bot.db.LinkBanLogicImpl
 import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class BanLogicTest : KoinBaseTest<LinkBanLogic>(
     LinkBanLogic::class,

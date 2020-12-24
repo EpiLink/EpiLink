@@ -8,15 +8,12 @@
  */
 package org.epilink.bot.security
 
-import io.ktor.application.ApplicationCall
-import io.ktor.http.Headers
-import io.ktor.http.HttpStatusCode
-import io.ktor.response.ApplicationResponse
-import io.ktor.response.ApplicationSendPipeline
-import io.ktor.sessions.CurrentSession
-import io.ktor.sessions.sessions
-import io.ktor.util.Attributes
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.application.*
+import io.ktor.http.*
+import io.ktor.response.*
+import io.ktor.sessions.*
+import io.ktor.util.*
+import io.ktor.util.pipeline.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.DatabaseFeatures.getUser

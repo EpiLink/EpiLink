@@ -13,9 +13,9 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
 import org.koin.test.KoinTest
-import org.koin.test.get
 import kotlin.reflect.KClass
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 /**
  * A base for all classes that run tests that use Koin. This class (and its subclasses) automatically start and stop

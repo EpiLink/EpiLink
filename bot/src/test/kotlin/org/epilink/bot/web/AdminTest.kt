@@ -8,17 +8,14 @@
  */
 package org.epilink.bot.web
 
-import io.ktor.application.ApplicationCall
-import io.ktor.http.HttpMethod
+import io.ktor.application.*
+import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.routing.routing
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.contentType
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.routing.*
+import io.ktor.server.testing.*
+import io.ktor.util.pipeline.*
 import io.mockk.*
 import org.epilink.bot.*
 import org.epilink.bot.DatabaseFeatures.deleteUser
@@ -45,7 +42,10 @@ import org.koin.test.mock.declare
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 private class BanImpl(
     override val banId: Int,

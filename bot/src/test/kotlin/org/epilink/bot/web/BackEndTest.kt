@@ -9,19 +9,12 @@
 package org.epilink.bot.web
 
 import guru.zoroark.ratelimit.RateLimit
-import io.ktor.application.Application
-import io.ktor.application.featureOrNull
-import io.ktor.features.ContentNegotiation
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.routing.Route
-import io.ktor.routing.Routing
-import io.ktor.routing.get
-import io.ktor.routing.routing
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
-import io.ktor.sessions.Sessions
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.routing.*
+import io.ktor.server.testing.*
+import io.ktor.sessions.*
 import io.mockk.*
 import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode

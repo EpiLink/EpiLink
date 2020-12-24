@@ -8,21 +8,20 @@
  */
 package org.epilink.bot.web
 
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
+import io.ktor.http.*
+import io.ktor.server.testing.*
 import io.mockk.every
 import io.mockk.spyk
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.assertStatus
 import org.epilink.bot.config.LinkWebServerConfiguration
-import org.epilink.bot.http.*
+import org.epilink.bot.http.LinkFrontEndHandler
+import org.epilink.bot.http.LinkFrontEndHandlerImpl
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import org.koin.test.get
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
     LinkFrontEndHandler::class,

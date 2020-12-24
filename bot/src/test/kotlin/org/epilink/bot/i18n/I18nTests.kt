@@ -17,7 +17,7 @@ import java.util.*
 
 /**
  * These tests are specifically intended for testing the language files themselves. For tests on the actual class that
- * handles all of this, see [org.epilink.bot.DiscordMessagesI18nTest].
+ * handles all of this, see [org.epilink.bot.i18n.I18nTests].
  */
 class I18nTests {
 

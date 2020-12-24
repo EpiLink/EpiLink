@@ -8,19 +8,13 @@
  */
 package org.epilink.bot.user
 
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.routing.routing
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
+import io.ktor.http.*
+import io.ktor.routing.*
+import io.ktor.server.testing.*
+import io.ktor.sessions.*
 import io.mockk.*
 import org.epilink.bot.*
 import org.epilink.bot.DatabaseFeatures.getUser
-import org.epilink.bot.web.ApiError
-import org.epilink.bot.web.ApiSuccess
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.db.*
@@ -32,6 +26,8 @@ import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.rulebook.getMap
 import org.epilink.bot.rulebook.getString
+import org.epilink.bot.web.ApiError
+import org.epilink.bot.web.ApiSuccess
 import org.koin.dsl.module
 import org.koin.test.get
 import kotlin.test.Test

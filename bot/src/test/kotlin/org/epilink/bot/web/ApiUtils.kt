@@ -8,11 +8,10 @@
  */
 package org.epilink.bot.web
 
-import io.ktor.application.ApplicationCall
+import io.ktor.application.*
 import io.ktor.sessions.*
-import io.ktor.util.AttributeKey
-import io.ktor.util.KtorExperimentalAPI
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.util.*
+import io.ktor.util.pipeline.*
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
@@ -37,7 +36,6 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.Map
 import kotlin.collections.set
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

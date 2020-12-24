@@ -18,7 +18,6 @@ import org.epilink.bot.DatabaseFeatures.getBansFor
 import org.epilink.bot.DatabaseFeatures.getIdentityAccesses
 import org.epilink.bot.DatabaseFeatures.getLanguagePreference
 import org.epilink.bot.db.*
-import org.jetbrains.exposed.sql.idParam
 import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant

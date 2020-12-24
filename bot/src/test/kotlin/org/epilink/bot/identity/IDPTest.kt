@@ -20,7 +20,10 @@ import org.epilink.bot.http.UserIdentityInfo
 import org.jose4j.jwt.consumer.InvalidJwtException
 import org.koin.dsl.module
 import org.koin.test.KoinTest
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 
 class IDPTest : KoinBaseTest<LinkIdentityProvider>(
     LinkIdentityProvider::class,

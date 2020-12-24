@@ -8,12 +8,10 @@
  */
 package org.epilink.bot.discord
 
-import io.mockk.*
+import io.mockk.coVerify
 import org.epilink.bot.DatabaseFeatures
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.mockDatabase
-import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,6 +40,7 @@ class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
             assertEquals(setOf("one", "two"), availableLanguages)
         }
     }
+
     @Test
     fun `Test key retrieval present in chosen`() {
         test {

@@ -9,11 +9,9 @@
 package org.epilink.bot.web
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.engine.mock.respondError
-import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import io.ktor.util.KtorExperimentalAPI
+import io.ktor.util.*
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes
@@ -30,14 +28,16 @@ class DiscordBackEndTest : KoinBaseTest<LinkDiscordBackEnd>(
     }
 ) {
     @Test
-    fun `Test Discord auth stub`() = test {
-        getAuthorizeStub().apply {
-            assertTrue(contains("client_id=DiscordClientId"), "Expected a client ID")
-            assertTrue(contains("scope=identify"), "Expected the scope to be set to identify")
-            assertTrue(contains("response_type=code"), "Expected the response type to be code")
-            assertTrue(contains(Regex("scope=identify(&|$)")), "Expected identify to be the only scope")
-            assertTrue(contains("prompt=consent"), "Expected prompt to be set to consent")
-            assertFalse(contains("redirect_uri"), "Expected redirect_uri to be absent")
+    fun `Test Discord auth stub`() {
+        test {
+            getAuthorizeStub().apply {
+                assertTrue(contains("client_id=DiscordClientId"), "Expected a client ID")
+                assertTrue(contains("scope=identify"), "Expected the scope to be set to identify")
+                assertTrue(contains("response_type=code"), "Expected the response type to be code")
+                assertTrue(contains(Regex("scope=identify(&|$)")), "Expected identify to be the only scope")
+                assertTrue(contains("prompt=consent"), "Expected prompt to be set to consent")
+                assertFalse(contains("redirect_uri"), "Expected redirect_uri to be absent")
+            }
         }
     }
 

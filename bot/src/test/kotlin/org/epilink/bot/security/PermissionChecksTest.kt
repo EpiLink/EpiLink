@@ -8,7 +8,6 @@
  */
 package org.epilink.bot.security
 
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import org.apache.commons.codec.binary.Hex
@@ -22,7 +21,9 @@ import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.mock.declare
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class PermissionChecksTest : KoinBaseTest<LinkPermissionChecks>(
     LinkPermissionChecks::class,

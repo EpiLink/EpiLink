@@ -10,14 +10,12 @@ package org.epilink.bot.discord
 
 import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.mockk
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.LinkException
-import org.epilink.bot.web.declareNoOpI18n
-import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
 import org.epilink.bot.mockHere
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import org.koin.test.get
 import java.time.Duration
@@ -228,7 +226,7 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test config for guild not found`() {
-        val cfg = mockDiscordConfig{
+        val cfg = mockDiscordConfig {
             server("id1")
             server("id2")
         }

@@ -117,7 +117,13 @@ object DatabaseFeatures {
         coEvery { isUserIdentifiable(who ?: any()) } returns result
     }
 
-    fun recordBan(target: ByteArray, until: Instant?, author: String, reason: String, result: LinkBan): DatabaseFeature = {
+    fun recordBan(
+        target: ByteArray,
+        until: Instant?,
+        author: String,
+        reason: String,
+        result: LinkBan
+    ): DatabaseFeature = {
         coEvery { recordBan(target, until, author, reason) } returns result
     }
 

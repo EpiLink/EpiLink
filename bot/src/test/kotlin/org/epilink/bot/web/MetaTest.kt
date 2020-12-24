@@ -8,15 +8,10 @@
  */
 package org.epilink.bot.web
 
-import io.ktor.http.ContentType
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.routing.routing
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.contentType
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
+import io.ktor.routing.*
+import io.ktor.server.testing.*
 import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.*

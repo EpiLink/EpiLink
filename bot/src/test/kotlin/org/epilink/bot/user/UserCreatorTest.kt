@@ -14,7 +14,9 @@ import io.mockk.mockk
 import org.epilink.bot.*
 import org.epilink.bot.db.*
 import org.koin.dsl.module
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class UserCreatorTest : KoinBaseTest<LinkUserCreator>(
     LinkUserCreator::class,

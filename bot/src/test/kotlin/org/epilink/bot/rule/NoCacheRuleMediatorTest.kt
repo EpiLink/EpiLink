@@ -13,7 +13,9 @@ import org.epilink.bot.discord.NoCacheRuleMediator
 import org.epilink.bot.discord.RuleResult
 import org.epilink.bot.rulebook.RuleException
 import org.epilink.bot.rulebook.WeakIdentityRule
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class NoCacheRuleMediatorTest {
     @Test

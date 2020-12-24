@@ -15,7 +15,10 @@ import org.epilink.bot.asUrl
 import org.epilink.bot.loadAsset
 import java.io.File
 import java.nio.file.Paths
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AssetTest {
     @Test
