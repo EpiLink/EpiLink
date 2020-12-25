@@ -9,8 +9,8 @@ info:
     For more information on EpiLink, check out:
     - The EpiLink website: <https://epilink.zoroark.guru>
   license:
-    name:
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+    name: Mozilla Public License 2
+    url: https://www.mozilla.org/en-US/MPL/2.0/
   version: "0.7"
 servers:
   - url: "{protocol}://{backendHost}/api/v1"
