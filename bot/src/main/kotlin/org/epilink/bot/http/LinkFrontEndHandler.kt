@@ -8,23 +8,13 @@
  */
 package org.epilink.bot.http
 
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.CORS
-import io.ktor.http.ContentType
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.resolveResource
-import io.ktor.http.defaultForFileExtension
-import io.ktor.request.path
-import io.ktor.request.queryString
-import io.ktor.request.uri
-import io.ktor.response.respond
-import io.ktor.response.respondRedirect
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.request.*
+import io.ktor.response.*
+import io.ktor.routing.*
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.debug
 import org.epilink.bot.trace
@@ -66,24 +56,43 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
 
     override fun Application.install() {
         val frontUrl = wsCfg.frontendUrl
-        when {
-            serveIntegratedFrontEnd -> {
-                logger.debug("CORS is disabled because the integrated front end is being served.")
-                routing {
-                    get("/{...}") {
+        val disableCors = wsCfg.disableCorsSecurity
+        routing {
+            get("/{...}") {
+                when {
+                    serveIntegratedFrontEnd -> {
+                        logger.debug("Serving bootstrapped front-end")
                         call.respondBootstrapped()
                     }
+                    frontUrl == null -> {
+                        logger.warn("Not serving bootstrapped front-end (none found and frontUrl was null)")
+                        call.respond(HttpStatusCode.NotFound)
+
+                    }
+                    else -> {
+                        logger.debug("Serving front-end as a redirection")
+                        val redirectionUrl = frontUrl.dropLast(1) +
+                                call.request.path() +
+                                (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" } ?: "")
+                        logger.debug { "Redirecting ${call.request.uri} to $redirectionUrl" }
+                        call.respondRedirect(redirectionUrl, permanent = false)
+                    }
                 }
+            }
+        }
+        when {
+            disableCors -> {
+                logger.warn("CORS is set to allow requests from any origin. DO NOT DO THIS IN PRODUCTION ENVIRONMENTS! Remove disableCorsSecurity from your config file!")
+                install(CORS) {
+                    anyHost()
+                }
+            }
+            serveIntegratedFrontEnd -> {
+                logger.debug("CORS is disabled because the integrated front end is being served.")
             }
             frontUrl == null -> {
                 logger.warn("CORS is disabled. Web browsers may deny calls to the back-end. Specify the front-end URL in the configuration files to fix this.")
-                routing {
-                    get("/{...}") {
-                        call.respond(HttpStatusCode.NotFound)
-                    }
-                }
             }
-
             else -> {
                 logger.debug("CORS is enabled.")
                 /*
@@ -103,13 +112,7 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                     host(frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https"))
                 }
                 routing {
-                    get("/{...}") {
-                        val redirectionUrl = frontUrl.dropLast(1) +
-                                call.request.path() +
-                                (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" } ?: "")
-                        logger.debug { "Redirecting ${call.request.uri} to $redirectionUrl" }
-                        call.respondRedirect(redirectionUrl, permanent = false)
-                    }
+
                 }
             }
         }
@@ -130,7 +133,7 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
     }
 
     private suspend fun ApplicationCall.respondBootstrapped() {
-        logger.trace { "Responding to ${request.uri} with bootstrapped"}
+        logger.trace { "Responding to ${request.uri} with bootstrapped" }
         // The path (without the initial /)
         val path = request.path().substring(1)
         if (path.isEmpty())
@@ -152,4 +155,3 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
         }
     }
 }
-

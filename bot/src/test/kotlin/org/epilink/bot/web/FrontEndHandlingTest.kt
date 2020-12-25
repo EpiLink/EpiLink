@@ -37,6 +37,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
         }
         mockHere<LinkWebServerConfiguration> {
             every { frontendUrl } returns null
+            every { disableCorsSecurity } returns false
         }
         withTestFrontHandler {
             listOf("/index.html", "/", "/dir/indir.md").forEach { path ->
@@ -54,6 +55,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
         }
         mockHere<LinkWebServerConfiguration> {
             every { frontendUrl } returns "https://frontend/"
+            every { disableCorsSecurity } returns false
         }
         withTestFrontHandler {
             listOf(
@@ -77,6 +79,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
         // The .hasFrontend is present in the test resources
         mockHere<LinkWebServerConfiguration> {
             every { frontendUrl } returns null
+            every { disableCorsSecurity } returns false
         }
         withTestFrontHandler {
             mapOf(
