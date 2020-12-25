@@ -1,0 +1,176 @@
+openapi: 3.0.1
+info:
+  title: EpiLink API (beta)
+  description: |
+    This is the API for EpiLink, a server authentication system for Discord. It is still WIP.
+
+    This will be the replacement for the old Docsify.js-based API documentation.
+
+    For more information on EpiLink, check out:
+    - The EpiLink website: <https://epilink.zoroark.guru>
+  license:
+    name:
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: "0.7"
+servers:
+  - url: "{protocol}://{backendHost}/api/v1"
+    variables:
+      backendHost:
+        default: my.epilinkinstance.org
+        description: The host name for your EpiLink instance
+      protocol:
+        enum:
+          - http
+          - https
+        default: https
+        description: The protocol to use.
+tags:
+  - name: meta
+    description: Metadata endpoints for discovering information about an instance
+paths:
+  /meta/info:
+    get:
+      tags: [meta]
+      summary: Returns information about the EpiLink instance
+      responses:
+        '200':
+          description: A JSON ApiResponse containing an InstanceInformation object.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InstanceInformation'
+              example:
+                success: true
+                message: ~
+                message_i18n: ~
+                message_i18n_data: {}
+                data:
+                  title: "My Instance"
+                  logo: "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
+                  background: ~
+                  authorizeStub_idProvider: "https://..."
+                  authorizeStub_discord: "https://..."
+                  providerName: "My Identity Provider"
+                  providerIcon: ~
+                  idPrompt: "<p>Pizza will be ordered and robots will invade if you give us your identity</p>"
+                  footerUrls:
+                    - name: My website
+                      url: https://zoroark.guru
+                    - name: Another website
+                      url: https://litarvan.com
+                  contacts:
+                    - name: Xavier Loginard
+                      email: xavier.loginard@school.edu
+                    - name: Mestel Bural-Nesfa
+                      email: mester@lab.school.edu
+  /meta/tos:
+    get:
+      tags: [meta]
+      summary: Returns the terms of services document for this instance.
+      description: The terms of services for this EpiLink instance are returned. This can be inline HTML or a PDF document. Clients should differentiate between the two using the returned Content-Type header.
+      responses:
+        '200':
+          description: OK, terms of services are returned.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+              example: A PDF document
+            text/html:
+              schema:
+                type: string
+                format: html
+              example: <p>Some HTML</p>
+
+components:
+  schemas:
+    InstanceInformation:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The name of the instance
+        logo:
+          type: string
+          format: url
+          description: A URL to the logo of the instance, either absolute (`https://...`) or with a leading /, indicating that it is under the back-end's hostname.
+          nullable: true
+        background:
+          type: string
+          format: url
+          description: A URL to the background image for this instance, same format as for the logo.
+          nullable: true
+        authorizeStub_idProvider:
+          type: string
+          format: url
+          description: |
+            The value for both `authorizeStub` properties are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to encode it as a URI component to properly escape special characters! (i.e. append `&redirect_uri=https://myexample.com/...` to the `authorizeStub` field).
+
+              This property is for the identity provider (e.g. Microsoft, Google, ...)
+        authorizeStub_discord:
+          type: string
+          format: url
+          description: |
+            Same use as `authorizeStub_idProvider`, but this one is for Discord.
+        providerName:
+          type: string
+          description: |
+            The display name for the identity provider. Human-friendly.
+        providerIcon:
+          type: string
+          format: url
+          description: |
+            The icon for the identity provider, same format as for `logo`.
+          nullable: true
+        idPrompt:
+          type: string
+          format: html
+          description: |
+            The text that should be shown below the "I want EpiLink to rememver my identity" checkbox.
+            This is inline HTML that is meant to be embedded within a web page.
+        footerUrls:
+          type: array
+          items:
+            $ref: '#/components/schemas/FooterUrl'
+          description: |
+            Footer URL's that should be displayed on the front-end.
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactInformation'
+          description: |
+            Contact information for the maintainers of the EpiLink instance
+    FooterUrl:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+    ContactInformation:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+    ApiResponse:
+      type: object
+      description: Almost all API endpoints return something of this form. Endpoints will inject their resulting data in an additional "data" property
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        message_i18n:
+          type: string
+        message_i18n_data:
+          type: object
+          additionalProperties:
+            type: string
