@@ -27,6 +27,8 @@ servers:
 tags:
   - name: meta
     description: Metadata endpoints for discovering information about an instance
+  - name: user
+    description: User endpoints for retrieving information on the currently logged in user.
 paths:
   /meta/info:
     get:
@@ -128,8 +130,65 @@ paths:
                 type: string
                 format: binary
               example: Something that corresponds to the requested resource.
+  /user:
+    get:
+      tags: ["user"]
+      summary: Retrieve information on the logged in user
+      description: |
+        Use this endpoint to retrive information on the currently logged in user.
+
+        As the session ID parameter is fully opaque, you cannot use it to know "stuff" on the user. Use this endpoint to
+        discover information on them.
+      security:
+        - SessionId: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserInformation'
+        '401':
+          $ref: '#/components/responses/UserUnauthorized'
+
 components:
   schemas:
+    # ---------------------- general schemas ----------------------
+    ApiResponse:
+      type: object
+      description: Almost all API endpoints return something of this form. Endpoints will inject their resulting data in an additional "data" property
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        message_i18n:
+          type: string
+        message_i18n_data:
+          type: object
+          additionalProperties:
+            type: string
+    ErrorData:
+      type: object
+      description: The "data" field for errors (when success is false in an apiresponse)
+      properties:
+        code:
+          type: integer
+        description:
+          type: string
+    ApiErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ErrorData'
+    # ---------------------- /meta schemas ----------------------
     InstanceInformation:
       type: object
       properties:
@@ -200,17 +259,50 @@ components:
           type: string
         email:
           type: string
-    ApiResponse:
+    # ---------------------- /user schemas ----------------------
+    UserInformation:
+      description: Information about the currently logged in user
       type: object
-      description: Almost all API endpoints return something of this form. Endpoints will inject their resulting data in an additional "data" property
       properties:
-        success:
+        discordId:
+          type: string
+          description: The ID of the user. This is stored in the instance's database.
+        username:
+          type: string
+          description: The user's Discord username (Hello#1234). This is stored as part of the session and is not stored in the instance's database.
+        avatarUrl:
+          type: string
+          format: url
+          nullable: true
+          description: The possibly null URL for the Discord avatar of the user
+        identifiable:
           type: boolean
-        message:
-          type: string
-        message_i18n:
-          type: string
-        message_i18n_data:
-          type: object
-          additionalProperties:
-            type: string
+          description: If true, the user has their identity recorded in the database, false otherwise.
+        privileged:
+          type: boolean
+          description: |
+            True if the user is privileged (i.e. is recorded as an administrators in the instance configuration).
+
+            This does not necessarily indicate that the user can actually perform administration actions, as additional
+            checks are performed when an admin tries to user their privileges. This should only be used for displaying
+            some sort of "admin" badge on the user.
+  responses:
+    UserUnauthorized:
+      description: Missing or invalid `SessionId`
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            success: false
+            message: "You need authentication to be able to access this resource"
+            message_i18n: "err.300"
+            message_i18n_data: {}
+            data:
+              code: 300
+              description: "You need authentication to be able ot access this resource"
+  securitySchemes:
+    SessionId:
+      type: apiKey
+      in: header
+      name: SessionId
