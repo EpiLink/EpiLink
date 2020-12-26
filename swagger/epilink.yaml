@@ -48,17 +48,17 @@ paths:
                         $ref: '#/components/schemas/InstanceInformation'
               example:
                 success: true
-                message: ~
-                message_i18n: ~
+                message: null
+                message_i18n: null
                 message_i18n_data: {}
                 data:
                   title: "My Instance"
                   logo: "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
-                  background: ~
+                  background: null
                   authorizeStub_idProvider: "https://..."
                   authorizeStub_discord: "https://..."
                   providerName: "My Identity Provider"
-                  providerIcon: ~
+                  providerIcon: null
                   idPrompt: "<p>Pizza will be ordered and robots will invade if you give us your identity</p>"
                   footerUrls:
                     - name: My website
