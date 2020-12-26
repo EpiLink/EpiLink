@@ -54,6 +54,18 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                 wsCfg.frontendUrl == null
     }
 
+    private fun CORS.Configuration.applyCorsOptions()
+    {
+        method(HttpMethod.Options)
+        method(HttpMethod.Delete)
+
+        header("Content-Type")
+        header("RegistrationSessionId")
+        header("SessionId")
+        exposeHeader("RegistrationSessionId")
+        exposeHeader("SessionId")
+    }
+
     override fun Application.install() {
         val frontUrl = wsCfg.frontendUrl
         val disableCors = wsCfg.disableCorsSecurity
@@ -84,6 +96,8 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
             disableCors -> {
                 logger.warn("CORS is set to allow requests from any origin. DO NOT DO THIS IN PRODUCTION ENVIRONMENTS! Remove disableCorsSecurity from your config file!")
                 install(CORS) {
+                    applyCorsOptions()
+
                     anyHost()
                 }
             }
@@ -100,14 +114,7 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                  * and methods
                  */
                 install(CORS) {
-                    method(HttpMethod.Options)
-                    method(HttpMethod.Delete)
-
-                    header("Content-Type")
-                    header("RegistrationSessionId")
-                    header("SessionId")
-                    exposeHeader("RegistrationSessionId")
-                    exposeHeader("SessionId")
+                    applyCorsOptions()
 
                     host(frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https"))
                 }
