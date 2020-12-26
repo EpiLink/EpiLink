@@ -195,6 +195,44 @@ paths:
                 data: null
         '401':
           $ref: '#/components/responses/UserUnauthorized'
+  /user/idaccesslogs:
+    get:
+      tags: [ "user" ]
+      summary: Retrieve the identity access logs for the logged in user
+      description: |
+        This endpoint returns a list of all the identity accesses made against this user.
+      security:
+        - SessionId: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/IdAccessLogs'
+              example:
+                message: null
+                message_i18n: null
+                message_i18n_data: { }
+                data:
+                  manualAuthorsDisclosed: false
+                  accesses:
+                    - automated: true
+                      author: EpiLink Bot Services
+                      reason: Used your name to order pizza
+                      timestamp: '2020-12-23T10:15:30Z'
+                    - automated: false
+                      author: Someone
+                      reason: You looked sus
+                      timestamp: '2020-12-11T20:12:23Z'
+
+        '401':
+          $ref: '#/components/responses/UserUnauthorized'
 
 components:
   schemas:
@@ -326,6 +364,47 @@ components:
             This does not necessarily indicate that the user can actually perform administration actions, as additional
             checks are performed when an admin tries to user their privileges. This should only be used for displaying
             some sort of "admin" badge on the user.
+    IdAccessLogs:
+      description: List of idenity accesses made against a user
+      type: object
+      properties:
+        manualAuthorsDisclosed:
+          type: boolean
+          description: |
+            This value is only intended to be used for displaying a message to tell the user that not seeing the name of
+            who made the identity access is normal (true if so, false otherwise). This does not actually determine
+            whether the author of all the listed accesses is actually available or not.
+        accesses:
+          type: array
+          items:
+            $ref: '#/components/schemas/IdAccess'
+          description: Identity accesses made against this account.
+    IdAccess:
+      description: Details for a single identity access
+      type: object
+      properties:
+        automated:
+          type: boolean
+          description: True if the access was made by a bot, false if it was made manually by a administrator
+        author:
+          type: string
+          nullable: true
+          description: |
+            The name of the author
+
+            No particular format is guaranteed, but this name should be enough for a human to distinguish who made the
+            request. Null if the author is not available to the user -- while the author is always logged on the
+            back-end, a policy can be set to prevent users from accessing the identity of the requester in specific
+            cases.
+        reason:
+          type: string
+          description: The human-readable reason for the access. Again, no particular format is guaranteed.
+        timestamp:
+          type: string
+          format: 'date-time'
+          description: An ISO-8601 timestamp of when the request happened, always in UTC (`z` or `Z` at the end)
+
+
   responses:
     UserUnauthorized:
       description: Missing or invalid `SessionId`
