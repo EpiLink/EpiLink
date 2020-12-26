@@ -68,14 +68,22 @@ paths:
                       email: xavier.loginard@school.edu
                     - name: Mestel Bural-Nesfa
                       email: mester@lab.school.edu
-  /meta/tos:
+  /meta/{legalText}:
     get:
       tags: [meta]
-      summary: Returns the terms of services document for this instance.
-      description: The terms of services for this EpiLink instance are returned. This can be inline HTML or a PDF document. Clients should differentiate between the two using the returned Content-Type header.
+      summary: Returns the requested legal text document for this instance.
+      description: The terms of services or privacy policy for this EpiLink instance are returned. This can be inline HTML or a PDF document. Clients should differentiate between the two using the returned Content-Type header.
+      parameters:
+        - in: path
+          name: legalText
+          schema:
+            type: string
+            enum: ["tos", "privacy"]
+            default: tos
+          required: true
       responses:
         '200':
-          description: OK, terms of services are returned.
+          description: OK
           content:
             application/pdf:
               schema:
@@ -87,7 +95,39 @@ paths:
                 type: string
                 format: html
               example: <p>Some HTML</p>
+  /meta/{resource}:
+    get:
+      tags: [ meta ]
+      summary: Returns the requested resource only if said resource is configured to be self-hosted
+      description: |
+        This endpoint only works if the resource is set to be hosted directly the back-end instead of being hosted somewhere else. You should not use this endpoint directly, use the corresponding field in the `/meta/info` endpoint instead.
 
+        The content type returned by this endpoint heavily depends on the server's configuration.
+
+        Possible values are:
+
+        - `logo`: The logo for this instance.
+
+        - `background`: The background image for this instance
+
+        - `idpLogo`: The identity provider's logo for this instance
+      parameters:
+        - in: path
+          name: resource
+          schema:
+            type: string
+            enum: [ "logo", "background", "ipdLogo" ]
+            default: logo
+          required: true
+      responses:
+        '200':
+          description: OK, resource is returned.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+              example: Something that corresponds to the requested resource.
 components:
   schemas:
     InstanceInformation:
