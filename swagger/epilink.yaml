@@ -181,18 +181,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        nullable: true
-              example:
-                message: null
-                message_i18n: null
-                message_i18n_data: { }
-                data: null
+                $ref: '#/components/schemas/ApiEmptyResponse'
         '401':
           $ref: '#/components/responses/UserUnauthorized'
   /user/idaccesslogs:
@@ -233,6 +222,78 @@ paths:
 
         '401':
           $ref: '#/components/responses/UserUnauthorized'
+  /user/identity:
+    post:
+      tags: [user]
+      security:
+        - SessionId: [ ]
+      summary: Add an identity to the account
+      description: |
+        This endpoint uses the provided ID Provider authorization code to record the e-mail address of the account in
+        the database. Note that the ID Provider account retrieved via the authorization code must be the one that was
+        used for creating the account in the first place -- otherwise, the operation fails with a 112 error code.
+
+        Note that the back-end will always consume the authorization code, although it will discard the retrieved token
+        immediately in case of an error (e.g. identity already known).
+
+        Triggers a global role update for the user on success.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationAuthCode'
+      responses:
+        '200':
+          description: OK -- Identity was linked to the account and the account is now identifiable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEmptyResponse'
+        '401':
+          $ref: '#/components/responses/UserUnauthorized'
+        '400':
+          description: An error happened, usually error codes 102, 110 or 112.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                '102':
+                  summary: 102 - Invalid authorization code
+                  description: The provided authorization code was invalid or rejected.
+                  value:
+                    success: false
+                    message: "Invalid authorization code"
+                    message_i18n: "err.102"
+                    message_i18n_data: {}
+                    data:
+                      code: 102
+                      message: "Invalid authorization code"
+                '110':
+                  summary: 110 - Identity already there
+                  description: Can't set the identity for this account as one was already present.
+                  value:
+                    success: false
+                    message: "The identity of this account is already registered in the database"
+                    message_i18n: "err.110"
+                    message_i18n_data: { }
+                    data:
+                      code: 110
+                      message: "The identity of this account is already registered in the database"
+                '112':
+                  summary: 112 - Account mismatch
+                  description: |
+                    The account used here is not the same as the one that was used to create this account and was thus
+                    rejected.
+                  value:
+                    success: false
+                    message: "This account's identity does not match the new one"
+                    message_i18n: "err.112"
+                    message_i18n_data: { }
+                    data:
+                      code: 112
+                      message: "This account's identity does not match the new one"
+
 
 components:
   schemas:
@@ -266,6 +327,20 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/ErrorData'
+    ApiEmptyResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              nullable: true
+          example:
+            message: null
+            message_i18n: null
+            message_i18n_data: { }
+            data: null
+
     # ---------------------- /meta schemas ----------------------
     InstanceInformation:
       type: object
@@ -403,6 +478,23 @@ components:
           type: string
           format: 'date-time'
           description: An ISO-8601 timestamp of when the request happened, always in UTC (`z` or `Z` at the end)
+    # ---------------------- /register schemas ----------------------
+    RegistrationAuthCode:
+      description: Used for sending an OAuth2 authentication code
+      type: object
+      properties:
+        code:
+          type: string
+          description: The OAuth2 authentication code itself
+        redirectUri:
+          type: string
+          format: url
+          description: |
+            The exact `redirect_uri` that was used for the original authentication request that obtained the code. This is
+            required for security reasons, the back-end does not redirect anything to this URI.
+      example:
+        code: "123code456"
+        redirectUri: "https://some.website.com/oauth2/somethingsomething"
 
 
   responses:
