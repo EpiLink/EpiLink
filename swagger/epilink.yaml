@@ -153,6 +153,16 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/UserInformation'
+              example:
+                message: null
+                message_i18n: null
+                message_i18n_data: {}
+                data:
+                  discordId: "1234567890"
+                  username: "TheUser#1324"
+                  avatarUrl: null
+                  identifiable: true
+                  privileged: false
         '401':
           $ref: '#/components/responses/UserUnauthorized'
 
