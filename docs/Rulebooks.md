@@ -12,7 +12,7 @@ An example is: I know that the user's email address is `ab@c.de`, and I want to 
 
 You can either put your rulebook directly in the configuration file, or in a separate file. The file extension for rulebooks is `.rule.kts` (e.g. your file could be named `epilink.rule.kts`).
 
-See [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is. Note that `rulebook`/`rulebookFile` can only be specified in the `discord` section of the configuration file.
+See [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is.
 
 ### Privacy
 
@@ -126,7 +126,7 @@ A rule can determine more than one role at the same time.
 Rules are only executed when the following conditions are met:
 
 * The user needs to have his roles refreshed in some discord servers X (e.g. he just joined the server, he was in the server but just got authenticated...)
-* In the EpiLink configuration, some of the servers X have roles bindings defined by rules, i.e. some custom roles are defined for the server.
+* In the EpiLink configuration, some of the servers X specify rule(s) in their `requires` field.
 
 For example, if we refresh the roles for a user Jake in the server "Abcde" with the following configuration:
 
@@ -151,25 +151,19 @@ rulebook: |
   }
 
 discord:
-  roles:
-    - name: myRole
-      rule: MyRule
-    - name: otherRole
-      rule: OtherRule
-    - name: third
-      rule: ThirdRule
   servers:
     - # Abcde server
       id: 123456
+      requires: [ "MyRule", "OtherRule" ]
       roles:
         _identified: 1234
         myRole: 5678
         otherRole: 9999 
 ```
 
-* EpiLink detects that `myRole` is in the server (from the server's config), and that that role is determined by the custom rule `MyRule` in the rulebook (from the roles config). **This rule gets executed as part of the role refresh process, regardless of whether Jake chose to keep his identity in the system or not.**
-* EpiLink detects that `otherRole` is in the server (from the server's config), and that that role is determined by the custom *strong-identity* rule `OtherRule`. **This rule gets executed as part of the role refresh process ONLY IF Jake chose to keep his identity in the system.** This also generates an identity access, and the user may get notified depending on the [privacy configuration](MaintainerGuide.md#privacy-configuration). Otherwise, the rule is simply ignored and the role is not applied.
-* The role `third` is NOT in the server. Its rule is therefore not executed.
+* EpiLink detects that `MyRule` is required by the server (from the server's config). **This rule gets executed as part of the role refresh process, regardless of whether Jake chose to keep his identity in the system or not.**
+* EpiLink detects that `OtherRule`, a strong-identity rule, is required by the server (from the server's config). **This rule gets executed as part of the role refresh process ONLY IF Jake chose to keep his identity in the system.** This also generates an identity access, and the user may get notified depending on the [privacy configuration](MaintainerGuide.md#privacy-configuration). Otherwise, the rule is simply ignored and the role is not applied.
+* `ThirdRule` is not specified in the server's `requires` field. It is therefore not executed.
 
 ### Reserved rule names
 

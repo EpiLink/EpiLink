@@ -112,7 +112,6 @@ fun LinkConfiguration.isConfigurationSane(
     report += server.check()
     report += tokens.check()
     report += legal.check()
-    report += discord.check()
     report += discord.checkCoherenceWithRulebook(rulebook)
     report += discord.checkCoherenceWithLanguages(availableDiscordLanguages)
 

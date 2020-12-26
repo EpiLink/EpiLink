@@ -155,9 +155,6 @@ discord:
   # include the default language.
   #preferredLanguages: [en]
 
-  # See the documentation on custom roles for more details on this option. You can omit it if you do not need it.
-  roles: []
-
   # List of EpiLink roles that the bot can add but will NOT remove (they "stick" to users), even if it is determined
   # that they should not be there. This one applies to all servers, you can also use this option on individual servers.
   # Optional, empty list by default.
@@ -176,6 +173,11 @@ discord:
       roles:
         _known: 1239121323
         _identified: 195923842
+
+      # Required rules for this server. These are the names of the rules that should be launched when trying to
+      # determine roles for a user. You can omit it if you do not use rules or custom roles for this server.
+      #requires: [ "a rule", "another rule" ]
+
       # True if the server should send a message to unknown users who join the server, false otherwise.
       # (optional, true by default)
       enableWelcomeMessage: true
