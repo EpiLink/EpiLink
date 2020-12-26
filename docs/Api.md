@@ -1,5 +1,7 @@
 # Back-end API
 
+!> **The documentation is being transitioned to Swagger UI in an OpenAPI format. You can check it out [here](/swagger ':ignore').** In order for it to work on your favorite EpiLink instance, they must have enabled Swagger compatibility. Some content will remain on this page (especially explanations on rate limiting and related things)
+
 **The API is not intended to be used as an external API**, although it technically could be used as such. Instance maintainers may forbid (e.g. through their ToS) usage of the API by anything other than the front-end.
 
 This is documentation of the backend API of EpiLink.
