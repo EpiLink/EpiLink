@@ -1,3 +1,19 @@
 plugins {
     id "com.github.hierynomus.license" version "0.15.0" apply false
 }
+
+task generateDocs {
+    dependsOn('copyDocs', 'copySwagger')
+}
+
+task copyDocs(type: Copy) {
+    from 'docs'
+    into 'build/docs'
+}
+
+task copySwagger(type: Copy) {
+    dependsOn(':swagger:generateSwaggerUIEpilink')
+    from 'swagger/build/swagger-ui-epilink'
+    exclude 'META-INF'
+    into 'build/docs/swagger'
+}

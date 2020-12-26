@@ -1,0 +1,17 @@
+plugins {
+    id 'org.hidetake.swagger.generator' version '2.18.2'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    swaggerUI 'org.webjars:swagger-ui:3.38.0'
+}
+
+swaggerSources {
+    epilink {
+        inputFile = file('epilink.yaml')
+    }
+}
