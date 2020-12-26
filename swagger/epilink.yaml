@@ -166,6 +166,36 @@ paths:
         '401':
           $ref: '#/components/responses/UserUnauthorized'
 
+  /user/logout:
+    post:
+      tags: [user]
+      summary: Log a user out and invalidate their session
+      description: |
+        Log a user out and invalidate the given `SessionId`. A new session ID can be obtained through the Registration
+        flow.
+      security:
+        - SessionId: []
+      responses:
+        '200':
+          description: OK -- User was logged out and SessionId is no longer valid. Data is always null in this case.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+              example:
+                message: null
+                message_i18n: null
+                message_i18n_data: { }
+                data: null
+        '401':
+          $ref: '#/components/responses/UserUnauthorized'
+
 components:
   schemas:
     # ---------------------- general schemas ----------------------
