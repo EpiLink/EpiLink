@@ -118,9 +118,6 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
 
                     host(frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https"))
                 }
-                routing {
-
-                }
             }
         }
     }
