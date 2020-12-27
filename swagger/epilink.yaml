@@ -26,9 +26,11 @@ servers:
         description: The protocol to use.
 tags:
   - name: meta
-    description: Metadata endpoints for discovering information about an instance
+    description: Endpoints for discovering information about an instance
   - name: user
-    description: User endpoints for retrieving information on the currently logged in user.
+    description: Endpoints for retrieving information on the currently logged in user.
+  - name: register
+    description: Endpoints for the registration procedure
 paths:
   /meta/info:
     get:
@@ -70,6 +72,7 @@ paths:
                       email: xavier.loginard@school.edu
                     - name: Mestel Bural-Nesfa
                       email: mester@lab.school.edu
+
   /meta/{legalText}:
     get:
       tags: [meta]
@@ -97,6 +100,7 @@ paths:
                 type: string
                 format: html
               example: <p>Some HTML</p>
+
   /meta/{resource}:
     get:
       tags: [ meta ]
@@ -130,6 +134,7 @@ paths:
                 type: string
                 format: binary
               example: Something that corresponds to the requested resource.
+
   /user:
     get:
       tags: ["user"]
@@ -184,6 +189,7 @@ paths:
                 $ref: '#/components/schemas/ApiEmptyResponse'
         '401':
           $ref: '#/components/responses/UserUnauthorized'
+
   /user/idaccesslogs:
     get:
       tags: [ "user" ]
@@ -222,6 +228,7 @@ paths:
 
         '401':
           $ref: '#/components/responses/UserUnauthorized'
+
   /user/identity:
     post:
       tags: [user]
@@ -399,7 +406,7 @@ components:
           description: |
             The value for both `authorizeStub` properties are OAuth2 authorization links (the ones you use for retrieving an authorization code) that are only missing a redirect URI. Append your own URI there. Don't forget to encode it as a URI component to properly escape special characters! (i.e. append `&redirect_uri=https://myexample.com/...` to the `authorizeStub` field).
 
-              This property is for the identity provider (e.g. Microsoft, Google, ...)
+            This property is for the identity provider (e.g. Microsoft, Google, ...)
         authorizeStub_discord:
           type: string
           format: url
@@ -531,6 +538,58 @@ components:
         code: "123code456"
         redirectUri: "https://some.website.com/oauth2/somethingsomething"
 
+    RegistrationInformation:
+      description: |
+        This object provides information on the current registration process' status and information. It can be obtained by
+        calling  `GET /register/info` and can be found in the responses of most registration endpoints.
+      type: object
+      properties:
+        discordUsername:
+          type: string
+          nullable: true
+          description: |
+            The discord username associated with the current registration process, or null if no Discord account is recorded in
+            the current regsitration process.
+        discordAvatarUrl:
+          type: string
+          format: url
+          nullable: true
+          description: |
+            The URL to the avatar of the Discord user. This may be null if the user does not have an avatar, or if no Discord
+            account is recorded in the current registration process.
+        email:
+          type: string
+          format: url
+          nullable: true
+          description: |
+            The user's email address, as provided by the OpenID Connect ID Token, or null if the ID Provider account has not
+            been recorded in the current registration process.
+    AdditionalRegistrationOptions:
+      description: |
+        These options are provided to finalize the registration process.
+      type: object
+      properties:
+        keepIdentity:
+          type: boolean
+          description: |
+            True if the identity of the user should be kept once their account has been created, false otherwise.
+    RegistrationContinuation:
+      description: |
+        Gives information on what to do next in the registration process.
+        The attachment field is `null` if `next` is `login` or a `RegistrationInformation` object otherwise.
+      type: object
+      properties:
+        next:
+          type: string
+          enum:
+            - continue
+            - login
+          description: |
+            "continue" if the registratino process should continue, "login" if the user has been logged in.
+        attachment:
+          allOf:
+            - nullable: true
+            - $ref: '#/components/schemas/RegistrationInformation'
 
   responses:
     UserUnauthorized:
