@@ -293,6 +293,40 @@ paths:
                     data:
                       code: 112
                       message: "This account's identity does not match the new one"
+    delete:
+      tags: [user]
+      security:
+        - SessionId: []
+      summary: Removes a user's identity from the database
+      description: |
+        This request does not have a body.
+
+        Deletes a user's identity from the instance. The instance will "forget" about the user's identity.
+
+        Updates the Discord roles of the user if successful.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEmptyResponse'
+        '401':
+          $ref: '#/components/responses/UserUnauthorized'
+        '400':
+          description: An error occured. This will usually be in the form of a 111 error (identity was already absent)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                message: "The identity of this account already does not exist in the database"
+                message_i18n: "err.111"
+                message_i18n_data: { }
+                data:
+                  code: 111
+                  message: "The identity of this account already does not exist in the database"
 
 
 components:
@@ -336,6 +370,7 @@ components:
               type: object
               nullable: true
           example:
+            success: true
             message: null
             message_i18n: null
             message_i18n_data: { }
