@@ -72,41 +72,6 @@ the data dictionary do *not* have `%`). Apart from `err.***` keys, the following
 | reg.isv | Invalid service: %service% |
 | reg.lgi | Logged in |
 
-
-## Details
-
-* All endpoints begin with `/api/v1`.
-* ALL RETURNED OBJECTS ARE WRAPPED IN A ApiResponse OBJECT in the `data` field.
- 
-### ApiResponse
-
-**ALL** API endpoints either return something of this form, or return no response at all. Some meta endpoints return raw HTML directly. All exceptions to this rule are noted.
-
-```json5
-{
-  "success": true, // or false
-  "message": "Hello", // nullable
-  "message_i18n": "...", // I18n key for the message, null if and only if message is null
-  "message_i18n_data":  { /* ... */ }, // I18n map for the data
-  "data": {} // nullable, depends on the request
-}
-```
-
-* If `success` is false, then `data` is guaranteed to be a non-null [ErrorData](#errordata) object, and `message` is not null.
-* If `success` is true, then `message` may be null and `data` may be null.
-
-### ErrorData
-
-```json5
-{
-  "code": 123,
-  "description": "Broad description of the error"
-}
-``` 
-
-Provides information on the error that happened. A list of codes is available below. The description is always the same,
-see the api response's message for more specific information about the error.
-
 ## Error codes
 
 These are the different codes that can be seen in [ErrorData](#errordata) objects.
@@ -172,6 +137,88 @@ Special codes for when things really go wrong.
 | Code | Description |
 |:----:| ----------- |
 | 999 | An unknown error occurred |
+
+## Registration
+
+
+Registration state is maintained with a `RegisterSessionId` header, which you must include in all calls.
+
+If you do not have any, (e.g. this is your first API request), you can call most registration endpoints: the back-end will generate a session ID and give it back to you.
+
+The OAuth2 design is like so:
+
+* The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get a stub of the authorization URL using [`/meta/info`](#get-metainfo). You only need to add a `redirect_uri` there.
+* The consumer then sends this access code with the [`POST /register/authcode/<service>`](#post-registerauthcodeservice)
+  endpoints.
+* The back-end validates all of this and retrieves tokens from the OAuth2 service (Discord, Microsoft, etc.)
+
+### Registration + Log in flow
+
+The registration process roughly looks like this:
+
+* Get a `SessionRegisterId`, which you can get from any endpoint. We recommend using [the `/register/info`](#get-information---get-registerinfo) endpoint
+
+* Provide an ID Provider or Discord authorization code using [the `/register/authcode/service`](#post-registerauthcodeservice) endpoints
+
+  * Starting with the Discord authorization code is a good idea, as the server will directly tell you "hey, I already know this user, here is the session id".
+
+* Provide the other authorization code using the other authorization code endpoint. (e.g. if you started with Discord, provide the ID Provider code next)
+
+* Complete the registration by calling [the `/register` endpoint](#post-register) with whether or not the user wants to have their identity kept in the system. The account has been created, congrats!
+
+At any point, a registration session can be cancelled using the [DELETE `/register`](#delete-register) endpoint.
+
+EpiLink has **no dedicated log in flow.** We recommend that you simply use the registration flow for everything and first start with the Discord authorization code. Once that code has been obtained, you can just check whether the back-end asks you to continue with the registration procedure or has logged the user in.
+
+## Sessions
+
+EpiLink uses sessions to maintain a stateful relationship with the client.
+
+Sessions are identified using the `SessionId` or `RegisterSessionId` headers and are initiated in different ways.
+
+* User sessions (`SessionId`) are initiated after a successful or shortcut registration sequence
+  * i.e. after a regular registration (account created) or a log-in event during the registration procedure (logged into the account)
+
+* Registration sessions (`RegisterSessionId`) are initiated upon calling any registration procedure API without already providing one.
+
+Because we use Ktor's session features, sessions are *always* returned in the response headers.
+
+Refer to the Swagger for information on where to use which session.
+
+# API Routes and details
+
+!> THIS IS DEPRECATED. Please see the [Swagger](/swagger ':ignore') instead.
+
+## General
+
+### ApiResponse
+
+**ALL** API endpoints either return something of this form, or return no response at all. Some meta endpoints return raw HTML directly. All exceptions to this rule are noted.
+
+```json5
+{
+  "success": true, // or false
+  "message": "Hello", // nullable
+  "message_i18n": "...", // I18n key for the message, null if and only if message is null
+  "message_i18n_data":  { /* ... */ }, // I18n map for the data
+  "data": {} // nullable, depends on the request
+}
+```
+
+* If `success` is false, then `data` is guaranteed to be a non-null [ErrorData](#errordata) object, and `message` is not null.
+* If `success` is true, then `message` may be null and `data` may be null.
+
+### ErrorData
+
+```json5
+{
+  "code": 123,
+  "description": "Broad description of the error"
+}
+``` 
+
+Provides information on the error that happened. A list of codes is available below. The description is always the same,
+see the api response's message for more specific information about the error.
 
 
 ## Meta-information (/meta)
@@ -289,29 +336,6 @@ Returns an image if the image is hosted directly by the back-end. The behavior i
 Instead of relying on these endpoints, you should instead rely on the `background`, `logo` and `providerIcon` (for `idpLogo`) information you get from the [meta information endpoint](#get-metainfo).
 
 ## Registration (/register)
-
-Registration state is maintained with a `RegisterSessionId` header, which you SHOULD include in all calls.
-
-If you do not have any, (e.g. this is your first API request), you can call any registration API endpoint: the back-end will generate a session ID and give it back to you.
-
-The OAuth2 design is like so:
-
-* The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get a stub of the authorization URL using [`/meta/info`](#get-metainfo). You only need to add a `redirect_uri` there.
-* The consumer then sends this access code with the [`POST /register/authcode/<service>`](#post-registerauthcodeservice)
-  endpoints.
-  
-### Registration + Log in flow
-
-The registration process roughly looks like this:
-
-* Get a `SessionRegisterId`, which you can get from any endpoint. We recommend using [the `/register/info`](#get-information---get-registerinfo) endpoint
-* Provide an ID Provider or Discord authorization code using [the `/register/authcode/service`](#post-registerauthcodeservice) endpoints
-* Provide the other authorization code using the other authorization code endpoint. (e.g. if you started with Discord, provide the ID Provider code next)
-* Complete the registration by calling [the `/register` endpoint](#post-register) with whether or not the user wants to have their identity kept in the system. The account has been created, congrats!
-
-At any point, a registration session can be cancelled using the [DELETE `/register`](#delete-register) endpoint.
-
-EpiLink has **no dedicated log in flow.** We recommend that you simply use the registration flow for everything and first start with the Discord authorization code. Once that code has been obtained, you can just check whether the back-end asks you to continue with the registration procedure or has logged the user in.
 
 ### Objects
 
