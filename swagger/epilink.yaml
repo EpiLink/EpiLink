@@ -358,6 +358,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/RegistrationInformation'
 
+  /register:
+    delete:
+      # TODO document error behavior
+      tags: [register]
+      summary: Cancel the registration procedure
+      description: |
+        Aborts the registration procedure associated with the given `RegisterSessionId`. Clears all session information from the back-end.
+      parameters:
+        - $ref: '#/components/parameters/RegisterSessionId'
+      responses:
+        '200':
+          description: OK -- Registration session has been deleted.
 components:
   schemas:
     # ---------------------- general schemas ----------------------
