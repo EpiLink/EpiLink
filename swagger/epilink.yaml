@@ -335,6 +335,28 @@ paths:
                   code: 111
                   message: "The identity of this account already does not exist in the database"
 
+  /register/info:
+    get:
+      tags: [register]
+      summary: Get the state of the registration
+      description: |
+        Returns the current state of the registration for the given `RegisterSessionId`. If no value or an invalid value is provided for this
+        header, a new registration session is created and its header is returned.
+      parameters:
+        - $ref: '#/components/parameters/RegisterSessionId'
+      responses:
+        '200':
+          description: OK -- Registration sessions information is returned
+          headers:
+            RegisterSessionId:
+              schema:
+                type: string
+                format: base64url
+              description: The registration session's ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationInformation'
 
 components:
   schemas:
@@ -611,3 +633,12 @@ components:
       type: apiKey
       in: header
       name: SessionId
+  
+  parameters:
+    RegisterSessionId:
+      name: RegisterSessionId
+      in: header
+      schema:
+        type: string
+        format: base64url
+      required: false
