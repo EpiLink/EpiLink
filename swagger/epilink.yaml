@@ -370,6 +370,117 @@ paths:
       responses:
         '200':
           description: OK -- Registration session has been deleted.
+
+  /register/authcode/{service}:
+    post:
+      tags: [register]
+      summary: Submit an authorization code
+      description: |
+        Submit an authorization code as part of the registration procedure.
+
+        In order to complete the submission procedure, two authorization codes must be provided:
+
+        - One from the identity provider
+
+        - One from Discord
+
+        You basically have to do the first part of the authorization code flow. The URL to use to acquire the
+        authorization code is provided in `GET /meta/info`.
+
+        Check the EpiLink documentation for more information on the procedure.
+      parameters:
+        - name: service
+          description: |
+            The service that should be used. Possible values are:
+              - idProvider: The identity provider for this instance
+              - discord: Discord for this instance.
+          required: true
+          in: path
+          schema:
+            type: string
+            enum:
+              - idProvider
+              - discord
+      requestBody:
+        required: true
+        description: The authorization code.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationAuthCode'
+      responses:
+        '200':
+          description: |
+            OK -- See attached object for info on procedure.
+
+            - If `next` is `login`, the user has been logged in, check the `SessionId` header.
+
+            - If `next` is `continue`, the procedure can continue.
+          headers:
+            SessionId:
+              description: If `next` is `login`, this is the newly created user session.
+              schema:
+                type: string
+                format: base64url
+              required: false
+            RegisterSessionId:
+              description: |
+                If `next` is `continue` and no `RegisterSessionId` was provided, this is the new registration session
+              schema:
+                type: string
+                format: base64url
+              required: false
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationContinuation'
+              examples:
+                Discord:
+                  summary: Discord only, continue
+                  description: |
+                    This value can be found upon a successful connection to Discord.
+
+                    EpiLink does not know about the account, so `next` is set to `continue`.
+                  value:
+                    next: continue
+                    attachment:
+                      discordUsername: 'me#1234'
+                      discordAvatarUrl: 'https://...'
+                      email: null
+                DiscordLoggedIn:
+                  summary: Logged in
+                  description: |
+                    Happens upon a successful connection to Discord, but EpiLink already know this account
+                    (`next` = `login`)
+
+                    The registration session is deleted and a new regular user session is opened with the `SessionId`
+                    resonse header.
+                  value:
+                    next: login
+                    attachment: null
+                IdProvider:
+                  summary: Identity provider only, continue
+                  description: |
+                    This value can be found after logging into the identity provider account.
+                  value:
+                    next: continue
+                    attachment:
+                      discordUsername: null
+                      discordAvatarUrl: null
+                      email: 'this.is.my.email@example.edu'
+                BothOk:
+                  summary: Identity provider and Discord both OK
+                  description: |
+                    At this point, the server knows about both the Identity Provider identity and Discord identity.
+                    The registration procedure can be concluded.
+                  value:
+                    next: continue
+                    attachment:
+                      discordUsername: 'me#1234'
+                      discordAvatarUrl: 'https://...'
+                      email: 'this.is.my.email@example.edu'
+    # TODO document error cases
+
 components:
   schemas:
     # ---------------------- general schemas ----------------------
