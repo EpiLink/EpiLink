@@ -6,6 +6,8 @@ info:
 
     This will be the replacement for the old Docsify.js-based API documentation.
 
+    **This document may contain mistakes. Please report them [on our GitHub repo](https://github.com/EpiLink/EpiLink). Thanks!**
+
     For more information on EpiLink, check out:
     - The EpiLink website: <https://epilink.zoroark.guru>
   license:
@@ -337,6 +339,7 @@ paths:
 
   /register/info:
     get:
+      # TODO document behavior if RegisterSessionId doesn't work
       tags: [register]
       summary: Get the state of the registration
       description: |
