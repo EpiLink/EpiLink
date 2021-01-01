@@ -771,6 +771,122 @@ components:
           allOf:
             - nullable: true
             - $ref: '#/components/schemas/RegistrationInformation'
+    
+    # ---------------------- /admin schemas ----------------------
+    IdRequest:
+      description: |
+        A request for an identity
+      type: object
+      properties:
+        target:
+          type: string
+          format: snowflake
+          description: The Discord ID of the user whose identity should be retrieved
+        reason:
+          type: string
+          description: The reason for the identity access.
+    IdRequestResult:
+      description: The result for an identity request
+      type: object
+      properties:
+        target:
+          type: string
+          format: snowflake
+          description: The Discord ID of the user whose identity should be retrieved
+        identity:
+          type: string
+          format: email
+          description: The identity (i.e. identity provider email address) of the user.
+    RegisteredUserInformaiton:
+      description: Information for a registered user
+      type: object
+      properties:
+        discordId:
+          type: string
+          format: snowflake
+          description: The Discord ID of the user
+        idpIdHash:
+          type: string
+          format: base64url
+          description: |
+            The URL-safe Base64 encodeded hash of the user identity from the identity provider.
+
+            Note that this does not correspond to a hash of the user's email.
+        created:
+          type: string
+          format: date-time
+          description: |
+            The time at which the user's account was created on this EpiLink instance.
+        identifiable:
+          type: boolean
+          description: |
+            True if the user has their identity recorded in the database.
+    UserBans:
+      description: Bans against a specific user
+      type: object
+      properties:
+        banned:
+          type: boolean
+          description: True if there are any bans considered active against this user, false otherwise.
+        bans:
+          type: array
+          items:
+            $ref: '#/components/schemas/BanInfo'
+          description: Possibly empty array of all the bans against a user.
+    BanInfo:
+      description: Information on a specific ban
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The internal ID of this ban. Used in several API paths.
+        revoked:
+          type: boolean
+          description: |
+            True if the ban was manually revoked, false otherwise
+        author:
+          type: string
+          description: |
+            The author of the ban in a human-readable format. This may not always be disclosed to a user.
+        reason:
+          type: string
+          description: |
+            The (human-readable) reason for the ban
+        issuedAt:
+          type: string
+          format: date-time
+          description: |
+            The timestamp of when the ban was issued.
+        expiresOn:
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            The timestamp of when the ban will expire, or null if the ban does not expire.
+    BanRequest:
+      description: A request for banning someone
+      type: object
+      properties:
+        reason:
+          type: string
+          description: The reason for the ban
+        expiresOn:
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            The timestamp at which the ban should expire, or null if the ban should never expire.
+    SearchResult:
+      description: The results of a search.
+      type: object
+      properties:
+        result:
+          type: array
+          items:
+            type: string
+            format: snowflake
+          description: |
+            A list of all matching user Discord ID's
 
   responses:
     UserUnauthorized:
