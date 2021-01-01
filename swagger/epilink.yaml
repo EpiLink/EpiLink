@@ -218,6 +218,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/IdAccessLogs'
               example:
+                success: true
                 message: null
                 message_i18n: null
                 message_i18n_data: { }
@@ -539,12 +540,86 @@ paths:
           description: OK -- Here's the identity.
           content:
             application/json:
+              # TODO no, this returns an ApiResponse, not the object directly
+              # TODO this mistake is also in other places RIP
               schema:
                 $ref: '#/components/schemas/IdRequestResult'
+              example:
+                target: "1234567890912934"
+                identity: "someone@example.com"
         '401':
           $ref: '#/components/responses/AdminOrUserUnauthorized'
         '404':
           $ref: '#/components/responses/AdminEndpointsDisabled'
+  
+  /admin/user/{userId}:
+    parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: snowflake
+    get:
+      # TODO document behavior with unknown user
+      tags: [admin]
+      security:
+        - SessionId: []
+      summary: Retrieve information about a user
+      description: |
+        Get information about a registered user. The returned data is not the same as what's returned by the
+        `GET /user` operation, which relies on some session-based info.
+      responses:
+        '200':
+          description: OK -- here is the information for this user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredUserInformation"
+              example:
+                discordId: '1234568819283754'
+                idpIdHash: 'haeyhEx34=='
+                created: '2014-09-02T08:05:23.653Z' # not a realistic date but i was too lazy to find a real one
+                identifiable: true
+        '400':
+          $ref: '#/components/responses/TargetUserDoesNotExist'
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
+
+    delete:
+      tags: [admin]
+      security:
+        - SessionId: []
+      summary: Delete a user account
+      description: |
+        Deletes the given user's account from this instance. This does not ban the user -- they will be
+        able to recreate one.
+
+        Upon success, triggers a role update for the user.
+      responses:
+        '200':
+          description: OK -- User was deleted
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/ApiResponse'
+                - $ref: '#/components/schemas/NullDataContainer'
+              example:
+                success: true
+                message: "User deleted"
+                message_i18n: "adm.ud"
+                message_i18n_data: {}
+                data: null
+        '400':
+          $ref: '#/components/responses/TargetUserDoesNotExist'
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
+
 components:
   schemas:
     # ---------------------- general schemas ----------------------
@@ -562,6 +637,12 @@ components:
           type: object
           additionalProperties:
             type: string
+    NullDataContainer:
+      type: object
+      properties:
+        data:
+          type: object
+          nullable: true
     ErrorData:
       type: object
       description: The "data" field for errors (when success is false in an apiresponse)
@@ -825,7 +906,7 @@ components:
           type: string
           format: email
           description: The identity (i.e. identity provider email address) of the user.
-    RegisteredUserInformaiton:
+    RegisteredUserInformation:
       description: Information for a registered user
       type: object
       properties:
@@ -977,6 +1058,21 @@ components:
     AdminEndpointsDisabled:
       description: |
         Admin endpoints are disabled in the instance's config.
+    TargetUserDoesNotExist:
+      description: |
+        The given target user does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            success: false
+            message: "Target user does not exist."
+            message_i18n: "err.402"
+            message_i18n_data: {}
+            data:
+              code: 402
+              description: "Target user does not exist."
   securitySchemes:
     SessionId:
       type: apiKey
