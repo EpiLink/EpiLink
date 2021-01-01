@@ -166,6 +166,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/UserInformation'
               example:
+                success: true
                 message: null
                 message_i18n: null
                 message_i18n_data: {}
@@ -351,11 +352,13 @@ paths:
       description: |
         Returns the current state of the registration for the given `RegisterSessionId`. If no value or an invalid value is provided for this
         header, a new registration session is created and its header is returned.
+
+        More examples for the 200 response can be found at `POST /register/authcode`.
       parameters:
         - $ref: '#/components/parameters/RegisterSessionId'
       responses:
         '200':
-          description: OK -- Registration sessions information is returned
+          description: OK -- Registration session information is returned
           headers:
             RegisterSessionId:
               schema:
@@ -365,7 +368,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RegistrationInformation'
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RegistrationInformation'
+              example:
+                success: true
+                message: null
+                message_i18n: null
+                message_i18n_data: {}
+                data:
+                  discordUsername: "Hello#1234"
+                  discordAvatarUrl: "https://my.discord.example.org/avatar.png"
+                  email: "myemail.com"
 
   /register:
     post:
@@ -397,6 +414,18 @@ paths:
                 type: string
                 format: base64url
               required: true
+          content:
+              application/json:
+                schema:
+                  allOf:
+                    - $ref: '#/components/schemas/ApiResponse'
+                    - $ref: '#/components/schemas/NullDataContainer'
+                example:
+                  success: true
+                  message: "Account created, logged in."
+                  message_i18n: "reg.acc"
+                  message_i18n_data: {}
+                  data: null
 
     delete:
       # TODO document error behavior
@@ -473,7 +502,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RegistrationContinuation'
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RegistrationContinuation'
               examples:
                 Discord:
                   summary: Discord only, continue
@@ -482,11 +516,16 @@ paths:
 
                     EpiLink does not know about the account, so `next` is set to `continue`.
                   value:
-                    next: continue
-                    attachment:
-                      discordUsername: 'me#1234'
-                      discordAvatarUrl: 'https://...'
-                      email: null
+                    success: true
+                    message: null
+                    message_i18n: null
+                    message_i18n_data: {}
+                    data:
+                      next: continue
+                      attachment:
+                        discordUsername: 'me#1234'
+                        discordAvatarUrl: 'https://...'
+                        email: null
                 DiscordLoggedIn:
                   summary: Logged in
                   description: |
@@ -496,29 +535,44 @@ paths:
                     The registration session is deleted and a new regular user session is opened with the `SessionId`
                     resonse header.
                   value:
-                    next: login
-                    attachment: null
+                    success: true
+                    message: Logged in
+                    message_i18n: "reg.lgi"
+                    message_i18n_data: {}
+                    data: 
+                      next: login
+                      attachment: null
                 IdProvider:
                   summary: Identity provider only, continue
                   description: |
                     This value can be found after logging into the identity provider account.
                   value:
-                    next: continue
-                    attachment:
-                      discordUsername: null
-                      discordAvatarUrl: null
-                      email: 'this.is.my.email@example.edu'
+                    success: true
+                    message: null
+                    message_i18n: null
+                    message_i18n_data: {}
+                    data:
+                      next: continue
+                      attachment:
+                        discordUsername: null
+                        discordAvatarUrl: null
+                        email: 'this.is.my.email@example.edu'
                 BothOk:
                   summary: Identity provider and Discord both OK
                   description: |
                     At this point, the server knows about both the Identity Provider identity and Discord identity.
                     The registration procedure can be concluded.
                   value:
-                    next: continue
-                    attachment:
-                      discordUsername: 'me#1234'
-                      discordAvatarUrl: 'https://...'
-                      email: 'this.is.my.email@example.edu'
+                    success: true
+                    message: null
+                    message_i18n: null
+                    message_i18n_data: {}
+                    data:
+                      next: continue
+                      attachment:
+                        discordUsername: 'me#1234'
+                        discordAvatarUrl: 'https://...'
+                        email: 'this.is.my.email@example.edu'
 
   /admin/idrequest:
     post:
@@ -543,10 +597,19 @@ paths:
               # TODO no, this returns an ApiResponse, not the object directly
               # TODO this mistake is also in other places RIP
               schema:
-                $ref: '#/components/schemas/IdRequestResult'
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/IdRequestResult'
               example:
-                target: "1234567890912934"
-                identity: "someone@example.com"
+                message: null
+                message_i18n: null
+                message_i18n_data: []
+                data:
+                  target: "1234567890912934"
+                  identity: "someone@example.com"
         '401':
           $ref: '#/components/responses/AdminOrUserUnauthorized'
         '404':
