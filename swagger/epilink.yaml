@@ -9,7 +9,10 @@ info:
     **This document may contain mistakes. Please report them [on our GitHub repo](https://github.com/EpiLink/EpiLink). Thanks!**
 
     For more information on EpiLink, check out:
+
     - The EpiLink website: <https://epilink.zoroark.guru>
+
+    - Additional API documentation: [here](/#/Api?). Has thorough information on topics not covered by this document.
   license:
     name: Mozilla Public License version 2
     url: https://www.mozilla.org/en-US/MPL/2.0/
@@ -362,6 +365,36 @@ paths:
                 $ref: '#/components/schemas/RegistrationInformation'
 
   /register:
+    post:
+      # TODO document error behavior
+      tags: [register]
+      summary: Complete the registration procedure
+      description: |
+        Completes the registration procedure associated with the given `RegisterSessionId`.
+
+        This directly logs the user in upon success.
+      parameters:
+        - $ref: '#/components/parameters/RegisterSessionIdRequired'
+      requestBody:
+        required: true
+        description: Additional registration information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdditionalRegistrationOptions'
+            example:
+              keepIdentity: true
+      responses:
+        '200':
+          description: OK -- Registration is successful.
+          headers:
+            SessionId:
+              description: The newly created session ID that corresponds to the created account.
+              schema:
+                type: string
+                format: base64url
+              required: true
+
     delete:
       # TODO document error behavior
       tags: [register]
@@ -369,13 +402,14 @@ paths:
       description: |
         Aborts the registration procedure associated with the given `RegisterSessionId`. Clears all session information from the back-end.
       parameters:
-        - $ref: '#/components/parameters/RegisterSessionId'
+        - $ref: '#/components/parameters/RegisterSessionIdRequired'
       responses:
         '200':
           description: OK -- Registration session has been deleted.
 
   /register/authcode/{service}:
     post:
+      # TODO document error cases
       tags: [register]
       summary: Submit an authorization code
       description: |
@@ -482,7 +516,6 @@ paths:
                       discordUsername: 'me#1234'
                       discordAvatarUrl: 'https://...'
                       email: 'this.is.my.email@example.edu'
-    # TODO document error cases
 
 components:
   schemas:
@@ -768,3 +801,10 @@ components:
         type: string
         format: base64url
       required: false
+    RegisterSessionIdRequired:
+      name: RegisterSessionId
+      in: header
+      schema:
+        type: string
+        format: base64url
+      required: true
