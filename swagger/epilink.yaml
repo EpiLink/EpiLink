@@ -36,6 +36,8 @@ tags:
     description: Endpoints for retrieving information on the currently logged in user.
   - name: register
     description: Endpoints for the registration procedure
+  - name: admin
+    description: Endpoints for administrative tasks. Admin permissions are required.
 paths:
   /meta/info:
     get:
@@ -517,6 +519,32 @@ paths:
                       discordAvatarUrl: 'https://...'
                       email: 'this.is.my.email@example.edu'
 
+  /admin/idrequest:
+    post:
+      tags: [admin]
+      summary: Request the identity of a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdRequest'
+            example:
+              target: "1234567890912934"
+              reason: "Checking your identity for our hand-made procedure 17-B."
+      security:
+        - SessionId: []
+      responses:
+        '200':
+          description: OK -- Here's the identity.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdRequestResult'
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
 components:
   schemas:
     # ---------------------- general schemas ----------------------
@@ -888,6 +916,40 @@ components:
           description: |
             A list of all matching user Discord ID's
 
+  examples:
+    UserUnauthorized:
+      summary: "300 - Authentication required"
+      description: Missing or invalid `SessionId`
+      value:
+        success: false
+        message: "You need authentication to be able to access this resource"
+        message_i18n: "err.300"
+        message_i18n_data: {}
+        data:
+          code: 300
+          description: "You need authentication to be able ot access this resource"
+    AdminUnauthorized:
+      summary: "301 - Not an admin"
+      description: The logged in user is not an administrator
+      value:
+        success: false
+        message: "You do not have permission to do that."
+        message_i18n: "err.301"
+        message_i18n_data: {}
+        data:
+          code: 301
+          description: "You do not have permission to do that"
+    AdminNotIdentifiable:
+      summary: "301 - Admin not identifiable"
+      description: The logged in user is an administrator but does not have their identity recorded.
+      value:
+        success: false
+        message: "You need to have your identity recorded to perform administrative tasks"
+        message_i18n: "sc.ani"
+        message_i18n_data: {}
+        data:
+          code: 301
+          description: "You do not have permission to do that"
   responses:
     UserUnauthorized:
       description: Missing or invalid `SessionId`
@@ -895,14 +957,26 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
-          example:
-            success: false
-            message: "You need authentication to be able to access this resource"
-            message_i18n: "err.300"
-            message_i18n_data: {}
-            data:
-              code: 300
-              description: "You need authentication to be able ot access this resource"
+          examples:
+            UserUnauthorized:
+              $ref: '#/components/examples/UserUnauthorized'
+    AdminOrUserUnauthorized:
+      description: |
+        Authentication failure.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          examples:
+            UserUnauthorized:
+              $ref: '#/components/examples/UserUnauthorized'
+            AdminUnauthorized:
+              $ref: '#/components/examples/AdminUnauthorized'
+            AdminNotIdentifiable:
+              $ref: '#/components/examples/AdminNotIdentifiable'
+    AdminEndpointsDisabled:
+      description: |
+        Admin endpoints are disabled in the instance's config.
   securitySchemes:
     SessionId:
       type: apiKey
