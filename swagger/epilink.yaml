@@ -41,7 +41,7 @@ tags:
 paths:
   /meta/info:
     get:
-      tags: [meta]
+      tags: [ meta ]
       summary: Returns information about the EpiLink instance
       responses:
         '200':
@@ -59,7 +59,7 @@ paths:
                 success: true
                 message: null
                 message_i18n: null
-                message_i18n_data: {}
+                message_i18n_data: { }
                 data:
                   title: "My Instance"
                   logo: "https://raw.githubusercontent.com/EpiLink/EpiLink/dev/assets/epilink256.png"
@@ -82,7 +82,7 @@ paths:
 
   /meta/{legalText}:
     get:
-      tags: [meta]
+      tags: [ meta ]
       summary: Returns the requested legal text document for this instance.
       description: The terms of services or privacy policy for this EpiLink instance are returned. This can be inline HTML or a PDF document. Clients should differentiate between the two using the returned Content-Type header.
       parameters:
@@ -90,7 +90,7 @@ paths:
           name: legalText
           schema:
             type: string
-            enum: ["tos", "privacy"]
+            enum: [ "tos", "privacy" ]
             default: tos
           required: true
       responses:
@@ -144,7 +144,7 @@ paths:
 
   /user:
     get:
-      tags: ["user"]
+      tags: [ "user" ]
       summary: Retrieve information on the logged in user
       description: |
         Use this endpoint to retrive information on the currently logged in user.
@@ -152,7 +152,7 @@ paths:
         As the session ID parameter is fully opaque, you cannot use it to know "stuff" on the user. Use this endpoint to
         discover information on them.
       security:
-        - SessionId: []
+        - SessionId: [ ]
       responses:
         '200':
           description: OK
@@ -169,7 +169,7 @@ paths:
                 success: true
                 message: null
                 message_i18n: null
-                message_i18n_data: {}
+                message_i18n_data: { }
                 data:
                   discordId: "1234567890"
                   username: "TheUser#1324"
@@ -181,13 +181,13 @@ paths:
 
   /user/logout:
     post:
-      tags: [user]
+      tags: [ user ]
       summary: Log a user out and invalidate their session
       description: |
         Log a user out and invalidate the given `SessionId`. A new session ID can be obtained through the Registration
         flow.
       security:
-        - SessionId: []
+        - SessionId: [ ]
       responses:
         '200':
           description: OK -- User was logged out and SessionId is no longer valid. Data is always null in this case.
@@ -240,7 +240,7 @@ paths:
 
   /user/identity:
     post:
-      tags: [user]
+      tags: [ user ]
       security:
         - SessionId: [ ]
       summary: Add an identity to the account
@@ -281,7 +281,7 @@ paths:
                     success: false
                     message: "Invalid authorization code"
                     message_i18n: "err.102"
-                    message_i18n_data: {}
+                    message_i18n_data: { }
                     data:
                       code: 102
                       message: "Invalid authorization code"
@@ -310,9 +310,9 @@ paths:
                       code: 112
                       message: "This account's identity does not match the new one"
     delete:
-      tags: [user]
+      tags: [ user ]
       security:
-        - SessionId: []
+        - SessionId: [ ]
       summary: Removes a user's identity from the database
       description: |
         This request does not have a body.
@@ -347,7 +347,7 @@ paths:
   /register/info:
     get:
       # TODO document behavior if RegisterSessionId doesn't work
-      tags: [register]
+      tags: [ register ]
       summary: Get the state of the registration
       description: |
         Returns the current state of the registration for the given `RegisterSessionId`. If no value or an invalid value is provided for this
@@ -378,7 +378,7 @@ paths:
                 success: true
                 message: null
                 message_i18n: null
-                message_i18n_data: {}
+                message_i18n_data: { }
                 data:
                   discordUsername: "Hello#1234"
                   discordAvatarUrl: "https://my.discord.example.org/avatar.png"
@@ -387,7 +387,7 @@ paths:
   /register:
     post:
       # TODO document error behavior
-      tags: [register]
+      tags: [ register ]
       summary: Complete the registration procedure
       description: |
         Completes the registration procedure associated with the given `RegisterSessionId`.
@@ -415,21 +415,21 @@ paths:
                 format: base64url
               required: true
           content:
-              application/json:
-                schema:
-                  allOf:
-                    - $ref: '#/components/schemas/ApiResponse'
-                    - $ref: '#/components/schemas/NullDataContainer'
-                example:
-                  success: true
-                  message: "Account created, logged in."
-                  message_i18n: "reg.acc"
-                  message_i18n_data: {}
-                  data: null
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - $ref: '#/components/schemas/NullDataContainer'
+              example:
+                success: true
+                message: "Account created, logged in."
+                message_i18n: "reg.acc"
+                message_i18n_data: { }
+                data: null
 
     delete:
       # TODO document error behavior
-      tags: [register]
+      tags: [ register ]
       summary: Cancel the registration procedure
       description: |
         Aborts the registration procedure associated with the given `RegisterSessionId`. Clears all session information from the back-end.
@@ -442,7 +442,7 @@ paths:
   /register/authcode/{service}:
     post:
       # TODO document error cases
-      tags: [register]
+      tags: [ register ]
       summary: Submit an authorization code
       description: |
         Submit an authorization code as part of the registration procedure.
@@ -519,7 +519,7 @@ paths:
                     success: true
                     message: null
                     message_i18n: null
-                    message_i18n_data: {}
+                    message_i18n_data: { }
                     data:
                       next: continue
                       attachment:
@@ -538,8 +538,8 @@ paths:
                     success: true
                     message: Logged in
                     message_i18n: "reg.lgi"
-                    message_i18n_data: {}
-                    data: 
+                    message_i18n_data: { }
+                    data:
                       next: login
                       attachment: null
                 IdProvider:
@@ -550,7 +550,7 @@ paths:
                     success: true
                     message: null
                     message_i18n: null
-                    message_i18n_data: {}
+                    message_i18n_data: { }
                     data:
                       next: continue
                       attachment:
@@ -566,7 +566,7 @@ paths:
                     success: true
                     message: null
                     message_i18n: null
-                    message_i18n_data: {}
+                    message_i18n_data: { }
                     data:
                       next: continue
                       attachment:
@@ -576,7 +576,7 @@ paths:
 
   /admin/idrequest:
     post:
-      tags: [admin]
+      tags: [ admin ]
       summary: Request the identity of a user
       requestBody:
         required: true
@@ -588,7 +588,7 @@ paths:
               target: "1234567890912934"
               reason: "Checking your identity for our hand-made procedure 17-B."
       security:
-        - SessionId: []
+        - SessionId: [ ]
       responses:
         '200':
           description: OK -- Here's the identity.
@@ -606,7 +606,7 @@ paths:
               example:
                 message: null
                 message_i18n: null
-                message_i18n_data: []
+                message_i18n_data: [ ]
                 data:
                   target: "1234567890912934"
                   identity: "someone@example.com"
@@ -614,20 +614,20 @@ paths:
           $ref: '#/components/responses/AdminOrUserUnauthorized'
         '404':
           $ref: '#/components/responses/AdminEndpointsDisabled'
-  
+
   /admin/user/{userId}:
     parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: snowflake
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: snowflake
     get:
       # TODO document behavior with unknown user
-      tags: [admin]
+      tags: [ admin ]
       security:
-        - SessionId: []
+        - SessionId: [ ]
       summary: Retrieve information about a user
       description: |
         Get information about a registered user. The returned data is not the same as what's returned by the
@@ -652,9 +652,9 @@ paths:
           $ref: '#/components/responses/AdminEndpointsDisabled'
 
     delete:
-      tags: [admin]
+      tags: [ admin ]
       security:
-        - SessionId: []
+        - SessionId: [ ]
       summary: Delete a user account
       description: |
         Deletes the given user's account from this instance. This does not ban the user -- they will be
@@ -668,13 +668,13 @@ paths:
             application/json:
               schema:
                 allOf:
-                - $ref: '#/components/schemas/ApiResponse'
-                - $ref: '#/components/schemas/NullDataContainer'
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - $ref: '#/components/schemas/NullDataContainer'
               example:
                 success: true
                 message: "User deleted"
                 message_i18n: "adm.ud"
-                message_i18n_data: {}
+                message_i18n_data: { }
                 data: null
         '400':
           $ref: '#/components/responses/TargetUserDoesNotExist'
@@ -682,6 +682,188 @@ paths:
           $ref: '#/components/responses/AdminOrUserUnauthorized'
         '404':
           $ref: '#/components/responses/AdminEndpointsDisabled'
+
+  /admin/ban/{idpIdHash}:
+    parameters:
+      - name: idpIdHash
+        description: An identity hash
+        in: path
+        required: true
+        schema:
+          type: string
+          format: base64url
+    get:
+      tags: [ admin ]
+      summary: Get the bans of a user
+      security:
+        - SessionId: [ ]
+      responses:
+        '200':
+          description: OK -- Here are the bans for this user
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserBans'
+        '400':
+          $ref: '#/components/responses/TargetUserDoesNotExist'
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
+
+    post:
+      tags: [ admin ]
+      summary: Create a ban against a user
+      description: |
+        Creates a ban against a user. If said ban succeeds, refreshes the user's roles. The user may be notified
+        depending on the instance settings.
+
+        Bans are made against an identity hash.
+      security:
+        - SessionId: [ ]
+      requestBody:
+        $ref: '#/components/schemas/BanRequest'
+      responses:
+        '200':
+          description: OK -- Ban has been created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BanInfo'
+        '400':
+          $ref: '#/components/responses/TargetUserDoesNotExist'
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
+
+  /admin/ban/{idpIdHash}/{banId}:
+    parameters:
+      - name: idpIdHash
+        description: An identity hash
+        in: path
+        required: true
+        schema:
+          type: string
+          format: base64url
+      - name: banId
+        description: The ID of the ban
+        in: path
+        required: true
+        schema:
+          type: string
+          format: base64url
+    get:
+      summary: Get a single ban of a specific user
+      security:
+        - SessionId: [ ]
+      responses:
+        '200':
+          description: OK -- Here is the ban
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BanInfo'
+        '400':
+          $ref: '#/components/responses/TargetUserDoesNotExist'
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
+
+  /admin/ban/{idpIdHash}/{banId}/revoke:
+    parameters:
+      - name: idpIdHash
+        description: An identity hash
+        in: path
+        required: true
+        schema:
+          type: string
+          format: base64url
+      - name: banId
+        description: The ID of the ban
+        in: path
+        required: true
+        schema:
+          type: string
+          format: base64url
+    post:
+      summary: Revokes a ban
+      security:
+        - SessionId: [ ]
+      responses:
+        '200':
+          description: OK -- Ban revoked. The user's roles are re-evaluated if this ban was currently in effect.
+        '400':
+          $ref: '#/components/responses/TargetUserDoesNotExist'
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
+
+  /admin/search/{criteria}/{term}:
+    parameters:
+      - name: criteria
+        description: The criteria to choose from
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [ hash16 ]
+      - name: term
+        description: The words the search will be done on
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Search users
+      description: |
+        Looks for users based on the given criteria and term. The criteria can be:
+
+        - hash16: Search users by a hex representation of their identity hash. The search term can be a substring of the
+          actual id.
+      responses:
+        '200':
+          description: OK -- Results below
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
+
+  /admin/gdprreport/{targetId}:
+    parameters:
+      - name: idpIdHash
+        description: An identity hash
+        in: path
+        required: true
+        schema:
+          type: string
+          format: base64url
+    post:
+      summary: Generate a GDPR report about the target
+      description: |
+        Returns a GDPR report for the given person, directly as a Markdown document.
+      responses:
 
 components:
   schemas:
@@ -943,7 +1125,7 @@ components:
           allOf:
             - nullable: true
             - $ref: '#/components/schemas/RegistrationInformation'
-    
+
     # ---------------------- /admin schemas ----------------------
     IdRequest:
       description: |
@@ -1068,7 +1250,7 @@ components:
         success: false
         message: "You need authentication to be able to access this resource"
         message_i18n: "err.300"
-        message_i18n_data: {}
+        message_i18n_data: { }
         data:
           code: 300
           description: "You need authentication to be able ot access this resource"
@@ -1079,7 +1261,7 @@ components:
         success: false
         message: "You do not have permission to do that."
         message_i18n: "err.301"
-        message_i18n_data: {}
+        message_i18n_data: { }
         data:
           code: 301
           description: "You do not have permission to do that"
@@ -1090,7 +1272,7 @@ components:
         success: false
         message: "You need to have your identity recorded to perform administrative tasks"
         message_i18n: "sc.ani"
-        message_i18n_data: {}
+        message_i18n_data: { }
         data:
           code: 301
           description: "You do not have permission to do that"
@@ -1132,7 +1314,7 @@ components:
             success: false
             message: "Target user does not exist."
             message_i18n: "err.402"
-            message_i18n_data: {}
+            message_i18n_data: { }
             data:
               code: 402
               description: "Target user does not exist."
@@ -1141,7 +1323,7 @@ components:
       type: apiKey
       in: header
       name: SessionId
-  
+
   parameters:
     RegisterSessionId:
       name: RegisterSessionId
