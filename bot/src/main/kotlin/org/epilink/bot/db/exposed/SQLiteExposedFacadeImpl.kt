@@ -13,7 +13,6 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transactionManager
 import org.sqlite.SQLiteConfig
 import org.sqlite.SQLiteDataSource
-import org.sqlite.javax.SQLiteConnectionPoolDataSource
 import java.sql.Connection
 
 // Can be increased in extreme load scenarios

@@ -9,8 +9,9 @@
 package org.epilink.bot.discord
 
 import org.epilink.bot.db.LinkDatabaseFacade
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -68,6 +69,7 @@ interface LinkDiscordMessagesI18n {
     suspend fun setLanguage(discordId: String, language: String): Boolean
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkDiscordMessagesI18nImpl(
     private val strings: Map<String, Map<String, String>>,
     override val defaultLanguage: String,

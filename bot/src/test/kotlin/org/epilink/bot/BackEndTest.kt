@@ -31,7 +31,7 @@ import org.epilink.bot.http.endpoints.LinkAdminApi
 import org.epilink.bot.http.endpoints.LinkMetaApi
 import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkUserApi
-import org.koin.core.get
+import org.koin.core.component.get
 import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.*

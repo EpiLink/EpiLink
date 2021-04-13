@@ -9,8 +9,9 @@
 package org.epilink.bot.db
 
 import org.epilink.bot.*
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 import java.time.Instant
 
@@ -24,6 +25,7 @@ interface LinkUserCreator {
     suspend fun createUser(discordId: String, idpId: String, email: String, keepIdentity: Boolean): LinkUser
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkUserCreatorImpl : LinkUserCreator, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.usercreator")
     private val perms: LinkPermissionChecks by inject()

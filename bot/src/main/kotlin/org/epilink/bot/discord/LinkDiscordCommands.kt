@@ -18,9 +18,10 @@ import org.epilink.bot.db.LinkUser
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.debug
 import org.epilink.bot.discord.MessageAcceptStatus.*
-import org.koin.core.KoinComponent
-import org.koin.core.get
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
+import org.koin.core.component.inject
 import org.koin.core.qualifier.named
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -149,6 +150,7 @@ interface Command {
     )
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkDiscordCommandsImpl : LinkDiscordCommands, KoinComponent {
     private val discordCfg: LinkDiscordConfig by inject()
     private val admins: List<String> by inject(named("admins"))

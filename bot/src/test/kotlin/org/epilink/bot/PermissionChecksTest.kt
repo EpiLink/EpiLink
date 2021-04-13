@@ -15,7 +15,7 @@ import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.db.*
 import org.epilink.bot.rulebook.Rulebook
-import org.koin.core.get
+import org.koin.core.component.get
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.mock.declare

@@ -12,7 +12,6 @@ import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.StrongIdentityRule
 import org.epilink.bot.rulebook.run
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 
 private val logger = LoggerFactory.getLogger("epilink.rulemediator")
 

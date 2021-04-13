@@ -13,7 +13,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.*
-import org.koin.core.get
+import org.koin.core.component.get
 import org.koin.dsl.module
 import kotlin.test.*
 

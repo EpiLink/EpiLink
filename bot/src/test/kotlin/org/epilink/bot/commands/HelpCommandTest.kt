@@ -18,7 +18,7 @@ import org.epilink.bot.discord.LinkDiscordClientFacade
 import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.discord.cmd.HelpCommand
 import org.epilink.bot.mockHere
-import org.koin.core.get
+import org.koin.core.component.get
 import org.koin.dsl.module
 import kotlin.test.Test
 
