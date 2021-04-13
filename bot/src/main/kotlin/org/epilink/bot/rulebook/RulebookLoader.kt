@@ -97,6 +97,9 @@ internal suspend fun compileRules(source: SourceCode): CompiledScript = withCont
     val compileConfig = createJvmCompilationConfigurationFromTemplate<RulebookScript> {
         jvm {
             dependenciesFromCurrentContext(wholeClasspath = true)
+
+            compilerOptions.append("-jvm-target")
+            compilerOptions.append("11")
         }
         implicitReceivers(RulebookBuilder::class)
         defaultImports("org.epilink.bot.rulebook.*", "io.ktor.http.*")

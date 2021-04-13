@@ -8,8 +8,9 @@
  */
 package org.epilink.bot.rulebook
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.request.get
@@ -50,14 +51,27 @@ data class Basic(val username: String, val password: String) : Auth()
 data class Bearer(val token: String) : Auth()
 
 /**
+ * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply deserialized to the
+ * inferred return type.
+ *
+ * @param url The URL for the GET request
+ * @param auth An authentication method to use if needed, or null if it is not. An instance of either [Basic] or
+ * [Bearer] can be provided.
+ */
+suspend inline fun <reified T> httpGetJson(url: String, auth: Auth?): T {
+    return httpGetJson(url, auth, jacksonTypeRef())
+}
+
+/**
  * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply as a Map from String
  * to Any?
  *
  * @param url The URL for the GET request
  * @param auth An authentication method to use if needed, or null if it is not. An instance of either [Basic] or
  * [Bearer] can be provided.
+ * @param responseType The type the response should be deserialized to.
  */
-suspend fun httpGetJson(url: String, auth: Auth?): Map<String, Any?> {
+suspend fun <T> httpGetJson(url: String, auth: Auth?, responseType: TypeReference<T>): T {
     val response = runCatching {
         client.get<String>(url) {
             header(HttpHeaders.Accept, ContentType.Application.Json)
@@ -77,7 +91,10 @@ suspend fun httpGetJson(url: String, auth: Auth?): Map<String, Any?> {
         throw RuleException("Encountered an error on httpGetJson call", it)
     }
 
-    return withContext(Dispatchers.Default) { ObjectMapper().readValue(response) }
+    return withContext(Dispatchers.Default) {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        ObjectMapper().readValue(response, responseType)
+    }
 }
 
 /**
@@ -91,7 +108,7 @@ suspend fun httpGetJson(url: String, auth: Auth?): Map<String, Any?> {
  * anything and is now always enabled
  */
 @Suppress("unused")
-@Deprecated("Replaced by a method with better parameters handling", ReplaceWith("httpGetJson(url, auth)"))
+@Deprecated("Reworked with better auth handling and custom return", ReplaceWith("httpGetJson(url, auth)"))
 suspend fun httpGetJson(
     url: String,
     basicAuth: Pair<String, String>? = null,
