@@ -4,11 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] (0.6.2)
+## [0.6.2] - 2021-04-14
 
 ### Changed
 
-* Dependencies updated
+* Dependencies updated for both frontend and backend
+* Improved httpGetJson to improve authentication and permit custom return types
 
 ### Fixed
 
@@ -256,7 +257,7 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.1...litarvan/major-fixes
+[0.6.2]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.2
 [0.6.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.1
 [0.6.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.0
 [0.5.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.1
