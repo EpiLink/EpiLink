@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Fixed an issue where Ktor would cut a response if too long, causing crashes on the id access logs (profile page)
 * Fixed an issue where Logback would cause a stack overflow during a cyclic exception stack trace logging
+* Fixed an issue where httpGetJson calls by rulebooks would cause thread leaking (#262)
+* Increased login popup windows so that the Discord QR code can be displayed (#250)
 
 ## [0.6.1] - 2020-09-13
 
