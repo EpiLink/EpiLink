@@ -11,7 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Dependencies updated for both frontend and backend
-* Improved httpGetJson to improve authentication and permit custom return types, the old method is marked as deprecated
+* Improved httpGetJson to improve authentication and permit custom return types
+
+### Deprecated
+
+* Deprecated the old httpGetJson method, which has to be replaced by the new ones
 
 ### Fixed
 
