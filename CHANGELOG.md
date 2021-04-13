@@ -10,17 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
-* Dependencies updated for both frontend and backend
-* Improved httpGetJson to improve authentication and permit custom return types
+* Dependencies updated for both frontend and backend ([#264](https://github.com/EpiLink/EpiLink/pull/264))
+* Improved httpGetJson to improve authentication and permit custom return types ([#264](https://github.com/EpiLink/EpiLink/pull/264))
 
 ### Deprecated
 
-* Deprecated the old httpGetJson method, which has to be replaced by the new ones
+* Deprecated the old httpGetJson method, which has to be replaced by the new ones ([#264](https://github.com/EpiLink/EpiLink/pull/264))
 
 ### Fixed
 
-* Fixed an issue where Ktor would cut a response if too long, causing crashes on the id access logs (profile page)
-* Fixed an issue where Logback would cause a stack overflow during a cyclic exception stack trace logging
+* Fixed an issue where Ktor would cut a response if too long, causing crashes on the id access logs (profile page) ([#264](https://github.com/EpiLink/EpiLink/pull/264))
+* Fixed an issue where Logback would cause a stack overflow during a cyclic exception stack trace logging ([#264](https://github.com/EpiLink/EpiLink/pull/264))
 * Fixed an issue where httpGetJson calls by rulebooks would cause thread leaking ([#262](https://github.com/EpiLink/EpiLink/issues/262))
 * Increased login popup windows so that the Discord QR code can be displayed ([#250](https://github.com/EpiLink/EpiLink/issues/250))
 
