@@ -41,6 +41,9 @@
                 return;
             }
 
+            // Removing code from URL as soon as possible
+            window.history.replaceState("", "", window.location.pathname);
+
             let code = query.substring(6);
             const max = code.indexOf('&');
             if (max !== -1) {
