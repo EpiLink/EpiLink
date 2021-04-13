@@ -52,7 +52,7 @@ data class Bearer(val token: String) : Auth()
 
 /**
  * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply deserialized to the
- * inferred return type.
+ * given return type.
  *
  * @param url The URL for the GET request
  * @param auth An authentication method to use if needed, or null if it is not. An instance of either [Basic] or
