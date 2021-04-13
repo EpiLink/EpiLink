@@ -15,11 +15,13 @@ import org.epilink.bot.StandardErrorCodes
 import org.jose4j.jwk.HttpsJwks
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
-import org.koin.core.KoinComponent
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
 
 /**
  * This class is responsible for verifying JWT tokens using a JWKS for keys.
  */
+@OptIn(KoinApiExtension::class)
 class LinkJwtVerifier(clientId: String, jwksUri: String, private val idClaim: String) : KoinComponent {
     private val jwtConsumer = JwtConsumerBuilder().apply {
         setRequireExpirationTime()

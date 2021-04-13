@@ -9,12 +9,10 @@
 package org.epilink.bot
 
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
 import org.epilink.bot.discord.DiscordEmbed
 import org.epilink.bot.discord.LinkDiscordClientFacade
 import org.epilink.bot.discord.LinkDiscordMessageSender
 import org.epilink.bot.discord.LinkDiscordMessageSenderImpl
-import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.*
 

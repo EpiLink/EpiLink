@@ -17,8 +17,9 @@ import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -78,6 +79,7 @@ interface LinkIdManager {
     suspend fun deleteUserIdentity(user: LinkUser)
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkIdManagerImpl : LinkIdManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.idaccessor")
     private val facade: LinkDatabaseFacade by inject()

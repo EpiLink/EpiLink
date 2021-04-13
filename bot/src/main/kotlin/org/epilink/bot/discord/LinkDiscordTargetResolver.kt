@@ -9,8 +9,9 @@
 package org.epilink.bot.discord
 
 import org.epilink.bot.discord.TargetParseResult.Success.*
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /*
  User selector:
@@ -110,6 +111,7 @@ sealed class TargetResult {
     data class RoleNotFound(val name: String) : TargetResult()
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkDiscordTargetsImpl : LinkDiscordTargets, KoinComponent {
     private val discord: LinkDiscordClientFacade by inject()
 

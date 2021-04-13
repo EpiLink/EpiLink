@@ -17,10 +17,7 @@ import io.mockk.every
 import io.mockk.spyk
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.http.*
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import org.koin.dsl.module
-import org.koin.test.KoinTest
 import org.koin.test.get
 import kotlin.test.*
 

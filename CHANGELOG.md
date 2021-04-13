@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] (0.7)
+
+## [0.6.2] - 2021-04-14
+
+### Changed
+
+* Dependencies updated for both frontend and backend ([#264](https://github.com/EpiLink/EpiLink/pull/264))
+* Improved httpGetJson to improve authentication and permit custom return types ([#264](https://github.com/EpiLink/EpiLink/pull/264))
+
+### Deprecated
+
+* Deprecated the old httpGetJson method, which has to be replaced by the new ones ([#264](https://github.com/EpiLink/EpiLink/pull/264))
+
+### Fixed
+
+* Fixed an issue where Ktor would cut a response if too long, causing crashes on the id access logs (profile page) ([#264](https://github.com/EpiLink/EpiLink/pull/264))
+* Fixed an issue where Logback would cause a stack overflow during a cyclic exception stack trace logging ([#264](https://github.com/EpiLink/EpiLink/pull/264))
+* Fixed an issue where httpGetJson calls by rulebooks would cause thread leaking ([#262](https://github.com/EpiLink/EpiLink/issues/262))
+* Increased login popup windows so that the Discord QR code can be displayed ([#250](https://github.com/EpiLink/EpiLink/issues/250))
+
 ## [0.6.1] - 2020-09-13
 
 Although there is a number of additions that would theoretically count as a minor update, these are very minimal and invisible to all users except maintainers, and do not break anything.
@@ -243,7 +263,8 @@ Initial release. Introduces so many things it will make your eyes hurt, probably
 * Added basic GitHub project management via CI and code owners ([#4](https://github.com/EpiLink/EpiLink/issues/4), [#49](https://github.com/EpiLink/EpiLink/issues/49))
 * Added basic Gradle project ([#2](https://github.com/EpiLink/EpiLink/issues/2))
 
-[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.1...dev
+[Unreleased]: https://github.com/EpiLink/EpiLink/compare/v0.6.2...dev
+[0.6.2]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.2
 [0.6.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.1
 [0.6.0]: https://github.com/EpiLink/EpiLink/releases/tag/v0.6.0
 [0.5.1]: https://github.com/EpiLink/EpiLink/releases/tag/v0.5.1

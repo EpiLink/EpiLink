@@ -8,25 +8,94 @@
  */
 package org.epilink.bot.rulebook
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.auth.Auth
-import io.ktor.client.features.auth.providers.basic
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import java.util.*
 
 /*
  * Utility functions for use within a Rulebook
  */
 
 private val logger = LoggerFactory.getLogger("epilink.rulebooks.helpers")
+private val client = HttpClient(Apache)
+
+/**
+ * An authentication method for [httpGetJson] requests
+ */
+sealed class Auth
+
+/**
+ * Basic HTTP authentication method for [httpGetJson] requests
+ *
+ * @param username The username to provide
+ * @param password The password to provide
+ */
+data class Basic(val username: String, val password: String) : Auth()
+
+/**
+ * Bearer token authentication method for [httpGetJson] requests
+ *
+ * @param token The token to provide
+ */
+data class Bearer(val token: String) : Auth()
+
+/**
+ * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply deserialized to the
+ * given return type.
+ *
+ * @param url The URL for the GET request
+ * @param auth An authentication method to use if needed, or null if it is not. An instance of either [Basic] or
+ * [Bearer] can be provided.
+ */
+suspend inline fun <reified T> httpGetJson(url: String, auth: Auth? = null): T {
+    return httpGetJson(url, auth, jacksonTypeRef())
+}
+
+/**
+ * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply deserialized to the
+ * given response type.
+ *
+ * @param url The URL for the GET request
+ * @param auth An authentication method to use if needed, or null if it is not. An instance of either [Basic] or
+ * [Bearer] can be provided.
+ * @param responseType The type the response should be deserialized to.
+ */
+suspend fun <T> httpGetJson(url: String, auth: Auth?, responseType: TypeReference<T>): T {
+    val response = runCatching {
+        client.get<String>(url) {
+            header(HttpHeaders.Accept, ContentType.Application.Json)
+
+            when(auth) {
+                is Bearer -> header(HttpHeaders.Authorization, "Bearer ${auth.token}")
+                is Basic -> {
+                    val credentials = "${auth.username}:${auth.password}"
+                    val encoded = Base64.getEncoder().encodeToString(credentials.toByteArray(Charsets.UTF_8))
+
+                    header(HttpHeaders.Authorization, "Basic $encoded")
+                }
+            }
+        }
+    }.getOrElse {
+        logger.error("Encountered error on httpGetJson call", it)
+        throw RuleException("Encountered an error on httpGetJson call", it)
+    }
+
+    return withContext(Dispatchers.Default) {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        ObjectMapper().readValue(response, responseType)
+    }
+}
 
 /**
  * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply as a Map from String
@@ -35,39 +104,25 @@ private val logger = LoggerFactory.getLogger("epilink.rulebooks.helpers")
  * @param url The URL for the GET request
  * @param basicAuth The Basic authentication credentials to use, or null to not use credentials at all
  * @param bearer The bearer to use in the Authorization header, or null to not do that
- * @param eagerAuthentication If the authentication information should be sent directly or only after the server sends
- * back an unauthorized error
+ * @param eagerAuthentication Since this method was rewritten to prevent thread leaking, this parameter doesn't change
+ * anything and is now always enabled
  */
 @Suppress("unused")
+@Deprecated("Reworked with better auth handling and custom return", ReplaceWith("httpGetJson(url, auth)"))
 suspend fun httpGetJson(
     url: String,
     basicAuth: Pair<String, String>? = null,
     bearer: String? = null,
+    @Suppress("unused_parameter")
     eagerAuthentication: Boolean = false
 ): Map<String, Any?> {
-    val client = HttpClient(Apache) {
-        install(Auth) {
-            if (basicAuth != null) {
-                basic {
-                    username = basicAuth.first
-                    password = basicAuth.second
-                    sendWithoutRequest = eagerAuthentication
-                }
-            }
-        }
-    }
-    val response = runCatching {
-        client.get<String>(url) {
-            header(HttpHeaders.Accept, ContentType.Application.Json)
-            if (bearer != null)
-                header(HttpHeaders.Authorization, "Bearer $bearer")
-        }
-    }.getOrElse {
-        logger.error("Encountered error on httpGetJson call", it)
-        throw RuleException("Encountered an error on httpGetJson call", it)
+    val auth = when {
+        basicAuth != null -> Basic(basicAuth.first, basicAuth.second)
+        bearer != null -> Bearer(bearer)
+        else -> null
     }
 
-    return withContext(Dispatchers.Default) { ObjectMapper().readValue(response) }
+    return httpGetJson(url, auth)
 }
 
 /**

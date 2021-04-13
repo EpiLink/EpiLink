@@ -9,7 +9,6 @@
 package org.epilink.bot.commands
 
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.declareNoOpI18n
 import org.epilink.bot.discord.Command
@@ -18,7 +17,6 @@ import org.epilink.bot.discord.LinkDiscordClientFacade
 import org.epilink.bot.discord.LinkDiscordMessages
 import org.epilink.bot.discord.cmd.HelpCommand
 import org.epilink.bot.mockHere
-import org.koin.core.get
 import org.koin.dsl.module
 import kotlin.test.Test
 

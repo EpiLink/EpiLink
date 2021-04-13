@@ -13,7 +13,6 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
 import org.koin.test.KoinTest
-import org.koin.test.get
 import kotlin.reflect.KClass
 import kotlin.test.*
 

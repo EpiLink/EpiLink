@@ -13,7 +13,6 @@ import io.mockk.mockk
 import org.epilink.bot.db.LinkBan
 import org.epilink.bot.db.LinkBanLogic
 import org.epilink.bot.db.LinkBanLogicImpl
-import org.koin.core.get
 import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant

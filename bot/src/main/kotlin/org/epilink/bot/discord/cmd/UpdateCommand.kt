@@ -12,13 +12,15 @@ import kotlinx.coroutines.*
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.debug
 import org.epilink.bot.discord.*
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
  * Implementation of an update command, which can be used to invalidate roles of members.
  */
+@OptIn(KoinApiExtension::class)
 class UpdateCommand : Command, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.discord.cmd.update")
     private val roleManager: LinkRoleManager by inject()

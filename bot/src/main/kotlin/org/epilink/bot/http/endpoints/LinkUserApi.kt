@@ -28,8 +28,9 @@ import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.UserInformation
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
 
@@ -50,6 +51,7 @@ interface LinkUserApi {
     fun loginAs(call: ApplicationCall, user: LinkUser, username: String, avatar: String?)
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkUserApiImpl : LinkUserApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.user")
     private val roleManager: LinkRoleManager by inject()

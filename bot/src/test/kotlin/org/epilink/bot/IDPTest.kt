@@ -12,16 +12,13 @@ import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
 import org.epilink.bot.http.LinkIdentityProvider
 import org.epilink.bot.http.LinkJwtVerifier
 import org.epilink.bot.http.UserIdentityInfo
 import org.jose4j.jwt.consumer.InvalidJwtException
 import org.koin.dsl.module
 import org.koin.test.KoinTest
-import org.koin.test.get
 import kotlin.test.*
 
 class IDPTest : KoinBaseTest<LinkIdentityProvider>(

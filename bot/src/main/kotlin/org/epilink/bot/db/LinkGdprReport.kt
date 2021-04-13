@@ -11,8 +11,9 @@ package org.epilink.bot.db
 import org.epilink.bot.LinkServerEnvironment
 import org.epilink.bot.config.LinkIdProviderConfiguration
 import org.epilink.bot.config.LinkPrivacy
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.time.Instant
 
 /**
@@ -54,6 +55,7 @@ interface LinkGdprReport {
     suspend fun getLanguagePreferencesReport(id: String): String
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkGdprReportImpl : LinkGdprReport, KoinComponent {
     private val dbf: LinkDatabaseFacade by inject()
     private val idManager: LinkIdManager by inject()

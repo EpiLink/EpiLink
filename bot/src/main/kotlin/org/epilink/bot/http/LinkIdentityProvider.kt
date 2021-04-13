@@ -24,13 +24,15 @@ import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.getList
 import org.epilink.bot.rulebook.getString
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
  * This class is responsible for communicating with OIDC APIs, determined from the given metadata
  */
+@OptIn(KoinApiExtension::class)
 class LinkIdentityProvider(
     private val clientId: String,
     private val clientSecret: String,
@@ -78,7 +80,7 @@ class LinkIdentityProvider(
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val received = ex.response!!.call.receive<String>()
+                val received = ex.response.call.receive<String>()
                 logger.debug { "Failed: received $received" }
                 val data = ObjectMapper().readValue<Map<String, Any?>>(received)
                 when (val error = data["error"] as? String) {
