@@ -63,8 +63,8 @@ suspend inline fun <reified T> httpGetJson(url: String, auth: Auth? = null): T {
 }
 
 /**
- * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply as a Map from String
- * to Any?
+ * Perform a HTTP GET request to the given URL, expecting a JSON reply, and return this JSON reply deserialized to the
+ * given response type.
  *
  * @param url The URL for the GET request
  * @param auth An authentication method to use if needed, or null if it is not. An instance of either [Basic] or
