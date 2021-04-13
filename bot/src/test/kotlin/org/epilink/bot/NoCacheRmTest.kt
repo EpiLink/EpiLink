@@ -13,7 +13,6 @@ import org.epilink.bot.discord.NoCacheRuleMediator
 import org.epilink.bot.discord.RuleResult
 import org.epilink.bot.rulebook.RuleException
 import org.epilink.bot.rulebook.WeakIdentityRule
-import java.lang.IllegalStateException
 import kotlin.test.*
 
 class NoCacheRmTest {

@@ -36,11 +36,16 @@ sealed class Auth
 
 /**
  * Basic HTTP authentication method for [httpGetJson] requests
+ *
+ * @param username The username to provide
+ * @param password The password to provide
  */
 data class Basic(val username: String, val password: String) : Auth()
 
 /**
  * Bearer token authentication method for [httpGetJson] requests
+ *
+ * @param token The token to provide
  */
 data class Bearer(val token: String) : Auth()
 
@@ -91,6 +96,7 @@ suspend fun httpGetJson(
     url: String,
     basicAuth: Pair<String, String>? = null,
     bearer: String? = null,
+    @Suppress("unused_parameter")
     eagerAuthentication: Boolean = false
 ): Map<String, Any?> {
     val auth = when {

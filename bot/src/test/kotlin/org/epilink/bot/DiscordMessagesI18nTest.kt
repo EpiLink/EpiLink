@@ -9,12 +9,10 @@
 package org.epilink.bot
 
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.discord.LinkDiscordMessagesI18n
 import org.epilink.bot.discord.LinkDiscordMessagesI18nImpl
 import org.koin.dsl.module
-import org.koin.test.get
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

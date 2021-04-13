@@ -11,7 +11,7 @@ package org.epilink.bot
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.ResourceAssetConfig
-import java.nio.file.Path
+import java.io.File
 import java.nio.file.Paths
 import kotlin.test.*
 
@@ -27,7 +27,7 @@ class AssetTest {
     @Test
     fun `Test load asset file`() {
         // Temporary file
-        val tmpFile = createTempFile("tmp_el_test")
+        val tmpFile = File.createTempFile("tmp_el_test", null)
         tmpFile.writeBytes(byteArrayOf(1, 2, 3))
         val asset = ResourceAssetConfig(file = tmpFile.toPath().toAbsolutePath().toString(), contentType = "text/plain")
         val realAsset = runBlocking { loadAsset(asset, "thing", Paths.get("")) }

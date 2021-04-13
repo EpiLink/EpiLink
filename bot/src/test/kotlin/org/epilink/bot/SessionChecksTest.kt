@@ -15,7 +15,6 @@ import io.ktor.response.ApplicationResponse
 import io.ktor.response.ApplicationSendPipeline
 import io.ktor.sessions.CurrentSession
 import io.ktor.sessions.sessions
-import io.ktor.util.AttributeKey
 import io.ktor.util.Attributes
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
@@ -27,9 +26,7 @@ import org.epilink.bot.http.LinkSessionChecksImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.userObjAttribute
 import org.koin.core.component.get
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import org.koin.test.mock.declare
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
