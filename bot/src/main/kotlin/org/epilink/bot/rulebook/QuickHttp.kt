@@ -58,7 +58,7 @@ data class Bearer(val token: String) : Auth()
  * @param auth An authentication method to use if needed, or null if it is not. An instance of either [Basic] or
  * [Bearer] can be provided.
  */
-suspend inline fun <reified T> httpGetJson(url: String, auth: Auth?): T {
+suspend inline fun <reified T> httpGetJson(url: String, auth: Auth? = null): T {
     return httpGetJson(url, auth, jacksonTypeRef())
 }
 
