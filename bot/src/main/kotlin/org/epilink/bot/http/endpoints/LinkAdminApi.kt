@@ -25,8 +25,9 @@ import org.epilink.bot.discord.LinkRoleManager
 import org.epilink.bot.http.*
 import org.epilink.bot.http.data.*
 import org.epilink.bot.toResponse
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.time.Instant
 import java.util.*
 
@@ -44,6 +45,7 @@ interface LinkAdminApi {
 
 private val hexCharacters = setOf('a', 'b', 'c', 'd', 'e', 'f', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0')
 
+@OptIn(KoinApiExtension::class)
 internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
     private val sessionChecks: LinkSessionChecks by inject()
     private val dbf: LinkDatabaseFacade by inject()

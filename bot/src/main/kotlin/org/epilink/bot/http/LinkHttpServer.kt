@@ -17,8 +17,9 @@ import io.ktor.server.netty.Netty
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.config.ProxyType.*
 import org.epilink.bot.debug
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -36,6 +37,7 @@ interface LinkHttpServer {
 /**
  * This class represents the Ktor server.
  */
+@OptIn(KoinApiExtension::class)
 internal class LinkHttpServerImpl : LinkHttpServer, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.http")
     private val wsCfg: LinkWebServerConfiguration by inject()

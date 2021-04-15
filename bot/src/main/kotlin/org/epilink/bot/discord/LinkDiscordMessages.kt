@@ -12,8 +12,9 @@ import org.epilink.bot.LinkException
 import org.epilink.bot.config.LinkDiscordConfig
 import org.epilink.bot.config.LinkDiscordServerSpec
 import org.epilink.bot.config.LinkPrivacy
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -95,6 +96,7 @@ private const val helloBlue = "#3771C8"
 private const val notificationOrange = "#FF6600"
 private const val okGreen = "#2B9B2B"
 
+@OptIn(KoinApiExtension::class)
 internal class LinkDiscordMessagesImpl : LinkDiscordMessages, KoinComponent {
     private val config: LinkDiscordConfig by inject()
     private val i18n: LinkDiscordMessagesI18n by inject()

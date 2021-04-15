@@ -22,8 +22,9 @@ import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.LinkDiscordBackEnd
 import org.epilink.bot.http.LinkIdentityProvider
 import org.epilink.bot.http.data.InstanceInformation
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -37,6 +38,7 @@ interface LinkMetaApi {
     fun install(route: Route)
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkMetaApiImpl : LinkMetaApi, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.meta")
     private val env: LinkServerEnvironment by inject()

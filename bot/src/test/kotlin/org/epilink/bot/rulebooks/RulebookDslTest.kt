@@ -10,7 +10,9 @@ package org.epilink.bot.rulebooks
 
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.rulebook.*
+import org.junit.jupiter.api.assertDoesNotThrow
 import java.time.Duration
+import kotlin.script.experimental.host.toScriptSource
 import kotlin.test.*
 
 class RulebookDslTest {
@@ -119,5 +121,19 @@ class RulebookDslTest {
     @Test
     fun `Day duration test`() {
         assertEquals(Duration.ofDays(333), 333.days)
+    }
+
+    @Test
+    fun `Code can be compiled from raw string`() {
+        val code = """
+            "Some Rule" {
+                httpGetJson(":zoronice:")
+            }
+        """.trimIndent().toScriptSource("TestFile")
+        assertDoesNotThrow {
+            runBlocking {
+                compileRules(code)
+            }
+        }
     }
 }

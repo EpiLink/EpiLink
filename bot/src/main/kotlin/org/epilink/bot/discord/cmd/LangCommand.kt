@@ -11,12 +11,14 @@ package org.epilink.bot.discord.cmd
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.discord.*
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * The e!lang command that allows any user to change the EpiLink Discord bot's language.
  */
+@OptIn(KoinApiExtension::class)
 class LangCommand : Command, KoinComponent {
     override val name = "lang"
     override val permissionLevel = PermissionLevel.Anyone

@@ -23,8 +23,9 @@ import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.db.*
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -54,6 +55,7 @@ interface LinkSessionChecks {
     suspend fun verifyAdmin(context: PipelineContext<Unit, ApplicationCall>): Boolean
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkSessionChecksImpl : LinkSessionChecks, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.api.sessioncheck")
     private val dbFacade: LinkDatabaseFacade by inject()

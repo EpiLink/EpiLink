@@ -197,10 +197,10 @@ You could write a rule that gives a role to `frenchDevs` like so (we assume that
 
 ```kotlin
 "FrenchDevsRule" % { email ->
-    val result = httpGetJson(
+    val result: Map<String, Any?> = httpGetJson(
         url = "https://myapi.com/api/endpoint?email=" + email.encodeURLQueryComponent(),
-        basicAuth = "apiusername" to "apipassword"
-    )
+        auth = Basic("apiusername", "apipassword") // Bearer(token) can also be used
+    ) // Return type can be whatever you want
     val positions = result.getList("positions")
     if (positions.size > 2) {
         val positionForParis = positions.getMap(1) // Gets the map at index 1 in the array

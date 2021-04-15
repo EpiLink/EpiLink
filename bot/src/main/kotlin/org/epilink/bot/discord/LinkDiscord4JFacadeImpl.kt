@@ -27,8 +27,9 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import org.epilink.bot.LinkException
 import org.epilink.bot.debug
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
@@ -36,6 +37,7 @@ import kotlin.reflect.KClass
 /**
  * Implementation of a Discord client facade that uses Discord4J
  */
+@OptIn(KoinApiExtension::class)
 internal class LinkDiscord4JFacadeImpl(
     private val discordClientId: String,
     private val token: String
@@ -219,7 +221,7 @@ internal class LinkDiscord4JFacadeImpl(
             Permission.SEND_MESSAGES,
             Permission.ATTACH_FILES,
             Permission.ADD_REACTIONS
-        ).map { it.value }.sum().toString()
+        ).sumOf { it.value }.toString()
         return "https://discord.com/api/oauth2/authorize?client_id=$discordClientId&scope=bot&permissions=$permissions"
     }
 

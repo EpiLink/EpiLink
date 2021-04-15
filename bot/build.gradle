@@ -1,6 +1,6 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "$kotlinVersion"
-    id "com.github.ben-manes.versions" version "0.36.0"
+    id "com.github.ben-manes.versions" version "0.38.0"
     id 'java'
     id 'application'
     id "com.github.hierynomus.license"
@@ -10,9 +10,10 @@ repositories {
     mavenCentral()
     jcenter()
     maven { url 'https://jitpack.io' }
+    maven { url 'https://litarvan.github.io/maven' }
 }
 
-version = "0.6.1+deps_hotfix"
+version = "0.6.2"
 
 compileKotlin {
     kotlinOptions.jvmTarget = "11"
@@ -44,7 +45,11 @@ dependencies {
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
 
-    implementation "ch.qos.logback:logback-classic:$logbackVersion"
+    implementation (group: "ch.qos.logback", name: "logback-classic") {
+        version {
+            strictly "[$logbackVersion]"
+        }
+    }
     implementation "org.jetbrains.exposed:exposed-core:$exposedVersion"
     implementation "org.jetbrains.exposed:exposed-dao:$exposedVersion"
     implementation "org.jetbrains.exposed:exposed-jdbc:$exposedVersion"
