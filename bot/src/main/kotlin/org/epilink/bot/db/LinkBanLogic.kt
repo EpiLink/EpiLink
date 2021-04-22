@@ -8,7 +8,8 @@
  */
 package org.epilink.bot.db
 
-import org.koin.core.KoinComponent
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
 import java.time.Instant
 
 /**
@@ -25,6 +26,7 @@ interface LinkBanLogic {
     fun isBanActive(ban: LinkBan): Boolean
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkBanLogicImpl : KoinComponent, LinkBanLogic {
     override fun isBanActive(ban: LinkBan): Boolean {
         if(ban.revoked)

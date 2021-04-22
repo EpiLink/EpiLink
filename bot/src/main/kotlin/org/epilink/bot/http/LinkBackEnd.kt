@@ -31,8 +31,9 @@ import org.epilink.bot.http.endpoints.LinkRegistrationApi
 import org.epilink.bot.http.endpoints.LinkUserApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -67,6 +68,7 @@ interface LinkBackEnd {
 /**
  * The back-end, defining API endpoints and more
  */
+@OptIn(KoinApiExtension::class)
 internal class LinkBackEndImpl : LinkBackEnd, KoinComponent {
 
     private val logger = LoggerFactory.getLogger("epilink.api")

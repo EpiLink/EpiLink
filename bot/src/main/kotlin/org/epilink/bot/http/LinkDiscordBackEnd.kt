@@ -26,13 +26,15 @@ import org.epilink.bot.LinkEndpointException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
 import org.epilink.bot.debug
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
  * The back-end, specifically for interacting with the Discord API
  */
+@OptIn(KoinApiExtension::class)
 class LinkDiscordBackEnd(
     private val clientId: String,
     private val secret: String
@@ -73,7 +75,7 @@ class LinkDiscordBackEnd(
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val received = ex.response!!.call.receive<String>()
+                val received = ex.response.call.receive<String>()
                 logger.debug { "Failed: received $received" }
                 val data = ObjectMapper().readValue<Map<String, Any?>>(received)
                 val error = data["error"] as? String

@@ -18,8 +18,9 @@ import io.ktor.routing.*
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.debug
 import org.epilink.bot.trace
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -42,6 +43,7 @@ interface LinkFrontEndHandler {
 /**
  * Front-end handling implementation
  */
+@OptIn(KoinApiExtension::class)
 internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.fronthandler")
 

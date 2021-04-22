@@ -12,7 +12,6 @@ import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.StrongIdentityRule
 import org.epilink.bot.rulebook.run
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 
 private val logger = LoggerFactory.getLogger("epilink.rulemediator")
 
@@ -77,8 +76,22 @@ sealed class CacheResult {
     object NotFound : CacheResult()
 }
 
+/**
+ * Represents the result of a rule execution
+ */
 sealed class RuleResult {
+    /**
+     * Returned if the rule execution succeeded
+     *
+     * @parma roles The roles computed by the rule
+     */
     data class Success(val roles: List<String>) : RuleResult()
+
+    /**
+     * Returned if the rule execution failed
+     *
+     * @param exception The exception that stopped the rule execution
+     */
     class Failure(val exception: Throwable) : RuleResult()
 }
 

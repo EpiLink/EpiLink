@@ -18,9 +18,10 @@ import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
 import org.epilink.bot.debug
-import org.koin.core.KoinComponent
-import org.koin.core.get
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
+import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -125,6 +126,7 @@ interface LinkRoleManager {
 /**
  * This class is responsible for managing and updating the roles of Discord users.
  */
+@OptIn(KoinApiExtension::class)
 internal class LinkRoleManagerImpl : LinkRoleManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.bot.roles")
     private val messages: LinkDiscordMessages by inject()

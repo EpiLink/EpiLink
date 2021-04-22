@@ -27,7 +27,7 @@ import org.epilink.bot.http.LinkSessionChecksImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.userObjAttribute
 import org.epilink.bot.mockHere
-import org.koin.core.get
+import org.koin.core.component.get
 import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals

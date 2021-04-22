@@ -14,8 +14,9 @@ import org.epilink.bot.db.LinkBan
 import org.epilink.bot.db.LinkBanLogic
 import org.epilink.bot.db.LinkDatabaseFacade
 import org.epilink.bot.db.LinkUnlinkCooldown
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.time.Instant
 import java.util.*
 
@@ -47,6 +48,7 @@ interface LinkBanManager {
     suspend fun revokeBan(idpHashBase64: String, banId: Int)
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkBanManagerImpl : LinkBanManager, KoinComponent {
     private val dbf: LinkDatabaseFacade by inject()
     private val roleManager: LinkRoleManager by inject()

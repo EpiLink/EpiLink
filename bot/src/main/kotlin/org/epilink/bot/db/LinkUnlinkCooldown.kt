@@ -10,9 +10,10 @@ package org.epilink.bot.db
 
 import org.epilink.bot.CacheClient
 import org.epilink.bot.config.LinkWebServerConfiguration
-import org.koin.core.KoinComponent
-import org.koin.core.get
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
+import org.koin.core.component.inject
 
 /**
  * Interface for managing the unlink cooldown feature of EpiLink.
@@ -43,6 +44,7 @@ interface LinkUnlinkCooldown {
     suspend fun deleteCooldown(userId: String)
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkUnlinkCooldownImpl : KoinComponent, LinkUnlinkCooldown {
     private val serverConfiguration: LinkWebServerConfiguration by inject()
     private val storage: UnlinkCooldownStorage by lazy {

@@ -195,7 +195,7 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
         // Clear the value (just in case)
         redis.del(key).awaitSingle()
         // If roles were returned, add them to the key. Otherwise, use the special `_none` as the only element
-        val valueToCache = if (roles.isEmpty()) listOf(StandardRoles.None.roleName) else roles
+        val valueToCache = roles.ifEmpty { listOf(StandardRoles.None.roleName) }
         redis.sadd(key, *valueToCache.toTypedArray()).awaitSingle()
         redis.expire(key, cacheDuration.toSeconds()).awaitSingle().also {
             if (!it) {

@@ -10,13 +10,15 @@ package org.epilink.bot.discord.cmd
 
 import org.epilink.bot.db.LinkUser
 import org.epilink.bot.discord.*
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.koin.core.qualifier.named
 
 /**
  * Implementation for the help command
  */
+@OptIn(KoinApiExtension::class)
 class HelpCommand : Command, KoinComponent {
     private val client: LinkDiscordClientFacade by inject()
     private val msg: LinkDiscordMessages by inject()

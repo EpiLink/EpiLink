@@ -11,8 +11,9 @@ package org.epilink.bot.db
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.Rulebook
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinApiExtension
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
 
@@ -68,6 +69,7 @@ enum class AdminStatus {
     Admin
 }
 
+@OptIn(KoinApiExtension::class)
 internal class LinkPermissionChecksImpl : LinkPermissionChecks, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.perms")
     private val facade: LinkDatabaseFacade by inject()
