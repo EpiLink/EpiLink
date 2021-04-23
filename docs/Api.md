@@ -74,12 +74,12 @@ the data dictionary do *not* have `%`). Apart from `err.***` keys, the following
 
 ## Error codes
 
-These are the different codes that can be seen in [ErrorData](#errordata) objects.
+These are the different codes that can be seen in `ErrorData` objects.
 
 The description you see in the tables is very close to what you will receive in the ErrorData's description (there are
 additional clarifications here).
 
-More information can usually be found in the [ApiResponse](#apiresponse)'s message.
+More information can usually be found in the `ApiResponse`'s message.
 
 ### 1xx codes
 
@@ -140,15 +140,14 @@ Special codes for when things really go wrong.
 
 ## Registration
 
-
 Registration state is maintained with a `RegisterSessionId` header, which you must include in all calls.
 
 If you do not have any, (e.g. this is your first API request), you can call most registration endpoints: the back-end will generate a session ID and give it back to you.
 
 The OAuth2 design is like so:
 
-* The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get a stub of the authorization URL using [`/meta/info`](#get-metainfo). You only need to add a `redirect_uri` there.
-* The consumer then sends this access code with the [`POST /register/authcode/<service>`](#post-registerauthcodeservice)
+* The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get a stub of the authorization URL using [`/meta/info`](/swagger/#/meta/get_meta_info ':ignore'). You only need to add a `redirect_uri` there.
+* The consumer then sends this access code with the [`POST /register/authcode/<service>`](/swagger/#/register/post_register_authcode__service_ ':ignore')
   endpoints.
 * The back-end validates all of this and retrieves tokens from the OAuth2 service (Discord, Microsoft, etc.)
 
@@ -156,17 +155,17 @@ The OAuth2 design is like so:
 
 The registration process roughly looks like this:
 
-* Get a `SessionRegisterId`, which you can get from any endpoint. We recommend using [the `/register/info`](#get-information---get-registerinfo) endpoint
+* Get a `SessionRegisterId`, which you can get from any endpoint. We recommend using [the `/register/info`](/swagger/#/register/get_register_info ':ignore') endpoint
 
-* Provide an ID Provider or Discord authorization code using [the `/register/authcode/service`](#post-registerauthcodeservice) endpoints
+* Provide an ID Provider or Discord authorization code using [the `/register/authcode/service`]((/swagger/#/register/post_register_authcode__service_ ':ignore') endpoints
 
   * Starting with the Discord authorization code is a good idea, as the server will directly tell you "hey, I already know this user, here is the session id".
 
 * Provide the other authorization code using the other authorization code endpoint. (e.g. if you started with Discord, provide the ID Provider code next)
 
-* Complete the registration by calling [the `/register` endpoint](#post-register) with whether or not the user wants to have their identity kept in the system. The account has been created, congrats!
+* Complete the registration by calling [the `/register` endpoint](/swagger/#/register/post_register ':ignore') with whether the user wants to have their identity kept in the system. The account has been created, congrats!
 
-At any point, a registration session can be cancelled using the [DELETE `/register`](#delete-register) endpoint.
+At any point, a registration session can be cancelled using the [DELETE `/register`](/swagger/#/register/delete_register ':ignore') endpoint.
 
 EpiLink has **no dedicated log in flow.** We recommend that you simply use the registration flow for everything and first start with the Discord authorization code. Once that code has been obtained, you can just check whether the back-end asks you to continue with the registration procedure or has logged the user in.
 
@@ -187,9 +186,11 @@ Refer to the Swagger for information on where to use which session.
 
 # API Routes and details
 
-!> THIS IS DEPRECATED. Please see the [Swagger](/swagger ':ignore') instead.
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
 
 ## General
+
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
 
 ### ApiResponse
 
@@ -222,6 +223,8 @@ see the api response's message for more specific information about the error.
 
 
 ## Meta-information (/meta)
+
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
 
 These endpoints can be used to retrieve information from the back-end that is used for operation on the front-end.
 
@@ -336,6 +339,8 @@ Returns an image if the image is hosted directly by the back-end. The behavior i
 Instead of relying on these endpoints, you should instead rely on the `background`, `logo` and `providerIcon` (for `idpLogo`) information you get from the [meta information endpoint](#get-metainfo).
 
 ## Registration (/register)
+
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
 
 ### Objects
 
@@ -463,6 +468,8 @@ Response: No data attachment in the usual ApiResponse.
 * If the request was successful, the user has been logged in and the response contains a SessionId header that can be used to access user-related resources.
 
 ## Connected user information /user
+
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
 
 All endpoints under `/user` expect the `SessionId` header to be set.
 
@@ -596,6 +603,8 @@ Error code 111 (identity already unknown) is relevant here. [See all error codes
 Upon success, triggers a role update.
 
 ## Administrative endpoints /admin
+
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
 
 ?> Since version 0.3.0
 
