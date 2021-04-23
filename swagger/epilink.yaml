@@ -764,6 +764,7 @@ paths:
           type: string
           format: base64url
     get:
+      tags: [admin]
       summary: Get a single ban of a specific user
       security:
         - SessionId: [ ]
@@ -803,6 +804,7 @@ paths:
           type: string
           format: base64url
     post:
+      tags: [admin]
       summary: Revokes a ban
       security:
         - SessionId: [ ]
@@ -832,7 +834,10 @@ paths:
         schema:
           type: string
     get:
+      tags: [admin]
       summary: Search users
+      security:
+        - SessionId: [ ]
       description: |
         Looks for users based on the given criteria and term. The criteria can be:
 
@@ -860,11 +865,23 @@ paths:
           type: string
           format: base64url
     post:
+      tags: [admin]
       summary: Generate a GDPR report about the target
+      security:
+        - SessionId: [ ]
       description: |
-        Returns a GDPR report for the given person, directly as a Markdown document.
+        Returns a GDPR report for the given person, directly as a Markdown document. This generates an identity access notification for manual access.
       responses:
-
+        '200':
+          description: OK -- Results below
+          content:
+            text/markdown:
+              example: |
+                Here is the GDPR report.
+        '401':
+          $ref: '#/components/responses/AdminOrUserUnauthorized'
+        '404':
+          $ref: '#/components/responses/AdminEndpointsDisabled'
 components:
   schemas:
     # ---------------------- general schemas ----------------------
