@@ -13,8 +13,10 @@ info:
     - The EpiLink website: <https://epilink.zoroark.guru>
 
     - Additional API documentation: [here](/#/Api?). Has thorough information on topics not covered by this document.
+
+    Please note that, unless your instance administrators decided to enable this Swagger via the EpiLink CORS whitelist, all of the APIs will fail.
   license:
-    name: Mozilla Public License version 2
+    name: Mozilla Public License version 2 - no copyleft exception (Exhibit B)
     url: https://www.mozilla.org/en-US/MPL/2.0/
   version: "0.7"
 servers:
