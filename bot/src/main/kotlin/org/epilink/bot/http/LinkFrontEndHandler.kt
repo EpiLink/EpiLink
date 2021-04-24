@@ -56,8 +56,7 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                 wsCfg.frontendUrl == null
     }
 
-    private fun CORS.Configuration.applyCorsOptions()
-    {
+    private fun CORS.Configuration.applyCorsOptions() {
         method(HttpMethod.Options)
         method(HttpMethod.Delete)
 
@@ -70,7 +69,7 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
 
     override fun Application.install() {
         val frontUrl = wsCfg.frontendUrl
-        val disableCors = wsCfg.disableCorsSecurity
+        val whitelist = wsCfg.corsWhitelist
         routing {
             get("/{...}") {
                 when {
@@ -95,12 +94,27 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
             }
         }
         when {
-            disableCors -> {
-                logger.warn("CORS is set to allow requests from any origin. DO NOT DO THIS IN PRODUCTION ENVIRONMENTS! Remove disableCorsSecurity from your config file!")
+            whitelist.isNotEmpty() -> {
+                logger.warn("CORS is enabled because a non-empty corsWhitelist is present.")
                 install(CORS) {
                     applyCorsOptions()
 
-                    anyHost()
+                    if (whitelist.contains("*")) {
+                        logger.warn("Whitelist contains '*' entry, CORS will allow all hosts. DO NOT DO THIS IN PRODUCTION!")
+                        anyHost()
+                    } else {
+                        whitelist.forEach { x ->
+                            addHostWithProtocol(x)
+                        }
+
+                        if (frontUrl != null) {
+                            logger.info("Also allowing frontUrl in addition to the whitelist")
+                            host(
+                                frontUrl.dropLast(1).replace(Regex("https?://"), ""),
+                                schemes = listOf("http", "https")
+                            )
+                        }
+                    }
                 }
             }
             serveIntegratedFrontEnd -> {
@@ -122,6 +136,11 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                 }
             }
         }
+    }
+
+    private fun CORS.Configuration.addHostWithProtocol(x: String) {
+        val (protocol, path) = x.split("://", limit = 2)
+        host(path, listOf(protocol))
     }
 
     /**

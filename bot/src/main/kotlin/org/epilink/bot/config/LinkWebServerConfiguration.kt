@@ -56,9 +56,10 @@ data class LinkWebServerConfiguration(
      * Rate limiting profile
      */
     val rateLimitingProfile: RateLimitingProfile = RateLimitingProfile.Harsh,
-    // TODO document (and document this)
-    //      also make this testable?
-    val disableCorsSecurity: Boolean = false
+    /**
+     * List of hosts (including protocol) that will get whitelisted in the server's CORS settings
+     */
+    val corsWhitelist: List<String> = listOf()
 )
 
 /**
