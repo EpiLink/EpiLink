@@ -174,5 +174,10 @@ fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
             reports += ConfigError(false, "Rate limiting profile set to Disabled. Spam protection is disabled, this leaves your server open for abuse!")
         else -> { /* nothing to report */ }
     }
+    corsWhitelist.forEach {
+        if (!it.startsWith("http://") && !it.startsWith("https://") && it != "*") {
+            reports += ConfigError(true, "Host in CORS whitelist '$it' is not a valid host. A host must be a protocol + host name (https://example.com) or * to allow any host")
+        }
+    }
     return reports
 }

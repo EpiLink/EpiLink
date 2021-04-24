@@ -92,6 +92,7 @@ class ConfigTestCheck {
             // Normal config
             every { rateLimitingProfile } returns RateLimitingProfile.Standard
             every { enableAdminEndpoints } returns true
+            every { corsWhitelist } returns listOf()
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("frontendUrl") })
@@ -104,6 +105,7 @@ class ConfigTestCheck {
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
             every { enableAdminEndpoints } returns true
+            every { corsWhitelist } returns listOf()
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigWarning && it.message.contains("Lenient") })
@@ -116,6 +118,7 @@ class ConfigTestCheck {
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
             every { enableAdminEndpoints } returns true
+            every { corsWhitelist } returns listOf()
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigError && !it.shouldFail && it.message.contains("Disabled") })
@@ -128,6 +131,7 @@ class ConfigTestCheck {
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
             every { rateLimitingProfile } returns RateLimitingProfile.Standard
+            every { corsWhitelist } returns listOf()
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigInfo && it.message.contains("endpoints") && it.message.contains("enabled") })
@@ -140,6 +144,7 @@ class ConfigTestCheck {
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
             every { rateLimitingProfile } returns RateLimitingProfile.Standard
+            every { corsWhitelist } returns listOf()
         }
         val reports = config.check()
         assertTrue(reports.any { it is ConfigInfo && it.message.contains("endpoints") && it.message.contains("disabled") })
@@ -172,6 +177,17 @@ class ConfigTestCheck {
         assertContainsSingleError(tokens(msftOAuthSecret = defaultTokenValue).check(), "idpOAuthSecret")
     }
 
+    @Test
+    fun `Test invalid host in CORS whitelist triggers error`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { corsWhitelist } returns listOf("http://hello.com", "yolo.yay", "https://woohoo")
+            // Normal config
+            every { frontendUrl } returns "https://my.slash.ishere/"
+            every { rateLimitingProfile } returns RateLimitingProfile.Standard
+            every { enableAdminEndpoints } returns false
+        }
+        assertContainsError(config.check(), "'yolo.yay'")
+    }
     /**
      * Assert that the report has a single error, whose message must contain the provided substring
      */
