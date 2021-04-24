@@ -2,6 +2,7 @@ plugins {
     id "org.jetbrains.kotlin.jvm" version "$kotlinVersion"
     id "com.github.ben-manes.versions" version "0.38.0"
     id 'java'
+    id 'jacoco'
     id 'application'
     id "com.github.hierynomus.license"
 }
@@ -95,6 +96,12 @@ license {
     exclude("frontend/*")
     // Generated file
     exclude("org/epilink/bot/Version.kt")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
 }
 
 /* ############################################################
