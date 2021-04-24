@@ -1,0 +1,28 @@
+plugins {
+    id 'org.hidetake.swagger.generator' version '2.18.2'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    swaggerUI 'org.webjars:swagger-ui:3.38.0'
+}
+
+swaggerSources {
+    epilink {
+        inputFile = file('epilink.yaml')
+        // From the README of the plugin, this injects a custom index.html
+        ui {
+            doLast {
+                copy {
+                    from 'index.html'
+                    into outputDir
+                }
+            }
+        }
+    }
+}
+
+tasks.generateSwaggerUIEpilink.inputs.file("index.html")

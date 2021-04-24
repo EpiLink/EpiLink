@@ -65,6 +65,9 @@ server:
   # Check the maintainer guide for guidance on which profile to choose. Harsh profile by default.
   #rateLimitingProfile: Harsh
 
+  # Whitelist of hosts to allow via CORS. Note that the front-end's URL is always added, you do not need to add it here.
+  #corsWhitelist: []
+
 # Name and location of the EpiLink SQLite database
 db: epilink.db
 

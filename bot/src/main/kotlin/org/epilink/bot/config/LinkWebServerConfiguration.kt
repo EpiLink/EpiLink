@@ -55,7 +55,11 @@ data class LinkWebServerConfiguration(
     /**
      * Rate limiting profile
      */
-    val rateLimitingProfile: RateLimitingProfile = RateLimitingProfile.Harsh
+    val rateLimitingProfile: RateLimitingProfile = RateLimitingProfile.Harsh,
+    /**
+     * List of hosts (including protocol) that will get whitelisted in the server's CORS settings
+     */
+    val corsWhitelist: List<String> = listOf()
 )
 
 /**
@@ -169,6 +173,13 @@ fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
         RateLimitingProfile.Disabled ->
             reports += ConfigError(false, "Rate limiting profile set to Disabled. Spam protection is disabled, this leaves your server open for abuse!")
         else -> { /* nothing to report */ }
+    }
+    corsWhitelist.forEach {
+        if (!it.startsWith("http://") && !it.startsWith("https://") && it != "*") {
+            reports += ConfigError(true, "Host in CORS whitelist '$it' is not a valid host. A host must be a protocol + host name (https://example.com) or * to allow any host")
+        } else if (it.count { c -> c == '/' } != 2) {
+            reports += ConfigError(true, "Malformed host: '$it'. Make sure that there are no trailing slashes and no sub-paths. The host should look like https://example.com")
+        }
     }
     return reports
 }

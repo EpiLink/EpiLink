@@ -167,6 +167,7 @@ server:
   enableAdminEndpoints: true # optional
   unlinkCooldown: 3600 # optional
   rateLimitingProfile: Harsh # optional
+  corsWhitelist: [] # optional
   footers: # optional
     - name: My Footer Url
       url: "https://myawesome.com"
@@ -202,6 +203,7 @@ server:
     * `Lenient`: The most forgiving profile, good for high-usage scenarios.
     * `Standard`: A moderate rate-limiting profile. Recommended for instances which host a lot of users (5000+) on the regular.
     * `Harsh`: The strictes rate-limiting profile. Recommended for smaller instances when in low-usage scenarios. Should be scaled up to `Standard` or `Lenient` if necessary.
+* `corsWhitelist` *(optional, empty list by default)*: additional hosts to allow for [CORS](https://enable-cors.org/)-protected operations. The front-end's url is always allowed, you only need to change this if you have multiple URLs or want to expose the API via a Swagger somewhere. Add individual host + protocol combinations (e.g. `http://example.com`) or a star `*` to allow any host (not recommended) *(since version 0.7.0)*
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
 

@@ -8,21 +8,21 @@
  */
 package org.epilink.bot.web
 
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
+import io.ktor.http.*
+import io.ktor.request.*
+import io.ktor.server.testing.*
 import io.mockk.every
 import io.mockk.spyk
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.assertStatus
 import org.epilink.bot.config.LinkWebServerConfiguration
-import org.epilink.bot.http.*
+import org.epilink.bot.http.LinkFrontEndHandler
+import org.epilink.bot.http.LinkFrontEndHandlerImpl
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import org.koin.test.get
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
     LinkFrontEndHandler::class,
@@ -37,6 +37,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
         }
         mockHere<LinkWebServerConfiguration> {
             every { frontendUrl } returns null
+            every { corsWhitelist } returns listOf()
         }
         withTestFrontHandler {
             listOf("/index.html", "/", "/dir/indir.md").forEach { path ->
@@ -54,6 +55,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
         }
         mockHere<LinkWebServerConfiguration> {
             every { frontendUrl } returns "https://frontend/"
+            every { corsWhitelist } returns listOf()
         }
         withTestFrontHandler {
             listOf(
@@ -77,6 +79,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
         // The .hasFrontend is present in the test resources
         mockHere<LinkWebServerConfiguration> {
             every { frontendUrl } returns null
+            every { corsWhitelist } returns listOf()
         }
         withTestFrontHandler {
             mapOf(
@@ -89,6 +92,86 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
                 handleRequest(HttpMethod.Get, k).apply {
                     assertStatus(HttpStatusCode.OK)
                     assertEquals(v, response.content)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `Test CORS - Whitelist - Allow All`() {
+        mockHere<LinkWebServerConfiguration> {
+            every { frontendUrl } returns null
+            every { corsWhitelist } returns listOf("*")
+        }
+        handleCorsRequest("http://somewhere.else", "*")
+    }
+
+    @Test
+    fun `Test CORS - Whitelist - No front-end`() {
+        mockHere<LinkWebServerConfiguration> {
+            every { frontendUrl } returns null
+            every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
+        }
+        handleCorsRequest("http://somewhere.else")
+    }
+
+    @Test
+    fun `Test CORS - Whitelist - With front-end`() {
+        mockHere<LinkWebServerConfiguration> {
+            every { frontendUrl } returns "http://front.end/"
+            every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
+        }
+        handleCorsRequest("http://front.end")
+    }
+
+    @Test
+    fun `Test CORS - Whitelist - Invalid`() {
+        mockHere<LinkWebServerConfiguration> {
+            every { frontendUrl } returns "http://front.end/"
+            every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
+        }
+        handleCorsRequest("http://oh.no", null)
+    }
+
+    @Test
+    fun `Test CORS - Enabled - Front-end`() {
+        mockHere<LinkWebServerConfiguration> {
+            every { frontendUrl } returns "http://front.end/"
+            every { corsWhitelist } returns listOf()
+        }
+        handleCorsRequest("http://front.end")
+    }
+
+    @Test
+    fun `Test CORS - Enabled - Front-end Invalid`() {
+        mockHere<LinkWebServerConfiguration> {
+            every { frontendUrl } returns "http://front.end/"
+            every { corsWhitelist } returns listOf()
+        }
+        handleCorsRequest("http://oh.no", null)
+    }
+
+    private fun handleCorsRequest(origin: String, expectedACAO: String? = origin) {
+        withTestFrontHandler {
+            handleRequest(HttpMethod.Options, "/") {
+                addHeader("Origin", origin)
+                addHeader("Access-Control-Request-Method", "POST")
+                addHeader("Access-Control-Request-Headers", "Content-Type, RegistrationSessionId, SessionId")
+            }.apply {
+                print(response.headers.allValues())
+                if (expectedACAO != null) {
+                    assertEquals(
+                        expectedACAO,
+                        response.headers["Access-Control-Allow-Origin"],
+                        "Wrong or absent Access-Control-Allow-Origin returned header value"
+                    )
+                    assertEquals("DELETE, OPTIONS", response.headers["Access-Control-Allow-Methods"])
+                    assertEquals(
+                        "Content-Type, RegistrationSessionId, SessionId",
+                        response.headers["Access-Control-Allow-Headers"]
+                    )
+                } else {
+                    assertStatus(HttpStatusCode.Forbidden)
                 }
             }
         }

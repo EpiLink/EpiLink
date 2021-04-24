@@ -8,23 +8,13 @@
  */
 package org.epilink.bot.http
 
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.CORS
-import io.ktor.http.ContentType
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.resolveResource
-import io.ktor.http.defaultForFileExtension
-import io.ktor.request.path
-import io.ktor.request.queryString
-import io.ktor.request.uri
-import io.ktor.response.respond
-import io.ktor.response.respondRedirect
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.request.*
+import io.ktor.response.*
+import io.ktor.routing.*
 import org.epilink.bot.config.LinkWebServerConfiguration
 import org.epilink.bot.debug
 import org.epilink.bot.trace
@@ -66,46 +56,34 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                 wsCfg.frontendUrl == null
     }
 
+    private fun CORS.Configuration.applyCorsOptions() {
+        method(HttpMethod.Options)
+        method(HttpMethod.Delete)
+
+        header("Content-Type")
+        header("RegistrationSessionId")
+        header("SessionId")
+        exposeHeader("RegistrationSessionId")
+        exposeHeader("SessionId")
+    }
+
     override fun Application.install() {
         val frontUrl = wsCfg.frontendUrl
-        when {
-            serveIntegratedFrontEnd -> {
-                logger.debug("CORS is disabled because the integrated front end is being served.")
-                routing {
-                    get("/{...}") {
+        val whitelist = wsCfg.corsWhitelist
+        routing {
+            get("/{...}") {
+                when {
+                    serveIntegratedFrontEnd -> {
+                        logger.debug("Serving bootstrapped front-end")
                         call.respondBootstrapped()
                     }
-                }
-            }
-            frontUrl == null -> {
-                logger.warn("CORS is disabled. Web browsers may deny calls to the back-end. Specify the front-end URL in the configuration files to fix this.")
-                routing {
-                    get("/{...}") {
+                    frontUrl == null -> {
+                        logger.warn("Not serving bootstrapped front-end (none found and frontUrl was null)")
                         call.respond(HttpStatusCode.NotFound)
+
                     }
-                }
-            }
-
-            else -> {
-                logger.debug("CORS is enabled.")
-                /*
-                 * Allows the frontend to call the API along with the required headers
-                 * and methods
-                 */
-                install(CORS) {
-                    method(HttpMethod.Options)
-                    method(HttpMethod.Delete)
-
-                    header("Content-Type")
-                    header("RegistrationSessionId")
-                    header("SessionId")
-                    exposeHeader("RegistrationSessionId")
-                    exposeHeader("SessionId")
-
-                    host(frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https"))
-                }
-                routing {
-                    get("/{...}") {
+                    else -> {
+                        logger.debug("Serving front-end as a redirection")
                         val redirectionUrl = frontUrl.dropLast(1) +
                                 call.request.path() +
                                 (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" } ?: "")
@@ -115,6 +93,54 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
                 }
             }
         }
+        when {
+            whitelist.isNotEmpty() -> {
+                logger.warn("CORS is enabled because a non-empty corsWhitelist is present.")
+                install(CORS) {
+                    applyCorsOptions()
+
+                    if (whitelist.contains("*")) {
+                        logger.warn("Whitelist contains '*' entry, CORS will allow all hosts. DO NOT DO THIS IN PRODUCTION!")
+                        anyHost()
+                    } else {
+                        whitelist.forEach { x ->
+                            addHostWithProtocol(x)
+                        }
+
+                        if (frontUrl != null) {
+                            logger.info("Also allowing frontUrl in addition to the whitelist")
+                            host(
+                                frontUrl.dropLast(1).replace(Regex("https?://"), ""),
+                                schemes = listOf("http", "https")
+                            )
+                        }
+                    }
+                }
+            }
+            serveIntegratedFrontEnd -> {
+                logger.debug("CORS is disabled because the integrated front end is being served.")
+            }
+            frontUrl == null -> {
+                logger.warn("CORS is disabled. Web browsers may deny calls to the back-end. Specify the front-end URL in the configuration files to fix this.")
+            }
+            else -> {
+                logger.debug("CORS is enabled.")
+                /*
+                 * Allows the frontend to call the API along with the required headers
+                 * and methods
+                 */
+                install(CORS) {
+                    applyCorsOptions()
+
+                    host(frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https"))
+                }
+            }
+        }
+    }
+
+    private fun CORS.Configuration.addHostWithProtocol(x: String) {
+        val (protocol, path) = x.split("://", limit = 2)
+        host(path, listOf(protocol))
     }
 
     /**
@@ -132,7 +158,7 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
     }
 
     private suspend fun ApplicationCall.respondBootstrapped() {
-        logger.trace { "Responding to ${request.uri} with bootstrapped"}
+        logger.trace { "Responding to ${request.uri} with bootstrapped" }
         // The path (without the initial /)
         val path = request.path().substring(1)
         if (path.isEmpty())
@@ -154,4 +180,3 @@ internal class LinkFrontEndHandlerImpl : LinkFrontEndHandler, KoinComponent {
         }
     }
 }
-

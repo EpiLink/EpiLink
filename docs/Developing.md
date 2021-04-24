@@ -94,3 +94,28 @@ $ ./gradlew run --args="path/to/config/file"
 The back-end requires a config file (check the [maintainer guide](MaintainerGuide.md) for guidance on how to fill it in). A sample config file can be found [here](https://github.com/EpiLink/EpiLink/tree/master/bot/config/epilink_config.yaml). You can copy-paste it and rename the copy to `epilink_config_real.yaml` and launch the back-end with `./gradlew run --args="config/epilink_config_real.yaml"`. The `epilink_config_real.yaml` file is ignored by Git in our `.gitignore` for this purpose.
 
 The back-end is served under whichever port [you specified in the configuration file](MaintainerGuide.md#http-server-settings).
+
+
+## Documentation
+
+The documentation website uses both [Swagger](https://swagger.io/) and [Docsify](https://docsify.js.org/).
+
+Serving the documentation for dev purposes is a bit unorthodox right now and will change in the future. For now, install the [Docsify CLI](https://docsifyjs.github.io/docsify-cli/#/), run these commands *in separate terminals*.
+
+
+```shell
+# TERMINAL 1
+$ gradle -t generateDocs
+```
+
+```shell
+# TERMINAL 2
+$ cd build/docs
+$ docsify serve
+```
+
+Go to `localhost:3000` to see the documentation in action.
+
+In terms of source files, the docs files are in `docs` while the Swagger YAML file is in `swagger`.
+
+The rule of thumb is that **any feature that is not documented, recorded in the changelog AND tested does not exist**.
