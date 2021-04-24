@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Added new `httpGet` utility functions ([#241](https://github.com/EpiLink/EpiLink/pull/241))
+* Added a Swagger document in the documentation ([#256](https://github.com/EpiLink/EpiLink/pull/256))
 
 ### Changed
 
