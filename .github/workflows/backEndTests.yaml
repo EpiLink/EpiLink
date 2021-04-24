@@ -17,6 +17,10 @@ jobs:
         run: ./gradlew jar
       - name: Test with gradle
         run: ./gradlew check
+      - name: Create and upload code coverage report
+        run: |
+          ./gradlew jacocoTestReport
+          bash <(curl -s https://codecov.io/bash) -f bot/build/reports/jacoco/test/jacocoTestReport.xml
       - name: Upload tests failure report to artifacts
         uses: actions/upload-artifact@v1
         if: failure()
