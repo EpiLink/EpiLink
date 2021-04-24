@@ -188,6 +188,31 @@ class ConfigTestCheck {
         }
         assertContainsError(config.check(), "'yolo.yay'")
     }
+
+    @Test
+    fun `Test trailing slash in host in CORS whitelist triggers error`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { corsWhitelist } returns listOf("http://hello.com", "http://pee.po/")
+            // Normal config
+            every { frontendUrl } returns "https://my.slash.ishere/"
+            every { rateLimitingProfile } returns RateLimitingProfile.Standard
+            every { enableAdminEndpoints } returns false
+        }
+        assertContainsError(config.check(), "'http://pee.po/'")
+    }
+
+    @Test
+    fun `Test subpath in host in CORS whitelist triggers error`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { corsWhitelist } returns listOf("http://hello.com", "http://pee.po/cringe")
+            // Normal config
+            every { frontendUrl } returns "https://my.slash.ishere/"
+            every { rateLimitingProfile } returns RateLimitingProfile.Standard
+            every { enableAdminEndpoints } returns false
+        }
+        assertContainsError(config.check(), "'http://pee.po/cringe'")
+    }
+
     /**
      * Assert that the report has a single error, whose message must contain the provided substring
      */
