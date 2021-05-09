@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   * The `roles` in the Discord config have been deleted
   * A new `requires` field should be configured for each server instead 
 * `httpGet` utility functions now have eager authentication on by default ([#241](https://github.com/EpiLink/EpiLink/pull/241))
+* Dependencies versions bumped ([#277](https://github.com/EpiLink/EpiLink/pull/277))
 
 ## [0.6.2] - 2021-04-14
 
