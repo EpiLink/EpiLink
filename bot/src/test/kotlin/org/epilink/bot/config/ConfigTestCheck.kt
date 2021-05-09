@@ -12,6 +12,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.WeakIdentityRule
+import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.*
 
 class ConfigTestCheck {
@@ -211,6 +212,18 @@ class ConfigTestCheck {
             every { enableAdminEndpoints } returns false
         }
         assertContainsError(config.check(), "'http://pee.po/cringe'")
+    }
+
+    @Test
+    fun `Test star in CORS whitelist does not trigger error`() {
+        val config = mockk<LinkWebServerConfiguration> {
+            every { corsWhitelist } returns listOf("*")
+            // Normal config
+            every { frontendUrl } returns "https://my.slash.ishere/"
+            every { rateLimitingProfile } returns RateLimitingProfile.Standard
+            every { enableAdminEndpoints } returns false
+        }
+        assertEquals(0, config.check().filterIsInstance<ConfigError>().size)
     }
 
     /**

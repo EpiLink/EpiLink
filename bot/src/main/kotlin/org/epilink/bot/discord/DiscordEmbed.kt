@@ -74,7 +74,7 @@ data class DiscordEmbed(
             else -> {
                 // Try and parse a Color static field
                 runCatching {
-                    Color::class.java.getField(this.color!!.toUpperCase()).get(null) as? Color
+                    Color::class.java.getField(this.color!!.uppercase()).get(null) as? Color
                 }.getOrElse { throw LinkException("Unrecognized color: $color", it) }
             }
         }
