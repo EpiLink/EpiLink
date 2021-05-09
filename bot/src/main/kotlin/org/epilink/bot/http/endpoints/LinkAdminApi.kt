@@ -225,7 +225,7 @@ internal class LinkAdminApiImpl : LinkAdminApi, KoinComponent {
 
         route("search") {
             get("hash16/{searchTerm}") {
-                val targetId = call.parameters["searchTerm"]!!.toLowerCase()
+                val targetId = call.parameters["searchTerm"]!!.lowercase()
                 if (targetId.any { it !in hexCharacters }) {
                     call.respond(BadRequest, InvalidAdminRequest.toResponse("Invalid hex string", "adm.ihs"))
                 } else {

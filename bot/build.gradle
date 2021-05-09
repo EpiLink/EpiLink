@@ -27,7 +27,7 @@ compileTestKotlin {
 }
 
 application {
-    mainClassName = "org.epilink.bot.MainKt"
+    mainClass = "org.epilink.bot.MainKt"
 }
 
 dependencies {
@@ -77,7 +77,7 @@ dependencies {
 
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
     testImplementation "io.mockk:mockk:$mockkVersion"
     testImplementation "org.koin:koin-test:$koinVersion"
     testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
