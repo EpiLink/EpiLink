@@ -97,6 +97,11 @@ license {
     exclude("org/epilink/bot/Version.kt")
 }
 
+// TODO Remove this when the default JaCoCo version is updated
+jacoco {
+    toolVersion = "0.8.7"
+}
+
 jacocoTestReport {
     reports {
         xml.enabled true
