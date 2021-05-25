@@ -1,6 +1,5 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "$kotlinVersion"
-    id "com.github.ben-manes.versions" version "0.38.0"
     id 'java'
     id 'jacoco'
     id 'application'
@@ -27,7 +26,7 @@ compileTestKotlin {
 }
 
 application {
-    mainClassName = "org.epilink.bot.MainKt"
+    mainClass = "org.epilink.bot.MainKt"
 }
 
 dependencies {
@@ -69,7 +68,7 @@ dependencies {
 
     implementation "io.lettuce:lettuce-core:$lettuceVersion"
 
-    implementation "guru.zoroark:ktor-rate-limit:$krlVersion"
+    implementation "guru.zoroark:ktor-rate-limit:$ktorRateLimitVersion"
 
     implementation "org.bitbucket.b_c:jose4j:$jose4jVersion"
 
@@ -77,7 +76,7 @@ dependencies {
 
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'
+    testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
     testImplementation "io.mockk:mockk:$mockkVersion"
     testImplementation "org.koin:koin-test:$koinVersion"
     testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
@@ -98,30 +97,14 @@ license {
     exclude("org/epilink/bot/Version.kt")
 }
 
+// TODO Remove this when the default JaCoCo version is updated
+jacoco {
+    toolVersion = "0.8.7"
+}
+
 jacocoTestReport {
     reports {
         xml.enabled true
-    }
-}
-
-/* ############################################################
- * ################# Versions plugin settings #################
- * ############################################################
- */
-
-// Versions config for the Gradle versions plugin, from the readme
-// https://github.com/ben-manes/gradle-versions-plugin
-
-def isNonStable = { String version ->
-    def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
-    def regex = /^[0-9,.v-]+(-r)?$/
-    return !stableKeyword && !(version ==~ regex) || version.contains("-M")
-}
-
-dependencyUpdates {
-    // Reject all non stable versions
-    rejectVersionIf {
-        isNonStable(it.candidate.version)
     }
 }
 

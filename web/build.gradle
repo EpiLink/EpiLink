@@ -1,7 +1,7 @@
 import com.hierynomus.gradle.license.tasks.*
 
 plugins {
-  id "com.github.node-gradle.node" version "2.2.3"
+  id "com.github.node-gradle.node" version "$nodeVersion"
   id "com.github.hierynomus.license"
 }
 
@@ -24,13 +24,13 @@ task bundleWeb(type: NpmTask) {
   inputs.file('babel.config.js')
   inputs.property("backendUrl", backEndUrl())
   outputs.dir('../build/web')
-  
+
   dependsOn npmInstall
   args = ['run', 'prod']
 
   doFirst {
     String backendUrl = backEndUrl()
-    if(backendUrl == null) {
+    if (backendUrl == null) {
       // Enforce it here, because creating a bundle isn't meant to be done with the default dev URL
       throw new InvalidUserDataException('Please provide a back-end URL with -PbackendUrl="https://..."')
     }

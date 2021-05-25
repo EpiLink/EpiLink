@@ -1,5 +1,5 @@
 plugins {
-    id 'org.hidetake.swagger.generator' version '2.18.2'
+    id 'org.hidetake.swagger.generator' version "$swaggerGeneratorVersion"
 }
 
 repositories {
@@ -7,7 +7,7 @@ repositories {
 }
 
 dependencies {
-    swaggerUI 'org.webjars:swagger-ui:3.38.0'
+    swaggerUI "org.webjars:swagger-ui:$swaggerUiVersion"
 }
 
 swaggerSources {

@@ -1,5 +1,6 @@
 plugins {
-    id "com.github.hierynomus.license" version "0.15.0" apply false
+    id "com.github.hierynomus.license" version "$licenseVersion" apply false
+    id "com.github.ben-manes.versions" version "$versionsVersion"
 }
 
 task generateDocs {
@@ -16,4 +17,25 @@ task copySwagger(type: Copy) {
     from 'swagger/build/swagger-ui-epilink'
     exclude 'META-INF'
     into 'build/docs/swagger'
+}
+
+/* ############################################################
+ * ################# Versions plugin settings #################
+ * ############################################################
+ */
+
+// Versions config for the Gradle versions plugin, from the readme
+// https://github.com/ben-manes/gradle-versions-plugin
+
+def isNonStable = { String version ->
+    def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
+    def regex = /^[0-9,.v-]+(-r)?$/
+    return !stableKeyword && !(version ==~ regex) || version.contains("-M")
+}
+
+dependencyUpdates {
+    // Reject all non stable versions
+    rejectVersionIf {
+        isNonStable(it.candidate.version)
+    }
 }

@@ -175,7 +175,9 @@ fun LinkWebServerConfiguration.check(): List<ConfigReportElement> {
         else -> { /* nothing to report */ }
     }
     corsWhitelist.forEach {
-        if (!it.startsWith("http://") && !it.startsWith("https://") && it != "*") {
+        if (it == "*")
+            return@forEach
+        if (!it.startsWith("http://") && !it.startsWith("https://")) {
             reports += ConfigError(true, "Host in CORS whitelist '$it' is not a valid host. A host must be a protocol + host name (https://example.com) or * to allow any host")
         } else if (it.count { c -> c == '/' } != 2) {
             reports += ConfigError(true, "Malformed host: '$it'. Make sure that there are no trailing slashes and no sub-paths. The host should look like https://example.com")
