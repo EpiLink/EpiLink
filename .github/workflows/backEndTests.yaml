@@ -1,4 +1,4 @@
-name: Tests
+name: Build and test
 
 on:
   push:
@@ -43,6 +43,7 @@ jobs:
           path: bot/build/reports/tests/test
 
   docs:
+    name: Generate docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -52,11 +53,6 @@ jobs:
           java-version: 11
       - name: Generate documentation
         run: ./gradlew generateDocs
-      - name: Upload documentation
-        uses: actions/upload-artifact@v2
-        with:
-          name: documentation
-          path: ./build/docs
 
   frontend-build:
     name: Build front-end
@@ -69,10 +65,6 @@ jobs:
           java-version: 11
       - name: Compile front-end JAR
         run: ./gradlew frontJar -PwithFrontend
-      - name: Upload front-end JAR
-        uses: actions/upload-artifact@v2
-        with:
-          path: ./web/build/libs/*.jar
 
   full-dist-build:
     needs: [license, backend-tests, frontend-build, docs]
