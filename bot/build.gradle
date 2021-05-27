@@ -74,7 +74,7 @@ dependencies {
     implementation "org.apache.commons:commons-dbcp2:$dbcp2Version"
 
     if (project.hasProperty("withFrontend"))
-        runtimeOnly project(path: ":epilink-frontend", configuration: "frontendJar")
+        runtimeOnly project(path: ":epilink-frontend", configuration: "frontendJarCfg")
 
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
