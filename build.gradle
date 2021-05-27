@@ -1,6 +1,11 @@
 plugins {
     id "com.github.hierynomus.license" version "$licenseVersion" apply false
     id "com.github.ben-manes.versions" version "$versionsVersion"
+    id "distribution"
+}
+
+subprojects {
+    version = "0.6.2"
 }
 
 task generateDocs {

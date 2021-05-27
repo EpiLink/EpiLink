@@ -3,6 +3,7 @@ plugins {
     id 'java'
     id 'jacoco'
     id 'application'
+    id 'distribution'
     id "com.github.hierynomus.license"
 }
 
@@ -12,8 +13,6 @@ repositories {
     maven { url 'https://jitpack.io' }
     maven { url 'https://litarvan.github.io/maven' }
 }
-
-version = "0.6.2"
 
 compileKotlin {
     kotlinOptions.jvmTarget = "11"
@@ -74,6 +73,9 @@ dependencies {
 
     implementation "org.apache.commons:commons-dbcp2:$dbcp2Version"
 
+    if (project.hasProperty("withFrontend"))
+        runtimeOnly project(path: ":epilink-frontend", configuration: "frontendJar")
+
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
     testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
@@ -81,8 +83,6 @@ dependencies {
     testImplementation "org.koin:koin-test:$koinVersion"
     testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
     testImplementation "io.ktor:ktor-client-mock-jvm:$ktorVersion"
-    // see https://github.com/mockk/mockk/issues/397#issuecomment-570799334
-    // testRuntimeOnly "net.bytebuddy:byte-buddy:1.10.10"
 }
 
 test {
@@ -108,43 +108,17 @@ jacocoTestReport {
     }
 }
 
-/* ###################################################################
- * ################# Front-end bootstrapping support #################
- * ###################################################################
- */
-// Can be enabled via -PwithFrontend
 
-import java.nio.file.FileAlreadyExistsException
-import java.nio.file.Files
-import java.nio.file.Paths
-
-task bootstrapFrontEnd {
-    dependsOn 'bundleFrontEndIntoResources'
-    doLast {
-        try {
-            Files.createFile(Paths.get("$buildDir/resources/main/.hasFrontend"))
-        } catch (FileAlreadyExistsException ignored) {
+distributions {
+    main {
+        if (project.hasProperty("withFrontend"))
+            distributionBaseName = "epilink-backend-withFrontend"
+        contents {
+            from "../LICENSE"
         }
     }
 }
 
-task bundleFrontEndIntoResources(type: Copy) {
-    dependsOn ':epilink-frontend:bundleWeb'
-    mustRunAfter 'processResources'
-    from '../build/web'
-    into 'build/resources/main/frontend'
-    duplicatesStrategy DuplicatesStrategy.INCLUDE // overwrite
-}
-
-task cleanFrontEnd(type: Delete) {
-    delete "$buildDir/resources/main/frontend", "$buildDir/resources/main/.hasFrontend"
-}
-
-if (project.hasProperty("withFrontend")) {
-    classes.dependsOn 'bootstrapFrontEnd'
-} else {
-    classes.dependsOn 'cleanFrontEnd'
-}
 
 /* ###################################################################
  * ################# Project version file generation #################
@@ -160,5 +134,6 @@ task generateKotlin(type: Copy) {
     into "$buildDir/generated/kotlin"
     expand templateContext
 }
+
 sourceSets.main.kotlin.srcDir "$buildDir/generated/kotlin"
 compileKotlin.dependsOn generateKotlin
