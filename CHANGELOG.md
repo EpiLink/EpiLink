@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added new `httpGet` utility functions ([#241](https://github.com/EpiLink/EpiLink/pull/241))
 * Added a Swagger document in the documentation ([#256](https://github.com/EpiLink/EpiLink/pull/256))
 * Added a simple notice in `.hasFrontend` file telling people to not remove it ([#280](https://github.com/EpiLink/EpiLink/pull/280))
+* Added a new `count` command that counts the number of users that correspond to a target ([#286](https://github.com/EpiLink/EpiLink/pull/286))
 
 ### Changed
 
