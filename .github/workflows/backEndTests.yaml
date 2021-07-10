@@ -80,4 +80,9 @@ jobs:
         run: ./gradlew assembleDist
       - name: Build dist with bundled front-end
         run: ./gradlew assembleDist -PwithFrontend
+      - uses: actions/upload-artifact@v2
+        with:
+          path: |
+            bot/build/distributions/epilink-backend-*.zip
+            bot/build/distributions/epilink-backend-*.tar
 
