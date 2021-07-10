@@ -9,7 +9,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    jcenter()
     maven { url 'https://jitpack.io' }
     maven { url 'https://litarvan.github.io/maven' }
 }
@@ -62,8 +61,8 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$coroutinesVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$coroutinesVersion"
 
-    implementation "org.koin:koin-core:$koinVersion"
-    implementation "org.koin:koin-logger-slf4j:$koinVersion"
+    implementation "io.insert-koin:koin-core:$koinVersion"
+    implementation "io.insert-koin:koin-logger-slf4j:$koinVersion"
 
     implementation "io.lettuce:lettuce-core:$lettuceVersion"
 
@@ -80,7 +79,7 @@ dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
     testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
     testImplementation "io.mockk:mockk:$mockkVersion"
-    testImplementation "org.koin:koin-test:$koinVersion"
+    testImplementation "io.insert-koin:koin-test:$koinVersion"
     testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
     testImplementation "io.ktor:ktor-client-mock-jvm:$ktorVersion"
 }
