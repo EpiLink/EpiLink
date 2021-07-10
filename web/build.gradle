@@ -3,6 +3,7 @@ import com.hierynomus.gradle.license.tasks.*
 plugins {
   id "com.github.node-gradle.node" version "$nodeVersion"
   id "com.github.hierynomus.license"
+  id "java" // For easier jar creation (not strictly necessary but would require more config without it)
 }
 
 String backEndUrl() {
@@ -16,37 +17,49 @@ String backEndUrl() {
 }
 
 task bundleWeb(type: NpmTask) {
-  inputs.files(fileTree('node_modules'))
+  inputs.file('package-lock.json')
   inputs.files(fileTree('src'))
   inputs.files(fileTree('assets'))
   inputs.file('package.json')
   inputs.file('vue.config.js')
   inputs.file('babel.config.js')
   inputs.property("backendUrl", backEndUrl())
-  outputs.dir('../build/web')
+  outputs.dir(layout.buildDirectory.dir("web"))
 
   dependsOn npmInstall
   args = ['run', 'prod']
 
-  doFirst {
-    String backendUrl = backEndUrl()
-    if (backendUrl == null) {
-      // Enforce it here, because creating a bundle isn't meant to be done with the default dev URL
-      throw new InvalidUserDataException('Please provide a back-end URL with -PbackendUrl="https://..."')
-    }
+  String backendUrl = backEndUrl()
+  if (backendUrl != null)
     environment = ['BACKEND_URL': backendUrl]
+}
+
+task frontendJar(type: Jar) {
+  archiveBaseName = 'epilink-frontend'
+  from(bundleWeb) {
+    into "frontend"
   }
+  from fileTree("bundled/")
+}
+
+configurations {
+  frontendJarCfg {
+    canBeConsumed = true
+    canBeResolved = false
+  }
+}
+
+artifacts {
+  frontendJarCfg(frontendJar)
 }
 
 task serveWeb(type: NpmTask) {
   dependsOn npmInstall
   args = ['run', 'serve']
 
-  doFirst {
-    String backendUrl = backEndUrl()
-    if (backendUrl != null)
-      environment = ['BACKEND_URL': backendUrl]
-  }
+  String backendUrl = backEndUrl()
+  if (backendUrl != null)
+    environment = ['BACKEND_URL': backendUrl]
 }
 
 task licenseFormatJs(type: LicenseFormat) {
