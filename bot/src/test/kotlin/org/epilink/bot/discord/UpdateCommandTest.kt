@@ -251,8 +251,8 @@ class UpdateCommandTest : KoinBaseTest<Command>(
             f.addReaction("channel", "sentMessage", "⚠")
         }
     }
+}
 
-    private operator fun String.unaryPlus(): LinkUser = mockk {
-        every { discordId } returns this@unaryPlus
-    }
+operator fun String.unaryPlus(): LinkUser = mockk {
+    every { discordId } returns this@unaryPlus
 }

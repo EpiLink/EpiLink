@@ -2,7 +2,7 @@
 
 This page describes the Discord commands that are available in EpiLink.
 
-?> Discord commands are available since version 0.4.0
+?> Discord commands are available since version 0.4.0. EpiLink does not support slash commands yet, you can track the progress of slash commands implementation [here](https://github.com/EpiLink/EpiLink/issues/251).
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ In order to be able to use admin commands, you must:
 - Use the prefix you set in the config file (`e!` by default, e.g. `e!update`)
 - The server you're running the command on must be [monitored](MaintainerGuide.md#discord-configuration), i.e. it must be configured in EpiLink's config file.
 
-Some commands have less strict requirements.
+Some commands have less strict requirements. For example, non-admin commands can be used for general actions that can benefit anyone.
 
 ## User target
 
@@ -70,3 +70,17 @@ In short:
 * `e!lang` to see general help
 * `e!lang xx` to change the language to another language (replace `xx` by a language code, send `e!lang` to get a list)
 * `e!lang clear` to clear language preferences
+
+### count
+
+?> Since version 0.7.0
+
+This is an admin command.
+
+Displays the number of users that correspond to a [user target](#user-target). For example, assuming you are using the default prefix, `e!count |Role Here` will give you the amount of users in the "Role Here" role.
+
+This works for all the existing user targets. The syntax is:
+
+```
+count <user>
+```
