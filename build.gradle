@@ -16,7 +16,7 @@ def needExpansion = [ "_coverpage.md" ]
 
 task copyDocs(type: Copy) {
     from 'docs'
-    into 'build/docs' // TODO should not hardcode this
+    into layout.buildDirectory.dir("docs")
     def template = [version: project.version]
     filesMatching(needExpansion) {
         expand template
@@ -25,9 +25,9 @@ task copyDocs(type: Copy) {
 
 task copySwagger(type: Copy) {
     dependsOn(':swagger:generateSwaggerUIEpilink')
-    from 'swagger/build/swagger-ui-epilink'
+    from project(":swagger").layout.buildDirectory.dir("swagger-ui-epilink")
     exclude 'META-INF'
-    into 'build/docs/swagger' // TODO should not hardcode this
+    into layout.buildDirectory.dir("docs/swagger")
 }
 
 /* ############################################################
