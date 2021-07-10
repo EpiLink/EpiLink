@@ -81,7 +81,7 @@
     }
 
     #discord {
-        $color: #687BBD;
+        $color: #5865F2;
 
         color: white;
         background-color: $color;
@@ -107,8 +107,7 @@
         transition: background-color 150ms;
 
         #discord-logo {
-            height: 30px;
-            margin-bottom: -2px;
+            height: 24px;
         }
 
         #discord-text {
