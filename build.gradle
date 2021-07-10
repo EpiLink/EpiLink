@@ -1,22 +1,33 @@
 plugins {
     id "com.github.hierynomus.license" version "$licenseVersion" apply false
     id "com.github.ben-manes.versions" version "$versionsVersion"
+    id "distribution"
+}
+
+allprojects {
+    version = "0.7.0-SNAPSHOT"
 }
 
 task generateDocs {
     dependsOn('copyDocs', 'copySwagger')
 }
 
+def needExpansion = [ "_coverpage.md" ]
+
 task copyDocs(type: Copy) {
     from 'docs'
-    into 'build/docs'
+    into layout.buildDirectory.dir("docs")
+    def template = [version: project.version]
+    filesMatching(needExpansion) {
+        expand template
+    }
 }
 
 task copySwagger(type: Copy) {
     dependsOn(':swagger:generateSwaggerUIEpilink')
-    from 'swagger/build/swagger-ui-epilink'
+    from project(":swagger").layout.buildDirectory.dir("swagger-ui-epilink")
     exclude 'META-INF'
-    into 'build/docs/swagger'
+    into layout.buildDirectory.dir("docs/swagger")
 }
 
 /* ############################################################

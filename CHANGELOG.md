@@ -4,20 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] (0.7)
+## [Unreleased] (0.7.0)
 
 ### Added
 
 * Added new `httpGet` utility functions ([#241](https://github.com/EpiLink/EpiLink/pull/241))
 * Added a Swagger document in the documentation ([#256](https://github.com/EpiLink/EpiLink/pull/256))
+* Added a simple notice in `.hasFrontend` file telling people to not remove it ([#280](https://github.com/EpiLink/EpiLink/pull/280))
 
 ### Changed
 
-* Changed the way custom roles are triggered ([#253](https://github.com/EpiLink/EpiLink/pull/241))
+* **BREAKING CHANGE** Changed the way custom roles are triggered ([#253](https://github.com/EpiLink/EpiLink/pull/241))
   * The `roles` in the Discord config have been deleted
   * A new `requires` field should be configured for each server instead 
 * `httpGet` utility functions now have eager authentication on by default ([#241](https://github.com/EpiLink/EpiLink/pull/241))
-* Dependencies versions bumped ([#277](https://github.com/EpiLink/EpiLink/pull/277))
+* Dependencies versions bumped ([#277](https://github.com/EpiLink/EpiLink/pull/277) and [#280](https://github.com/EpiLink/EpiLink/pull/280))
+
+* The following are worth mentions, though they are internal changes that don't impact the actual feature set. ([#280](https://github.com/EpiLink/EpiLink/pull/280)) 
+  * The CI is now more thorough in order to improve our release quality.
+  * The front-end is now bundled as a separate JAR that is *then* integrated as a regular library in the back-end. This significantly simplifies the `withFrontend` variant build.
+  * Let Gradle automatically replace the correct version string in the docs via a simple template.
+  * Also used Gradle's `layout` feature to avoid hard-coding build paths.
 
 ## [0.6.2] - 2021-04-14
 
