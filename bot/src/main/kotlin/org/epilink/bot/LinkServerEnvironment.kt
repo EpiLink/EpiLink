@@ -17,6 +17,7 @@ import org.epilink.bot.config.LinkConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.db.exposed.SQLiteExposedFacadeImpl
 import org.epilink.bot.discord.*
+import org.epilink.bot.discord.cmd.CountCommand
 import org.epilink.bot.discord.cmd.HelpCommand
 import org.epilink.bot.discord.cmd.LangCommand
 import org.epilink.bot.discord.cmd.UpdateCommand
@@ -103,7 +104,8 @@ class LinkServerEnvironment(
             listOf(
                 UpdateCommand(),
                 HelpCommand(),
-                LangCommand()
+                LangCommand(),
+                CountCommand()
             )
         }
     }
