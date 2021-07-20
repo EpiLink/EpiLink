@@ -129,14 +129,14 @@ interface RoleManager {
 @OptIn(KoinApiExtension::class)
 internal class RoleManagerImpl : RoleManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.bot.roles")
-    private val messages: LinkDiscordMessages by inject()
-    private val i18n: LinkDiscordMessagesI18n by inject()
+    private val messages: DiscordMessages by inject()
+    private val i18n: DiscordMessagesI18n by inject()
     private val config: DiscordConfiguration by inject()
     private val rulebook: Rulebook by inject()
     private val facade: DiscordClientFacade by inject()
-    private val idManager: LinkIdManager by inject()
+    private val idManager: IdentityManager by inject()
     private val dbFacade: DatabaseFacade by inject()
-    private val perms: LinkPermissionChecks by inject()
+    private val perms: PermissionChecks by inject()
     private val ruleMediator: RuleMediator by lazy {
         get<CacheClient>().newRuleMediator("el_rc_")
     }

@@ -24,9 +24,9 @@ class LangCommand : Command, KoinComponent {
     override val permissionLevel = PermissionLevel.Anyone
     override val requireMonitoredServer = false
 
-    private val client by inject<LinkDiscordClientFacade>()
-    private val messages by inject<LinkDiscordMessages>()
-    private val i18n by inject<LinkDiscordMessagesI18n>()
+    private val client by inject<DiscordClientFacade>()
+    private val messages by inject<DiscordMessages>()
+    private val i18n by inject<DiscordMessagesI18n>()
     private val db by inject<DatabaseFacade>()
 
     override suspend fun run(
