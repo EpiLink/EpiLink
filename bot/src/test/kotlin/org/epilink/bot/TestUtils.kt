@@ -34,7 +34,7 @@ import kotlin.test.assertEquals
 
 val minimalConfig = Configuration(
     "Test",
-    server = WebServerConfiguration(0, ProxyType.None, null),
+    server = WebServerConfiguration("0.0.0.0", 0, ProxyType.None, null),
     db = "",
     tokens = TokensConfiguration(
         discordToken = "",

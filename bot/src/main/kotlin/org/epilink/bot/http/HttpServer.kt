@@ -49,7 +49,7 @@ internal class HttpServerImpl : HttpServer, KoinComponent {
     /**
      * The actual Ktor application instance
      */
-    private var server: ApplicationEngine = embeddedServer(Netty, wsCfg.port) {
+    private var server: ApplicationEngine = embeddedServer(Netty, wsCfg.port, wsCfg.address) {
         when (wsCfg.proxyType) {
             None -> logger.warn("Reverse proxy support is DISABLED. Use a reverse proxy and configure it for HTTPS!")
             Forwarded -> install(ForwardedHeaderSupport)

@@ -34,6 +34,8 @@ The following is a more in-depth description of how to configure everything from
 
 #### Choosing an account and tenant
 
+!> **Your Azure tenant may allow guest accounts. As such, it may be possible for anyone to easily add any account they want, which would then be recognized by EpiLink as real accounts.** You should add an [e-mail validator](Rulebooks.md#e-mail-validation). See [this section](#guests-on-tenants) for more details.
+
 Before using Microsoft as an Identity Provider, you must determine *where* your app will live. If your app will live inside a company or school, you should do this entire procedure from your company or school account, and, if there is only one Azure tenant, choose the "account in my organization" option. EpiLink will work fine with just your regular Microsoft account, but this is not recommended.
 
 EpiLink allows you to define a tenant in the configuration file directly, so just choose what makes sense for your use case. 
@@ -55,10 +57,20 @@ You will need to create a secret manually, as Azure AD does not create one for y
 
 | Name in Azure AD Application page        | Name in the config file |
 | ---------------------------------------  | ----------------------- |
-| Overview -> Application (client) ID      | `idpOAuthClientId`     |
-| Certificates & Secrets -> Client secrets | `idpOAuthSecret`       |
+| Overview -> Application (client) ID      | `idpOAuthClientId`      |
+| Certificates & Secrets -> Client secrets | `idpOAuthSecret`        |
 
 You should also add redirection URIs based on where the front-end is served. The path is `/redirect/idProvider`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/idProvider`.
+
+You may need to tweak permissions (e.g., enterprise-wide access instead of per-user, making sure OAuth scopes are enabled...) depending on your Azure AD setup.
+
+#### Guests on Tenants
+
+As Azure AD allows the presence of [guest accounts](https://docs.microsoft.com/en-us/azure/active-directory/external-identities/what-is-b2b), it may be possible (depending on your Azure configuration) for users to create guest accounts for other users. While this may be a good thing for situations where you want to invite people outside of your organization to collaborate, **this creates a real Azure account which EpiLink will consider as valid**.
+
+As such, it is trivially simple for a malicious user who has an account on an Azure AD to add guest accounts and authenticate as many Discord accounts as they want. An example would be for the attacker to invite an external user (e.g., an email address that the attacker controls) to a Teams team.
+
+One way to prevent this from the EpiLink side is to add an [e-mail validator](Rulebooks.md#e-mail-validation). Assuming that (a) people within your organization have a valid e-mail address that follow a specific pattern and (b) such an e-mail address can only be owned by someone in the organization, this blocks any foreign e-mail address.
 
 ### Google
 

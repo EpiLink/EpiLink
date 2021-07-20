@@ -18,6 +18,9 @@ name: My EpiLink Instance
 
 # HTTP server configuration
 server:
+  # The address/host the server should be bound to. 0.0.0.0 (all addresses) by default.
+  #address: 0.0.0.0
+
   # The port that should be used for the server.
   port: 9090
 
