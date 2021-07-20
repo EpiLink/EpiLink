@@ -15,6 +15,10 @@ package org.epilink.bot.config
  */
 data class LinkWebServerConfiguration(
     /**
+     * The address on which the server should bind itself (aka the host)
+     */
+    val address: String = "0.0.0.0",
+    /**
      * The port to be used by the server
      */
     val port: Int,

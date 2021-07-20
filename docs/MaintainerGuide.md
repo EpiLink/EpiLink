@@ -159,6 +159,7 @@ Custom roles can be determined using custom rules, and you can additionally vali
 
 ```yaml
 server:
+  address: 0.0.0.0 # optional
   port: 9090
   frontendUrl: ~
   proxyType: None # or XForwarded, or Forwarded
@@ -180,7 +181,8 @@ server:
       email: "w_afton@circusbaby.pizza"
 ```
 
-* `port`: The port on which the back-end will be served
+* `address`: The address (aka host) on which the server should be bound, without the port. *(since version 0.7.0)*
+* `port`: The port on which the back-end will be served.
 * `frontendUrl`: The URL of the front-end *WITH A TRAILING SLASH* (e.g. `https://myfrontend.com/`), or `~` if the front-end is unknown, or you are using the all-in-one packages (i.e. the front-end is bundled with the back-end).
 * `proxyType` ***SECURITY***: Tells EpiLink how the reverse proxy it is behind passes down remote host information.
     * `None`: For testing only, when EpiLink is not behind a reverse proxy at all.
