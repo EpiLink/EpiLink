@@ -22,11 +22,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Dependencies versions bumped ([#277](https://github.com/EpiLink/EpiLink/pull/277), [#280](https://github.com/EpiLink/EpiLink/pull/280) and [#287](https://github.com/EpiLink/EpiLink/pull/287))
 * Updated the Discord logo and color ([#283](https://github.com/EpiLink/EpiLink/pull/283))
 
-* The following are worth mentions, though they are internal changes that don't impact the actual feature set. ([#280](https://github.com/EpiLink/EpiLink/pull/280)) 
+* The following are worth mentioning, though they are internal changes that don't impact the actual feature set. ([#280](https://github.com/EpiLink/EpiLink/pull/280)) 
   * The CI is now more thorough in order to improve our release quality.
   * The front-end is now bundled as a separate JAR that is *then* integrated as a regular library in the back-end. This significantly simplifies the `withFrontend` variant build.
   * Let Gradle automatically replace the correct version string in the docs via a simple template.
   * Also used Gradle's `layout` feature to avoid hard-coding build paths.
+  * Renamed internal classes to remove the "Link" prefix ([#289](https://github.com/EpiLink/EpiLink/pull/289))
 
 ## [0.6.2] - 2021-04-14
 
