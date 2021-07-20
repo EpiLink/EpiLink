@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added a Swagger document in the documentation ([#256](https://github.com/EpiLink/EpiLink/pull/256))
 * Added a simple notice in `.hasFrontend` file telling people to not remove it ([#280](https://github.com/EpiLink/EpiLink/pull/280))
 * Added a new `count` command that counts the number of users that correspond to a target ([#286](https://github.com/EpiLink/EpiLink/pull/286))
+* Added information in the documentation on guest accounts on Microsoft tenants and a hint for troubleshooting permission issues ([#290](https://github.com/EpiLink/EpiLink/pull/290))
+* Added the ability to change the host address the server is bound to in the configuration file ([#290](https://github.com/EpiLink/EpiLink/pull/290))
 
 ### Changed
 
