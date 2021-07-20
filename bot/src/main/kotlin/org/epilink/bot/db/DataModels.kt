@@ -13,7 +13,7 @@ import java.time.Instant
 /**
  * Represents a user of EpiLink
  */
-interface LinkUser {
+interface User {
     /**
      * The user's Discord ID
      */
@@ -33,7 +33,7 @@ interface LinkUser {
 /**
  * Represents a ban
  */
-interface LinkBan {
+interface Ban {
     /**
      * Opaque identifier for this ban
      */
@@ -75,7 +75,7 @@ interface LinkBan {
 /**
  * Represents a logged identity access
  */
-interface LinkIdentityAccess {
+interface IdentityAccess {
     /**
      * The name of the author
      */
@@ -100,7 +100,7 @@ interface LinkIdentityAccess {
 /**
  * A language preference for a specific Discord user
  */
-interface LinkDiscordLanguage {
+interface DiscordLanguagePreference {
     /**
      * The Discord ID of the user this language preference is referring to.
      */

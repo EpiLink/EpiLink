@@ -24,7 +24,7 @@ import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.CacheClient
 import org.epilink.bot.db.*
-import org.epilink.bot.discord.LinkDiscordMessagesI18n
+import org.epilink.bot.discord.DiscordMessagesI18n
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
@@ -116,19 +116,19 @@ internal fun KoinTest.setupSession(
     created: Instant = Instant.now() - Duration.ofDays(1),
     trueIdentity: String? = null
 ): String {
-    val u: LinkUser = mockk {
+    val u: User = mockk {
         every { discordId } returns discId
         every { idpIdHash } returns msIdHash
         every { creationDate } returns created
     }
-    softMockHere<LinkDatabaseFacade> {
+    softMockHere<DatabaseFacade> {
         coEvery { getUser(discId) } returns u
         if (trueIdentity != null) {
             coEvery { isUserIdentifiable(u) } returns true
         }
     }
     if (trueIdentity != null) {
-        softMockHere<LinkIdManager> {
+        softMockHere<IdentityManager> {
             coEvery { accessIdentity(u, any(), any(), any()) } returns trueIdentity
         }
     }
@@ -147,16 +147,16 @@ internal fun KoinTest.setupSession(
 
 suspend fun Scope.injectUserIntoAttributes(
     slot: CapturingSlot<PipelineContext<Unit, ApplicationCall>>,
-    attribute: AttributeKey<LinkUser>
+    attribute: AttributeKey<User>
 ) {
     val call = slot.captured.context
     call.attributes.put(
         attribute,
-        get<LinkDatabaseFacade>().getUser(call.sessions.get<ConnectedSession>()!!.discordId)!!
+        get<DatabaseFacade>().getUser(call.sessions.get<ConnectedSession>()!!.discordId)!!
     )
 }
 
-object NoOpI18n : LinkDiscordMessagesI18n {
+object NoOpI18n : DiscordMessagesI18n {
     override val availableLanguages = setOf("")
 
     override val preferredLanguages = listOf("")
@@ -173,5 +173,5 @@ object NoOpI18n : LinkDiscordMessagesI18n {
 }
 
 fun KoinTest.declareNoOpI18n() {
-    declare<LinkDiscordMessagesI18n> { NoOpI18n }
+    declare<DiscordMessagesI18n> { NoOpI18n }
 }

@@ -10,10 +10,9 @@ package org.epilink.bot.discord
 
 import io.mockk.*
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.config.LinkDiscordConfig
+import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.web.declareNoOpI18n
-import org.epilink.bot.discord.*
 import org.epilink.bot.mockHere
 import org.epilink.bot.softMockHere
 import org.koin.core.qualifier.named
@@ -21,10 +20,10 @@ import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.*
 
-class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
-    LinkDiscordCommands::class,
+class DiscordCommandsTest : KoinBaseTest<DiscordCommands>(
+    DiscordCommands::class,
     module {
-        single<LinkDiscordCommands> { LinkDiscordCommandsImpl() }
+        single<DiscordCommands> { DiscordCommandsImpl() }
     }
 ) {
     @Test
@@ -96,7 +95,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     @Test
     fun `Do not accept messages from unidentified admins`() {
         val (dcf, e) = mockErrorMessage("cr.awni").mockSend("5678")
-        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        val u = mockk<User> { every { discordId } returns "1234" }
         declareCommand("hellothere") {}
         test("1234", "90", u) {
             handleMessage("e!hellothere", "1234", "5678", "90")
@@ -107,7 +106,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     @Test
     fun `Accept messages without command body`() {
         val c = declareCommandNoOp("hellothere")
-        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        val u = mockk<User> { every { discordId } returns "1234" }
         test("1234", "90", u, true) {
             handleMessage("e!hellothere", "1234", "5678", "90")
         }
@@ -119,7 +118,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     @Test
     fun `Accept messages with command body`() {
         val c = declareCommandNoOp("hellothere")
-        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        val u = mockk<User> { every { discordId } returns "1234" }
         test("1234", "90", u, true) {
             handleMessage("e!hellothere this is my command's body", "1234", "5678", "90")
         }
@@ -131,7 +130,7 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     @Test
     fun `Accept messages from users if user command`() {
         val c = declareCommandNoOp("hellothere", PermissionLevel.User)
-        val u = mockk<LinkUser> { every { discordId } returns "1234" }
+        val u = mockk<User> { every { discordId } returns "1234" }
         test(null, "90", u) {
             handleMessage("e!hellothere", "1234", "5678", "90")
         }
@@ -180,12 +179,12 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
     private fun test(
         admin: String? = null,
         server: String? = null,
-        user: LinkUser? = null,
+        user: User? = null,
         identityAvailable: Boolean = false,
-        block: suspend LinkDiscordCommands.() -> Unit
+        block: suspend DiscordCommands.() -> Unit
     ) {
         declareNoOpI18n()
-        softMockHere<LinkDiscordConfig> {
+        softMockHere<DiscordConfiguration> {
             every { commandsPrefix } returns "e!"
             if (server == null)
                 every { servers } returns listOf()
@@ -194,11 +193,11 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
                     every { id } returns server
                 })
         }
-        softMockHere<LinkDatabaseFacade> {
+        softMockHere<DatabaseFacade> {
             coEvery { getUser(any()) } returns user
         }
         if (user != null) {
-            softMockHere<LinkPermissionChecks> {
+            softMockHere<PermissionChecks> {
                 coEvery { canPerformAdminActions(user) } returns
                         if (identityAvailable) AdminStatus.Admin
                         else AdminStatus.AdminNotIdentifiable
@@ -210,10 +209,10 @@ class DiscordCommandsTest : KoinBaseTest<LinkDiscordCommands>(
 
     private fun mockErrorMessage(i18nKey: String): DiscordEmbed =
         mockk<DiscordEmbed>().also {
-            mockHere<LinkDiscordMessages> { every { getErrorCommandReply(any(), i18nKey) } returns it }
+            mockHere<DiscordMessages> { every { getErrorCommandReply(any(), i18nKey) } returns it }
         }
 
     private fun DiscordEmbed.mockSend(channel: String) =
-        softMockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage(channel, this@mockSend) } returns "" } to this
+        softMockHere<DiscordClientFacade> { coEvery { sendChannelMessage(channel, this@mockSend) } returns "" } to this
 
 }

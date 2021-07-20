@@ -8,7 +8,7 @@
  */
 package org.epilink.bot.db.exposed
 
-import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.DatabaseFacade
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transactionManager
 import org.sqlite.SQLiteConfig
@@ -19,7 +19,7 @@ import java.sql.Connection
 private const val BUSY_TIMEOUT_SQLITE = 60000
 
 /**
- * Implementation of [LinkDatabaseFacade] that uses Exposed with a SQLite database
+ * Implementation of [DatabaseFacade] that uses Exposed with a SQLite database
  */
 class SQLiteExposedFacadeImpl(db: String) : ExposedDatabaseFacade() {
     override val db = Database.connect(

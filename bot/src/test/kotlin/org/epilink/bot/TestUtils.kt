@@ -25,30 +25,30 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import org.epilink.bot.config.*
-import org.epilink.bot.discord.LinkDiscordMessagesI18n
+import org.epilink.bot.discord.DiscordMessagesI18n
 import org.koin.test.KoinTest
 import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import kotlin.test.assertEquals
 
-val minimalConfig = LinkConfiguration(
+val minimalConfig = Configuration(
     "Test",
-    server = LinkWebServerConfiguration("0.0.0.0", 0, ProxyType.None, null),
+    server = WebServerConfiguration("0.0.0.0", 0, ProxyType.None, null),
     db = "",
-    tokens = LinkTokens(
+    tokens = TokensConfiguration(
         discordToken = "",
         discordOAuthClientId = "",
         discordOAuthSecret = "",
         idpOAuthClientId = "",
         idpOAuthSecret = ""
     ),
-    idProvider = LinkIdProviderConfiguration(
+    idProvider = IdentityProviderConfiguration(
         url = "",
         name = "",
         icon = null
     ),
-    discord = LinkDiscordConfig(null),
+    discord = DiscordConfiguration(null),
     redis = null
 )
 
@@ -120,7 +120,7 @@ fun TestApplicationRequest.setJsonBody(json: String) {
 /**
  * Mocks the default behavior for the get message: it will return the second argument (the i18n key)
  */
-fun LinkDiscordMessagesI18n.defaultMock() {
+fun DiscordMessagesI18n.defaultMock() {
     val keySlot = slot<String>()
     every { get(any(), capture(keySlot)) } answers { keySlot.captured }
 }

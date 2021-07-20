@@ -9,7 +9,7 @@
 package org.epilink.bot.discord.cmd
 
 import kotlinx.coroutines.*
-import org.epilink.bot.db.LinkUser
+import org.epilink.bot.db.User
 import org.epilink.bot.debug
 import org.epilink.bot.discord.*
 import org.koin.core.component.KoinApiExtension
@@ -23,11 +23,11 @@ import org.slf4j.LoggerFactory
 @OptIn(KoinApiExtension::class)
 class UpdateCommand : Command, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.discord.cmd.update")
-    private val roleManager: LinkRoleManager by inject()
-    private val targetResolver: LinkDiscordTargets by inject()
-    private val client: LinkDiscordClientFacade by inject()
-    private val msg: LinkDiscordMessages by inject()
-    private val i18n: LinkDiscordMessagesI18n by inject()
+    private val roleManager: RoleManager by inject()
+    private val targetResolver: DiscordTargets by inject()
+    private val client: DiscordClientFacade by inject()
+    private val msg: DiscordMessages by inject()
+    private val i18n: DiscordMessagesI18n by inject()
     private val updateLauncherScope = CoroutineScope(SupervisorJob())
 
     override val name: String
@@ -40,7 +40,7 @@ class UpdateCommand : Command, KoinComponent {
     override suspend fun run(
         fullCommand: String,
         commandBody: String,
-        sender: LinkUser?,
+        sender: User?,
         senderId: String,
         channelId: String,
         guildId: String?

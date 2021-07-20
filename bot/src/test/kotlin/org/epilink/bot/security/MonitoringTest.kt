@@ -10,14 +10,14 @@ package org.epilink.bot.security
 
 import io.mockk.every
 import io.mockk.mockk
-import org.epilink.bot.config.LinkDiscordConfig
+import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.isMonitored
 import kotlin.test.*
 
 class MonitoringTest {
     @Test
     fun `Test monitoring check`() {
-        val ldc: LinkDiscordConfig = mockk {
+        val ldc: DiscordConfiguration = mockk {
             every { servers } returns listOf(
                 mockk { every { id } returns "YEET" }
             )

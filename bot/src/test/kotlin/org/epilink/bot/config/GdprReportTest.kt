@@ -14,7 +14,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.LinkServerEnvironment
+import org.epilink.bot.ServerEnvironment
 import org.epilink.bot.db.*
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
@@ -23,22 +23,22 @@ import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class GdprReportTest : KoinBaseTest<LinkGdprReport>(
-    LinkGdprReport::class,
+class GdprReportTest : KoinBaseTest<GdprReport>(
+    GdprReport::class,
     module {
-        single<LinkGdprReport> { LinkGdprReportImpl() }
+        single<GdprReport> { GdprReportImpl() }
     }
 ) {
     @Test
     fun `Test user info report`() {
         val i = Instant.now()
         val id = byteArrayOf(1, 2, 3, 4)
-        val u = mockk<LinkUser> {
+        val u = mockk<User> {
             every { discordId } returns "1234"
             every { creationDate } returns i
             every { idpIdHash } returns id
         }
-        mockHere<LinkIdProviderConfiguration> {
+        mockHere<IdentityProviderConfiguration> {
             every { name } returns "testy"
         }
         test {
@@ -60,8 +60,8 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test true identity report (not identifiable)`() {
-        val u = mockk<LinkUser>()
-        mockHere<LinkDatabaseFacade> { coEvery { isUserIdentifiable(u) } returns false }
+        val u = mockk<User>()
+        mockHere<DatabaseFacade> { coEvery { isUserIdentifiable(u) } returns false }
         test {
             val s = getTrueIdentityReport(u, "big boi")
             assertEquals(
@@ -79,9 +79,9 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @OptIn(UsesTrueIdentity::class)
     @Test
     fun `Test true identity report (identifiable)`() {
-        val u = mockk<LinkUser>()
-        mockHere<LinkDatabaseFacade> { coEvery { isUserIdentifiable(u) } returns true }
-        mockHere<LinkIdManager> {
+        val u = mockk<User>()
+        mockHere<DatabaseFacade> { coEvery { isUserIdentifiable(u) } returns true }
+        mockHere<IdentityManager> {
             coEvery {
                 accessIdentity(
                     u,
@@ -108,10 +108,10 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @Test
     fun `Test ban report (no bans)`() {
         val idHash = byteArrayOf(1, 2, 3, 4)
-        val u = mockk<LinkUser> {
+        val u = mockk<User> {
             every { idpIdHash } returns idHash
         }
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getBansFor(idHash) } returns listOf()
         }
         test {
@@ -131,7 +131,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     @Test
     fun `Test ban report (has bans)`() {
         val idHash = byteArrayOf(1, 2, 3, 4)
-        val u = mockk<LinkUser> {
+        val u = mockk<User> {
             every { idpIdHash } returns idHash
         }
         val i1 = Instant.now()
@@ -143,10 +143,10 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
             mockBan(false, "deuxième cheh", i2, e1),
             mockBan(false, "troisième cheh", i3, null)
         )
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getBansFor(idHash) } returns bans
         }
-        mockHere<LinkBanLogic> {
+        mockHere<BanLogic> {
             every { isBanActive(bans[0]) } returns false
             every { isBanActive(bans[1]) } returns false
             every { isBanActive(bans[2]) } returns true
@@ -178,8 +178,8 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
 
     @Test
     fun `Test id access report, none`() {
-        val u = mockk<LinkUser>()
-        mockHere<LinkDatabaseFacade> {
+        val u = mockk<User>()
+        mockHere<DatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf()
         }
         test {
@@ -207,16 +207,16 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
     }
 
     private fun idAccessReportTest(identityDisclosed: Boolean) {
-        val u = mockk<LinkUser>()
+        val u = mockk<User>()
         val i1 = Instant.now() - Duration.ofHours(1)
         val i2 = Instant.now() - Duration.ofDays(365)
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf(
                 mockIdAccess("Michel", "get rekt", i1, false),
                 mockIdAccess("JacquelinBot", "g3t r3kt", i2, true)
             )
         }
-        mockHere<LinkPrivacy> {
+        mockHere<PrivacyConfiguration> {
             every { shouldDiscloseIdentity(any()) } returns identityDisclosed
         }
         test {
@@ -240,7 +240,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
 
     @Test
     fun `Test language preferences report, none`() {
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getLanguagePreference("le id") } returns null
         }
         test {
@@ -259,7 +259,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
 
     @Test
     fun `Test language preferences report, has one`() {
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getLanguagePreference("le id") } returns "howdy"
         }
         test {
@@ -278,15 +278,15 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
 
     @Test
     fun `Test entire generation`() {
-        val u = mockk<LinkUser> { every { discordId } returns "le id" }
-        val gdpr = spyk(LinkGdprReportImpl()) {
+        val u = mockk<User> { every { discordId } returns "le id" }
+        val gdpr = spyk(GdprReportImpl()) {
             every { getUserInfoReport(u) } returns "#1"
             coEvery { getTrueIdentityReport(u, "E") } returns "#2"
             coEvery { getBanReport(u) } returns "#3"
             coEvery { getIdentityAccessesReport(u) } returns "#4"
             coEvery { getLanguagePreferencesReport("le id") } returns "#5"
         }
-        mockHere<LinkServerEnvironment> { every { name } returns "LeTest" }
+        mockHere<ServerEnvironment> { every { name } returns "LeTest" }
         val s = runBlocking { gdpr.getFullReport(u, "E") }
 
         assertEquals(
@@ -314,7 +314,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
         )
     }
 
-    private fun mockBan(revoked: Boolean, reason: String, issued: Instant, expiresOn: Instant?): LinkBan = mockk {
+    private fun mockBan(revoked: Boolean, reason: String, issued: Instant, expiresOn: Instant?): Ban = mockk {
         every { this@mockk.revoked } returns revoked
         every { this@mockk.reason } returns reason
         every { this@mockk.issued } returns issued
@@ -326,7 +326,7 @@ class GdprReportTest : KoinBaseTest<LinkGdprReport>(
         reason: String,
         timestamp: Instant,
         automated: Boolean
-    ): LinkIdentityAccess = mockk {
+    ): IdentityAccess = mockk {
         every { authorName } returns author
         every { this@mockk.reason } returns reason
         every { this@mockk.timestamp } returns timestamp

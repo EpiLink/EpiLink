@@ -12,11 +12,11 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.LinkException
+import org.epilink.bot.EpiLinkException
 import org.epilink.bot.web.declareNoOpI18n
-import org.epilink.bot.config.LinkDiscordConfig
-import org.epilink.bot.config.LinkDiscordServerSpec
-import org.epilink.bot.config.LinkPrivacy
+import org.epilink.bot.config.DiscordConfiguration
+import org.epilink.bot.config.DiscordServerSpec
+import org.epilink.bot.config.PrivacyConfiguration
 import org.epilink.bot.defaultMock
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
@@ -25,16 +25,16 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
-    LinkDiscordMessages::class,
+class MessagesTest : KoinBaseTest<DiscordMessages>(
+    DiscordMessages::class,
     module {
-        single<LinkDiscordMessages> { LinkDiscordMessagesImpl() }
+        single<DiscordMessages> { DiscordMessagesImpl() }
     }
 ) {
 
     @Test
     fun `Test welcome generation does not output when`() {
-        mockHere<LinkDiscordConfig> {
+        mockHere<DiscordConfiguration> {
             every { servers } returns listOf(
                 mockk {
                     every { id } returns "guildid"
@@ -42,13 +42,13 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
                 }
             )
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         assertNull(dm.getGreetingsEmbed("", "guildid", "My Guild"))
     }
 
     @Test
     fun `Test welcome generation outputs sane default message`() {
-        mockHere<LinkDiscordConfig> {
+        mockHere<DiscordConfiguration> {
             every { welcomeUrl } returns "MyVeryTrueUrl"
             every { servers } returns listOf(
                 mockk {
@@ -58,13 +58,13 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
                 }
             )
         }
-        mockHere<LinkDiscordMessagesI18n> {
+        mockHere<DiscordMessagesI18n> {
             coEvery { getLanguage(any()) } returns ""
             defaultMock()
             every { get(any(), "greet.title") } returns "greet.title::%s"
             every { get(any(), "greet.welcome") } returns "greet.welcome::%s"
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embed = dm.getGreetingsEmbed("", "guildid", "My Guild")
         assertNotNull(embed)
         assertEquals("greet.title::My Guild", embed.title)
@@ -78,7 +78,7 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
     @Test
     fun `Test welcome generation outputs custom message`() {
         val embed = DiscordEmbed()
-        mockHere<LinkDiscordConfig> {
+        mockHere<DiscordConfiguration> {
             every { welcomeUrl } returns "YEET"
             every { servers } returns listOf(
                 mockk {
@@ -88,20 +88,20 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
                 }
             )
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embedReturned = dm.getGreetingsEmbed("", "guildid", "My Guild")
         assertSame(embed, embedReturned)
     }
 
     @Test
     fun `Test could not join`() {
-        mockHere<LinkDiscordMessagesI18n> {
+        mockHere<DiscordMessagesI18n> {
             every { get(any(), "cnj.title") } returns "title::%s"
             every { get(any(), "cnj.description") } returns "description::%s"
             every { get(any(), "cnj.reason") } returns "reason"
             every { get(any(), "poweredBy") } returns "poweredBy"
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embed = dm.getCouldNotJoinEmbed("", "My Guild", "My Reason")
         assertEquals("description::My Guild", embed.description)
         assertEquals("title::My Guild", embed.title)
@@ -109,10 +109,10 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test identity access embed not sent on specific cases`() {
-        mockHere<LinkPrivacy> {
+        mockHere<PrivacyConfiguration> {
             every { shouldNotify(any()) } returns false
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embed = dm.getIdentityAccessEmbed("", true, "TestAuthor", "TestReason")
         assertNull(embed, "Should not give an embed")
         val embed2 = dm.getIdentityAccessEmbed("", false, "TrueAuthor", "TestReason")
@@ -121,15 +121,15 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test identity access embed`() {
-        mockHere<LinkPrivacy> {
+        mockHere<PrivacyConfiguration> {
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(true) } returns true
         }
-        mockHere<LinkDiscordMessagesI18n> {
+        mockHere<DiscordMessagesI18n> {
             defaultMock()
             every { get(any(), "ida.accessAuthorAuto") } returns "authorauto::%s"
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embed = dm.getIdentityAccessEmbed("", true, "TestAuthor", "TestReason")
         assertNotNull(embed)
         assertEquals("authorauto::TestAuthor", embed.description)
@@ -138,15 +138,15 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test identity access embed not automated`() {
-        mockHere<LinkPrivacy> {
+        mockHere<PrivacyConfiguration> {
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(false) } returns true
         }
-        mockHere<LinkDiscordMessagesI18n> {
+        mockHere<DiscordMessagesI18n> {
             defaultMock()
             every { get(any(), "ida.accessAuthor") } returns "author::%s"
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embed = dm.getIdentityAccessEmbed("", false, "TestAuthor", "TestReason")
         assertNotNull(embed)
         assertEquals("author::TestAuthor", embed.description)
@@ -155,12 +155,12 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test identity access embed not automated, no disclose identity`() {
-        mockHere<LinkPrivacy> {
+        mockHere<PrivacyConfiguration> {
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(false) } returns false
         }
         declareNoOpI18n()
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embed = dm.getIdentityAccessEmbed("", false, "TestAuthor", "TestReason")
         assertNotNull(embed)
         assertFalse(embed.description!!.contains("TestAuthor"))
@@ -169,24 +169,24 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test disabled ban notification`() {
-        mockHere<LinkPrivacy> {
+        mockHere<PrivacyConfiguration> {
             every { notifyBans } returns false
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embed = dm.getBanNotification("", "Hello", Instant.now() + Duration.ofHours(230))
         assertNull(embed)
     }
 
     @Test
     fun `Test ban notification`() {
-        mockHere<LinkPrivacy> {
+        mockHere<PrivacyConfiguration> {
             every { notifyBans } returns true
         }
-        mockHere<LinkDiscordMessagesI18n> {
+        mockHere<DiscordMessagesI18n> {
             defaultMock()
             every { get(any(), "bn.expiry.date") } returns "date::%s::%s"
         }
-        val dm = get<LinkDiscordMessages>()
+        val dm = get<DiscordMessages>()
         val embed = dm.getBanNotification("", "You are now banned, RIP.", Instant.parse("2020-02-03T13:37:01.02Z"))
         assertNotNull(embed)
         assertEquals("You are now banned, RIP.", embed.fields[0].value)
@@ -195,7 +195,7 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test error command reply`() {
-        mockHere<LinkDiscordMessagesI18n> {
+        mockHere<DiscordMessagesI18n> {
             defaultMock()
             every { get(any(), "kkk.title") } returns "title::%s::%s"
             every { get(any(), "kkk.description") } returns "desc::%s::%s"
@@ -211,7 +211,7 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test wrong target command reply`() {
-        mockHere<LinkDiscordMessagesI18n> {
+        mockHere<DiscordMessagesI18n> {
             defaultMock()
             every { get(any(), "cr.wt.description") } returns "description::%s"
             every { get(any(), "cr.wt.help.description") } returns "helpDescription::%s"
@@ -228,8 +228,8 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test config for guild found`() {
-        val server = mockk<LinkDiscordServerSpec> { every { id } returns "id2" }
-        val cfg = mockk<LinkDiscordConfig> {
+        val server = mockk<DiscordServerSpec> { every { id } returns "id2" }
+        val cfg = mockk<DiscordConfiguration> {
             every { servers } returns listOf(
                 mockk { every { id } returns "id1" },
                 server
@@ -240,12 +240,12 @@ class MessagesTest : KoinBaseTest<LinkDiscordMessages>(
 
     @Test
     fun `Test config for guild not found`() {
-        val cfg = mockk<LinkDiscordConfig> {
+        val cfg = mockk<DiscordConfiguration> {
             every { servers } returns listOf(
                 mockk { every { id } returns "id1" },
                 mockk { every { id } returns "id2" }
             )
         }
-        assertFailsWith<LinkException> { cfg.getConfigForGuild("id3") }
+        assertFailsWith<EpiLinkException> { cfg.getConfigForGuild("id3") }
     }
 }

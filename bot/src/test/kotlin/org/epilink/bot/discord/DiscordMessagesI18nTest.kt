@@ -10,7 +10,7 @@ package org.epilink.bot.discord
 
 import io.mockk.*
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import kotlin.test.Test
@@ -18,11 +18,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
-    LinkDiscordMessagesI18n::class,
+class DiscordMessagesI18nTest : KoinBaseTest<DiscordMessagesI18n>(
+    DiscordMessagesI18n::class,
     module {
-        single<LinkDiscordMessagesI18n> {
-            LinkDiscordMessagesI18nImpl(
+        single<DiscordMessagesI18n> {
+            DiscordMessagesI18nImpl(
                 mapOf(
                     "one" to mapOf("hello" to "Bonjour", "goodbye" to "Au revoir"),
                     "two" to mapOf("hello" to "Buongiorno")
@@ -64,7 +64,7 @@ class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
 
     @Test
     fun `Test set language with valid language`() {
-        val db = mockHere<LinkDatabaseFacade> {
+        val db = mockHere<DatabaseFacade> {
             coEvery { recordLanguagePreference("did", "two") } just runs
         }
         test { assertTrue(setLanguage("did", "two")) }
@@ -83,7 +83,7 @@ class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
 
     @Test
     fun `Test get language no preference`() {
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getLanguagePreference("did") } returns null
         }
         test { assertEquals("one", getLanguage("did")) }
@@ -91,7 +91,7 @@ class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
 
     @Test
     fun `Test get language invalid preference`() {
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getLanguagePreference("did") } returns "LQSDLKJQHSD"
         }
         test { assertEquals("one", getLanguage("did")) }
@@ -99,7 +99,7 @@ class DiscordMessagesI18nTest : KoinBaseTest<LinkDiscordMessagesI18n>(
 
     @Test
     fun `Test get language valid preference`() {
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getLanguagePreference("did") } returns "two"
         }
         test { assertEquals("two", getLanguage("did")) }
