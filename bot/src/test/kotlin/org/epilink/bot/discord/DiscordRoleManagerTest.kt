@@ -13,8 +13,8 @@ import kotlinx.coroutines.runBlocking
 import org.epilink.bot.CacheClient
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.MemoryCacheClient
-import org.epilink.bot.config.LinkDiscordConfig
-import org.epilink.bot.config.LinkDiscordServerSpec
+import org.epilink.bot.config.DiscordConfiguration
+import org.epilink.bot.config.DiscordServerSpec
 import org.epilink.bot.db.*
 import org.epilink.bot.mockHere
 import org.epilink.bot.rulebook.Rule
@@ -30,27 +30,27 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
-    LinkRoleManager::class,
+class DiscordRoleManagerTest : KoinBaseTest<RoleManager>(
+    RoleManager::class,
     module {
-        single<LinkRoleManager> { LinkRoleManagerImpl() }
+        single<RoleManager> { RoleManagerImpl() }
     }
 ) {
     @Test
     fun `Test role update for disallowed user`() {
-        val user: LinkUser = mockk()
-        val sd = mockHere<LinkDatabaseFacade> {
+        val user: User = mockk()
+        val sd = mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
         }
-        val pc = mockHere<LinkPermissionChecks> {
+        val pc = mockHere<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "my.reason")
         }
-        val dcf = mockHere<LinkDiscordClientFacade> {
+        val dcf = mockHere<DiscordClientFacade> {
             coEvery { sendDirectMessage("userid", any()) } just runs
             coEvery { getGuildName("Hello") } returns "There"
         }
         declareNoOpI18n()
-        val dm = mockHere<LinkDiscordMessages> {
+        val dm = mockHere<DiscordMessages> {
             every { getCouldNotJoinEmbed(any(), "There", "This is my reason") } returns mockk()
         }
         test {
@@ -70,7 +70,7 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test on join, unmonitored guild`() {
-        val cfg = mockHere<LinkDiscordConfig> {
+        val cfg = mockHere<DiscordConfiguration> {
             every { servers } returns listOf(mockk { every { id } returns "otherid" })
         }
         test { handleNewUser("guildid", "My Awesome Guild", "userid") }
@@ -80,9 +80,9 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test on join, unknown user, send greeting`() {
-        val cfg = mockHere<LinkDiscordConfig> {
+        val cfg = mockHere<DiscordConfiguration> {
             every { servers } returns listOf(
-                LinkDiscordServerSpec(
+                DiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = true,
                     roles = mockk(),
@@ -91,14 +91,14 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
             )
         }
         val mockem = mockk<DiscordEmbed>()
-        val db = mockHere<LinkDatabaseFacade> {
+        val db = mockHere<DatabaseFacade> {
             coEvery { getUser("jacques") } returns null
         }
         declareNoOpI18n()
-        val dm = mockHere<LinkDiscordMessages> {
+        val dm = mockHere<DiscordMessages> {
             every { getGreetingsEmbed(any(), "guildid", "My Awesome Guild") } returns mockem
         }
-        val dcf = mockHere<LinkDiscordClientFacade> {
+        val dcf = mockHere<DiscordClientFacade> {
             coEvery { sendDirectMessage("jacques", mockem) } just runs
         }
         test {
@@ -115,9 +115,9 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test on join, unknown user, no greeting`() {
-        val cfg = mockHere<LinkDiscordConfig> {
+        val cfg = mockHere<DiscordConfiguration> {
             every { servers } returns listOf(
-                LinkDiscordServerSpec(
+                DiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = false,
                     roles = mockk(),
@@ -125,11 +125,11 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                 )
             )
         }
-        val db = mockHere<LinkDatabaseFacade> {
+        val db = mockHere<DatabaseFacade> {
             coEvery { getUser("jacques") } returns null
         }
         declareNoOpI18n()
-        val dm = mockHere<LinkDiscordMessages> {
+        val dm = mockHere<DiscordMessages> {
             every { getGreetingsEmbed(any(), "guildid", "My Awesome Guild") } returns null
         }
         test {
@@ -145,9 +145,9 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test on join, known`() {
-        val cfg = mockHere<LinkDiscordConfig> {
+        val cfg = mockHere<DiscordConfiguration> {
             every { servers } returns listOf(
-                LinkDiscordServerSpec(
+                DiscordServerSpec(
                     id = "guildid",
                     enableWelcomeMessage = false,
                     roles = mockk(),
@@ -155,11 +155,11 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                 )
             )
         }
-        val usermock: LinkUser = mockk()
-        val db = mockHere<LinkDatabaseFacade> {
+        val usermock: User = mockk()
+        val db = mockHere<DatabaseFacade> {
             coEvery { getUser("jacques") } returns usermock
         }
-        val rm = declare { spyk(LinkRoleManagerImpl()) }
+        val rm = declare { spyk(RoleManagerImpl()) }
         coEvery { rm.updateRolesOnGuilds("jacques", listOf("guildid"), true) } just runs
         runBlocking {
             rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
@@ -187,7 +187,7 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
                 "FourthRule" to fourthRule
             )
         }
-        mockHere<LinkDiscordConfig> {
+        mockHere<DiscordConfiguration> {
             every { servers } returns listOf(
                 // Typical server with a mix of standard and rule-based roles
                 mockk {
@@ -225,7 +225,7 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
             )
         }
         runBlocking {
-            val rm = get<LinkRoleManager>()
+            val rm = get<RoleManager>()
             val rules = rm.getRulesRelevantForGuilds("guildid1", "guildid2", "guildid3")
             println(rules)
             assertEquals(3, rules.size)
@@ -251,10 +251,10 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test get roles for unknown user`() {
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
-        val rm = get<LinkRoleManager>()
+        val rm = get<RoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
             assertEquals(setOf(), roles.first, "roles should be empty")
@@ -264,14 +264,14 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test get roles for disallowed user, do not tell`() {
-        val user: LinkUser = mockk()
-        mockHere<LinkDatabaseFacade> {
+        val user: User = mockk()
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "yes.maybe")
         }
-        val rm = get<LinkRoleManager>()
+        val rm = get<RoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
             assertEquals(setOf(), roles.first, "roles should be empty")
@@ -281,23 +281,23 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test get roles for disallowed user, notify`() {
-        val user: LinkUser = mockk()
-        mockHere<LinkDatabaseFacade> {
+        val user: User = mockk()
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "yes.allo")
         }
         val embed: DiscordEmbed = mockk()
-        val dcf = mockHere<LinkDiscordClientFacade> {
+        val dcf = mockHere<DiscordClientFacade> {
             coEvery { sendDirectMessage("userid", embed) } just runs
             coEvery { getGuildName("HELLO THERE") } returns "GENERAL KENOBI"
         }
         declareNoOpI18n()
-        mockHere<LinkDiscordMessages> {
+        mockHere<DiscordMessages> {
             every { getCouldNotJoinEmbed(any(), "GENERAL KENOBI", "This is my reason") } returns embed
         }
-        val rm = get<LinkRoleManager>()
+        val rm = get<RoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", mockk(), true, listOf("HELLO THERE"))
             assertEquals(setOf(), roles.first, "roles should be empty")
@@ -308,16 +308,16 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test get roles, no rules, not identifiable`() {
-        val user: LinkUser = mockk()
+        val user: User = mockk()
         @OptIn(UsesTrueIdentity::class)
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
             coEvery { isUserIdentifiable(user) } returns false
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
         }
-        val rm = get<LinkRoleManager>()
+        val rm = get<RoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
             assertEquals(setOf("_known", "_notIdentified"), roles.first)
@@ -327,16 +327,16 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test get roles, no rules, identifiable`() {
-        val user: LinkUser = mockk()
+        val user: User = mockk()
         @OptIn(UsesTrueIdentity::class)
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
             coEvery { isUserIdentifiable(user) } returns true
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
         }
-        val rm = get<LinkRoleManager>()
+        val rm = get<RoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
             assertEquals(setOf("_known", "_identified"), roles.first)
@@ -347,19 +347,19 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
     @Test
     @OptIn(UsesTrueIdentity::class)
     fun `Test get roles, with rules, identifiable`() {
-        val user: LinkUser = mockk { every { discordId } returns "userid" }
-        val lia = mockHere<LinkIdManager> {
+        val user: User = mockk { every { discordId } returns "userid" }
+        val lia = mockHere<IdentityManager> {
             coEvery { accessIdentity(user, any(), any(), any()) } returns "email@@"
         }
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
             coEvery { isUserIdentifiable(user) } returns true
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
         }
         val dui = DiscordUserInfo("userid", "uname", "disc")
-        mockHere<LinkDiscordClientFacade> {
+        mockHere<DiscordClientFacade> {
             coEvery { getDiscordUserInfo("userid") } returns dui.copy()
             coEvery { getGuildName(any()) } returns "NAME"
         }
@@ -379,7 +379,7 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
             roles += "wirDisc_$userDiscordDiscriminator"
         }
         declare<CacheClient> { MemoryCacheClient() }
-        val rm = get<LinkRoleManager>()
+        val rm = get<RoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser(
                 "userid",
@@ -401,17 +401,17 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
 
     @Test
     fun `Test get roles, with rules, not identifiable`() {
-        val user: LinkUser = mockk { every { discordId } returns "userid" }
+        val user: User = mockk { every { discordId } returns "userid" }
         @OptIn(UsesTrueIdentity::class)
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
             coEvery { isUserIdentifiable(user) } returns false
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
         }
         val dui = DiscordUserInfo("userid", "uname", "disc")
-        mockHere<LinkDiscordClientFacade> {
+        mockHere<DiscordClientFacade> {
             coEvery { getDiscordUserInfo("userid") } returns dui.copy()
         }
         val rule1 = StrongIdentityRule("StrongRule", null, mockk())
@@ -423,7 +423,7 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
             roles += "wirDisc_$userDiscordDiscriminator"
         }
         declare<CacheClient> { MemoryCacheClient() }
-        val rm = get<LinkRoleManager>()
+        val rm = get<RoleManager>()
         runBlocking {
             val roles = rm.getRolesForUser(
                 "userid",
@@ -448,10 +448,10 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
         updateUserWithRolesTest(false)
 
     private fun updateUserWithRolesTest(applySticky: Boolean) {
-        val dcf = mockHere<LinkDiscordClientFacade> {
+        val dcf = mockHere<DiscordClientFacade> {
             coEvery { manageRoles(any(), any(), any(), any()) } just runs
         }
-        mockHere<LinkDiscordConfig> {
+        mockHere<DiscordConfiguration> {
             every { servers } returns listOf(
                 mockk {
                     every { id } returns "guildid"
@@ -468,7 +468,7 @@ class DiscordRoleManagerTest : KoinBaseTest<LinkRoleManager>(
             )
             every { stickyRoles } returns listOf("sr2")
         }
-        val rm = get<LinkRoleManager>()
+        val rm = get<RoleManager>()
         runBlocking {
             rm.updateUserWithRoles("userid", "guildid", setOf("eladd", "eladd2", "elneut", "elneut2"), applySticky)
         }

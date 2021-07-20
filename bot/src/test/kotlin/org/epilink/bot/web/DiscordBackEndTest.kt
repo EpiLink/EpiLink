@@ -15,18 +15,18 @@ import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.*
 import io.ktor.util.KtorExperimentalAPI
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.LinkEndpointException
+import org.epilink.bot.EndpointException
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.declareClientHandler
 import org.epilink.bot.http.DiscordUserInfo
-import org.epilink.bot.http.LinkDiscordBackEnd
+import org.epilink.bot.http.DiscordBackEnd
 import org.koin.dsl.module
 import kotlin.test.*
 
-class DiscordBackEndTest : KoinBaseTest<LinkDiscordBackEnd>(
-    LinkDiscordBackEnd::class,
+class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
+    DiscordBackEnd::class,
     module {
-        single { LinkDiscordBackEnd("DiscordClientId", "DiscordSecret") }
+        single { DiscordBackEnd("DiscordClientId", "DiscordSecret") }
     }
 ) {
     @Test
@@ -77,7 +77,7 @@ class DiscordBackEndTest : KoinBaseTest<LinkDiscordBackEnd>(
         }
 
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<EndpointException> {
                 getDiscordToken("Authcode", "Redir")
             }
             assertEquals(StandardErrorCodes.InvalidAuthCode, exc.errorCode)
@@ -91,7 +91,7 @@ class DiscordBackEndTest : KoinBaseTest<LinkDiscordBackEnd>(
         }
 
         test {
-            val exc = assertFailsWith<LinkEndpointException> {
+            val exc = assertFailsWith<EndpointException> {
                 getDiscordToken("Auth", "Re")
             }
             assertEquals(StandardErrorCodes.DiscordApiFailure, exc.errorCode)

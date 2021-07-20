@@ -26,8 +26,8 @@ class HelpCommandTest : KoinBaseTest<Command>(
     fun `Test help command`() {
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<LinkDiscordMessages> { every { getHelpMessage(any(), false) } returns embed }
-        mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
+        mockHere<DiscordMessages> { every { getHelpMessage(any(), false) } returns embed }
+        mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!help", "", null, "", "1234", "")
         }

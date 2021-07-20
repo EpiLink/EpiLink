@@ -21,12 +21,12 @@ import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.*
 import org.epilink.bot.config.*
-import org.epilink.bot.http.LinkBackEnd
-import org.epilink.bot.http.LinkBackEndImpl
-import org.epilink.bot.http.LinkDiscordBackEnd
-import org.epilink.bot.http.LinkIdentityProvider
-import org.epilink.bot.http.endpoints.LinkMetaApi
-import org.epilink.bot.http.endpoints.LinkMetaApiImpl
+import org.epilink.bot.http.BackEnd
+import org.epilink.bot.http.BackEndImpl
+import org.epilink.bot.http.DiscordBackEnd
+import org.epilink.bot.http.IdentityProvider
+import org.epilink.bot.http.endpoints.MetaApi
+import org.epilink.bot.http.endpoints.MetaApiImpl
 import org.koin.dsl.module
 import org.koin.test.get
 import org.koin.test.mock.declare
@@ -35,10 +35,10 @@ import kotlin.test.*
 class MetaTest : KoinBaseTest<Unit>(
     Unit::class,
     module {
-        single<LinkMetaApi> { LinkMetaApiImpl() }
-        single<LinkBackEnd> { LinkBackEndImpl() }
+        single<MetaApi> { MetaApiImpl() }
+        single<BackEnd> { BackEndImpl() }
         single<CacheClient> { MemoryCacheClient() }
-        single<LinkWebServerConfiguration> {
+        single<WebServerConfiguration> {
             mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
         }
     }
@@ -46,27 +46,27 @@ class MetaTest : KoinBaseTest<Unit>(
     @Test
     fun `Test meta information gathering`() {
         defaultAssets()
-        mockHere<LinkServerEnvironment> {
+        mockHere<ServerEnvironment> {
             every { name } returns "EpiLink Test Instance"
         }
-        mockHere<LinkDiscordBackEnd> {
+        mockHere<DiscordBackEnd> {
             every { getAuthorizeStub() } returns "I am a Discord authorize stub"
         }
-        mockHere<LinkIdentityProvider> {
+        mockHere<IdentityProvider> {
             every { getAuthorizeStub() } returns "I am a Microsoft authorize stub"
         }
-        mockHere<LinkLegalTexts> {
+        mockHere<LegalTexts> {
             every { idPrompt } returns "My id prompt text is the best"
         }
-        mockHere<LinkIdProviderConfiguration> { every { name } returns "the_name" }
-        softMockHere<LinkWebServerConfiguration> {
+        mockHere<IdentityProviderConfiguration> { every { name } returns "the_name" }
+        softMockHere<WebServerConfiguration> {
             every { footers } returns listOf(
-                LinkFooterUrl("Hello", "https://hello"),
-                LinkFooterUrl("Heeeey", "/macarena")
+                FooterUrl("Hello", "https://hello"),
+                FooterUrl("Heeeey", "/macarena")
             )
             every { contacts } returns listOf(
-                LinkContactInformation("Number One", "numberone@my-email.com"),
-                LinkContactInformation("The Two", "othernumber@eeeee.es")
+                ContactInformation("Number One", "numberone@my-email.com"),
+                ContactInformation("The Two", "othernumber@eeeee.es")
             )
         }
         withTestEpiLink {
@@ -96,7 +96,7 @@ class MetaTest : KoinBaseTest<Unit>(
     fun `Test ToS retrieval`() {
         defaultAssets()
         val tos = "<p>ABCDEFG</p>"
-        mockHere<LinkLegalTexts> {
+        mockHere<LegalTexts> {
             every { termsOfServices } returns LegalText.Html(tos)
         }
         withTestEpiLink {
@@ -112,7 +112,7 @@ class MetaTest : KoinBaseTest<Unit>(
     fun `Test ToS PDF retrieval`() {
         defaultAssets()
         val tos = byteArrayOf(1, 2, 3)
-        mockHere<LinkLegalTexts> {
+        mockHere<LegalTexts> {
             every { termsOfServices } returns LegalText.Pdf(tos)
         }
         withTestEpiLink {
@@ -129,7 +129,7 @@ class MetaTest : KoinBaseTest<Unit>(
     fun `Test PP retrieval`() {
         defaultAssets()
         val pp = "<p>Privacy policyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</p>"
-        mockHere<LinkLegalTexts> {
+        mockHere<LegalTexts> {
             every { privacyPolicy } returns LegalText.Html(pp)
         }
         withTestEpiLink {
@@ -145,7 +145,7 @@ class MetaTest : KoinBaseTest<Unit>(
     fun `Test PP PDF retrieval`() {
         defaultAssets()
         val pp = byteArrayOf(1, 2, 3)
-        mockHere<LinkLegalTexts> {
+        mockHere<LegalTexts> {
             every { privacyPolicy } returns LegalText.Pdf(pp)
         }
         withTestEpiLink {
@@ -176,7 +176,7 @@ class MetaTest : KoinBaseTest<Unit>(
     @Test
     fun `Test asset retrieval (direct)`() {
         val assets = declare {
-            LinkAssets(
+            Assets(
                 ResourceAsset.File(byteArrayOf(1, 2, 3), ContentType.Image.JPEG),
                 ResourceAsset.File(byteArrayOf(4, 5, 6), ContentType.Image.PNG),
                 ResourceAsset.File(byteArrayOf(7, 8, 9), ContentType.Image.GIF)
@@ -199,7 +199,7 @@ class MetaTest : KoinBaseTest<Unit>(
 
     @Test
     fun `Test asset retrieval (no asset)`() {
-        declare { LinkAssets(ResourceAsset.None, ResourceAsset.None, ResourceAsset.None) }
+        declare { Assets(ResourceAsset.None, ResourceAsset.None, ResourceAsset.None) }
         withTestEpiLink {
             for (urlFragment in assetEndpoints) {
                 val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$urlFragment")
@@ -209,7 +209,7 @@ class MetaTest : KoinBaseTest<Unit>(
     }
 
     private fun defaultAssets() = declare {
-        LinkAssets(
+        Assets(
             ResourceAsset.Url("LogoURL"),
             ResourceAsset.Url("BackgroundURL"),
             ResourceAsset.Url("IDPLogoURL")
@@ -218,7 +218,7 @@ class MetaTest : KoinBaseTest<Unit>(
 
     private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
-            with(get<LinkBackEnd>()) { installFeatures() }
-            routing { get<LinkMetaApi>().install(this) }
+            with(get<BackEnd>()) { installFeatures() }
+            routing { get<MetaApi>().install(this) }
         }, block)
 }

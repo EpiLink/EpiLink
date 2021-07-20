@@ -16,7 +16,7 @@ import org.apache.commons.dbcp2.PoolableConnection
 import org.apache.commons.dbcp2.PoolableConnectionFactory
 import org.apache.commons.dbcp2.PoolingDataSource
 import org.apache.commons.pool2.impl.GenericObjectPool
-import org.epilink.bot.LinkException
+import org.epilink.bot.EpiLinkException
 import org.epilink.bot.db.*
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -38,7 +38,7 @@ import javax.sql.DataSource
 /**
  * Implementation of an EpiLink database facade using the JetBrains Exposed library
  */
-abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
+abstract class ExposedDatabaseFacade : DatabaseFacade {
     /**
      * The Database instance managed by JetBrains Exposed used for transactions.
      */
@@ -77,11 +77,11 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
      *         }
      */
 
-    override suspend fun getUser(discordId: String): LinkUser? = t {
+    override suspend fun getUser(discordId: String): User? = t {
         ExposedUser.find(ExposedUsers.discordId eq discordId).firstOrNull()
     }
 
-    override suspend fun getUserFromIdpIdHash(idpIdHash: ByteArray): LinkUser? = t {
+    override suspend fun getUserFromIdpIdHash(idpIdHash: ByteArray): User? = t {
         ExposedUser.find(ExposedUsers.idpIdHash eq idpIdHash).firstOrNull()
     }
 
@@ -98,7 +98,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         until: Instant?,
         author: String,
         reason: String
-    ): LinkBan = t {
+    ): Ban = t {
         ExposedBan.new {
             idpIdHash = target
             expiresOn = until
@@ -109,11 +109,11 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         }
     }
 
-    override suspend fun getBansFor(hash: ByteArray): List<LinkBan> = t {
+    override suspend fun getBansFor(hash: ByteArray): List<Ban> = t {
         ExposedBan.find(ExposedBans.idpIdHash eq hash).toList()
     }
 
-    override suspend fun getBan(banId: Int): LinkBan? = t {
+    override suspend fun getBan(banId: Int): Ban? = t {
         ExposedBan.findById(banId)
     }
 
@@ -124,7 +124,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         newEmail: String,
         keepIdentity: Boolean,
         timestamp: Instant
-    ): LinkUser = t {
+    ): User = t {
         val u = ExposedUser.new {
             discordId = newDiscordId
             idpIdHash = newIdpIdHash
@@ -145,7 +145,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     }
 
     @UsesTrueIdentity
-    override suspend fun isUserIdentifiable(user: LinkUser): Boolean {
+    override suspend fun isUserIdentifiable(user: User): Boolean {
         val exUser = user.asExposed()
         return t {
             exUser.trueIdentity != null
@@ -154,7 +154,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
 
     @UsesTrueIdentity
     override suspend fun getUserEmailWithAccessLog(
-        user: LinkUser,
+        user: User,
         automated: Boolean,
         author: String,
         reason: String
@@ -163,7 +163,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         return t {
             val identity =
                 exUser.trueIdentity?.email
-                    ?: throw LinkException("Cannot get true identity of user ${exUser.discordId}")
+                    ?: throw EpiLinkException("Cannot get true identity of user ${exUser.discordId}")
             // Record the identity access
             ExposedIdentityAccess.new {
                 target = exUser.id
@@ -176,7 +176,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         }
     }
 
-    override suspend fun getIdentityAccessesFor(user: LinkUser): Collection<LinkIdentityAccess> {
+    override suspend fun getIdentityAccessesFor(user: User): Collection<IdentityAccess> {
         val exUser = user.asExposed()
         return t {
             ExposedIdentityAccess.find(ExposedIdentityAccesses.target eq exUser.id).toList()
@@ -184,7 +184,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     }
 
     @UsesTrueIdentity
-    override suspend fun recordNewIdentity(user: LinkUser, newEmail: String) {
+    override suspend fun recordNewIdentity(user: User, newEmail: String) {
         val exUser = user.asExposed()
         t {
             ExposedTrueIdentity.new {
@@ -195,7 +195,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     }
 
     @UsesTrueIdentity
-    override suspend fun eraseIdentity(user: LinkUser) {
+    override suspend fun eraseIdentity(user: User) {
         val exUser = user.asExposed()
         t {
             exUser.trueIdentity!! // We don't care about error cases, callers are responsible for checks
@@ -204,15 +204,15 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     }
 
     override suspend fun getLanguagePreference(discordId: String): String? = t {
-        ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()?.language
+        ExposedDiscordLanguagePreference.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()?.language
     }
 
     override suspend fun recordLanguagePreference(discordId: String, preference: String): Unit = t {
-        val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
+        val x = ExposedDiscordLanguagePreference.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
         if (x != null) {
             x.language = preference
         } else {
-            ExposedDiscordLanguage.new {
+            ExposedDiscordLanguagePreference.new {
                 this.discordId = discordId
                 language = preference
             }
@@ -220,11 +220,11 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     }
 
     override suspend fun clearLanguagePreference(discordId: String): Unit = t {
-        val x = ExposedDiscordLanguage.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
+        val x = ExposedDiscordLanguagePreference.find(ExposedDiscordLanguages.discordId eq discordId).firstOrNull()
         x?.delete()
     }
 
-    override suspend fun updateIdpId(user: LinkUser, newIdHash: ByteArray) {
+    override suspend fun updateIdpId(user: User, newIdHash: ByteArray) {
         val u = user.asExposed()
         t {
             u.idpIdHash = newIdHash
@@ -232,7 +232,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
     }
 
     @OptIn(UsesTrueIdentity::class)
-    override suspend fun deleteUser(user: LinkUser) {
+    override suspend fun deleteUser(user: User) {
         val u = user.asExposed()
         t {
             // True identity
@@ -245,7 +245,7 @@ abstract class ExposedDatabaseFacade : LinkDatabaseFacade {
         }
     }
 
-    override suspend fun searchUserByPartialHash(partialHashHex: String): List<LinkUser> = t {
+    override suspend fun searchUserByPartialHash(partialHashHex: String): List<User> = t {
         ExposedUser.all().filter { Hex.encodeHexString(it.idpIdHash).contains(partialHashHex) }
     }.toList()
 
@@ -357,7 +357,7 @@ private object ExposedBans : IntIdTable("Bans") {
  *
  * @see ExposedBans
  */
-class ExposedBan(id: EntityID<Int>) : IntEntity(id), LinkBan {
+class ExposedBan(id: EntityID<Int>) : IntEntity(id), Ban {
     companion object : IntEntityClass<ExposedBan>(
         ExposedBans
     )
@@ -421,7 +421,7 @@ private object ExposedUsers : IntIdTable("Users") {
  *
  * @see ExposedUsers
  */
-class ExposedUser(id: EntityID<Int>) : IntEntity(id), LinkUser {
+class ExposedUser(id: EntityID<Int>) : IntEntity(id), User {
     companion object : IntEntityClass<ExposedUser>(
         ExposedUsers
     )
@@ -456,8 +456,8 @@ class ExposedUser(id: EntityID<Int>) : IntEntity(id), LinkUser {
     val trueIdentity by ExposedTrueIdentity optionalBackReferencedOn ExposedTrueIdentities.user
 }
 
-private fun LinkUser.asExposed(): ExposedUser =
-    this as? ExposedUser ?: error("Unexpected LinkUser is not from the exposed facade")
+private fun User.asExposed(): ExposedUser =
+    this as? ExposedUser ?: error("Unexpected User is not from the exposed facade")
 
 /**
  * Database table for identity accesses
@@ -492,7 +492,7 @@ private object ExposedIdentityAccesses : IntIdTable("IdentityAccesses") {
 /**
  * The DAO class for a single IdentityAccess
  */
-class ExposedIdentityAccess(id: EntityID<Int>) : IntEntity(id), LinkIdentityAccess {
+class ExposedIdentityAccess(id: EntityID<Int>) : IntEntity(id), IdentityAccess {
     companion object : IntEntityClass<ExposedIdentityAccess>(ExposedIdentityAccesses)
 
     /**
@@ -530,8 +530,8 @@ private object ExposedDiscordLanguages : IntIdTable("DiscordLanguages") {
 /**
  * The DAO class for language preferences
  */
-class ExposedDiscordLanguage(id: EntityID<Int>) : IntEntity(id), LinkDiscordLanguage {
-    companion object : IntEntityClass<ExposedDiscordLanguage>(ExposedDiscordLanguages)
+class ExposedDiscordLanguagePreference(id: EntityID<Int>) : IntEntity(id), DiscordLanguagePreference {
+    companion object : IntEntityClass<ExposedDiscordLanguagePreference>(ExposedDiscordLanguages)
 
     override var discordId by ExposedDiscordLanguages.discordId
     override var language by ExposedDiscordLanguages.language

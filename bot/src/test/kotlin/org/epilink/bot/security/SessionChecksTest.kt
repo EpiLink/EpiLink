@@ -22,8 +22,8 @@ import kotlinx.coroutines.runBlocking
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.*
 import org.epilink.bot.http.ApiErrorResponse
-import org.epilink.bot.http.LinkSessionChecks
-import org.epilink.bot.http.LinkSessionChecksImpl
+import org.epilink.bot.http.SessionChecker
+import org.epilink.bot.http.SessionCheckerImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.userObjAttribute
 import org.epilink.bot.mockHere
@@ -34,10 +34,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
-    LinkSessionChecks::class,
+class SessionChecksTest : KoinBaseTest<SessionChecker>(
+    SessionChecker::class,
     module {
-        single<LinkSessionChecks> { LinkSessionChecksImpl() }
+        single<SessionChecker> { SessionCheckerImpl() }
     }
 ) {
     /**
@@ -136,7 +136,7 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<LinkDatabaseFacade> {
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
         test {
@@ -163,12 +163,12 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
-        val u = mockk<LinkUser>()
-        mockHere<LinkDatabaseFacade> {
+        val u = mockk<User>()
+        mockHere<DatabaseFacade> {
             coEvery { getUser("userid") } returns u
         }
         runBlocking {
-            assertTrue(get<LinkSessionChecks>().verifyUser(context))
+            assertTrue(get<SessionChecker>().verifyUser(context))
         }
         verify { attr.put(match { it.name.contains("User") }, u) }
     }
@@ -183,11 +183,11 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canPerformAdminActions(u) } returns AdminStatus.NotAdmin
         }
         runBlocking {
-            assertFalse(get<LinkSessionChecks>().verifyAdmin(context))
+            assertFalse(get<SessionChecker>().verifyAdmin(context))
             val captured = mr.slot.captured
             assertTrue(captured is ApiErrorResponse)
             assertEquals(301, captured.data!!.code)
@@ -209,11 +209,11 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canPerformAdminActions(u) } returns AdminStatus.AdminNotIdentifiable
         }
         runBlocking {
-            assertFalse(get<LinkSessionChecks>().verifyAdmin(context))
+            assertFalse(get<SessionChecker>().verifyAdmin(context))
             val captured = mr.slot.captured
             assertTrue(captured is ApiErrorResponse)
             assertEquals(301, captured.data!!.code)
@@ -233,17 +233,17 @@ class SessionChecksTest : KoinBaseTest<LinkSessionChecks>(
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
-        mockHere<LinkPermissionChecks> {
+        mockHere<PermissionChecks> {
             coEvery { canPerformAdminActions(u) } returns AdminStatus.Admin
         }
         runBlocking {
-            assertTrue(get<LinkSessionChecks>().verifyAdmin(context))
+            assertTrue(get<SessionChecker>().verifyAdmin(context))
         }
         verify { attr.put(match { it.name.contains("Admin") }, u) }
     }
 
-    private fun mockUserAttributes(discordId: String, mockedCall: ApplicationCall): Pair<Attributes, LinkUser> {
-        val u = mockk<LinkUser> {
+    private fun mockUserAttributes(discordId: String, mockedCall: ApplicationCall): Pair<Attributes, User> {
+        val u = mockk<User> {
             every { this@mockk.discordId } returns discordId
         }
         val attributes = mockk<Attributes> {

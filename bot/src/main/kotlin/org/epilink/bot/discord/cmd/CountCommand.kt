@@ -8,7 +8,7 @@
  */
 package org.epilink.bot.discord.cmd
 
-import org.epilink.bot.db.LinkUser
+import org.epilink.bot.db.User
 import org.epilink.bot.discord.*
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
@@ -16,10 +16,10 @@ import org.koin.core.component.inject
 
 @OptIn(KoinApiExtension::class)
 class CountCommand : Command, KoinComponent {
-    private val msg: LinkDiscordMessages by inject()
-    private val i18n: LinkDiscordMessagesI18n by inject()
-    private val discord: LinkDiscordClientFacade by inject()
-    private val resolver: LinkDiscordTargets by inject()
+    private val msg: DiscordMessages by inject()
+    private val i18n: DiscordMessagesI18n by inject()
+    private val discord: DiscordClientFacade by inject()
+    private val resolver: DiscordTargets by inject()
 
     override val name = "count"
     override val permissionLevel = PermissionLevel.Admin
@@ -28,7 +28,7 @@ class CountCommand : Command, KoinComponent {
     override suspend fun run(
         fullCommand: String,
         commandBody: String,
-        sender: LinkUser?,
+        sender: User?,
         senderId: String,
         channelId: String,
         guildId: String?

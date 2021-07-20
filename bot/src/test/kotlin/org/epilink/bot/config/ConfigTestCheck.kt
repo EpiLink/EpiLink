@@ -12,13 +12,12 @@ import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.WeakIdentityRule
-import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.*
 
 class ConfigTestCheck {
     @Test
     fun `Test no tos in config triggers warning`() {
-        val config = mockk<LinkLegalConfiguration> {
+        val config = mockk<LegalConfiguration> {
             every { tos } returns null
             every { tosFile } returns null
             // Valid config for policies
@@ -32,7 +31,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test both tos and tosFile in config triggers error`() {
-        val config = mockk<LinkLegalConfiguration> {
+        val config = mockk<LegalConfiguration> {
             every { tos } returns ""
             every { tosFile } returns ""
             // Valid config for policies
@@ -46,7 +45,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test no privacy policy in config triggers warning`() {
-        val config = mockk<LinkLegalConfiguration> {
+        val config = mockk<LegalConfiguration> {
             every { tos } returns ""
             every { tosFile } returns null
             every { policy } returns null
@@ -60,7 +59,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test both privacy policy and privacy policy file in config triggers error`() {
-        val config = mockk<LinkLegalConfiguration> {
+        val config = mockk<LegalConfiguration> {
             every { tos } returns ""
             every { tosFile } returns null
             every { policy } returns ""
@@ -73,7 +72,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test no identity prompt text triggers warning`() {
-        val config = mockk<LinkLegalConfiguration> {
+        val config = mockk<LegalConfiguration> {
             every { identityPromptText } returns null
             // Normal configs for everything else
             every { tos } returns ""
@@ -88,7 +87,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test no trailing slash at end of front-end URL triggers error`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { frontendUrl } returns "https://whereismy.slash"
             // Normal config
             every { rateLimitingProfile } returns RateLimitingProfile.Standard
@@ -101,7 +100,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test lenient rate limiting profile triggers warning`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { rateLimitingProfile } returns RateLimitingProfile.Lenient
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
@@ -114,7 +113,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test disabled rate limiting profile triggers non-fatal error`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { rateLimitingProfile } returns RateLimitingProfile.Disabled
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
@@ -127,7 +126,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test enabled admin endpoints message`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { enableAdminEndpoints } returns true
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
@@ -140,7 +139,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test disabled admin endpoints message`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { enableAdminEndpoints } returns false
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
@@ -180,7 +179,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test invalid host in CORS whitelist triggers error`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { corsWhitelist } returns listOf("http://hello.com", "yolo.yay", "https://woohoo")
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
@@ -192,7 +191,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test trailing slash in host in CORS whitelist triggers error`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { corsWhitelist } returns listOf("http://hello.com", "http://pee.po/")
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
@@ -204,7 +203,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test subpath in host in CORS whitelist triggers error`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { corsWhitelist } returns listOf("http://hello.com", "http://pee.po/cringe")
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
@@ -216,7 +215,7 @@ class ConfigTestCheck {
 
     @Test
     fun `Test star in CORS whitelist does not trigger error`() {
-        val config = mockk<LinkWebServerConfiguration> {
+        val config = mockk<WebServerConfiguration> {
             every { corsWhitelist } returns listOf("*")
             // Normal config
             every { frontendUrl } returns "https://my.slash.ishere/"
@@ -264,7 +263,7 @@ class ConfigTestCheck {
     }
 
     /**
-     * Create a fake LinkTokens with valid values for all parameters. To create invalid values, provide an argument.
+     * Create a fake TokensConfiguration with valid values for all parameters. To create invalid values, provide an argument.
      */
     private fun tokens(
         discordOAuthClientId: String = "a",
@@ -272,7 +271,7 @@ class ConfigTestCheck {
         discordToken: String = "c",
         msftOAuthClientId: String = "d",
         msftOAuthSecret: String = "e"
-    ): LinkTokens = LinkTokens(
+    ): TokensConfiguration = TokensConfiguration(
         discordOAuthClientId = discordOAuthClientId,
         discordOAuthSecret = discordOAuthSecret,
         discordToken = discordToken,
@@ -300,14 +299,14 @@ class ConfigTestCheck {
         assertContainsSingleError(r, "klkl")
     }
 
-    private fun mockServer(id: String, requires: List<String>): LinkDiscordServerSpec =
+    private fun mockServer(id: String, requires: List<String>): DiscordServerSpec =
         mockk {
             every { this@mockk.id } returns id
             every { this@mockk.requires } returns requires
         }
 
-    private fun mockConfigServers(vararg servers: LinkDiscordServerSpec) =
-        mockk<LinkDiscordConfig> {
+    private fun mockConfigServers(vararg servers: DiscordServerSpec) =
+        mockk<DiscordConfiguration> {
             every { this@mockk.servers } returns servers.toList()
         }
 
@@ -365,7 +364,7 @@ class ConfigTestCheck {
     private fun languages(
         default: String = "a",
         preferred: List<String> = listOf("a")
-    ) = mockk<LinkDiscordConfig> {
+    ) = mockk<DiscordConfiguration> {
         every { defaultLanguage } returns default
         every { preferredLanguages } returns preferred
     }
