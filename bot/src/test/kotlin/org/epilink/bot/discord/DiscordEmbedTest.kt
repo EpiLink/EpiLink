@@ -11,7 +11,7 @@ package org.epilink.bot.discord
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.discordjson.json.EmbedData
 import discord4j.rest.util.Color
-import org.epilink.bot.LinkException
+import org.epilink.bot.EpiLinkException
 import kotlin.test.*
 
 class DiscordEmbedTest {
@@ -27,7 +27,7 @@ class DiscordEmbedTest {
 
     @Test
     fun `Test embed invalid hex color`() {
-        assertFailsWith<LinkException> { DiscordEmbed(color = "#qsdfmljkdfqs").d4jColor }
+        assertFailsWith<EpiLinkException> { DiscordEmbed(color = "#qsdfmljkdfqs").d4jColor }
     }
 
     @Test
@@ -37,7 +37,7 @@ class DiscordEmbedTest {
 
     @Test
     fun `Test embed invalid named color`() {
-        assertFailsWith<LinkException> { DiscordEmbed(color = "nope").d4jColor }
+        assertFailsWith<EpiLinkException> { DiscordEmbed(color = "nope").d4jColor }
     }
 
     @Test

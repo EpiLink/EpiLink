@@ -14,16 +14,16 @@ import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import kotlin.test.*
 
-class MessageSenderTest : KoinBaseTest<LinkDiscordMessageSender>(
-    LinkDiscordMessageSender::class,
+class MessageSenderTest : KoinBaseTest<DiscordMessageSender>(
+    DiscordMessageSender::class,
     module {
-        single<LinkDiscordMessageSender> { LinkDiscordMessageSenderImpl() }
+        single<DiscordMessageSender> { DiscordMessageSenderImpl() }
     }
 ) {
     @Test
     fun `Test sending message later`() {
         val embed = mockk<DiscordEmbed>()
-        val dcf = mockHere<LinkDiscordClientFacade> {
+        val dcf = mockHere<DiscordClientFacade> {
             coEvery { sendDirectMessage("userid", embed) } just runs
         }
         test {

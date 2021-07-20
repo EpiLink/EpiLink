@@ -9,33 +9,32 @@
 package org.epilink.bot.web
 
 import io.ktor.http.*
-import io.ktor.request.*
 import io.ktor.server.testing.*
 import io.mockk.every
 import io.mockk.spyk
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.assertStatus
-import org.epilink.bot.config.LinkWebServerConfiguration
-import org.epilink.bot.http.LinkFrontEndHandler
-import org.epilink.bot.http.LinkFrontEndHandlerImpl
+import org.epilink.bot.config.WebServerConfiguration
+import org.epilink.bot.http.FrontEndHandler
+import org.epilink.bot.http.FrontEndHandlerImpl
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import org.koin.test.get
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
-    LinkFrontEndHandler::class,
+class FrontEndHandlingTest : KoinBaseTest<FrontEndHandler>(
+    FrontEndHandler::class,
     module {
-        single<LinkFrontEndHandler> { spyk(LinkFrontEndHandlerImpl()) }
+        single<FrontEndHandler> { spyk(FrontEndHandlerImpl()) }
     }
 ) {
     @Test
     fun `Test front 404 error`() {
-        get<LinkFrontEndHandler>().apply {
+        get<FrontEndHandler>().apply {
             every { serveIntegratedFrontEnd } returns false
         }
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns null
             every { corsWhitelist } returns listOf()
         }
@@ -50,10 +49,10 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
 
     @Test
     fun `Test front redirect`() {
-        get<LinkFrontEndHandler>().apply {
+        get<FrontEndHandler>().apply {
             every { serveIntegratedFrontEnd } returns false
         }
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns "https://frontend/"
             every { corsWhitelist } returns listOf()
         }
@@ -77,7 +76,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
     @Test
     fun `Test serving bundled front`() {
         // The .hasFrontend is present in the test resources
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns null
             every { corsWhitelist } returns listOf()
         }
@@ -99,7 +98,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
 
     @Test
     fun `Test CORS - Whitelist - Allow All`() {
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns null
             every { corsWhitelist } returns listOf("*")
         }
@@ -108,7 +107,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
 
     @Test
     fun `Test CORS - Whitelist - No front-end`() {
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns null
             every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
         }
@@ -117,7 +116,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
 
     @Test
     fun `Test CORS - Whitelist - With front-end`() {
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns "http://front.end/"
             every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
         }
@@ -126,7 +125,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
 
     @Test
     fun `Test CORS - Whitelist - Invalid`() {
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns "http://front.end/"
             every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
         }
@@ -135,7 +134,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
 
     @Test
     fun `Test CORS - Enabled - Front-end`() {
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns "http://front.end/"
             every { corsWhitelist } returns listOf()
         }
@@ -144,7 +143,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
 
     @Test
     fun `Test CORS - Enabled - Front-end Invalid`() {
-        mockHere<LinkWebServerConfiguration> {
+        mockHere<WebServerConfiguration> {
             every { frontendUrl } returns "http://front.end/"
             every { corsWhitelist } returns listOf()
         }
@@ -179,7 +178,7 @@ class FrontEndHandlingTest : KoinBaseTest<LinkFrontEndHandler>(
 
     private fun withTestFrontHandler(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
-            with(get<LinkFrontEndHandler>()) {
+            with(get<FrontEndHandler>()) {
                 install()
             }
         }, block)

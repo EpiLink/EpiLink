@@ -16,20 +16,20 @@ import org.epilink.bot.db.*
 import org.koin.dsl.module
 import kotlin.test.*
 
-class UserCreatorTest : KoinBaseTest<LinkUserCreator>(
-    LinkUserCreator::class,
+class UserCreatorTest : KoinBaseTest<UserCreator>(
+    UserCreator::class,
     module {
-        single<LinkUserCreator> { LinkUserCreatorImpl() }
+        single<UserCreator> { UserCreatorImpl() }
     }
 ) {
 
     @Test
     fun `Successful account creation`() {
         val hash = "tested".sha256()
-        val fac = mockHere<LinkDatabaseFacade> {
+        val fac = mockHere<DatabaseFacade> {
             coEvery { recordNewUser("discordid", hash, "eeemail", true, any()) } returns mockk()
         }
-        val pc = mockHere<LinkPermissionChecks> {
+        val pc = mockHere<PermissionChecks> {
             coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
         }
@@ -45,12 +45,12 @@ class UserCreatorTest : KoinBaseTest<LinkUserCreator>(
 
     @Test
     fun `Unsuccessful account creation on msft issue`() {
-        val pc = mockHere<LinkPermissionChecks> {
+        val pc = mockHere<PermissionChecks> {
             coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Disallowed("Hello", "good.bye")
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
         }
         test {
-            val exc = assertFailsWith<LinkEndpointUserException> {
+            val exc = assertFailsWith<UserEndpointException> {
                 createUser("discordid", "tested", "eeemail", true)
             }
             assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)
@@ -63,12 +63,12 @@ class UserCreatorTest : KoinBaseTest<LinkUserCreator>(
 
     @Test
     fun `Unsuccessful account creation on Discord issue`() {
-        val pc = mockHere<LinkPermissionChecks> {
+        val pc = mockHere<PermissionChecks> {
             coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Disallowed("Hiii", "he.y")
         }
         test {
-            val exc = assertFailsWith<LinkEndpointUserException> {
+            val exc = assertFailsWith<UserEndpointException> {
                 createUser("discordid", "tested", "eeemail", true)
             }
             assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)

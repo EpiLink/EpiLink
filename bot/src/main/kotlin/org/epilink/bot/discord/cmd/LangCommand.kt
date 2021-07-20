@@ -8,8 +8,8 @@
  */
 package org.epilink.bot.discord.cmd
 
-import org.epilink.bot.db.LinkDatabaseFacade
-import org.epilink.bot.db.LinkUser
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.User
 import org.epilink.bot.discord.*
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
@@ -27,12 +27,12 @@ class LangCommand : Command, KoinComponent {
     private val client by inject<LinkDiscordClientFacade>()
     private val messages by inject<LinkDiscordMessages>()
     private val i18n by inject<LinkDiscordMessagesI18n>()
-    private val db by inject<LinkDatabaseFacade>()
+    private val db by inject<DatabaseFacade>()
 
     override suspend fun run(
         fullCommand: String,
         commandBody: String,
-        sender: LinkUser?,
+        sender: User?,
         senderId: String,
         channelId: String,
         guildId: String?

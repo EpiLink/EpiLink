@@ -8,8 +8,8 @@
  */
 package org.epilink.bot.http.data
 
-import org.epilink.bot.config.LinkContactInformation
-import org.epilink.bot.config.LinkFooterUrl
+import org.epilink.bot.config.ContactInformation
+import org.epilink.bot.config.FooterUrl
 
 // See the Api.md documentation file for more information
 @Suppress("KDocMissingDocumentation")
@@ -22,6 +22,6 @@ data class InstanceInformation(
     val providerName: String,
     val providerIcon: String?,
     val idPrompt: String,
-    val footerUrls: List<LinkFooterUrl>,
-    val contacts: List<LinkContactInformation>
+    val footerUrls: List<FooterUrl>,
+    val contacts: List<ContactInformation>
 )

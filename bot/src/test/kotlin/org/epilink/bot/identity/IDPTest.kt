@@ -14,18 +14,18 @@ import io.ktor.http.*
 import io.mockk.coEvery
 import io.mockk.mockk
 import org.epilink.bot.*
-import org.epilink.bot.http.LinkIdentityProvider
-import org.epilink.bot.http.LinkJwtVerifier
+import org.epilink.bot.http.IdentityProvider
+import org.epilink.bot.http.JwtVerifier
 import org.epilink.bot.http.UserIdentityInfo
 import org.jose4j.jwt.consumer.InvalidJwtException
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import kotlin.test.*
 
-class IDPTest : KoinBaseTest<LinkIdentityProvider>(
-    LinkIdentityProvider::class,
+class IDPTest : KoinBaseTest<IdentityProvider>(
+    IdentityProvider::class,
     module {
-        single { LinkIdentityProvider("CLIENT_ID", "CLIENT_SECRET", "http://TOKEN_URL", "http://AUTHORIZE_URL") }
+        single { IdentityProvider("CLIENT_ID", "CLIENT_SECRET", "http://TOKEN_URL", "http://AUTHORIZE_URL") }
     }
 ) {
     /*
@@ -36,7 +36,7 @@ class IDPTest : KoinBaseTest<LinkIdentityProvider>(
     fun `Test user identity retrieval`() {
         declareTokenRequestHandler("""{"id_token": "JWT_TOKEN"}""")
         val ret = UserIdentityInfo("GUID", "EMAIL")
-        mockHere<LinkJwtVerifier> {
+        mockHere<JwtVerifier> {
             coEvery { process("JWT_TOKEN") } returns ret
         }
         test {
@@ -49,7 +49,7 @@ class IDPTest : KoinBaseTest<LinkIdentityProvider>(
     fun `Test user identity info retrieval failure invalid_grant`() {
         declareTokenRequestHandler("""{"error": "invalid_grant"}""", HttpStatusCode.BadRequest)
         test {
-            val ex = assertFailsWith<LinkEndpointUserException> { getUserIdentityInfo("AUTHCODE", "REDIRECT_URI") }
+            val ex = assertFailsWith<UserEndpointException> { getUserIdentityInfo("AUTHCODE", "REDIRECT_URI") }
             assertEqualsPairwise(
                 "Invalid authorization code" to ex.details,
                 "oa.iac" to ex.detailsI18n,
@@ -62,7 +62,7 @@ class IDPTest : KoinBaseTest<LinkIdentityProvider>(
     fun `Test user identity info retrieval failure other`() {
         declareTokenRequestHandler("""{"error": "blaaah"}""", HttpStatusCode.BadRequest)
         test {
-            val ex = assertFailsWith<LinkEndpointInternalException> { getUserIdentityInfo("AUTHCODE", "REDIRECT_URI") }
+            val ex = assertFailsWith<InternalEndpointException> { getUserIdentityInfo("AUTHCODE", "REDIRECT_URI") }
             assertEquals("Identity Provider OAuth failed: blaaah (no description)", ex.message)
             assertEquals(StandardErrorCodes.IdentityProviderApiFailure, ex.errorCode)
         }
@@ -72,7 +72,7 @@ class IDPTest : KoinBaseTest<LinkIdentityProvider>(
     fun `Test user identity info retrieval no token returned`() {
         declareTokenRequestHandler("{}")
         test {
-            val ex = assertFailsWith<LinkEndpointInternalException> { getUserIdentityInfo("AUTHCODE", "REDIRECT_URI") }
+            val ex = assertFailsWith<InternalEndpointException> { getUserIdentityInfo("AUTHCODE", "REDIRECT_URI") }
             assertEquals("Did not receive any ID token from the identity provider", ex.message)
             assertEquals(StandardErrorCodes.IdentityProviderApiFailure, ex.errorCode)
         }
@@ -82,7 +82,7 @@ class IDPTest : KoinBaseTest<LinkIdentityProvider>(
     fun `Test user identity info retrieval invalid token`() {
         declareTokenRequestHandler("""{"id_token":"JWT_TOKEN"}""")
         val ex = mockk<InvalidJwtException>()
-        mockHere<LinkJwtVerifier> { coEvery { process("JWT_TOKEN") } throws ex }
+        mockHere<JwtVerifier> { coEvery { process("JWT_TOKEN") } throws ex }
         test {
             val ex2 = assertFailsWith<InvalidJwtException> { getUserIdentityInfo("AUTHCODE", "REDIRECT_URI") }
             assertSame(ex, ex2)

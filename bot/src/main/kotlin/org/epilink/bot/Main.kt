@@ -149,7 +149,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
         }
 
         logger.debug("Creating environment")
-        val env = LinkServerEnvironment(
+        val env = ServerEnvironment(
             cfg = cfg,
             legal = legal.await(),
             assets = assets.await(),
@@ -168,7 +168,7 @@ private fun runBlockingWithScope(block: suspend CoroutineScope.() -> Unit) =
     runBlocking { withContext(Dispatchers.Default) { coroutineScope { block() } } }
 
 private fun checkConfig(
-    cfg: LinkConfiguration,
+    cfg: Configuration,
     rulebook: Rulebook,
     cliArgs: CliArgs,
     availableDiscordLanguages: Set<String>
@@ -193,7 +193,7 @@ private fun checkConfig(
 
 private fun download(url: String) = runBlocking { HttpClient(Apache).get<String>(url) }
 
-private suspend fun loadRulebook(cfg: LinkConfiguration, cfgPath: Path, enableCache: Boolean): Rulebook {
+private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache: Boolean): Rulebook {
     val rb = when {
         cfg.rulebook != null -> cfg.rulebook.let {
             logger.info("Loading rulebook from configuration file, this may take some time...")

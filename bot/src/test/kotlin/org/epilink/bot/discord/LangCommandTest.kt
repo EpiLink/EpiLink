@@ -10,7 +10,7 @@ package org.epilink.bot.discord
 
 import io.mockk.*
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.db.LinkDatabaseFacade
+import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.discord.cmd.LangCommand
 import org.epilink.bot.mockHere
@@ -27,8 +27,8 @@ class LangCommandTest : KoinBaseTest<Command>(
     fun `Test lang command help`() {
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<LinkDiscordMessages> { every { getLangHelpEmbed(any()) } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
+        mockHere<DiscordMessages> { every { getLangHelpEmbed(any()) } returns embed }
+        val dcf = mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang", "", null, "", "1234", "")
             dcf.sendChannelMessage("1234", embed)
@@ -39,9 +39,9 @@ class LangCommandTest : KoinBaseTest<Command>(
     fun `Test lang command clear`() {
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        val df = mockHere<LinkDatabaseFacade> { coEvery { clearLanguagePreference("iid") } just runs }
-        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any(), "lang.clearSuccess") } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
+        val df = mockHere<DatabaseFacade> { coEvery { clearLanguagePreference("iid") } just runs }
+        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), "lang.clearSuccess") } returns embed }
+        val dcf = mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang clear", "clear", null, "iid", "1234", "")
         }
@@ -54,12 +54,12 @@ class LangCommandTest : KoinBaseTest<Command>(
     @Test
     fun `Test lang command set success`() {
         val embed = mockk<DiscordEmbed>()
-        val i18n = mockHere<LinkDiscordMessagesI18n> {
+        val i18n = mockHere<DiscordMessagesI18n> {
             coEvery { getLanguage(any()) } returns ""
             coEvery { setLanguage("iid", "lll") } returns true
         }
-        mockHere<LinkDiscordMessages> { every { getSuccessCommandReply(any(), "lang.success") } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
+        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), "lang.success") } returns embed }
+        val dcf = mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang lll", "lll", null, "iid", "1234", "")
         }
@@ -72,12 +72,12 @@ class LangCommandTest : KoinBaseTest<Command>(
     @Test
     fun `Test lang command set fail`() {
         val embed = mockk<DiscordEmbed>()
-        val i18n = mockHere<LinkDiscordMessagesI18n> {
+        val i18n = mockHere<DiscordMessagesI18n> {
             coEvery { getLanguage(any()) } returns ""
             coEvery { setLanguage("iid", "lll") } returns false
         }
-        mockHere<LinkDiscordMessages> { every { getErrorCommandReply(any(), "lang.invalidLanguage", "lll") } returns embed }
-        val dcf = mockHere<LinkDiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
+        mockHere<DiscordMessages> { every { getErrorCommandReply(any(), "lang.invalidLanguage", "lll") } returns embed }
+        val dcf = mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang lll", "lll", null, "iid", "1234", "")
         }

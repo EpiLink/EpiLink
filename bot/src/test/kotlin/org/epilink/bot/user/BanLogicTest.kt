@@ -11,23 +11,23 @@ package org.epilink.bot.user
 import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.db.LinkBan
-import org.epilink.bot.db.LinkBanLogic
-import org.epilink.bot.db.LinkBanLogicImpl
+import org.epilink.bot.db.Ban
+import org.epilink.bot.db.BanLogic
+import org.epilink.bot.db.BanLogicImpl
 import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class BanLogicTest : KoinBaseTest<LinkBanLogic>(
-    LinkBanLogic::class,
+class BanLogicTest : KoinBaseTest<BanLogic>(
+    BanLogic::class,
     module {
-        single<LinkBanLogic> { LinkBanLogicImpl() }
+        single<BanLogic> { BanLogicImpl() }
     }
 ) {
     @Test
     fun `Revoked ban is not active`() {
-        val ban = mockk<LinkBan> {
+        val ban = mockk<Ban> {
             every { revoked } returns true
         }
         test {
@@ -37,7 +37,7 @@ class BanLogicTest : KoinBaseTest<LinkBanLogic>(
 
     @Test
     fun `Expired ban is not active`() {
-        val ban = mockk<LinkBan> {
+        val ban = mockk<Ban> {
             every { revoked } returns false
             every { expiresOn } returns Instant.now() - Duration.ofHours(1)
         }
@@ -48,7 +48,7 @@ class BanLogicTest : KoinBaseTest<LinkBanLogic>(
 
     @Test
     fun `Ban with no expiry is active`() {
-        val ban = mockk<LinkBan> {
+        val ban = mockk<Ban> {
             every { revoked } returns false
             every { expiresOn } returns null
         }
@@ -59,7 +59,7 @@ class BanLogicTest : KoinBaseTest<LinkBanLogic>(
 
     @Test
     fun `Ban with non-expired expiry is active`() {
-        val ban = mockk<LinkBan> {
+        val ban = mockk<Ban> {
             every { revoked } returns false
             every { expiresOn } returns Instant.now() + Duration.ofHours(10)
         }

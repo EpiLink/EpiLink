@@ -25,13 +25,13 @@ import io.ktor.sessions.Sessions
 import io.mockk.*
 import org.epilink.bot.*
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
-import org.epilink.bot.config.LinkWebServerConfiguration
-import org.epilink.bot.http.LinkBackEnd
-import org.epilink.bot.http.LinkBackEndImpl
-import org.epilink.bot.http.endpoints.LinkAdminApi
-import org.epilink.bot.http.endpoints.LinkMetaApi
-import org.epilink.bot.http.endpoints.LinkRegistrationApi
-import org.epilink.bot.http.endpoints.LinkUserApi
+import org.epilink.bot.config.WebServerConfiguration
+import org.epilink.bot.http.BackEnd
+import org.epilink.bot.http.BackEndImpl
+import org.epilink.bot.http.endpoints.AdminEndpoints
+import org.epilink.bot.http.endpoints.MetaApi
+import org.epilink.bot.http.endpoints.RegistrationApi
+import org.epilink.bot.http.endpoints.UserApi
 import org.koin.core.component.get
 import org.koin.dsl.module
 import org.koin.test.mock.declare
@@ -45,9 +45,9 @@ class BackEndTest : KoinBaseTest<Unit>(
 ) {
     @Test
     fun `Test feature installation`() {
-        declare<LinkBackEnd> { LinkBackEndImpl() }
+        declare<BackEnd> { BackEndImpl() }
         withTestApplication({
-            with(get<LinkBackEnd>()) { installFeatures() }
+            with(get<BackEnd>()) { installFeatures() }
         }) {
             assertNotNull(application.featureOrNull(ContentNegotiation))
             assertNotNull(application.featureOrNull(Sessions))
@@ -58,16 +58,16 @@ class BackEndTest : KoinBaseTest<Unit>(
     private fun withErrorHandlingTestApplication(routing: Routing.() -> Unit, test: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             // Requires content negotiation
-            with(get<LinkBackEnd>()) { installFeatures() }
+            with(get<BackEnd>()) { installFeatures() }
             routing {
-                with(get<LinkBackEnd>()) { installErrorHandling() }
+                with(get<BackEnd>()) { installErrorHandling() }
                 routing()
             }
         }, test)
 
     @Test
     fun `Test error handling random error`() {
-        declare<LinkBackEnd> { LinkBackEndImpl() }
+        declare<BackEnd> { BackEndImpl() }
         withErrorHandlingTestApplication({
             get("/one") {
                 error("You don't know me")
@@ -90,10 +90,10 @@ class BackEndTest : KoinBaseTest<Unit>(
 
     @Test
     fun `Test error handling user error`() {
-        declare<LinkBackEnd> { LinkBackEndImpl() }
+        declare<BackEnd> { BackEndImpl() }
         withErrorHandlingTestApplication({
             get("/two") {
-                throw LinkEndpointUserException(
+                throw UserEndpointException(
                     StandardErrorCodes.MissingAuthentication,
                     "Oops",
                     "oo.ps",
@@ -123,10 +123,10 @@ class BackEndTest : KoinBaseTest<Unit>(
 
     @Test
     fun `Test error handling internal error`() {
-        declare<LinkBackEnd> { LinkBackEndImpl() }
+        declare<BackEnd> { BackEndImpl() }
         withErrorHandlingTestApplication({
             get("/three") {
-                throw LinkEndpointInternalException(InvalidAuthCode, "EEEE")
+                throw InternalEndpointException(InvalidAuthCode, "EEEE")
             }
         }) {
             handleRequest(HttpMethod.Get, "/three").apply {
@@ -155,21 +155,21 @@ class BackEndTest : KoinBaseTest<Unit>(
     }
 
     private fun testModuleInstallation(enableAdminEndpoints: Boolean) {
-        val back = declare<LinkBackEnd> {
-            spyk(LinkBackEndImpl()) {
+        val back = declare<BackEnd> {
+            spyk(BackEndImpl()) {
                 every { any<Application>().installFeatures() } just runs
                 every { any<Route>().installErrorHandling() } just runs
             }
         }
-        val user = mockHere<LinkUserApi> { every { install(any()) } just runs }
-        val meta = mockHere<LinkMetaApi> { every { install(any()) } just runs }
-        val register = mockHere<LinkRegistrationApi> { every { install(any()) } just runs }
+        val user = mockHere<UserApi> { every { install(any()) } just runs }
+        val meta = mockHere<MetaApi> { every { install(any()) } just runs }
+        val register = mockHere<RegistrationApi> { every { install(any()) } just runs }
         val admin = if (enableAdminEndpoints) {
-            mockHere<LinkAdminApi> { every { install(any()) } just runs }
+            mockHere<AdminEndpoints> { every { install(any()) } just runs }
         } else null
-        mockHere<LinkWebServerConfiguration> { every { this@mockHere.enableAdminEndpoints } returns enableAdminEndpoints }
+        mockHere<WebServerConfiguration> { every { this@mockHere.enableAdminEndpoints } returns enableAdminEndpoints }
         withTestApplication({
-            with(get<LinkBackEnd>()) { epilinkApiModule() }
+            with(get<BackEnd>()) { epilinkApiModule() }
         }) { }
         verifyAll {
             with(back) {
