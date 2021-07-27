@@ -134,19 +134,7 @@ class DiscordBackEnd(
             userId,
             displayableUsername,
             avatar,
-            discordConfig.servers.any {
-                try {
-                    discordClient.isUserInGuild(userId, it.id)
-                } catch(ex: ClientException) {
-                    if (ex.status == HttpResponseStatus.FORBIDDEN) {
-                        // This is the usual exception for orphaned guilds (EpiLink has a configuration for them but is not connected to them.
-                        logger.warn("Forbidden (403) response when checking if Discord user ${userId} is part of guild ${it.id}, is the bot on the guild?", ex)
-                    } else {
-                        logger.warn("Unexpected error when checking if Discord user ${userId} is part of guild ${it.id}", ex)
-                    }
-                    false
-                }
-            }
+            discordConfig.servers.any { discordClient.isUserInGuild(userId, it.id) }
         ).also { logger.debug { "Retrieved info $it" } }
     }
 
