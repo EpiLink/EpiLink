@@ -13,5 +13,6 @@ package org.epilink.bot.http.data
 data class RegistrationInformation(
     val discordUsername: String?,
     val discordAvatarUrl: String?,
+    val presentOnMonitoredServers: Boolean?,
     val email: String?
 )

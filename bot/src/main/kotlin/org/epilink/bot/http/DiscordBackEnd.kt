@@ -10,22 +10,22 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.client.HttpClient
-import io.ktor.client.call.receive
-import io.ktor.client.features.ClientRequestException
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.content.TextContent
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.ParametersBuilder
-import io.ktor.http.formUrlEncode
-import org.epilink.bot.InternalEndpointException
-import org.epilink.bot.UserEndpointException
+import discord4j.rest.http.client.ClientException
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.features.*
+import io.ktor.client.request.*
+import io.ktor.content.*
+import io.ktor.http.*
+import io.netty.handler.codec.http.HttpResponseStatus
 import org.epilink.bot.EndpointException
+import org.epilink.bot.InternalEndpointException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
+import org.epilink.bot.UserEndpointException
+import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.debug
+import org.epilink.bot.discord.DiscordClientFacade
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -42,6 +42,8 @@ class DiscordBackEnd(
     private val logger = LoggerFactory.getLogger("epilink.discordapi")
 
     private val client: HttpClient by inject()
+    private val discordClient: DiscordClientFacade by inject()
+    private val discordConfig: DiscordConfiguration by inject()
 
     private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" +
             listOf(
@@ -115,29 +117,37 @@ class DiscordBackEnd(
             client.getJson("https://discord.com/api/v6/users/@me", bearer = token)
         }.getOrElse {
             logger.debug(it) { "Failed (token $token)" }
-            throw InternalEndpointException(
-                DiscordApiFailure,
-                "Failed to contact Discord servers for user information retrieval.",
-                it
-            )
+            apiFailure("Failed to contact Discord servers for user information retrieval.", it)
         }
-        val userId = data["id"] as String?
-            ?: throw InternalEndpointException(DiscordApiFailure, "Missing Discord ID in Discord API response")
-        val username = data["username"] as String?
-            ?: throw InternalEndpointException(
-                DiscordApiFailure,
-                "Missing Discord username in Discord API response"
-            )
-        val discriminator = data["discriminator"] as String?
-            ?: throw InternalEndpointException(
-                DiscordApiFailure,
-                "Missing Discord discriminator in Discord API response"
-            )
+
+        val userId = data["id"] as? String?
+            ?: apiFailure("Missing/Invalid Discord ID in Discord API response")
+        val username = data["username"] as? String?
+            ?: apiFailure("Missing/Invalid Discord username in Discord API response")
+        val discriminator = data["discriminator"] as? String?
+            ?: apiFailure("Missing/Invalid Discord discriminator in Discord API response")
+
         val displayableUsername = "$username#$discriminator"
-        val avatarHash = data["avatar"] as String?
-        val avatar =
-            if (avatarHash != null) "https://cdn.discordapp.com/avatars/$userId/$avatarHash.png?size=256" else null
-        return DiscordUserInfo(userId, displayableUsername, avatar).also { logger.debug { "Retrieved info $it" } }
+        val avatarHash = data["avatar"] as? String?
+        val avatar = avatarHash?.let { "https://cdn.discordapp.com/avatars/$userId/$it.png?size=256" }
+        return DiscordUserInfo(
+            userId,
+            displayableUsername,
+            avatar,
+            discordConfig.servers.any {
+                try {
+                    discordClient.isUserInGuild(userId, it.id)
+                } catch(ex: ClientException) {
+                    if (ex.status == HttpResponseStatus.FORBIDDEN) {
+                        // This is the usual exception for orphaned guilds (EpiLink has a configuration for them but is not connected to them.
+                        logger.warn("Forbidden (403) response when checking if Discord user ${userId} is part of guild ${it.id}, is the bot on the guild?", ex)
+                    } else {
+                        logger.warn("Unexpected error when checking if Discord user ${userId} is part of guild ${it.id}", ex)
+                    }
+                    false
+                }
+            }
+        ).also { logger.debug { "Retrieved info $it" } }
     }
 
     /**
@@ -145,3 +155,5 @@ class DiscordBackEnd(
      */
     fun getAuthorizeStub(): String = authStubDiscord
 }
+
+private fun apiFailure(msg: String, cause: Throwable? = null): Nothing = throw InternalEndpointException(DiscordApiFailure, msg, cause)

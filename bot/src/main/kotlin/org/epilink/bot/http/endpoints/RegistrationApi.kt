@@ -227,5 +227,5 @@ internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
      * Utility function for transforming a session into the JSON object that is returned by the back-end's APIs
      */
     private fun RegisterSession.toRegistrationInformation() =
-        RegistrationInformation(email = email, discordAvatarUrl = discordAvatarUrl, discordUsername = discordUsername)
+        RegistrationInformation(email = email, discordAvatarUrl = discordAvatarUrl, discordUsername = discordUsername, presentOnMonitoredServers = presentOnMonitoredServers)
 }

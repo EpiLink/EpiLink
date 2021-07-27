@@ -24,5 +24,6 @@ data class DiscordUserInfo(
     /**
      * An optional URL to the user's avatar
      */
-    val avatarUrl: String?
+    val avatarUrl: String?,
+    val presentOnMonitoredServers: Boolean?
 )

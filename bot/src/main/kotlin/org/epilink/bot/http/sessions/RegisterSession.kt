@@ -31,5 +31,6 @@ data class RegisterSession (
     /**
      * The Discord avatar url to be used
      */
-    val discordAvatarUrl: String? = null
+    val discordAvatarUrl: String? = null,
+    val presentOnMonitoredServers: Boolean? = null,
 )
