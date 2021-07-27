@@ -56,6 +56,6 @@ open class KoinBaseTest<T : Any>(
     /**
      * Run the given [block] in a coroutine, with a ready-to-use Koin DI environment.
      */
-    fun <R> test(block: suspend T.() -> R): R =
+    fun <R> test(block: suspend T.() -> R): Unit =
         runBlocking { block(getKoin().get(kclass)) }
 }

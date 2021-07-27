@@ -8,20 +8,14 @@
  */
 package org.epilink.bot.user
 
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.routing.routing
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
+import io.ktor.http.*
+import io.ktor.routing.*
+import io.ktor.server.testing.*
+import io.ktor.sessions.*
 import io.mockk.*
 import org.epilink.bot.*
-import org.epilink.bot.web.ApiError
-import org.epilink.bot.web.ApiSuccess
-import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.config.RateLimitingProfile
+import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.RoleManager
 import org.epilink.bot.http.*
@@ -29,6 +23,8 @@ import org.epilink.bot.http.endpoints.RegistrationApi
 import org.epilink.bot.http.endpoints.RegistrationApiImpl
 import org.epilink.bot.http.endpoints.UserApi
 import org.epilink.bot.http.sessions.RegisterSession
+import org.epilink.bot.web.ApiError
+import org.epilink.bot.web.ApiSuccess
 import org.koin.dsl.module
 import org.koin.test.get
 import kotlin.test.Test
@@ -96,11 +92,23 @@ class RegistrationTest : KoinBaseTest<Unit>(
         }
     }
 
+    private fun DiscordBackEnd.fakeDiscordInfo(
+        token: String = "fake yeet",
+        id: String = "yes",
+        username: String = "no",
+        avatarUrl: String = "maybe",
+        presentOnServers: Boolean = true
+    ) =
+        coEvery { getDiscordInfo(token) } returns DiscordUserInfo(id, username, avatarUrl, true)
+
+    private fun DiscordBackEnd.fakeDiscordToken(authcode: String = "fake auth", redirectUri: String = "fake uri") =
+        coEvery { getDiscordToken(authcode, redirectUri) } returns "fake yeet"
+
     @Test
     fun `Test Discord account authcode registration account does not exist`() {
         mockHere<DiscordBackEnd> {
-            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
-            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
+            fakeDiscordInfo()
+            fakeDiscordToken()
         }
         mockHere<PermissionChecks> {
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Allowed
@@ -133,8 +141,8 @@ class RegistrationTest : KoinBaseTest<Unit>(
     @Test
     fun `Test Discord account authcode registration account already exists`() {
         mockHere<DiscordBackEnd> {
-            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
-            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
+            fakeDiscordToken()
+            fakeDiscordInfo()
         }
         mockHere<DatabaseFacade> {
             coEvery { getUser("yes") } returns mockk { every { discordId } returns "yes" }
@@ -159,8 +167,8 @@ class RegistrationTest : KoinBaseTest<Unit>(
     @Test
     fun `Test Discord account authcode registration when disallowed`() {
         mockHere<DiscordBackEnd> {
-            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
-            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
+            fakeDiscordToken()
+            fakeDiscordInfo()
         }
         mockHere<PermissionChecks> {
             coEvery { isDiscordUserAllowedToCreateAccount(any()) } returns Disallowed("Cheh dans ta tête", "ch.eh2")
@@ -180,18 +188,16 @@ class RegistrationTest : KoinBaseTest<Unit>(
     }
 
     @Test
-    fun `Test registration session deletion`() {
-        withTestEpiLink {
-            val header = handleRequest(HttpMethod.Get, "/api/v1/register/info").run {
-                assertStatus(HttpStatusCode.OK)
-                assertNotNull(sessions.get<RegisterSession>())
-                response.headers["RegistrationSessionId"]!!
-            }
-            handleRequest(HttpMethod.Delete, "/api/v1/register") {
-                addHeader("RegistrationSessionId", header)
-            }.apply {
-                assertNull(sessions.get<RegisterSession>())
-            }
+    fun `Test registration session deletion`() = withTestEpiLink {
+        val header = handleRequest(HttpMethod.Get, "/api/v1/register/info").run {
+            assertStatus(HttpStatusCode.OK)
+            assertNotNull(sessions.get<RegisterSession>())
+            response.headers["RegistrationSessionId"]!!
+        }
+        handleRequest(HttpMethod.Delete, "/api/v1/register") {
+            addHeader("RegistrationSessionId", header)
+        }.apply {
+            assertNull(sessions.get<RegisterSession>())
         }
     }
 
@@ -200,8 +206,8 @@ class RegistrationTest : KoinBaseTest<Unit>(
     fun `Test full registration sequence, discord then msft`() {
         var userCreated = false
         mockHere<DiscordBackEnd> {
-            coEvery { getDiscordToken("fake auth", "fake uri") } returns "fake yeet"
-            coEvery { getDiscordInfo("fake yeet") } returns DiscordUserInfo("yes", "no", "maybe")
+            fakeDiscordInfo()
+            fakeDiscordToken()
         }
         mockHere<IdentityProvider> {
             coEvery { getUserIdentityInfo("fake mac", "fake mur") } returns UserIdentityInfo("fakeguid", "fakemail")

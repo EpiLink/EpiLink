@@ -22,6 +22,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Permission
+import io.netty.handler.codec.http.HttpResponseStatus
 import kotlinx.coroutines.*
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
@@ -107,13 +108,13 @@ internal class Discord4JFacadeImpl(
             logger.debug { "$userId is in guild $guildId" }
             true
         } catch (ex: ClientException) {
-            if (ex.errorCode == "10007") {
-                logger.debug { "$userId is NOT in guild $guildId" }
-                false
-            } else {
-                logger.error("Unexpected reply on isUserInGuild($userId) (error code ${ex.errorCode})")
-                throw ex
+            when {
+                ex.status == HttpResponseStatus.FORBIDDEN ->
+                    logger.warn("Forbidden (403) response when checking if Discord user $userId is part of guild ${guildId}, is the bot on the guild?", ex)
+                ex.errorCode == "10007" -> logger.debug { "$userId is NOT in guild $guildId" }
+                else -> logger.error("Unexpected reply on isUserInGuild($userId) (error code ${ex.errorCode})")
             }
+            false
         }
     }
 

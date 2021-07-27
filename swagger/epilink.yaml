@@ -1118,6 +1118,13 @@ components:
           description: |
             The user's email address, as provided by the OpenID Connect ID Token, or null if the ID Provider account has not
             been recorded in the current registration process.
+        presentOnMonitoredServers:
+          type: boolean
+          nullable: true
+          description: |
+            True if the registration Discord account is present on monitored servers (i.e. the account is on a server where
+            the EpiLink Discord bot is actively managing roles), false otherwise, null if the registration process does
+            not have information on the person's Discord ID yet.
     AdditionalRegistrationOptions:
       description: |
         These options are provided to finalize the registration process.

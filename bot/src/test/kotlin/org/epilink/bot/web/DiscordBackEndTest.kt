@@ -14,10 +14,13 @@ import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.*
 import io.ktor.util.KtorExperimentalAPI
-import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.EndpointException
-import org.epilink.bot.StandardErrorCodes
-import org.epilink.bot.declareClientHandler
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import org.epilink.bot.*
+import org.epilink.bot.config.DiscordConfiguration
+import org.epilink.bot.config.DiscordServerSpec
+import org.epilink.bot.discord.DiscordClientFacade
 import org.epilink.bot.http.DiscordUserInfo
 import org.epilink.bot.http.DiscordBackEnd
 import org.koin.dsl.module
@@ -47,7 +50,6 @@ class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
         declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") { request ->
             assertEquals(HttpMethod.Post, request.method)
             assertEquals(ContentType.Application.FormUrlEncoded, request.body.contentType)
-            @OptIn(KtorExperimentalAPI::class)
             val params = String(request.body.toByteArray()).parseUrlEncodedParameters()
             assertEquals("DiscordClientId", params["client_id"])
             assertEquals("DiscordSecret", params["client_secret"])
@@ -100,6 +102,16 @@ class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
 
     @Test
     fun `Test Discord info retrieval`() {
+        mockHere<DiscordConfiguration> {
+            every { servers } returns listOf(
+                mockk { every { id } returns "the server id" }
+            )
+        }
+
+        mockHere<DiscordClientFacade> {
+            coEvery { isUserInGuild("myVeryId", "the server id") } returns true
+        }
+
         declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/users/@me") { req ->
             assertEquals("Bearer veryserioustoken", req.headers["Authorization"])
             val data = mapOf(
@@ -120,7 +132,8 @@ class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
                 DiscordUserInfo(
                     id = "myVeryId",
                     username = "usseeer#9876",
-                    avatarUrl = "https://cdn.discordapp.com/avatars/myVeryId/haaash.png?size=256"
+                    avatarUrl = "https://cdn.discordapp.com/avatars/myVeryId/haaash.png?size=256",
+                    true
                 ),
                 getDiscordInfo("veryserioustoken")
             )
