@@ -99,9 +99,13 @@ jobs:
         run: ./gradlew assembleDist -PwithFrontend
       - uses: actions/upload-artifact@v2
         with:
-          name: distribution-archive
+          name: distribution-archive-zip
           path: |
             bot/build/distributions/epilink-backend-*.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: distribution-archive-tar
+          path: |
             bot/build/distributions/epilink-backend-*.tar
 
   docker-image-build:
