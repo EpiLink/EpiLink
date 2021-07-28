@@ -102,8 +102,10 @@ jobs:
           path: |
             bot/build/distributions/epilink-backend-*.zip
             bot/build/distributions/epilink-backend-*.tar
+
   docker-image-build:
     needs: [license, backend-tests, frontend-build, docs]
+    name: Build Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU
