@@ -89,7 +89,7 @@ enum class ProxyType {
 /**
  * Represents the calls/minutes allowed under different rate limiting profiles
  */
-@Suppress("unused")
+@Suppress("unused", "MagicNumber")
 enum class RateLimitingProfile(
     /**
      * Calls/minutes for the meta API. Applies to all users per IP address
@@ -116,17 +116,17 @@ enum class RateLimitingProfile(
     /**
      * Lenient profile for high-usage periods.
      */
-    Lenient(300, 30, 150, 30),
+    Lenient(metaApi = 300, userApi = 30, registrationApi = 150, adminApi = 30),
 
     /**
      * Standard rate limiting profile, recommended for instances which host a lot of users on the regular.
      */
-    Standard(100, 20, 100, 30),
+    Standard(metaApi = 100, userApi = 20, registrationApi = 100, adminApi = 30),
 
     /**
      * Harsh rate limiting profile, recommended for regular use.
      */
-    Harsh(50, 10, 20, 30)
+    Harsh(metaApi = 50, userApi = 10, registrationApi = 20, adminApi = 30)
 }
 
 /**

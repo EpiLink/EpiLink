@@ -18,6 +18,8 @@ import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 
+private const val ALLOWED_CLOCK_SKEW = 30
+
 /**
  * This class is responsible for verifying JWT tokens using a JWKS for keys.
  */
@@ -28,7 +30,7 @@ class JwtVerifier(clientId: String, jwksUri: String, private val idClaim: String
         setRequireIssuedAt()
         // Not present for Google
         // setRequireNotBefore()
-        setAllowedClockSkewInSeconds(30)
+        setAllowedClockSkewInSeconds(ALLOWED_CLOCK_SKEW)
         setRequireSubject()
         setExpectedAudience(clientId)
         // Does not work for MS, since the issuer is different for every tenant

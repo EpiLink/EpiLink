@@ -63,6 +63,10 @@ class CliArgs(parser: ArgParser) {
     val verbose by parser.flagging("-v", "--verbose", help = "Enables DEBUG output for EpiLink loggers")
 }
 
+private const val EXIT_CODE_CONFIG_CHECK_FAILED = 1
+private const val EXIT_CODE_RULEBOOK_CLASH = 4
+private const val EXIT_CODE_CANNOT_LOAD_CONFIG = 123
+
 /**
  * Main entry-point for EpiLink, which expects CLI arguments in the arguments.
  */
@@ -107,13 +111,13 @@ fun main(args: Array<String>) = mainBody("epilink") {
                 is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
                 else -> logger.error("Encountered an unexpected exception on config load", exc)
             }
-            exitProcess(123)
+            exitProcess(EXIT_CODE_CANNOT_LOAD_CONFIG)
         }
 
         if (cfg.rulebook != null && cfg.rulebookFile != null) {
             logger.error("Your configuration defines both a rulebook and a rulebookFile: please only use one of those.")
             logger.info("Use rulebook if you are putting the rulebook code directly in the config file, or rulebookFile if you are putting the code in a separate file.")
-            exitProcess(4)
+            exitProcess(EXIT_CODE_RULEBOOK_CLASH)
         }
 
         val idProviderMetadata = async {
@@ -187,7 +191,7 @@ private fun checkConfig(
     }
 
     if (shouldExit) {
-        exitProcess(1)
+        exitProcess(EXIT_CODE_CONFIG_CHECK_FAILED)
     }
 }
 

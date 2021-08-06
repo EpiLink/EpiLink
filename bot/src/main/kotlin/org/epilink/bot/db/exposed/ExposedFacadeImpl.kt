@@ -260,6 +260,8 @@ abstract class ExposedDatabaseFacade : DatabaseFacade {
     }
 }
 
+private const val MAX_EMAIL_ADDRESS_SIZE = 254
+
 /**
  * The TrueIdentities table of the database, used to store a reference to the
  * User's information and their e-mail address.
@@ -286,7 +288,7 @@ private object ExposedTrueIdentities : IntIdTable("TrueIdentities") {
      * Maximum size of a valid email address is 254 characters, see
      * https://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
      */
-    val email = varchar("email", 254)
+    val email = varchar("email", MAX_EMAIL_ADDRESS_SIZE)
 }
 
 /**
@@ -315,6 +317,11 @@ class ExposedTrueIdentity(id: EntityID<Int>) : IntEntity(id) {
     var email by ExposedTrueIdentities.email
 }
 
+private const val ID_HASH_SIZE = 64
+private const val AUTHOR_MAX_SIZE = 40
+private const val REASON_MAX_SIZE = 2000
+
+
 /**
  * The table for all of the bans.
  *
@@ -328,7 +335,7 @@ private object ExposedBans : IntIdTable("Bans") {
      * their account (i.e. delete the row of that user in the [ExposedUsers] table)
      * while still maintaining the information that this Identity Provider ID is banned.
      */
-    val idpIdHash = binary("msftIdHash", 64)
+    val idpIdHash = binary("msftIdHash", ID_HASH_SIZE)
 
     /**
      * Null if this is a definitive ban, the expiration date if this is a
@@ -346,9 +353,9 @@ private object ExposedBans : IntIdTable("Bans") {
      */
     val revoked = bool("revoked")
 
-    val author = varchar("author", 40)
+    val author = varchar("author", AUTHOR_MAX_SIZE)
 
-    val reason = varchar("reason", 2000)
+    val reason = varchar("reason", REASON_MAX_SIZE)
 }
 
 /**
@@ -390,6 +397,8 @@ class ExposedBan(id: EntityID<Int>) : IntEntity(id), Ban {
     override var reason by ExposedBans.reason
 }
 
+private const val DISCORD_ID_SIZE = 32
+
 /**
  * The Users table of the database, that contains basic identity information
  * on each user.
@@ -400,12 +409,12 @@ private object ExposedUsers : IntIdTable("Users") {
     /**
      * The Discord ID of the user
      */
-    val discordId = varchar("discordId", 32).uniqueIndex()
+    val discordId = varchar("discordId", DISCORD_ID_SIZE).uniqueIndex()
 
     /**
      * The SHA256 hash of the User's Identity Provider ID
      */
-    val idpIdHash = binary("msftIdHash", 64).uniqueIndex()
+    val idpIdHash = binary("msftIdHash", ID_HASH_SIZE).uniqueIndex()
 
     /**
      * The creation date of the user's account
@@ -470,7 +479,7 @@ private object ExposedIdentityAccesses : IntIdTable("IdentityAccesses") {
     /**
      * The requester of the identity access (i.e. the person who requested the identity access).
      */
-    val authorName = varchar("authorName", 40)
+    val authorName = varchar("authorName", AUTHOR_MAX_SIZE)
 
     /**
      * True if this was done by a bot, false if it was done by a human.
@@ -480,7 +489,7 @@ private object ExposedIdentityAccesses : IntIdTable("IdentityAccesses") {
     /**
      * The justification given for the identity access.
      */
-    val reason = varchar("reason", 2000)
+    val reason = varchar("reason", REASON_MAX_SIZE)
 
     /**
      * The time at which the identity access was conducted.
@@ -520,10 +529,12 @@ class ExposedIdentityAccess(id: EntityID<Int>) : IntEntity(id), IdentityAccess {
     override var timestamp by ExposedIdentityAccesses.timestamp
 }
 
-private object ExposedDiscordLanguages : IntIdTable("DiscordLanguages") {
-    val discordId = varchar("discordId", 32).uniqueIndex()
+private const val LANGUAGE_ID_MAX_SIZE = 16
 
-    val language = varchar("language", 16)
+private object ExposedDiscordLanguages : IntIdTable("DiscordLanguages") {
+    val discordId = varchar("discordId", DISCORD_ID_SIZE).uniqueIndex()
+
+    val language = varchar("language", LANGUAGE_ID_MAX_SIZE)
 }
 
 /**

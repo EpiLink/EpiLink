@@ -25,6 +25,12 @@ import kotlin.system.exitProcess
  * 4. Discord discriminator
  * 5. (optional) E-mail address
  */
+private const val QUERY_REGEX_RULE_NAME = 1
+private const val QUERY_REGEX_DISCORD_ID = 2
+private const val QUERY_REGEX_DISCORD_USERNAME = 3
+private const val QUERY_REGEX_DISCORD_DISCRIMINATOR = 4
+private const val QUERY_REGEX_EMAIL_ADDRESS = 5
+
 private val queryRegex = Regex("""(.+?)\[(\d+);(.+?);(\d{4})(?:;(.+?))?]""")
 
 /**
@@ -51,12 +57,15 @@ fun ruleTester(rulebookFile: String) = runBlocking {
     } while (true)
 }
 
+private const val LOAD_STRING_LENGTH = 5
+private const val VALIDATE_STRING_LENGTH = 9
+
 private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (Rulebook?) -> Unit) {
     // Exit command
     if (l == "exit") exitProcess(0)
     // Load command
     if (l.startsWith("load:")) {
-        rulebookSetter(loadRulebook(l.substring(5)))
+        rulebookSetter(loadRulebook(l.substring(LOAD_STRING_LENGTH)))
         return
     }
     // E-mail validation command
@@ -66,7 +75,7 @@ private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (R
             println("<!> No e-mail validator is defined in the rulebook")
         } else {
             print("(i) Running e-mail validator... ")
-            val result = runCatching { validator(l.substring(9)) }
+            val result = runCatching { validator(l.substring(VALIDATE_STRING_LENGTH)) }
             result.fold(onSuccess = {
                 if (it) {
                     println("OK, e-mail passes (returned true)")
@@ -147,10 +156,10 @@ private data class Query(
 private fun toQuery(queryString: String): Query? {
     val match = queryRegex.matchEntire(queryString) ?: return null
     return Query(
-        match.groups[1]!!.value,
-        match.groups[2]!!.value,
-        match.groups[3]!!.value,
-        match.groups[4]!!.value,
-        match.groups[5]?.value
+        ruleName = match.groups[QUERY_REGEX_RULE_NAME]!!.value,
+        discordId = match.groups[QUERY_REGEX_DISCORD_ID]!!.value,
+        discordUsername = match.groups[QUERY_REGEX_DISCORD_USERNAME]!!.value,
+        discordDiscriminator = match.groups[QUERY_REGEX_DISCORD_DISCRIMINATOR]!!.value,
+        email = match.groups[QUERY_REGEX_EMAIL_ADDRESS]?.value
     )
 }

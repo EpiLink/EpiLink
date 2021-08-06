@@ -50,6 +50,7 @@ fun ErrorCode.toResponse(
  * @property code The integer code associated with this error code
  * @property description A human-readable description of this error code.
  */
+@Suppress("MagicNumber") // This is the definition for codes, so replacing them by constants doesn't matter
 enum class StandardErrorCodes(override val code: Int, override val description: String) : ErrorCode {
     // Special
 

@@ -12,6 +12,8 @@ import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import org.epilink.bot.EpiLinkException
 
+private const val HEXADECIMAL = 16
+
 /**
  * Represents an embed that can be sent in a Discord message. Use [EmbedCreateSpec.from] (an extension function) to
  * fill an embed create spec with the embed information contained in a DiscordEmbed object.
@@ -70,7 +72,7 @@ data class DiscordEmbed(
             // (runCatching is missing a contract to let the compiler know)
             this.color.startsWith("#") -> runCatching {
                 @Suppress("UnsafeCallOnNullableType")
-                Color.of(Integer.parseInt(this.color!!.substring(1), 16))
+                Color.of(Integer.parseInt(this.color!!.substring(1), HEXADECIMAL))
             }.getOrElse { throw EpiLinkException("Invalid hexadecimal color format: $color", it) }
             else -> {
                 // Try and parse a Color static field

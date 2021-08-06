@@ -17,6 +17,9 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
+private const val UPDATE_CHUNK_SIZE = 10
+private const val UPDATE_DELAY_BETWEEN_INVALIDATION = 20L
+
 /**
  * Implementation of an update command, which can be used to invalidate roles of members.
  */
@@ -98,9 +101,9 @@ class UpdateCommand : Command, KoinComponent {
         originalMessageId: String
     ) = updateLauncherScope.launch {
         var errorsEncountered = false
-        targets.asSequence().chunked(10).forEach { part ->
+        targets.asSequence().chunked(UPDATE_CHUNK_SIZE).forEach { part ->
             part.map {
-                delay(20)
+                delay(UPDATE_DELAY_BETWEEN_INVALIDATION)
                 it to async(SupervisorJob()) { roleManager.invalidateAllRoles(it, false) }
             }.forEach {
                 try {
