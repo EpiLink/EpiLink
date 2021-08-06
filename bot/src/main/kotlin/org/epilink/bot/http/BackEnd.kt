@@ -107,6 +107,7 @@ internal class BackEndImpl : BackEnd, KoinComponent {
         install(Locations)
     }
 
+    @Suppress("TooGenericExceptionCaught") // Catching all exceptinos is the entire point here
     override fun Route.installErrorHandling() {
         // Make sure that exceptions are not left for Ktor to try and figure out.
         // Ktor would figure it out, but we a) need to log them b) respond with an ApiResponse
@@ -115,17 +116,12 @@ internal class BackEndImpl : BackEnd, KoinComponent {
                 coroutineScope {
                     proceed()
                 }
-            } catch (ex: EndpointException) {
-                when (ex) {
-                    is UserEndpointException -> {
-                        logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
-                        call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
-                    }
-                    is InternalEndpointException -> {
-                        logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}", ex)
-                        call.respond(HttpStatusCode.InternalServerError, ex.toApiResponse())
-                    }
-                }
+            } catch (ex: UserEndpointException) {
+                logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
+                call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
+            } catch (ex: InternalEndpointException) {
+                logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}", ex)
+                call.respond(HttpStatusCode.InternalServerError, ex.toApiResponse())
             } catch (ex: Exception) {
                 logger.error(
                     "Uncaught exception encountered while processing v1 API call. Catch it and return a proper thing!",

@@ -55,7 +55,7 @@ interface DiscordMessages {
      * `key.title` and `key.description`, where key is the [key] argument. The [objects] are used for formatting the
      * description only.
      */
-    fun getErrorCommandReply(language: String, key: String, vararg objects: Any, titleObjects: List<Any> = listOf()): DiscordEmbed
+    fun getErrorCommandReply(language: String, key: String, objects: List<Any> = listOf(), titleObjects: List<Any> = listOf()): DiscordEmbed
 
     /**
      * Embed for an invalid target given in a command body.
@@ -65,7 +65,7 @@ interface DiscordMessages {
     /**
      * Generic embed for a successful command result.
      */
-    fun getSuccessCommandReply(language: String, messageKey: String, vararg messageArgs: Any): DiscordEmbed
+    fun getSuccessCommandReply(language: String, messageKey: String, messageArgs: List<Any> = listOf()): DiscordEmbed
 
     /**
      * Embed for the help message. Simply shows the URL to the documentation
@@ -110,8 +110,8 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
 
     override fun getCouldNotJoinEmbed(language: String, guildName: String, reason: String) = language.ctx {
         DiscordEmbed(
-            title = i18n["cnj.title"].f(guildName),
-            description = i18n["cnj.description"].f(guildName),
+            title = i18n["cnj.title"].f(listOf(guildName)),
+            description = i18n["cnj.description"].f(listOf(guildName)),
             fields = listOf(DiscordEmbedField(i18n["cnj.reason"], reason, true)),
             footer = poweredByEpiLink,
             color = ERROR_RED
@@ -123,8 +123,8 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
         if (!guildConfig.enableWelcomeMessage)
             null
         else guildConfig.welcomeEmbed ?: DiscordEmbed(
-            title = i18n["greet.title"].f(guildName),
-            description = i18n["greet.welcome"].f(guildName),
+            title = i18n["greet.title"].f(listOf(guildName)),
+            description = i18n["greet.welcome"].f(listOf(guildName)),
             fields = run {
                 val ml = mutableListOf<DiscordEmbedField>()
                 val welcomeUrl = config.welcomeUrl
@@ -132,7 +132,7 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
                     ml += DiscordEmbedField(i18n["greet.logIn"], welcomeUrl)
                 ml += DiscordEmbedField(
                     i18n["greet.needHelp"],
-                    i18n["greet.contact"].f(guildName)
+                    i18n["greet.contact"].f(listOf(guildName))
                 )
                 ml
             },
@@ -152,7 +152,7 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
             val discloseId = privacyConfig.shouldDiscloseIdentity(automated)
             val authorKey = if (discloseId) "Author" else ""
             val autoKey = if (automated) "Auto" else ""
-            val str = i18n["ida.access$authorKey$autoKey"].let { if (discloseId) it.f(author) else it }
+            val str = i18n["ida.access$authorKey$autoKey"].let { if (discloseId) it.f(listOf(author)) else it }
             DiscordEmbed(
                 title = i18n["ida.title"],
                 description = str,
@@ -181,7 +181,7 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
                         DiscordEmbedField(i18n["bn.reason"], banReason),
                         DiscordEmbedField(
                             i18n["bn.expiry.title"],
-                            banExpiry?.let { i18n["bn.expiry.date"].f(it.getDate(), it.getTime()) }
+                            banExpiry?.let { i18n["bn.expiry.date"].f(listOf(it.getDate(), it.getTime())) }
                                 ?: i18n["bn.expiry.none"]
                         )
                     ),
@@ -197,12 +197,12 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
     override fun getErrorCommandReply(
         language: String,
         key: String,
-        vararg objects: Any,
+        objects: List<Any>,
         titleObjects: List<Any>
     ): DiscordEmbed = language.ctx {
         DiscordEmbed(
-            title = i18n["$key.title"].f(*titleObjects.toTypedArray()),
-            description = i18n["$key.description"].f(*objects),
+            title = i18n["$key.title"].f(titleObjects),
+            description = i18n["$key.description"].f(objects),
             color = ERROR_RED,
             footer = poweredByEpiLink
         )
@@ -211,11 +211,11 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
     override fun getWrongTargetCommandReply(language: String, target: String): DiscordEmbed = language.ctx {
         DiscordEmbed(
             title = i18n["cr.wt.title"],
-            description = i18n["cr.wt.description"].f(target),
+            description = i18n["cr.wt.description"].f(listOf(target)),
             fields = listOf(
                 DiscordEmbedField(
                     i18n["cr.wt.help.title"],
-                    i18n["cr.wt.help.description"].f(TARGETS_DOCS_URL)
+                    i18n["cr.wt.help.description"].f(listOf(TARGETS_DOCS_URL))
                 )
             ),
             color = ERROR_RED,
@@ -223,11 +223,11 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
         )
     }
 
-    override fun getSuccessCommandReply(language: String, messageKey: String, vararg messageArgs: Any): DiscordEmbed =
+    override fun getSuccessCommandReply(language: String, messageKey: String, messageArgs: List<Any>): DiscordEmbed =
         language.ctx {
             DiscordEmbed(
                 title = i18n["cr.ok.title"],
-                description = i18n[messageKey].f(*messageArgs),
+                description = i18n[messageKey].f(messageArgs),
                 color = OK_GREEN,
                 footer = poweredByEpiLink
             )
@@ -240,7 +240,7 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
             fields = if (withAdminHelp) listOf(
                 DiscordEmbedField(
                     i18n["help.admin.title"],
-                    i18n["help.admin.description"].f(COMMANDS_DOCS_URL),
+                    i18n["help.admin.description"].f(listOf(COMMANDS_DOCS_URL)),
                     false
                 )
             ) else listOf(),

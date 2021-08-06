@@ -55,7 +55,7 @@ interface RoleManager {
      *
      * @param guilds Vararg of guildIDs
      */
-    suspend fun getRulesRelevantForGuilds(vararg guilds: String): List<RuleWithRequestingGuilds>
+    suspend fun getRulesRelevantForGuilds(guilds: List<String>): List<RuleWithRequestingGuilds>
 
     /**
      * Handles the event where a user joins a server where the bot is.
@@ -155,7 +155,7 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
             guilds.filter { config.isMonitored(it) && facade.isUserInGuild(discordId, it) }
         logger.debug { "Only updating ${discordId}'s roles on ${whereConnected.joinToString(", ")}" }
         // Get the relevant rules
-        val rules = getRulesRelevantForGuilds(*whereConnected.toTypedArray())
+        val rules = getRulesRelevantForGuilds(whereConnected)
         logger.debug { "Updating ${discordId}'s roles requires calling the rules ${rules.joinToString(", ") { it.rule.name }}" }
         // Compute the roles
         val (roles, bypassStickyRules) = getRolesForUser(discordId, rules, tellUserIfFailed, guilds)
@@ -196,7 +196,7 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
     }
 
     override suspend fun getRulesRelevantForGuilds(
-        vararg guilds: String
+        guilds: List<String>
     ): List<RuleWithRequestingGuilds> = withContext(Dispatchers.Default) {
         // Maps role names to their rules in the global config
         // val rolesInGlobalConfig = config.roles.associateBy({ it.name }, { it.rule })

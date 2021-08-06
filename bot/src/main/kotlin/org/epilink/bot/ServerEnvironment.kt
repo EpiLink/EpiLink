@@ -180,7 +180,7 @@ class ServerEnvironment(
         }
 
         logger.debug { "Starting components" }
-        try {
+        runCatching {
             runBlocking {
                 coroutineScope {
                     launch {
@@ -205,9 +205,8 @@ class ServerEnvironment(
             }
             logger.debug { "Starting server" }
             app.koin.get<HttpServer>().startServer(wait = true)
-        } catch (ex: Exception) {
-            logger.error("Encountered an exception on initialization", ex)
-            return
+        }.onFailure {
+            logger.error("Encountered an exception on initialization", it)
         }
     }
 }

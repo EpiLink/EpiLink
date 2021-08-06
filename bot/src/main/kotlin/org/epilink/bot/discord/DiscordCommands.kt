@@ -185,7 +185,7 @@ internal class DiscordCommandsImpl : DiscordCommands, KoinComponent {
             is UnknownCommand ->
                 client.sendChannelMessage(
                     channelId,
-                    msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.ic", a.name, titleObjects = listOf(a.name))
+                    msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.ic", objects = listOf(a.name), titleObjects = listOf(a.name))
                 ).also { logger.debugReject("unknown command", message, senderId, channelId, serverId) }
             is Accept -> {
                 // Do the thing

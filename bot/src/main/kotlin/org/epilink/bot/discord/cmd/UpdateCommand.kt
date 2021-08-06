@@ -59,18 +59,19 @@ class UpdateCommand : Command, KoinComponent {
         val (toInvalidate, messageAndReplace) = when (target) {
             is TargetResult.User -> {
                 logger.debug { "Updating ${target.id}'s roles globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
-                listOf(target.id) to ("update.user" to arrayOf())
+                listOf(target.id) to ("update.user" to listOf())
             }
             is TargetResult.Role -> {
                 logger.debug { "Updating everyone with role ${target.id} globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
                 client.getMembersWithRole(target.id, guildId).let {
-                    it to ("update.role" to arrayOf<Any>(target.id, it.size))
+                    it to ("update.role" to listOf(target.id, it.size))
                 }
             }
             TargetResult.Everyone -> {
                 logger.debug { "Updating everyone on server $guildId globally (cmd from ${sender.discordId} on channel $channelId, guild $guildId)" }
                 client.getMembers(guildId).let {
-                    it to ("update.everyone" to arrayOf(it.size))
+                    @Suppress("ArrayPrimitive") // Required to use Array<Int> for typing consistency
+                    it to ("update.everyone" to listOf(it.size))
                 }
             }
             is TargetResult.RoleNotFound -> {
@@ -85,11 +86,12 @@ class UpdateCommand : Command, KoinComponent {
         val (message, replace) = messageAndReplace
         val messageId = client.sendChannelMessage(
             channelId,
-            msg.getSuccessCommandReply(i18n.getLanguage(senderId), message, *replace)
+            msg.getSuccessCommandReply(i18n.getLanguage(senderId), message, replace)
         )
         startUpdate(toInvalidate, channelId, messageId)
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun startUpdate(
         targets: List<String>,
         originalChannelId: String,

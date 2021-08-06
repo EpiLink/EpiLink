@@ -27,9 +27,10 @@ class DiscordI18nContext(private val language: String) {
     /**
      * Format the given string with the given language, inferring the language from this i18n context.
      */
-    fun String.f(vararg objects: Any): String {
+    fun String.f(objects: List<Any>): String {
         val locale = Locale.forLanguageTag(language)
-        return String.format(locale, this, *objects)
+        @Suppress("SpreadOperator") // No other choice here
+        return String.format(locale, this, *objects.toTypedArray())
     }
 }
 

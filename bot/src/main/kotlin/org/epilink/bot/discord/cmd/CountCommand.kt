@@ -59,6 +59,6 @@ class CountCommand : Command, KoinComponent {
     }
 
     private suspend fun success(senderId: String, size: Int) : DiscordEmbed {
-        return msg.getSuccessCommandReply(i18n.getLanguage(senderId), "count.success", size)
+        return msg.getSuccessCommandReply(i18n.getLanguage(senderId), "count.success", listOf(size))
     }
 }

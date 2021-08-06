@@ -202,7 +202,7 @@ class MessagesTest : KoinBaseTest<DiscordMessages>(
         }
         test {
             val embed =
-                getErrorCommandReply("", "kkk", titleObjects = listOf("to1", "to2"), objects = arrayOf("obj1", "obj2"))
+                getErrorCommandReply("", "kkk", titleObjects = listOf("to1", "to2"), objects = listOf("obj1", "obj2"))
             assertEquals("#8A0303", embed.color)
             assertEquals("title::to1::to2", embed.title)
             assertEquals("desc::obj1::obj2", embed.description)
