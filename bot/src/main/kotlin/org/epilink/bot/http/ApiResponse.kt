@@ -14,6 +14,7 @@ package org.epilink.bot.http
  *
  * @param T The type of the data, or `Nothing?` if no data is expected.
  */
+@Suppress("ConstructorParameterNaming")
 sealed class ApiResponse<T>(
     /**
      * A message (in English) explaining the success or failure. If success is false, this should be non-null.
@@ -48,6 +49,7 @@ sealed class ApiResponse<T>(
  *
  * Create instances of this by using the [of] functions
  */
+@Suppress("ConstructorParameterNaming")
 class ApiSuccessResponse<T> private constructor(
     message: String? = null,
     message_i18n: String? = null,
@@ -66,8 +68,8 @@ class ApiSuccessResponse<T> private constructor(
         /**
          * Create a success response from all of the provided values. See [ApiResponse] for details.
          */
-        fun <T> of(message: String, message_i18n: String, message_i18n_data: Map<String, String> = mapOf(), data: T) =
-            ApiSuccessResponse(message, message_i18n, message_i18n_data, data)
+        fun <T> of(message: String, messageI18n: String, messageI18nData: Map<String, String> = mapOf(), data: T) =
+            ApiSuccessResponse(message, messageI18n, messageI18nData, data)
     }
 
     override val success: Boolean
@@ -77,6 +79,7 @@ class ApiSuccessResponse<T> private constructor(
 /**
  * Sent when something wrong happens. A message must be provided.
  */
+@Suppress("ConstructorParameterNaming")
 class ApiErrorResponse(
     message: String,
     message_i18n: String,
@@ -100,7 +103,7 @@ data class ApiErrorData(val code: Int, val description: String)
  */
 fun apiSuccess(
     message: String,
-    message_i18n: String,
-    message_i18n_data: Map<String, String> = mapOf()
+    messageI18n: String,
+    messageI18nData: Map<String, String> = mapOf()
 ): ApiResponse<Nothing?> =
-    ApiSuccessResponse.of(message, message_i18n, message_i18n_data, null)
+    ApiSuccessResponse.of(message, messageI18n, messageI18nData, null)

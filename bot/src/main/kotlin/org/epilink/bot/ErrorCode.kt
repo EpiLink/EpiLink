@@ -40,9 +40,9 @@ fun ErrorCode.toResponse() = ApiErrorResponse(description, "err.$code", mapOf(),
  */
 fun ErrorCode.toResponse(
     description: String,
-    description_i18n: String,
-    description_i18n_data: Map<String, String> = mapOf()
-) = ApiErrorResponse(description, description_i18n, description_i18n_data, toErrorData())
+    descriptionI18n: String,
+    descriptionI18nData: Map<String, String> = mapOf()
+) = ApiErrorResponse(description, descriptionI18n, descriptionI18nData, toErrorData())
 
 /**
  * Standard error codes of the EpiLink API.
