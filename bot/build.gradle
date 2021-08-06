@@ -16,7 +16,7 @@ repositories {
 
 compileKotlin {
     kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn"]
+    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=io.ktor.locations.KtorExperimentalLocationsAPI"]
 }
 
 compileTestKotlin {
@@ -37,6 +37,8 @@ dependencies {
     implementation "io.ktor:ktor-server-netty:$ktorVersion"
     implementation "io.ktor:ktor-auth:$ktorVersion"
     implementation "io.ktor:ktor-jackson:$ktorVersion"
+    implementation "io.ktor:ktor-locations:$ktorVersion"
+
     implementation "io.ktor:ktor-client-apache:$ktorVersion"
     implementation "io.ktor:ktor-client-auth-jvm:$ktorVersion"
 
