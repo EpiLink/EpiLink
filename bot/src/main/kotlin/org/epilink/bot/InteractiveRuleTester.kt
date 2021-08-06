@@ -91,19 +91,22 @@ private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (R
         println("<!> No rule exists named ${query.ruleName}")
         return
     }
-    if (rule is StrongIdentityRule && query.email == null) {
-        println("<!> Rule ${query.ruleName} requires an e-mail address (it is a strong identity rule).")
-        return
-    }
     print("(i) Running rule ${query.ruleName}... ")
     runCatching {
         when (rule) {
-            is StrongIdentityRule -> rule.determineRoles(
-                query.discordId,
-                query.discordUsername,
-                query.discordDiscriminator,
-                query.email!!
-            )
+            is StrongIdentityRule -> {
+                if (query.email == null) {
+                    println("<!> Rule ${query.ruleName} requires an e-mail address (it is a strong identity rule).")
+                    error("E-mail address required")
+                }
+
+                rule.determineRoles(
+                    query.discordId,
+                    query.discordUsername,
+                    query.discordDiscriminator,
+                    query.email
+                )
+            }
             is WeakIdentityRule -> rule.determineRoles(
                 query.discordId,
                 query.discordUsername,
@@ -140,6 +143,7 @@ private data class Query(
     val email: String?
 )
 
+@Suppress("UnsafeCallOnNullableType") // Impossible for groups to be null on match due to the Regex.
 private fun toQuery(queryString: String): Query? {
     val match = queryRegex.matchEntire(queryString) ?: return null
     return Query(

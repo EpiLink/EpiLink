@@ -92,7 +92,7 @@ interface DatabaseFacade {
     suspend fun recordNewIdentity(user: User, newEmail: String)
 
     /**
-     * Erase the identity of the given user. This function does not perform any checks on the given parameters.
+     * Erase the identity of the given user. Does nothing if the user does not have a recorded identity.
      *
      * @param user The user whose identity should be erased.
      */

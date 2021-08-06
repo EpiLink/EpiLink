@@ -84,6 +84,7 @@ suspend fun <T> httpGetJson(url: String, auth: Auth?, responseType: TypeReferenc
 
                     header(HttpHeaders.Authorization, "Basic $encoded")
                 }
+                null -> { /* No headers required */ }
             }
         }
     }.getOrElse {

@@ -66,14 +66,16 @@ data class DiscordEmbed(
     val d4jColor: Color? by lazy {
         when {
             this.color == null -> null
+            // Color is guaranteed to not be null at this point, so we can just !! it
+            // (runCatching is missing a contract to let the compiler know)
             this.color.startsWith("#") -> runCatching {
-                // Color is guaranteed to not be null at this point, so we can just !! it
-                // (runCatching is missing a contract to let the compiler know)
+                @Suppress("UnsafeCallOnNullableType")
                 Color.of(Integer.parseInt(this.color!!.substring(1), 16))
             }.getOrElse { throw EpiLinkException("Invalid hexadecimal color format: $color", it) }
             else -> {
                 // Try and parse a Color static field
                 runCatching {
+                    @Suppress("UnsafeCallOnNullableType")
                     Color::class.java.getField(this.color!!.uppercase()).get(null) as? Color
                 }.getOrElse { throw EpiLinkException("Unrecognized color: $color", it) }
             }

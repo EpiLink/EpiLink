@@ -16,6 +16,7 @@ import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
+import io.ktor.locations.*
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.routing
@@ -103,6 +104,7 @@ internal class BackEndImpl : BackEnd, KoinComponent {
         }
 
         install(RateLimit)
+        install(Locations)
     }
 
     override fun Route.installErrorHandling() {

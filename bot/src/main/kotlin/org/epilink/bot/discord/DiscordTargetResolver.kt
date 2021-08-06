@@ -122,6 +122,7 @@ internal class DiscordTargetsImpl : DiscordTargets, KoinComponent {
         if (angled != null) {
             // Pinged someone or pinged a role
             val isRole = angled.groups[1] != null
+            @Suppress("UnsafeCallOnNullableType") // Cannot be null on match due to Regex
             val id = angled.groups[2]!!.value
             return if (isRole) RoleById(id) else UserById(id)
         } else {

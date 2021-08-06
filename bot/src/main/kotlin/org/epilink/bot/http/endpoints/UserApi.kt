@@ -76,6 +76,7 @@ internal class UserApiImpl : UserApi, KoinComponent {
         @ApiEndpoint("GET /api/v1/user")
         @OptIn(UsesTrueIdentity::class) // returns whether user is identifiable or not
         get {
+            @Suppress("UnsafeCallOnNullableType") // session is already check by interceptor
             val session = call.sessions.get<ConnectedSession>()!!
             logger.debug { "Returning user data session information for ${session.discordId} (${session.discordUsername})" }
             call.respond(HttpStatusCode.OK, ApiSuccessResponse.of(session.toUserInformation(call.user)))

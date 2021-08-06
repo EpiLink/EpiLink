@@ -198,8 +198,7 @@ abstract class ExposedDatabaseFacade : DatabaseFacade {
     override suspend fun eraseIdentity(user: User) {
         val exUser = user.asExposed()
         t {
-            exUser.trueIdentity!! // We don't care about error cases, callers are responsible for checks
-                .delete()
+            exUser.trueIdentity?.delete()
         }
     }
 
