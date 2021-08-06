@@ -21,8 +21,8 @@ import io.ktor.server.testing.withTestApplication
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.*
-import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.config.RateLimitingProfile
+import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.BanManager
 import org.epilink.bot.discord.RoleManager

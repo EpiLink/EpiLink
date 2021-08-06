@@ -20,11 +20,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
-import org.epilink.bot.InternalEndpointException
-import org.epilink.bot.UserEndpointException
 import org.epilink.bot.EndpointException
+import org.epilink.bot.InternalEndpointException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
+import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
@@ -44,13 +44,13 @@ class DiscordBackEnd(
     private val client: HttpClient by inject()
 
     private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" +
-            listOf(
-                "response_type=code",
-                "client_id=${clientId}",
-                // Allows access to user information (w/o email address)
-                "scope=identify",
-                "prompt=consent"
-            ).joinToString("&")
+        listOf(
+            "response_type=code",
+            "client_id=$clientId",
+            // Allows access to user information (w/o email address)
+            "scope=identify",
+            "prompt=consent"
+        ).joinToString("&")
 
     /**
      * Consume the authcode and return a token.
@@ -81,16 +81,16 @@ class DiscordBackEnd(
                 val error = data["error"] as? String
                 val isCodeError =
                     error == "invalid_grant" ||
-                            (data["error_description"] as? String)?.contains("Invalid \"code\"") ?: false
-                if (isCodeError)
+                        (data["error_description"] as? String)?.contains("Invalid \"code\"") ?: false
+                if (isCodeError) {
                     throw UserEndpointException(InvalidAuthCode, "Invalid authorization code", "oa.iac", cause = ex)
-                else
+                } else {
                     throw InternalEndpointException(
                         DiscordApiFailure,
                         "Discord OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
                         ex
                     )
-
+                }
             } else {
                 throw InternalEndpointException(
                     DiscordApiFailure,

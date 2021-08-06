@@ -10,17 +10,21 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.features.*
-import io.ktor.client.request.*
-import io.ktor.content.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.receive
+import io.ktor.client.features.ClientRequestException
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.content.TextContent
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.ParametersBuilder
+import io.ktor.http.formUrlEncode
 import org.epilink.bot.EndpointException
 import org.epilink.bot.InternalEndpointException
-import org.epilink.bot.UserEndpointException
 import org.epilink.bot.StandardErrorCodes.IdentityProviderApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
+import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.getList
 import org.epilink.bot.rulebook.getString
@@ -41,9 +45,9 @@ class IdentityProvider(
 ) : KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.identityProvider")
     private val authStub = "$authorizeUrl?" +
-            listOf(
-                "client_id=${clientId}",
-                "response_type=code",
+        listOf(
+            "client_id=$clientId",
+            "response_type=code",
                 /*
                  * Only useful for Microsoft, which prompts the "select an account" screen, since users may have
                  * multiple accounts (e.g. their work account and their personal account)
@@ -52,9 +56,9 @@ class IdentityProvider(
                  * > The authorization server MUST ignore unrecognized request parameters.
                  * So we can leave it in, servers that do not support that parameter will ignore it.
                  */
-                "prompt=select_account",
-                "scope=openid%20profile%20email"
-            ).joinToString("&")
+            "prompt=select_account",
+            "scope=openid%20profile%20email"
+        ).joinToString("&")
 
     private val client: HttpClient by inject()
     private val jwtVerifier: JwtVerifier by inject()
@@ -92,8 +96,10 @@ class IdentityProvider(
                     )
                     else -> throw InternalEndpointException(
                         IdentityProviderApiFailure,
-                        "Identity Provider OAuth failed: $error (" + (data["error_description"]
-                            ?: "no description") + ")",
+                        "Identity Provider OAuth failed: $error (" + (
+                            data["error_description"]
+                                ?: "no description"
+                            ) + ")",
                         ex
                     )
                 }

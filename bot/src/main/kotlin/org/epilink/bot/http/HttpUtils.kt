@@ -21,7 +21,10 @@ import io.ktor.http.ParametersBuilder
  * Utility function for appending classic OAuth parameters to a ParametersBuilder object all at once.
  */
 fun ParametersBuilder.appendOauthParameters(
-    clientId: String, secret: String, authcode: String, redirectUri: String
+    clientId: String,
+    secret: String,
+    authcode: String,
+    redirectUri: String
 ) {
     append("grant_type", "authorization_code")
     append("client_id", clientId)

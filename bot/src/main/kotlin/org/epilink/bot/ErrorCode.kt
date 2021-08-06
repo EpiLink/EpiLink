@@ -97,7 +97,8 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     IdentityAlreadyKnown(110, "The identity of this account is already registered in the database"),
 
     /**
-     *  This account's identity cannot be removed, because it is not present in the database (for the `/user/identity` endpoint)
+     *  This account's identity cannot be removed, because it is not present in the database (for the `/user/identity`
+     *  endpoint)
      */
     IdentityAlreadyUnknown(111, "The identity of this account already does not exist in the database"),
 
@@ -109,7 +110,10 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     /**
      * This account's identity cannot be removed because it is on cooldown to prevent abuse.
      */
-    IdentityRemovalOnCooldown(113, "This account's identity cannot be removed at this time: please wait before retrying."),
+    IdentityRemovalOnCooldown(
+        113,
+        "This account's identity cannot be removed at this time: please wait before retrying."
+    ),
 
     // ************ 2xx: External services errors ************
     /**

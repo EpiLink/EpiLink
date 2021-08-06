@@ -55,7 +55,12 @@ interface DiscordMessages {
      * `key.title` and `key.description`, where key is the [key] argument. The [objects] are used for formatting the
      * description only.
      */
-    fun getErrorCommandReply(language: String, key: String, objects: List<Any> = listOf(), titleObjects: List<Any> = listOf()): DiscordEmbed
+    fun getErrorCommandReply(
+        language: String,
+        key: String,
+        objects: List<Any> = listOf(),
+        titleObjects: List<Any> = listOf()
+    ): DiscordEmbed
 
     /**
      * Embed for an invalid target given in a command body.
@@ -120,16 +125,17 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
 
     override fun getGreetingsEmbed(language: String, guildId: String, guildName: String): DiscordEmbed? = language.ctx {
         val guildConfig = config.getConfigForGuild(guildId)
-        if (!guildConfig.enableWelcomeMessage)
+        if (!guildConfig.enableWelcomeMessage) {
             null
-        else guildConfig.welcomeEmbed ?: DiscordEmbed(
+        } else guildConfig.welcomeEmbed ?: DiscordEmbed(
             title = i18n["greet.title"].f(listOf(guildName)),
             description = i18n["greet.welcome"].f(listOf(guildName)),
             fields = run {
                 val ml = mutableListOf<DiscordEmbedField>()
                 val welcomeUrl = config.welcomeUrl
-                if (welcomeUrl != null)
+                if (welcomeUrl != null) {
                     ml += DiscordEmbedField(i18n["greet.logIn"], welcomeUrl)
+                }
                 ml += DiscordEmbedField(
                     i18n["greet.needHelp"],
                     i18n["greet.contact"].f(listOf(guildName))
@@ -270,9 +276,9 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
         DiscordEmbed(
             title = i18n["welcomeLang.current"],
             description = i18n["welcomeLang.description"] + "\n\n" +
-                    (i18n.preferredLanguages - i18n.defaultLanguage).joinToString("\n\n") {
-                        i18n.get(it, "welcomeLang.change")
-                    },
+                (i18n.preferredLanguages - i18n.defaultLanguage).joinToString("\n\n") {
+                    i18n.get(it, "welcomeLang.change")
+                },
             color = HELLO_BLUE
             // No powered by epilink footer because this embed is sent right before another one. Having a "powered
             // by epilink" footer on both is obnoxious.

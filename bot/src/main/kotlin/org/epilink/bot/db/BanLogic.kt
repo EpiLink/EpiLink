@@ -29,8 +29,9 @@ interface BanLogic {
 @OptIn(KoinApiExtension::class)
 internal class BanLogicImpl : KoinComponent, BanLogic {
     override fun isBanActive(ban: Ban): Boolean {
-        if(ban.revoked)
+        if (ban.revoked) {
             return false
+        }
         val expiry = ban.expiresOn ?: return true
         return expiry.isAfter(Instant.now())
     }

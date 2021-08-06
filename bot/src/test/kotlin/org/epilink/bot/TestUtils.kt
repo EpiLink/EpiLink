@@ -60,14 +60,16 @@ fun KoinTest.declareClientHandler(onlyMatchUrl: String? = null, handler: MockReq
     declare {
         HttpClient(MockEngine) {
             engine {
-                addHandler(onlyMatchUrl?.let {
-                    { request ->
-                        when (request.url.fullUrl) {
-                            onlyMatchUrl -> handler(request)
-                            else -> error("Url ${request.url.fullUrl} does not match expected URL $onlyMatchUrl")
+                addHandler(
+                    onlyMatchUrl?.let {
+                        { request ->
+                            when (request.url.fullUrl) {
+                                onlyMatchUrl -> handler(request)
+                                else -> error("Url ${request.url.fullUrl} does not match expected URL $onlyMatchUrl")
+                            }
                         }
-                    }
-                } ?: handler)
+                    } ?: handler
+                )
             }
         }
     }

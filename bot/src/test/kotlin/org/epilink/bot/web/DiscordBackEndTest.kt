@@ -14,12 +14,12 @@ import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.*
 import io.ktor.util.KtorExperimentalAPI
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.EndpointException
+import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.declareClientHandler
-import org.epilink.bot.http.DiscordUserInfo
 import org.epilink.bot.http.DiscordBackEnd
+import org.epilink.bot.http.DiscordUserInfo
 import org.koin.dsl.module
 import kotlin.test.*
 
@@ -40,7 +40,6 @@ class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
             assertFalse(contains("redirect_uri"), "Expected redirect_uri to be absent")
         }
     }
-
 
     @Test
     fun `Test Discord token retrieval`() {

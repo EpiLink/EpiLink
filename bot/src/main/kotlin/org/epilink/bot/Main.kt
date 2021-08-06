@@ -18,8 +18,18 @@ import com.xenomachina.argparser.mainBody
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.request.get
-import kotlinx.coroutines.*
-import org.epilink.bot.config.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.epilink.bot.config.ConfigError
+import org.epilink.bot.config.ConfigInfo
+import org.epilink.bot.config.ConfigWarning
+import org.epilink.bot.config.Configuration
+import org.epilink.bot.config.isConfigurationSane
+import org.epilink.bot.config.loadConfigFromFile
 import org.epilink.bot.http.MetadataOrFailure
 import org.epilink.bot.http.identityProviderMetadataFromDiscovery
 import org.epilink.bot.rulebook.Rulebook
@@ -30,7 +40,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.*
+import java.util.Properties
 import kotlin.streams.asSequence
 import kotlin.system.exitProcess
 
@@ -93,7 +103,10 @@ fun main(args: Array<String>) = mainBody("epilink") {
         return@mainBody
     }
 
-    logger.info("EpiLink version $VERSION, starting right up! See $DOCS for documentation. Report issues and suggestions at $BUGS and join our Discord server for help.")
+    logger.info(
+        "EpiLink version $VERSION, starting right up! See $DOCS for documentation. Report issues and " +
+                "suggestions at $BUGS and join our Discord server for help."
+    )
     if (cliArgs.verbose) {
         val ctx = LoggerFactory.getILoggerFactory() as LoggerContext
         ctx.getLogger("epilink").level = Level.DEBUG
@@ -106,7 +119,10 @@ fun main(args: Array<String>) = mainBody("epilink") {
         val cfg = runCatching { loadConfigFromFile(cfgPath) }.getOrElse { exc ->
             logger.debug(exc) { "Encountered exception on config load" }
             when (exc) {
-                is java.nio.file.NoSuchFileException -> logger.error("Failed to load config, could not find config file $cfgPath")
+                is java.nio.file.NoSuchFileException -> logger.error(
+                    "Failed to load config, could not find config " +
+                            "file $cfgPath"
+                )
                 is JsonParseException -> logger.error("Failed to parse YAML file, wrong syntax: ${exc.message}")
                 is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
                 else -> logger.error("Encountered an unexpected exception on config load", exc)
@@ -115,20 +131,28 @@ fun main(args: Array<String>) = mainBody("epilink") {
         }
 
         if (cfg.rulebook != null && cfg.rulebookFile != null) {
-            logger.error("Your configuration defines both a rulebook and a rulebookFile: please only use one of those.")
-            logger.info("Use rulebook if you are putting the rulebook code directly in the config file, or rulebookFile if you are putting the code in a separate file.")
+            logger.error("Your configuration defines both a rulebook and a rulebookFile: please only useone of those.")
+            logger.info(
+                "Use rulebook if you are putting the rulebook code directly in the config file, or " +
+                        "rulebookFile if you are putting the code in a separate file."
+            )
             exitProcess(EXIT_CODE_RULEBOOK_CLASH)
         }
 
         val idProviderMetadata = async {
             logger.info("Loading identity provider information...")
             val discoveryContent = download(cfg.idProvider.url + "/.well-known/openid-configuration")
-            when (val m = identityProviderMetadataFromDiscovery(
-                discoveryContent,
-                if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub"
-            )) {
+            when (
+                val m = identityProviderMetadataFromDiscovery(
+                    discoveryContent,
+                    if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub"
+                )
+            ) {
                 is MetadataOrFailure.Metadata -> m.metadata
-                is MetadataOrFailure.IncompatibleProvider -> error("The chosen provider is not compatible: ${m.reason}")
+                is MetadataOrFailure.IncompatibleProvider -> error(
+                    "The chosen provider is not compatible: " +
+                            m.reason
+                )
             }
         }
 
@@ -211,7 +235,10 @@ private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache:
             withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
                 val path = cfgPath.parent.resolve(file)
                 @Suppress("BlockingMethodInNonBlockingContext")
-                logger.info("Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this may take some time...")
+                logger.info(
+                    "Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this " +
+                            "may take some time..."
+                )
                 if (enableCache) {
                     loadRulesWithCache(path, LoggerFactory.getLogger("epilink.rulebookLoader"))
                 } else {
@@ -223,7 +250,10 @@ private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache:
     }
     if (rb != null) {
         if (!enableCache) {
-            logger.info("Rulebook caching is disabled, making startup slower. Set 'cacheRulebook' to 'true' in your config file to enable it.")
+            logger.info(
+                "Rulebook caching is disabled, making startup slower. Set 'cacheRulebook' to 'true' in your " +
+                        "config file to enable it."
+            )
         }
         logger.info("Rulebook loaded with ${rb.rules.size} rules.")
     }

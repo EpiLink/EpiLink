@@ -10,8 +10,8 @@ package org.epilink.bot.http
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.epilink.bot.UserEndpointException
 import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.UserEndpointException
 import org.jose4j.jwk.HttpsJwks
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver

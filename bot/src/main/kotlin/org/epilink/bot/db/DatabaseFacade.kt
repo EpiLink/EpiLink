@@ -53,7 +53,7 @@ interface DatabaseFacade {
     /**
      * Record a new ban against a user.
      */
-    suspend fun recordBan(target: ByteArray, until: Instant?, author: String, reason: String) : Ban
+    suspend fun recordBan(target: ByteArray, until: Instant?, author: String, reason: String): Ban
 
     /**
      * Mark a ban as revoked. Does nothing if the ban was already revoked.

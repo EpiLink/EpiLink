@@ -22,7 +22,14 @@ import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Permission
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import org.epilink.bot.EpiLinkException
@@ -51,9 +58,11 @@ internal class Discord4JFacadeImpl(
      * Coroutine scope used for firing things in events
      */
     private val scope =
-        CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
-            logger.error("Uncaught exception in Discord4J client", ex)
-        })
+        CoroutineScope(
+            Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
+                logger.error("Uncaught exception in Discord4J client", ex)
+            }
+        )
 
     /**
      * The actual Discord client
@@ -143,16 +152,18 @@ internal class Discord4JFacadeImpl(
                 toAdd.map { Snowflake.of(it) }
                     .minus(currentRoles)
                     .also { set ->
-                        if (set.isNotEmpty())
+                        if (set.isNotEmpty()) {
                             logger.debug { "Will only add " + set.joinToString(", ") { it.asString() } }
+                        }
                     }
                     .map { async { member.addRole(it).await() } }
             val removing =
                 toRemove.map { Snowflake.of(it) }
                     .intersect(currentRoles)
                     .also { set ->
-                        if (set.isNotEmpty())
+                        if (set.isNotEmpty()) {
                             logger.debug { "Will only remove " + set.joinToString(", ") { it.asString() } }
+                        }
                     }
                     .map { async { member.removeRole(it).await() } }
             if (adding.isEmpty() && removing.isEmpty()) {
@@ -186,10 +197,11 @@ internal class Discord4JFacadeImpl(
         return coroutineScope {
             members.map { m ->
                 async {
-                    if (m.roles.any { it.id == roleSnowflake }.awaitSingle())
+                    if (m.roles.any { it.id == roleSnowflake }.awaitSingle()) {
                         m.id.asString()
-                    else
+                    } else {
                         null
+                    }
                 }
             }.awaitAll().filterNotNull()
         }
@@ -259,9 +271,9 @@ internal class Discord4JFacadeImpl(
         try {
             this.privateChannel.awaitSingle()
         } catch (ex: ClientException) {
-            if (ex.errorCode == "50007")
+            if (ex.errorCode == "50007") {
                 throw UserDoesNotAcceptPrivateMessagesException(ex)
-            else throw EpiLinkException("Unexpected exception on private channel retrieval", ex)
+            } else throw EpiLinkException("Unexpected exception on private channel retrieval", ex)
         }
 
     /**
@@ -273,5 +285,4 @@ internal class Discord4JFacadeImpl(
 
     private val ClientException.errorCode: String?
         get() = this.errorResponse.orElse(null)?.fields?.get("code")?.toString()
-
 }

@@ -268,10 +268,11 @@ class RulebookBuilder {
     @RulebookDsl
     @Suppress("unused")
     fun emailValidator(v: EmailValidator) {
-        if (validator == null)
+        if (validator == null) {
             validator = v
-        else
+        } else {
             error("The e-mail validator was already defined elsewhere")
+        }
     }
 
     /**

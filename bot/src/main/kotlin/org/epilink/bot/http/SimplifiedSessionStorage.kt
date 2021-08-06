@@ -31,9 +31,11 @@ internal abstract class SimplifiedSessionStorage : SessionStorage {
     }
 
     override suspend fun write(id: String, provider: suspend (ByteWriteChannel) -> Unit) {
-        return provider(CoroutineScope(Dispatchers.IO).reader(coroutineContext, autoFlush = true) {
-            write(id, channel.readAvailable())
-        }.channel)
+        return provider(
+            CoroutineScope(Dispatchers.IO).reader(coroutineContext, autoFlush = true) {
+                write(id, channel.readAvailable())
+            }.channel
+        )
     }
 }
 
@@ -49,4 +51,3 @@ private suspend fun ByteReadChannel.readAvailable(): ByteArray = withContext(Dis
     }
     data.toByteArray()
 }
-

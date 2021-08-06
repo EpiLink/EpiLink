@@ -16,15 +16,18 @@ import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
-import io.ktor.locations.*
+import io.ktor.locations.Locations
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.routing
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.header
 import kotlinx.coroutines.coroutineScope
-import org.epilink.bot.*
+import org.epilink.bot.CacheClient
+import org.epilink.bot.EndpointException
+import org.epilink.bot.InternalEndpointException
 import org.epilink.bot.StandardErrorCodes.UnknownError
+import org.epilink.bot.UserEndpointException
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.http.endpoints.AdminEndpoints
 import org.epilink.bot.http.endpoints.MetaApi
@@ -32,6 +35,8 @@ import org.epilink.bot.http.endpoints.RegistrationApi
 import org.epilink.bot.http.endpoints.UserApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
+import org.epilink.bot.toApiResponse
+import org.epilink.bot.toResponse
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -139,8 +144,9 @@ internal class BackEndImpl : BackEnd, KoinComponent {
             userApi.install(this)
             registrationApi.install(this)
             metaApi.install(this)
-            if (wsCfg.enableAdminEndpoints)
+            if (wsCfg.enableAdminEndpoints) {
                 adminEndpoints.install(this)
+            }
         }
     }
 }

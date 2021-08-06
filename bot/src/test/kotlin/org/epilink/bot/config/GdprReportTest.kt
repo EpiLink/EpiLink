@@ -52,7 +52,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                 - Discord ID: 1234
                 - Identity Provider (testy) ID hash (Base64 URL-safe encoded): ${id.encodeBase64Url()}
                 - Account creation timestamp: $i
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }
@@ -71,7 +72,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                 You did not enable the "Remember my identity" feature.
             
                 - True identity: Not stored.
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }
@@ -100,7 +102,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                 Information stored because you enabled the "Remember my identity" feature.
             
                 - True identity: le identity
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }
@@ -123,7 +126,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                 The following list contains all of the bans against you.
                 
                 No known bans.
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }
@@ -171,7 +175,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                   - Reason: troisième cheh
                   - Issued on: $i3
                   - Expires on: Does not expire
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }
@@ -191,7 +196,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                 List of accesses made to your identity.
                 
                 No known ID access.
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }
@@ -233,7 +239,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                 - ID Access made on $i2 automatically
                   - Requester: ${if (identityDisclosed) "JacquelinBot" else "(undisclosed)"}
                   - Reason: g3t r3kt
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }
@@ -252,7 +259,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                 You can set and clear your language preferences using the "e!lang" command in Discord.
                 
                 Language preference: None
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }
@@ -271,7 +279,8 @@ class GdprReportTest : KoinBaseTest<GdprReport>(
                 You can set and clear your language preferences using the "e!lang" command in Discord.
                 
                 Language preference: howdy
-                """.trimIndent(), s
+                """.trimIndent(),
+                s
             )
         }
     }

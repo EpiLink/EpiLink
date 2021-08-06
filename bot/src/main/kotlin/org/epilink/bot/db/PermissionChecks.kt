@@ -27,7 +27,8 @@ interface PermissionChecks {
     suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory
 
     /**
-     * Checks whether an account with the given Identity Provider ID and e-mail address would be allowed to create an account.
+     * Checks whether an account with the given Identity Provider ID and e-mail address would be allowed to create an
+     * account.
      */
     suspend fun isIdentityProviderUserAllowedToCreateAccount(idpId: String, email: String): DatabaseAdvisory
 
@@ -78,20 +79,22 @@ internal class PermissionChecksImpl : PermissionChecks, KoinComponent {
     private val admins: List<String> by inject(named("admins"))
 
     override suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory {
-        return if (facade.doesUserExist(discordId))
+        return if (facade.doesUserExist(discordId)) {
             Disallowed("This Discord account already exists", "pc.dae")
-        else
+        } else {
             Allowed
+        }
     }
 
     override suspend fun isIdentityProviderUserAllowedToCreateAccount(idpId: String, email: String): DatabaseAdvisory {
         val hash = idpId.hashSha256()
-        if (facade.isIdentityAccountAlreadyLinked(hash))
+        if (facade.isIdentityAccountAlreadyLinked(hash)) {
             return Disallowed(
                 "This identity provider account is already linked to another account",
                 "pc.ala",
                 mapOf("idpIdHashHex" to hash.toHexString().let { it.substring(0, it.length / 2) })
             )
+        }
         if (rulebook.validator?.invoke(email) == false) { // == false because the left side can be true or null
             return Disallowed(
                 "This e-mail address was rejected. Are you sure you are using the correct identity provider account?",

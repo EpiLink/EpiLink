@@ -18,10 +18,8 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.mockk.*
 import org.epilink.bot.*
-import org.epilink.bot.web.ApiError
-import org.epilink.bot.web.ApiSuccess
-import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.config.RateLimitingProfile
+import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.db.*
 import org.epilink.bot.discord.RoleManager
 import org.epilink.bot.http.*
@@ -29,6 +27,8 @@ import org.epilink.bot.http.endpoints.RegistrationApi
 import org.epilink.bot.http.endpoints.RegistrationApiImpl
 import org.epilink.bot.http.endpoints.UserApi
 import org.epilink.bot.http.sessions.RegisterSession
+import org.epilink.bot.web.ApiError
+import org.epilink.bot.web.ApiSuccess
 import org.koin.dsl.module
 import org.koin.test.get
 import kotlin.test.Test

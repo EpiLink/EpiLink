@@ -9,7 +9,10 @@
 package org.epilink.bot
 
 import kotlinx.coroutines.runBlocking
-import org.epilink.bot.rulebook.*
+import org.epilink.bot.rulebook.Rulebook
+import org.epilink.bot.rulebook.StrongIdentityRule
+import org.epilink.bot.rulebook.WeakIdentityRule
+import org.epilink.bot.rulebook.loadRules
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -48,12 +51,12 @@ fun ruleTester(rulebookFile: String) = runBlocking {
         print(">>> ")
         val l = readLine() ?: exitProcess(0)
         handleLine(l, rulebook) {
-            if (it != null)
+            if (it != null) {
                 rulebook = it
-            else
+            } else {
                 println("<!> Loading failed. The rulebook was not changed.")
+            }
         }
-
     } while (true)
 }
 
@@ -131,7 +134,6 @@ private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (R
         error.printStackTrace(System.out)
     })
 }
-
 
 private fun loadRulebook(fileName: String): Rulebook? {
     println("(i) Loading rulebook, please wait...")

@@ -8,10 +8,15 @@
  */
 package org.epilink.bot.db
 
-import org.epilink.bot.*
-import org.epilink.bot.StandardErrorCodes.*
+import org.epilink.bot.EpiLinkException
+import org.epilink.bot.StandardErrorCodes.IdentityAlreadyKnown
+import org.epilink.bot.StandardErrorCodes.IdentityAlreadyUnknown
+import org.epilink.bot.StandardErrorCodes.IdentityRemovalOnCooldown
+import org.epilink.bot.StandardErrorCodes.NewIdentityDoesNotMatch
+import org.epilink.bot.UserEndpointException
 import org.epilink.bot.config.IdentityProviderConfiguration
 import org.epilink.bot.config.PrivacyConfiguration
+import org.epilink.bot.debug
 import org.epilink.bot.discord.DiscordMessageSender
 import org.epilink.bot.discord.DiscordMessages
 import org.epilink.bot.discord.DiscordMessagesI18n
@@ -35,11 +40,11 @@ interface IdentityManager {
      * privacy settings.
      * @param reason The reason for the identity access. Will be displayed to the user
      * @return The identity of the user (e-mail address)
-     * @throws EpiLinkException if the user is not identifiable (i.e. does not have their identity stored in the database)
+     * @throws EpiLinkException if the user is not identifiable (i.e. does not have their identity stored in the
+     * database)
      */
     @UsesTrueIdentity
     suspend fun accessIdentity(user: User, automated: Boolean, author: String, reason: String): String
-
 
     /**
      * Get the identity access logs as an [IdAccessLogs] object, ready to be sent.
@@ -90,7 +95,6 @@ internal class IdentityManagerImpl : IdentityManager, KoinComponent {
     private val idpConfig: IdentityProviderConfiguration by inject()
     private val cooldown: UnlinkCooldown by inject()
 
-
     @UsesTrueIdentity
     override suspend fun accessIdentity(user: User, automated: Boolean, author: String, reason: String): String {
         // TODO replace all the exceptions with a distinct return value (sealed class or something)
@@ -99,8 +103,9 @@ internal class IdentityManagerImpl : IdentityManager, KoinComponent {
             throw EpiLinkException("User is not identifiable")
         }
         val embed = messages.getIdentityAccessEmbed(i18n.getLanguage(user.discordId), automated, author, reason)
-        if (embed != null)
+        if (embed != null) {
             discordSender.sendDirectMessageLater(user.discordId, embed)
+        }
         cooldown.refreshCooldown(user.discordId)
         return facade.getUserEmailWithAccessLog(user, automated, author, reason)
     }
@@ -121,7 +126,8 @@ internal class IdentityManagerImpl : IdentityManager, KoinComponent {
                 val oldIdFormat = associatedIdpId.substringAfter("00000000-0000-0000-").replace("-", "")
                 if (oldIdFormat.hashSha256().contentEquals(knownHash)) {
                     // If the "oldified" new one matches, replace by the correct new one
-                    logger.info("Updating hash for user ${user.discordId} due to format changes between Microsoft Graph & OIDC APIs")
+                    logger.info("Updating hash for user ${user.discordId} due to format changes between Microsoft " +
+                            "Graph & OIDC APIs")
                     // Update known hash
                     facade.updateIdpId(user, newHash)
                 } else throw UserEndpointException(NewIdentityDoesNotMatch)
@@ -146,10 +152,12 @@ internal class IdentityManagerImpl : IdentityManager, KoinComponent {
 
     @UsesTrueIdentity
     override suspend fun deleteUserIdentity(user: User) {
-        if (!facade.isUserIdentifiable(user))
+        if (!facade.isUserIdentifiable(user)) {
             throw UserEndpointException(IdentityAlreadyUnknown)
-        if (!cooldown.canUnlink(user.discordId))
+        }
+        if (!cooldown.canUnlink(user.discordId)) {
             throw UserEndpointException(IdentityRemovalOnCooldown)
+        }
         facade.eraseIdentity(user)
     }
 }

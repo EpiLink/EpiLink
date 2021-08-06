@@ -23,7 +23,10 @@ class CountCommandTest : KoinBaseTest<Command>(
         single<Command> { CountCommand() }
     }
 ) {
-    private fun mockMessagePipeline(channelId: String, discordMessagesReceiver: MockKMatcherScope.(DiscordMessages) -> DiscordEmbed): Pair<DiscordClientFacade, DiscordEmbed> {
+    private fun mockMessagePipeline(
+        channelId: String,
+        discordMessagesReceiver: MockKMatcherScope.(DiscordMessages) -> DiscordEmbed
+    ): Pair<DiscordClientFacade, DiscordEmbed> {
         val embed = mockk<DiscordEmbed>()
         mockHere<DiscordMessages> {
             every { discordMessagesReceiver(this@mockHere) } returns embed

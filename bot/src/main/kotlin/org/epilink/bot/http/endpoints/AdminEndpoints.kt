@@ -8,32 +8,52 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.*
-import io.ktor.http.*
+import io.ktor.application.ApplicationCallPipeline
+import io.ktor.application.call
+import io.ktor.content.TextContent
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.http.content.*
-import io.ktor.locations.post
-import io.ktor.locations.get
-import io.ktor.locations.delete
 import io.ktor.locations.Location
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import org.epilink.bot.StandardErrorCodes.*
+import io.ktor.locations.delete
+import io.ktor.locations.get
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.Route
+import io.ktor.routing.post
+import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.StandardErrorCodes.InvalidAdminRequest
+import org.epilink.bot.StandardErrorCodes.InvalidId
+import org.epilink.bot.StandardErrorCodes.InvalidInstant
+import org.epilink.bot.StandardErrorCodes.TargetUserDoesNotExist
 import org.epilink.bot.config.WebServerConfiguration
-import org.epilink.bot.db.*
+import org.epilink.bot.db.Ban
+import org.epilink.bot.db.BanLogic
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.GdprReport
+import org.epilink.bot.db.IdentityManager
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.BanManager
 import org.epilink.bot.discord.RoleManager
-import org.epilink.bot.http.*
-import org.epilink.bot.http.data.*
+import org.epilink.bot.http.ApiEndpoint
+import org.epilink.bot.http.ApiSuccessResponse
+import org.epilink.bot.http.SessionChecker
+import org.epilink.bot.http.admin
+import org.epilink.bot.http.apiSuccess
+import org.epilink.bot.http.data.BanInfo
+import org.epilink.bot.http.data.BanRequest
+import org.epilink.bot.http.data.IdRequest
+import org.epilink.bot.http.data.IdRequestResult
+import org.epilink.bot.http.data.RegisteredUserInfo
+import org.epilink.bot.http.data.UserBans
 import org.epilink.bot.toResponse
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Instant
-import java.util.*
+import java.util.Base64
+import io.ktor.locations.post as postl
 
 /**
  * Component that implements administration routes (that is, routes under /admin/). Administration routes
@@ -104,16 +124,19 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
         post("idrequest") {
             val request = call.receive<IdRequest>()
             if (request.reason.isEmpty()) {
-                call.respond(BadRequest, IncompleteAdminRequest.toResponse("Missing reason.", "adm.mir"))
+                call.respond(
+                    BadRequest,
+                    StandardErrorCodes.IncompleteAdminRequest.toResponse("Missing reason.", "adm.mir")
+                )
                 return@post
             }
             val admin = call.admin
             val target = dbf.getUser(request.target)
             when {
                 target == null ->
-                    call.respond(BadRequest, TargetUserDoesNotExist.toResponse())
+                    call.respond(BadRequest, StandardErrorCodes.TargetUserDoesNotExist.toResponse())
                 !dbf.isUserIdentifiable(target) ->
-                    call.respond(BadRequest, TargetIsNotIdentifiable.toResponse())
+                    call.respond(BadRequest, StandardErrorCodes.TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
                     val adminTid = idManager.accessIdentity(
@@ -175,7 +198,7 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
 
         @ApiEndpoint("POST /api/v1/admin/ban/{idpHash}")
         @OptIn(UsesTrueIdentity::class) // Retrieves the ID of the admin
-        post<BansByIdpHash> { banByIdHash ->
+        postl<BansByIdpHash> { banByIdHash ->
             val request: BanRequest = call.receive()
             val expiry = request.expiresOn?.let { runCatching { Instant.parse(it) }.getOrNull() }
             if (expiry == null && request.expiresOn != null) {
@@ -223,7 +246,7 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
         }
 
         @ApiEndpoint("POST /api/v1/admin/ban/{idpHash}/{banId}/revoke")
-        post<BansByIdpHash.Ban.Revoke> { revoke ->
+        postl<BansByIdpHash.Ban.Revoke> { revoke ->
             val idpHash = revoke.parent.parent.idpHash
             val banId = revoke.parent.banId.toIntOrNull()
             if (banId == null) {
@@ -237,7 +260,7 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
 
     @OptIn(UsesTrueIdentity::class)
     private fun Route.gdprReport() {
-        post<GdprReportLocation> { location ->
+        postl<GdprReportLocation> { location ->
             val targetId = location.targetIdp
             val target = dbf.getUser(targetId)
             if (target == null) {

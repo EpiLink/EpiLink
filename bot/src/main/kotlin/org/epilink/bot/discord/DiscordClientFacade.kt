@@ -12,7 +12,7 @@ package org.epilink.bot.discord
  * This interface should be implemented by facades that abstract away an actual Discord client for the EpiLink Discord
  * bot.
  *
- * All of the functions are suspending and, no matter what the original client uses as a method for providing asynchronous
+ * All the functions are suspending and, no matter what the original client uses as a method for providing asynchronous
  * operations, the operations of this interface *must not be blocking*, only suspending. They should suspend until the
  * operation has been successfully processed by Discord.
  *
@@ -87,7 +87,8 @@ interface DiscordClientFacade {
      * @param discordId The ID of the Discord user whose roles should be modified
      * @param guildId The guild in which to modify the roles of the given user
      * @param toAdd Collection of role IDs that should be added to the user. May contain roles the user already has.
-     * @param toRemove Collection of role IDs that should be removed from the user. May contain roles the user does not have.
+     * @param toRemove Collection of role IDs that should be removed from the user. May contain roles the user does not
+     * have.
      */
     suspend fun manageRoles(discordId: String, guildId: String, toAdd: Set<String>, toRemove: Set<String>)
 

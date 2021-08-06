@@ -92,10 +92,11 @@ internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
     }
 
     override suspend fun write(id: String, data: ByteArray?) {
-        if (data == null)
+        if (data == null) {
             sessions.remove(id)
-        else
+        } else {
             sessions[id] = data
+        }
     }
 
     override suspend fun invalidate(id: String) {

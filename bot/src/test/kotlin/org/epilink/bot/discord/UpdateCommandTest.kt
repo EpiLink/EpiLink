@@ -12,10 +12,10 @@ import io.mockk.*
 import kotlinx.coroutines.delay
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.User
-import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.discord.cmd.UpdateCommand
 import org.epilink.bot.mockHere
 import org.epilink.bot.softMockHere
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import kotlin.test.*
 

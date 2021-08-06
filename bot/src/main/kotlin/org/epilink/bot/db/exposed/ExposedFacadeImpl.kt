@@ -17,7 +17,12 @@ import org.apache.commons.dbcp2.PoolableConnectionFactory
 import org.apache.commons.dbcp2.PoolingDataSource
 import org.apache.commons.pool2.impl.GenericObjectPool
 import org.epilink.bot.EpiLinkException
-import org.epilink.bot.db.*
+import org.epilink.bot.db.Ban
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.DiscordLanguagePreference
+import org.epilink.bot.db.IdentityAccess
+import org.epilink.bot.db.User
+import org.epilink.bot.db.UsesTrueIdentity
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -320,7 +325,6 @@ class ExposedTrueIdentity(id: EntityID<Int>) : IntEntity(id) {
 private const val ID_HASH_SIZE = 64
 private const val AUTHOR_MAX_SIZE = 40
 private const val REASON_MAX_SIZE = 2000
-
 
 /**
  * The table for all of the bans.

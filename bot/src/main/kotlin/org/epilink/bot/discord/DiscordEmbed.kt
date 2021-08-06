@@ -35,8 +35,8 @@ data class DiscordEmbed(
      */
     val url: String? = null,
     /**
-     * The color of the embed. Can be either a static field of [discord4j.rest.util.Color] or a hexadecimal value preceded by a
-     * `#` (e.g.: `#12be00`)
+     * The color of the embed. Can be either a static field of [discord4j.rest.util.Color] or a hexadecimal value
+     * preceded by a `#` (e.g.: `#12be00`)
      */
     val color: String? = null,
     /**

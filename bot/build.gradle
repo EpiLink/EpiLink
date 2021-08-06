@@ -85,6 +85,8 @@ dependencies {
     testImplementation "io.insert-koin:koin-test:$koinVersion"
     testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
     testImplementation "io.ktor:ktor-client-mock-jvm:$ktorVersion"
+
+    detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
 }
 
 test {

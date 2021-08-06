@@ -14,8 +14,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.epilink.bot.config.IdentityProviderConfiguration
-import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.config.ResourceAssetConfig
+import org.epilink.bot.config.WebServerConfiguration
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -34,7 +34,8 @@ class Assets(
     /**
      * The Identity provider's logo asset
      */
-    val idpLogo: ResourceAsset)
+    val idpLogo: ResourceAsset
+)
 
 /**
  * An asset.
@@ -93,9 +94,11 @@ suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): Res
                 // Blocking here is fine
                 Files.readAllBytes(root.resolve(asset.file))
             },
-            asset.contentType?.let { ContentType.parse(it) })
+            asset.contentType?.let { ContentType.parse(it) }
+        )
     }
-    if (asset.url != null)
+    if (asset.url != null) {
         return ResourceAsset.Url(asset.url)
+    }
     return ResourceAsset.None
 }

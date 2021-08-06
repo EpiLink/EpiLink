@@ -9,7 +9,15 @@
 package org.epilink.bot.discord.cmd
 
 import org.epilink.bot.db.User
-import org.epilink.bot.discord.*
+import org.epilink.bot.discord.Command
+import org.epilink.bot.discord.DiscordClientFacade
+import org.epilink.bot.discord.DiscordEmbed
+import org.epilink.bot.discord.DiscordMessages
+import org.epilink.bot.discord.DiscordMessagesI18n
+import org.epilink.bot.discord.DiscordTargets
+import org.epilink.bot.discord.PermissionLevel
+import org.epilink.bot.discord.TargetParseResult
+import org.epilink.bot.discord.TargetResult
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -58,7 +66,7 @@ class CountCommand : Command, KoinComponent {
         discord.sendChannelMessage(channelId, embed)
     }
 
-    private suspend fun success(senderId: String, size: Int) : DiscordEmbed {
+    private suspend fun success(senderId: String, size: Int): DiscordEmbed {
         return msg.getSuccessCommandReply(i18n.getLanguage(senderId), "count.success", listOf(size))
     }
 }

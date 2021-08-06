@@ -481,5 +481,4 @@ class DiscordRoleManagerTest : KoinBaseTest<RoleManager>(
         }
         confirmVerified(dcf)
     }
-
 }
