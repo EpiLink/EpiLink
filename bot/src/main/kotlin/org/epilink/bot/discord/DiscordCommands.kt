@@ -146,6 +146,7 @@ interface Command {
      * [requireMonitoredServer] is false. If not null, this guild is monitored if [requireMonitoredServer]
      * is true.
      */
+    @Suppress("LongParameterList") // All parameters are required
     suspend fun run(
         fullCommand: String,
         commandBody: String,
@@ -219,33 +220,44 @@ internal class DiscordCommandsImpl : DiscordCommands, KoinComponent {
         // Get the command
         val withoutPrefix = message.substring(discordCfg.commandsPrefix.length)
         val (name, body) = withoutPrefix.split(' ', limit = 2).coerceAtLeast(2, "")
-        val command = commands[name] ?: return UnknownCommand(name)
-        if (command.requireMonitoredServer && (serverId == null || !discordCfg.isMonitored(serverId))) {
-            return ServerNotMonitored
-        }
-        return when (command.permissionLevel) {
+        val command = commands[name]
+        return if (command == null) {
+            UnknownCommand(name)
+        } else if (monitoringMismatch(command, serverId)) {
+            ServerNotMonitored
+        } else when (command.permissionLevel) {
             PermissionLevel.Admin -> {
-                // Quick admin check (avoids checking the database for a user object for obviously-not-an-admin cases)
-                if (senderId !in admins) {
-                    return MessageAcceptStatus.NotAdmin
-                }
-                val user = db.getUser(senderId) ?: return NotRegistered
-                when (permission.canPerformAdminActions(user)) {
-                    NotAdmin -> MessageAcceptStatus.NotAdmin
-                    AdminNotIdentifiable -> AdminNoIdentity
-                    Admin -> {
-                        Accept(user, command, body)
-                    }
-                }
+                checkAdminCommandAllowed(senderId, command, body)
             }
             PermissionLevel.User -> {
-                val user = db.getUser(senderId) ?: return NotRegistered
+                val user = db.getUser(senderId)
                 // TODO add check if user is banned (right now not a huge problem)
-                Accept(user, command, body)
+                if (user == null) NotRegistered else Accept(user, command, body)
             }
             PermissionLevel.Anyone -> Accept(db.getUser(senderId), command, body)
         }
     }
+
+    private fun monitoringMismatch(command: Command, serverId: String?) =
+        command.requireMonitoredServer && (serverId == null || !discordCfg.isMonitored(serverId))
+
+    @UsesTrueIdentity
+    private suspend fun checkAdminCommandAllowed(senderId: String, command: Command, body: String) =
+        // Quick admin check (avoids checking the database for a user object for obviously-not-an-admin cases)
+        if (senderId !in admins) {
+            MessageAcceptStatus.NotAdmin
+        } else {
+            val user = db.getUser(senderId)
+            if (user == null) {
+                NotRegistered
+            } else when (permission.canPerformAdminActions(user)) {
+                NotAdmin -> MessageAcceptStatus.NotAdmin
+                AdminNotIdentifiable -> AdminNoIdentity
+                Admin -> {
+                    Accept(user, command, body)
+                }
+            }
+        }
 }
 
 private fun Logger.debugReject(

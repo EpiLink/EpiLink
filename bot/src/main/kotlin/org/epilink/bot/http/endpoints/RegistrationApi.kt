@@ -77,6 +77,7 @@ internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
         with(route) { registration() }
     }
 
+    @Suppress("LongMethod")
     private fun Route.registration() = limitedRoute("/api/v1/register", wsCfg.rateLimitingProfile.registrationApi) {
         @ApiEndpoint("GET /api/v1/register/info")
         get("info") {
@@ -92,6 +93,7 @@ internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
         }
 
         @ApiEndpoint("POST /api/v1/register")
+        @Suppress("ComplexCondition") // No other choice, otherwise null checks get messy
         post {
             with(call.sessions.get<RegisterSession>()) {
                 if (this == null) {

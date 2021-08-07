@@ -186,6 +186,7 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
         }
     }
 
+    @Suppress("LongMethod")
     private fun Route.ban() {
         @ApiEndpoint("GET /api/v1/admin/ban/{idpHash}")
         get<BansByIdpHash> { bbih ->

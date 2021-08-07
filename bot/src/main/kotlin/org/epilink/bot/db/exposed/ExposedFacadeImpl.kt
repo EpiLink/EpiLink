@@ -43,6 +43,7 @@ import javax.sql.DataSource
 /**
  * Implementation of an EpiLink database facade using the JetBrains Exposed library
  */
+@Suppress("TooManyFunctions")
 abstract class ExposedDatabaseFacade : DatabaseFacade {
     /**
      * The Database instance managed by JetBrains Exposed used for transactions.

@@ -14,6 +14,7 @@ import java.time.Instant
 /**
  * The database facade is the interface that is used to communicate with the database.
  */
+@Suppress("TooManyFunctions")
 interface DatabaseFacade {
     /**
      * Starts the database and creates required elements

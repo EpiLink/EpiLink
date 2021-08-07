@@ -6,6 +6,9 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
+
+@file:Suppress("TooManyFunctions")
+
 package org.epilink.bot.rulebook
 
 import kotlinx.coroutines.Dispatchers

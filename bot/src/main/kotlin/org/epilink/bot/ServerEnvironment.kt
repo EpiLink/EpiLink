@@ -83,6 +83,7 @@ import kotlin.system.measureTimeMillis
  * references to things like the Discord client, the Database environment, the
  * server, etc.
  */
+@Suppress("LongParameterList") // All parameters are required
 class ServerEnvironment(
     private val cfg: Configuration,
     private val legal: LegalTexts,

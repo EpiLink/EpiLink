@@ -45,6 +45,7 @@ import kotlin.reflect.KClass
  * Implementation of a Discord client facade that uses Discord4J
  */
 @OptIn(KoinApiExtension::class)
+@Suppress("TooManyFunctions")
 internal class Discord4JFacadeImpl(
     private val discordClientId: String,
     private val token: String

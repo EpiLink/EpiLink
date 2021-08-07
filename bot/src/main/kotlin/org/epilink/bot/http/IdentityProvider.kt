@@ -94,27 +94,23 @@ class IdentityProvider(
                         "oa.iac",
                         cause = ex
                     )
-                    else -> throw InternalEndpointException(
-                        IdentityProviderApiFailure,
-                        "Identity Provider OAuth failed: $error (" + (
-                            data["error_description"]
-                                ?: "no description"
-                            ) + ")",
-                        ex
-                    )
+                    else -> {
+                        val description = data["error_description"] ?: "no description"
+                        identityProviderFailure("Identity Provider OAuth failed: $error ($description)", ex)
+                    }
                 }
             } else {
-                throw InternalEndpointException(IdentityProviderApiFailure, "Identity Provider API call failed", ex)
+                identityProviderFailure("Identity Provider API call failed", ex)
             }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
         val jwt = data["id_token"] as String?
-            ?: throw InternalEndpointException(
-                IdentityProviderApiFailure,
-                "Did not receive any ID token from the identity provider"
-            )
+            ?: identityProviderFailure("Did not receive any ID token from the identity provider")
         return jwtVerifier.process(jwt)
     }
+
+    private fun identityProviderFailure(message: String, cause: Throwable? = null): Nothing =
+        throw InternalEndpointException(IdentityProviderApiFailure, message, cause)
 
     /**
      * Retrieve the beginning of the authorization URL that is only missing the redirect_uri
@@ -170,23 +166,25 @@ sealed class MetadataOrFailure {
 /**
  * Determine the identity provider metadata from the contents of the discovery URL
  */
+@Suppress("ReturnCount")
 fun identityProviderMetadataFromDiscovery(discoveryContent: String, idClaim: String = "sub"): MetadataOrFailure {
     val map: Map<String, *> = ObjectMapper().readValue(discoveryContent)
     val responseTypes = map.getList("response_types_supported")
-    if ("code" !in responseTypes) {
-        return MetadataOrFailure.IncompatibleProvider("Does not support authorization code flow")
+    return if ("code" !in responseTypes) {
+        MetadataOrFailure.IncompatibleProvider("Does not support authorization code flow")
+    } else {
+        val metadata = IdentityProviderMetadata(
+            issuer = map.getString("issuer"),
+            tokenUrl = map.getString("token_endpoint")
+                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+            authorizeUrl = map.getString("authorization_endpoint")
+                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+            jwksUri = map.getString("jwks_uri")
+                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+            idClaim = idClaim
+        )
+        MetadataOrFailure.Metadata(metadata)
     }
-    val metadata = IdentityProviderMetadata(
-        issuer = map.getString("issuer"),
-        tokenUrl = map.getString("token_endpoint")
-            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
-        authorizeUrl = map.getString("authorization_endpoint")
-            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
-        jwksUri = map.getString("jwks_uri")
-            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
-        idClaim = idClaim
-    )
-    return MetadataOrFailure.Metadata(metadata)
 }
 
 private inline fun String.ensureHttps(ifNotHttps: (String) -> Nothing): String {

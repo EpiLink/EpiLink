@@ -23,6 +23,7 @@ package org.epilink.bot.discord
  * - Guilds in which the bot is connected but does *not* have configurations for are said to be **unmonitored**.
  * - Guilds in which the bot is not but has configurations for are said to be **orphaned**. Not currently checked.
  */
+@Suppress("TooManyFunctions")
 interface DiscordClientFacade {
 
     /**

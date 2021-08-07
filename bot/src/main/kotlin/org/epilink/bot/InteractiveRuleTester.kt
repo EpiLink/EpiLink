@@ -63,36 +63,41 @@ fun ruleTester(rulebookFile: String) = runBlocking {
 private const val LOAD_STRING_LENGTH = 5
 private const val VALIDATE_STRING_LENGTH = 9
 
+private suspend fun validateCommand(rulebook: Rulebook, l: String) {
+    val validator = rulebook.validator
+    if (validator == null) {
+        println("<!> No e-mail validator is defined in the rulebook")
+    } else {
+        print("(i) Running e-mail validator... ")
+        val result = runCatching { validator(l.substring(VALIDATE_STRING_LENGTH)) }
+        result.fold(onSuccess = {
+            if (it) {
+                println("OK, e-mail passes (returned true)")
+            } else {
+                println("NOT OK, e-mail rejected (returned false)")
+            }
+        }, onFailure = {
+            println("error")
+            it.printStackTrace(System.out)
+        })
+    }
+}
+
 private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (Rulebook?) -> Unit) {
     // Exit command
-    if (l == "exit") exitProcess(0)
-    // Load command
-    if (l.startsWith("load:")) {
-        rulebookSetter(loadRulebook(l.substring(LOAD_STRING_LENGTH)))
-        return
+    when {
+        l == "exit" -> exitProcess(0)
+        // Load command
+        l.startsWith("load:") ->
+            rulebookSetter(loadRulebook(l.substring(LOAD_STRING_LENGTH)))
+        // E-mail validation command
+        l.startsWith("validate:") -> validateCommand(rulebook, l)
+        // Actual query
+        else -> handleQuery(l, rulebook)
     }
-    // E-mail validation command
-    if (l.startsWith("validate:")) {
-        val validator = rulebook.validator
-        if (validator == null) {
-            println("<!> No e-mail validator is defined in the rulebook")
-        } else {
-            print("(i) Running e-mail validator... ")
-            val result = runCatching { validator(l.substring(VALIDATE_STRING_LENGTH)) }
-            result.fold(onSuccess = {
-                if (it) {
-                    println("OK, e-mail passes (returned true)")
-                } else {
-                    println("NOT OK, e-mail rejected (returned false)")
-                }
-            }, onFailure = {
-                println("error")
-                it.printStackTrace(System.out)
-            })
-        }
-        return
-    }
-    // Actual query
+}
+
+private suspend fun handleQuery(l: String, rulebook: Rulebook) {
     val query = toQuery(l)
     if (query == null) {
         println("<!> Invalid query. Please try again.")

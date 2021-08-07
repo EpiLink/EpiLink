@@ -142,6 +142,7 @@ interface RoleManager {
  * This class is responsible for managing and updating the roles of Discord users.
  */
 @OptIn(KoinApiExtension::class)
+@Suppress("TooManyFunctions")
 internal class RoleManagerImpl : RoleManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.bot.roles")
     private val messages: DiscordMessages by inject()

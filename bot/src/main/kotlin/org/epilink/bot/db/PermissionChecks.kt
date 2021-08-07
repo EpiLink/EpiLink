@@ -88,30 +88,31 @@ internal class PermissionChecksImpl : PermissionChecks, KoinComponent {
 
     override suspend fun isIdentityProviderUserAllowedToCreateAccount(idpId: String, email: String): DatabaseAdvisory {
         val hash = idpId.hashSha256()
-        if (facade.isIdentityAccountAlreadyLinked(hash)) {
-            return Disallowed(
+        return if (facade.isIdentityAccountAlreadyLinked(hash)) {
+            Disallowed(
                 "This identity provider account is already linked to another account",
                 "pc.ala",
                 mapOf("idpIdHashHex" to hash.toHexString().let { it.substring(0, it.length / 2) })
             )
-        }
-        if (rulebook.validator?.invoke(email) == false) { // == false because the left side can be true or null
-            return Disallowed(
+        } else if (rulebook.validator?.invoke(email) == false) { // == false because the left side can be true or null
+            Disallowed(
                 "This e-mail address was rejected. Are you sure you are using the correct identity provider account?",
                 "pc.erj"
             )
+        } else {
+            val b = facade.getBansFor(hash)
+            val ban = b.firstOrNull { banLogic.isBanActive(it) }
+            if (ban != null) {
+                // cba = "creation ban"
+                Disallowed(
+                    "This identity provider account is banned (reason: ${ban.reason})",
+                    "pc.cba",
+                    mapOf("reason" to ban.reason)
+                )
+            } else {
+                Allowed
+            }
         }
-        val b = facade.getBansFor(hash)
-        val ban = b.firstOrNull { banLogic.isBanActive(it) }
-        if (ban != null) {
-            // cba = "creation ban"
-            return Disallowed(
-                "This identity provider account is banned (reason: ${ban.reason})",
-                "pc.cba",
-                mapOf("reason" to ban.reason)
-            )
-        }
-        return Allowed
     }
 
     private fun ByteArray.toHexString(): String =

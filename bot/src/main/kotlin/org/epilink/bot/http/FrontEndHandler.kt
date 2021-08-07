@@ -79,7 +79,6 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
 
     override fun Application.install() {
         val frontUrl = wsCfg.frontendUrl
-        val whitelist = wsCfg.corsWhitelist
         routing {
             get("/{...}") {
                 when {
@@ -102,6 +101,12 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
                 }
             }
         }
+        setupCors()
+    }
+
+    private fun Application.setupCors() {
+        val whitelist = wsCfg.corsWhitelist
+        val frontUrl = wsCfg.frontendUrl
         when {
             whitelist.isNotEmpty() -> {
                 logger.warn("CORS is enabled because a non-empty corsWhitelist is present.")

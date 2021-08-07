@@ -30,6 +30,7 @@ import org.epilink.bot.config.ConfigWarning
 import org.epilink.bot.config.Configuration
 import org.epilink.bot.config.isConfigurationSane
 import org.epilink.bot.config.loadConfigFromFile
+import org.epilink.bot.http.IdentityProviderMetadata
 import org.epilink.bot.http.MetadataOrFailure
 import org.epilink.bot.http.identityProviderMetadataFromDiscovery
 import org.epilink.bot.rulebook.Rulebook
@@ -102,7 +103,6 @@ fun main(args: Array<String>) = mainBody("epilink") {
         ruleTester(cliArgs.config)
         return@mainBody
     }
-
     logger.info(
         "EpiLink version $VERSION, starting right up! See $DOCS for documentation. Report issues and " +
                 "suggestions at $BUGS and join our Discord server for help."
@@ -112,85 +112,81 @@ fun main(args: Array<String>) = mainBody("epilink") {
         ctx.getLogger("epilink").level = Level.DEBUG
         logger.debug("DEBUG output enabled. Remove flag -v to disable.")
     }
-    runBlockingWithScope {
-        logger.debug("Loading configuration")
+    launchEpiLink(cliArgs)
+}
 
-        val cfgPath = Paths.get(cliArgs.config)
-        val cfg = runCatching { loadConfigFromFile(cfgPath) }.getOrElse { exc ->
-            logger.debug(exc) { "Encountered exception on config load" }
-            when (exc) {
-                is java.nio.file.NoSuchFileException -> logger.error(
-                    "Failed to load config, could not find config " +
-                            "file $cfgPath"
-                )
-                is JsonParseException -> logger.error("Failed to parse YAML file, wrong syntax: ${exc.message}")
-                is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
-                else -> logger.error("Encountered an unexpected exception on config load", exc)
-            }
-            exitProcess(EXIT_CODE_CANNOT_LOAD_CONFIG)
-        }
+fun launchEpiLink(cliArgs: CliArgs) = runBlockingWithScope {
+    logger.debug("Loading configuration")
 
-        if (cfg.rulebook != null && cfg.rulebookFile != null) {
-            logger.error("Your configuration defines both a rulebook and a rulebookFile: please only useone of those.")
-            logger.info(
-                "Use rulebook if you are putting the rulebook code directly in the config file, or " +
-                        "rulebookFile if you are putting the code in a separate file."
-            )
-            exitProcess(EXIT_CODE_RULEBOOK_CLASH)
-        }
+    val cfgPath = Paths.get(cliArgs.config)
+    val cfg = loadConfig(cfgPath)
 
-        val idProviderMetadata = async {
-            logger.info("Loading identity provider information...")
-            val discoveryContent = download(cfg.idProvider.url + "/.well-known/openid-configuration")
-            when (
-                val m = identityProviderMetadataFromDiscovery(
-                    discoveryContent,
-                    if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub"
-                )
-            ) {
-                is MetadataOrFailure.Metadata -> m.metadata
-                is MetadataOrFailure.IncompatibleProvider -> error(
-                    "The chosen provider is not compatible: " +
-                            m.reason
-                )
-            }
-        }
+    checkRulebookConsistency(cfg)
 
-        val rulebook = async { loadRulebook(cfg, cfgPath, cfg.cacheRulebook) }
+    val idProviderMetadata = async { loadIdProviderMetadata(cfg) }
+    val rulebook = async { loadRulebook(cfg, cfgPath, cfg.cacheRulebook) }
+    val strings = async { loadDiscordI18n() }
+    checkConfig(cfg, rulebook.await(), cliArgs, strings.await().keys)
+    val legal = async { cfg.legal.load(cfgPath) }
+    val assets = async { loadAssets(cfg.server, cfg.idProvider, cfgPath.parent) }
 
-        val strings = async {
-            logger.debug("Loading Discord strings")
-            loadDiscordI18n()
-        }
+    logger.debug("Creating environment")
+    val env = ServerEnvironment(
+        cfg = cfg,
+        legal = legal.await(),
+        assets = assets.await(),
+        identityProviderMetadata = idProviderMetadata.await(),
+        rulebook = rulebook.await(),
+        discordStrings = strings.await(),
+        defaultDiscordLanguage = cfg.discord.defaultLanguage
+    )
 
-        logger.debug("Checking config...")
-        checkConfig(cfg, rulebook.await(), cliArgs, strings.await().keys)
+    logger.info("Environment created, starting ${env.name}")
+    env.start()
+}
 
-        val legal = async {
-            logger.debug("Loading legal texts")
-            cfg.legal.load(cfgPath)
-        }
-
-        val assets = async {
-            logger.debug("Loading assets")
-            loadAssets(cfg.server, cfg.idProvider, cfgPath.parent)
-        }
-
-        logger.debug("Creating environment")
-        val env = ServerEnvironment(
-            cfg = cfg,
-            legal = legal.await(),
-            assets = assets.await(),
-            identityProviderMetadata = idProviderMetadata.await(),
-            rulebook = rulebook.await(),
-            discordStrings = strings.await(),
-            defaultDiscordLanguage = cfg.discord.defaultLanguage
+private suspend fun loadIdProviderMetadata(cfg: Configuration): IdentityProviderMetadata {
+    logger.info("Loading identity provider information...")
+    val discoveryContent = download(cfg.idProvider.url + "/.well-known/openid-configuration")
+    return when (
+        val m = identityProviderMetadataFromDiscovery(
+            discoveryContent,
+            if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub"
         )
-
-        logger.info("Environment created, starting ${env.name}")
-        env.start()
+    ) {
+        is MetadataOrFailure.Metadata -> m.metadata
+        is MetadataOrFailure.IncompatibleProvider -> error(
+            "The chosen provider is not compatible: " +
+                    m.reason
+        )
     }
 }
+
+private fun checkRulebookConsistency(cfg: Configuration) {
+    if (cfg.rulebook != null && cfg.rulebookFile != null) {
+        logger.error("Your configuration defines both a rulebook and a rulebookFile: please only useone of those.")
+        logger.info(
+            "Use rulebook if you are putting the rulebook code directly in the config file, or " +
+                    "rulebookFile if you are putting the code in a separate file."
+        )
+        exitProcess(EXIT_CODE_RULEBOOK_CLASH)
+    }
+}
+
+private fun loadConfig(cfgPath: Path) =
+    runCatching { loadConfigFromFile(cfgPath) }.getOrElse { exc ->
+        logger.debug(exc) { "Encountered exception on config load" }
+        when (exc) {
+            is java.nio.file.NoSuchFileException -> logger.error(
+                "Failed to load config, could not find config " +
+                        "file $cfgPath"
+            )
+            is JsonParseException -> logger.error("Failed to parse YAML file, wrong syntax: ${exc.message}")
+            is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
+            else -> logger.error("Encountered an unexpected exception on config load", exc)
+        }
+        exitProcess(EXIT_CODE_CANNOT_LOAD_CONFIG)
+    }
 
 private fun runBlockingWithScope(block: suspend CoroutineScope.() -> Unit) =
     runBlocking { withContext(Dispatchers.Default) { coroutineScope { block() } } }
@@ -260,8 +256,9 @@ private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache:
     return rb ?: Rulebook(mapOf()) { true }
 }
 
-private fun loadDiscordI18n(): Map<String, Map<String, String>> =
-    CliArgs::class.java.getResourceAsStream("/discord_i18n/languages").bufferedReader().use { reader ->
+private fun loadDiscordI18n(): Map<String, Map<String, String>> {
+    logger.debug("Loading Discord strings")
+    return CliArgs::class.java.getResourceAsStream("/discord_i18n/languages").bufferedReader().use { reader ->
         reader.lines().asSequence().associateWith {
             val props = Properties()
             CliArgs::class.java.getResourceAsStream("/discord_i18n/strings_$it.properties").bufferedReader()
@@ -273,3 +270,4 @@ private fun loadDiscordI18n(): Map<String, Map<String, String>> =
             map
         }
     }
+}

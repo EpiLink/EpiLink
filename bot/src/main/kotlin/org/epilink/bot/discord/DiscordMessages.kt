@@ -102,6 +102,7 @@ private const val NOTIFICATION_ORANGE = "#FF6600"
 private const val OK_GREEN = "#2B9B2B"
 
 @OptIn(KoinApiExtension::class)
+@Suppress("TooManyFunctions")
 internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
     private val config: DiscordConfiguration by inject()
     private val i18n: DiscordMessagesI18n by inject()
