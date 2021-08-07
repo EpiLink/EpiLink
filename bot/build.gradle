@@ -123,6 +123,10 @@ distributions {
     }
 }
 
+check.configure {
+    dependsOn = dependsOn.findAll { it.name != 'detekt' }
+    dependsOn += 'detektMain'
+}
 
 /* ###################################################################
  * ################# Project version file generation #################
