@@ -8,16 +8,30 @@
  */
 package org.epilink.bot.discord
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.epilink.bot.CacheClient
 import org.epilink.bot.EndpointException
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.isMonitored
-import org.epilink.bot.db.*
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.Disallowed
+import org.epilink.bot.db.IdentityManager
+import org.epilink.bot.db.PermissionChecks
+import org.epilink.bot.db.User
+import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.debug
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
-import org.epilink.bot.debug
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
@@ -51,11 +65,12 @@ interface RoleManager {
      *
      * To get only the rules, use the result with `result.map { it.first }`
      *
-     * The guild IDs are only intended for displaying them (or the name of the guild) as part of ID access notifications.
+     * The guild IDs are only intended for displaying them (or the name of the guild) as part of ID access
+     * notifications.
      *
      * @param guilds Vararg of guildIDs
      */
-    suspend fun getRulesRelevantForGuilds(vararg guilds: String): List<RuleWithRequestingGuilds>
+    suspend fun getRulesRelevantForGuilds(guilds: List<String>): List<RuleWithRequestingGuilds>
 
     /**
      * Handles the event where a user joins a server where the bot is.
@@ -127,6 +142,7 @@ interface RoleManager {
  * This class is responsible for managing and updating the roles of Discord users.
  */
 @OptIn(KoinApiExtension::class)
+@Suppress("TooManyFunctions")
 internal class RoleManagerImpl : RoleManager, KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.bot.roles")
     private val messages: DiscordMessages by inject()
@@ -140,11 +156,14 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
     private val ruleMediator: RuleMediator by lazy {
         get<CacheClient>().newRuleMediator("el_rc_")
     }
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
-        logger.error("Uncaught exception in role manager launched coroutine", ex)
-    })
+    private val scope = CoroutineScope(
+        Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
+            logger.error("Uncaught exception in role manager launched coroutine", ex)
+        }
+    )
 
-    // TODO Add some tests for this function. Its individual components are tested but the whole *apparently* isn't
+    // TODO Add some tests for this function. Its individual components are tested but the whole
+    //  *apparently* isn't
     override suspend fun updateRolesOnGuilds(
         discordId: String,
         guilds: Collection<String>,
@@ -153,10 +172,13 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
         // Determine where the user is among the given guilds
         val whereConnected =
             guilds.filter { config.isMonitored(it) && facade.isUserInGuild(discordId, it) }
-        logger.debug { "Only updating ${discordId}'s roles on ${whereConnected.joinToString(", ")}" }
+        logger.debug { "Only updating $discordId's roles on ${whereConnected.joinToString(", ")}" }
         // Get the relevant rules
-        val rules = getRulesRelevantForGuilds(*whereConnected.toTypedArray())
-        logger.debug { "Updating ${discordId}'s roles requires calling the rules ${rules.joinToString(", ") { it.rule.name }}" }
+        val rules = getRulesRelevantForGuilds(whereConnected)
+        logger.debug {
+            "Updating $discordId's roles requires calling the rules " +
+                    rules.joinToString(", ") { it.rule.name }
+        }
         // Compute the roles
         val (roles, bypassStickyRules) = getRolesForUser(discordId, rules, tellUserIfFailed, guilds)
         logger.debug {
@@ -175,11 +197,12 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
             return // Ignore unmonitored guilds' join events
         }
         val dbUser = dbFacade.getUser(memberId)
-        if (dbUser == null)
+        if (dbUser == null) {
             messages.getGreetingsEmbed(i18n.getLanguage(memberId), guildId, guildName)
                 ?.let { facade.sendDirectMessage(memberId, it) }
-        else
+        } else {
             updateRolesOnGuilds(memberId, listOf(guildId), true)
+        }
     }
 
     // TODO test this
@@ -196,7 +219,7 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
     }
 
     override suspend fun getRulesRelevantForGuilds(
-        vararg guilds: String
+        guilds: List<String>
     ): List<RuleWithRequestingGuilds> = withContext(Dispatchers.Default) {
         // Maps role names to their rules in the global config
         // val rolesInGlobalConfig = config.roles.associateBy({ it.name }, { it.rule })
@@ -246,7 +269,7 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
                 setOf<String>().also { logger.debug { "Unidentified user $userId roles determined: none" } } to true
             adv is Disallowed -> {
                 // Disallowed user
-                if (tellUserIfFailed)
+                if (tellUserIfFailed) {
                     facade.sendDirectMessage(
                         userId,
                         // See the other SimplifiableCallChain in this file for explanations
@@ -257,6 +280,7 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
                             adv.reason
                         )
                     )
+                }
                 (setOf<String>() to false)
                     .also { logger.debug { "Disallowed user $userId roles determined: none (${adv.reason})" } }
             }
@@ -264,13 +288,14 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
             else -> {
                 val identifiable = dbFacade.isUserIdentifiable(dbUser)
                 val baseSet = getBaseRoleSetForKnown(identifiable)
-                if (rulesInfo.isEmpty())
+                if (rulesInfo.isEmpty()) {
                     baseSet to true
-                else
+                } else {
                     baseSet.union(
                         computeAllowedUserRoles(dbUser, identifiable, rulesInfo)
                             ?: error("Cannot continue due to previous rule errors")
                     ) to true
+                }
             }
         }
     }
@@ -292,8 +317,9 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
                 if (identifiable) roleUpdateIdAccess(dbUser, remaining) else null
             )
         }.union(cachedRoles)
-        if (ruleResults.all { it is RuleResult.Success })
+        if (ruleResults.all { it is RuleResult.Success }) {
             return ruleResults.flatMap { (it as RuleResult.Success).roles }.toSet()
+        }
         // Error handling
         logger.error("Encountered errors on running rules")
         for (failure in ruleResults.filterIsInstance<RuleResult.Failure>().withIndex()) {
@@ -329,10 +355,11 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
     private fun getBaseRoleSetForKnown(identifiable: Boolean): Set<String> =
         mutableSetOf(
             StandardRoles.Known.roleName,
-            if (identifiable)
+            if (identifiable) {
                 StandardRoles.Identified.roleName
-            else
+            } else {
                 StandardRoles.NotIdentified.roleName
+            }
         )
 
     @UsesTrueIdentity
@@ -355,7 +382,8 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
             user = dbUser,
             automated = true,
             author = "EpiLink Discord Bot",
-            reason = "EpiLink has accessed your identity automatically in order to update your roles on the following Discord servers: " +
+            reason = "EpiLink has accessed your identity automatically in order to update your roles on the " +
+                    "following Discord servers: " +
                     strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().map { facade.getGuildName(it) }
                         .joinToString(", ")
         )

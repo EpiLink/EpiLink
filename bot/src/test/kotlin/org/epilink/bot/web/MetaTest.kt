@@ -183,11 +183,13 @@ class MetaTest : KoinBaseTest<Unit>(
             )
         }
         withTestEpiLink {
-            for ((assetUrl, asset) in listOf(
-                "logo" to assets.logo as ResourceAsset.File,
-                "background" to assets.background as ResourceAsset.File,
-                "idpLogo" to assets.idpLogo as ResourceAsset.File
-            )) {
+            for (
+                (assetUrl, asset) in listOf(
+                    "logo" to assets.logo as ResourceAsset.File,
+                    "background" to assets.background as ResourceAsset.File,
+                    "idpLogo" to assets.idpLogo as ResourceAsset.File
+                )
+            ) {
                 val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$assetUrl")
                 call.assertStatus(OK)
                 assertEquals(asset.contentType, call.response.contentType())

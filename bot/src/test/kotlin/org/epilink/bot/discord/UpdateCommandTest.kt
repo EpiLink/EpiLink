@@ -12,10 +12,10 @@ import io.mockk.*
 import kotlinx.coroutines.delay
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.User
-import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.discord.cmd.UpdateCommand
 import org.epilink.bot.mockHere
 import org.epilink.bot.softMockHere
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import kotlin.test.*
 
@@ -96,7 +96,7 @@ class UpdateCommandTest : KoinBaseTest<Command>(
         // Message reply
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), "Rooole ID", 3) } returns embed }
+        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), listOf("Rooole ID", 3)) } returns embed }
         val f = softMockHere<DiscordClientFacade> {
             // (soft mock because already defined above)
             coEvery { sendChannelMessage("channel", embed) } returns "sentMessage"
@@ -178,7 +178,7 @@ class UpdateCommandTest : KoinBaseTest<Command>(
         // Message reply
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), 3) } returns embed }
+        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), listOf(3)) } returns embed }
         val f = softMockHere<DiscordClientFacade> { // (soft mock because already defined above)
             coEvery { sendChannelMessage("channel", embed) } returns "sentMessage"
             coEvery { addReaction("channel", "sentMessage", "✅") } just runs
@@ -224,7 +224,7 @@ class UpdateCommandTest : KoinBaseTest<Command>(
         // Message reply
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), 26) } returns embed }
+        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), listOf(26)) } returns embed }
         val f = softMockHere<DiscordClientFacade> { // (soft mock because already defined above)
             coEvery { sendChannelMessage("channel", embed) } returns "sentMessage"
             coEvery { addReaction("channel", "sentMessage", "✅") } just runs

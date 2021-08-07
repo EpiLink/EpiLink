@@ -10,14 +10,20 @@ package org.epilink.bot.discord
 
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.isMonitored
-import org.epilink.bot.db.AdminStatus.*
+import org.epilink.bot.db.AdminStatus.Admin
+import org.epilink.bot.db.AdminStatus.AdminNotIdentifiable
 import org.epilink.bot.db.AdminStatus.NotAdmin
 import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.db.PermissionChecks
 import org.epilink.bot.db.User
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.debug
-import org.epilink.bot.discord.MessageAcceptStatus.*
+import org.epilink.bot.discord.MessageAcceptStatus.Accept
+import org.epilink.bot.discord.MessageAcceptStatus.AdminNoIdentity
+import org.epilink.bot.discord.MessageAcceptStatus.NotACommand
+import org.epilink.bot.discord.MessageAcceptStatus.NotRegistered
+import org.epilink.bot.discord.MessageAcceptStatus.ServerNotMonitored
+import org.epilink.bot.discord.MessageAcceptStatus.UnknownCommand
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
@@ -140,6 +146,7 @@ interface Command {
      * [requireMonitoredServer] is false. If not null, this guild is monitored if [requireMonitoredServer]
      * is true.
      */
+    @Suppress("LongParameterList") // All parameters are required
     suspend fun run(
         fullCommand: String,
         commandBody: String,
@@ -185,13 +192,19 @@ internal class DiscordCommandsImpl : DiscordCommands, KoinComponent {
             is UnknownCommand ->
                 client.sendChannelMessage(
                     channelId,
-                    msg.getErrorCommandReply(i18n.getLanguage(senderId), "cr.ic", a.name, titleObjects = listOf(a.name))
+                    msg.getErrorCommandReply(
+                        i18n.getLanguage(senderId),
+                        "cr.ic",
+                        objects = listOf(a.name),
+                        titleObjects = listOf(a.name)
+                    )
                 ).also { logger.debugReject("unknown command", message, senderId, channelId, serverId) }
             is Accept -> {
                 // Do the thing
                 a.command.run(message, a.commandBody, a.user, senderId, channelId, serverId).also {
                     logger.debug {
-                        "Accepted command '$message' from $senderId @ channel $channelId server $serverId (command name '${a.command.name}' body '${a.commandBody}')"
+                        "Accepted command '$message' from $senderId @ channel $channelId server $serverId (command " +
+                                "name '${a.command.name}' body '${a.commandBody}')"
                     }
                 }
             }
@@ -201,36 +214,50 @@ internal class DiscordCommandsImpl : DiscordCommands, KoinComponent {
     // TODO put that logic in a separate class and test it independently
     @OptIn(UsesTrueIdentity::class)
     private suspend fun shouldAcceptMessage(message: String, senderId: String, serverId: String?): MessageAcceptStatus {
-        if (!message.startsWith(discordCfg.commandsPrefix))
+        if (!message.startsWith(discordCfg.commandsPrefix)) {
             return NotACommand
+        }
         // Get the command
         val withoutPrefix = message.substring(discordCfg.commandsPrefix.length)
         val (name, body) = withoutPrefix.split(' ', limit = 2).coerceAtLeast(2, "")
-        val command = commands[name] ?: return UnknownCommand(name)
-        if (command.requireMonitoredServer && (serverId == null || !discordCfg.isMonitored(serverId)))
-            return ServerNotMonitored
-        return when (command.permissionLevel) {
+        val command = commands[name]
+        return if (command == null) {
+            UnknownCommand(name)
+        } else if (monitoringMismatch(command, serverId)) {
+            ServerNotMonitored
+        } else when (command.permissionLevel) {
             PermissionLevel.Admin -> {
-                // Quick admin check (avoids checking the database for a user object for obviously-not-an-admin cases)
-                if (senderId !in admins)
-                    return MessageAcceptStatus.NotAdmin
-                val user = db.getUser(senderId) ?: return NotRegistered
-                when (permission.canPerformAdminActions(user)) {
-                    NotAdmin -> MessageAcceptStatus.NotAdmin
-                    AdminNotIdentifiable -> AdminNoIdentity
-                    Admin -> {
-                        Accept(user, command, body)
-                    }
-                }
+                checkAdminCommandAllowed(senderId, command, body)
             }
             PermissionLevel.User -> {
-                val user = db.getUser(senderId) ?: return NotRegistered
+                val user = db.getUser(senderId)
                 // TODO add check if user is banned (right now not a huge problem)
-                Accept(user, command, body)
+                if (user == null) NotRegistered else Accept(user, command, body)
             }
             PermissionLevel.Anyone -> Accept(db.getUser(senderId), command, body)
         }
     }
+
+    private fun monitoringMismatch(command: Command, serverId: String?) =
+        command.requireMonitoredServer && (serverId == null || !discordCfg.isMonitored(serverId))
+
+    @UsesTrueIdentity
+    private suspend fun checkAdminCommandAllowed(senderId: String, command: Command, body: String) =
+        // Quick admin check (avoids checking the database for a user object for obviously-not-an-admin cases)
+        if (senderId !in admins) {
+            MessageAcceptStatus.NotAdmin
+        } else {
+            val user = db.getUser(senderId)
+            if (user == null) {
+                NotRegistered
+            } else when (permission.canPerformAdminActions(user)) {
+                NotAdmin -> MessageAcceptStatus.NotAdmin
+                AdminNotIdentifiable -> AdminNoIdentity
+                Admin -> {
+                    Accept(user, command, body)
+                }
+            }
+        }
 }
 
 private fun Logger.debugReject(
@@ -251,4 +278,3 @@ private fun <E> List<E>.coerceAtLeast(i: Int, e: E): List<E> =
         }
         list
     }
-

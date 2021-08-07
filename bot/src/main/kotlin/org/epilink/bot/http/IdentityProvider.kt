@@ -10,17 +10,21 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.features.*
-import io.ktor.client.request.*
-import io.ktor.content.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.receive
+import io.ktor.client.features.ClientRequestException
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.content.TextContent
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.ParametersBuilder
+import io.ktor.http.formUrlEncode
 import org.epilink.bot.EndpointException
 import org.epilink.bot.InternalEndpointException
-import org.epilink.bot.UserEndpointException
 import org.epilink.bot.StandardErrorCodes.IdentityProviderApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
+import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.getList
 import org.epilink.bot.rulebook.getString
@@ -41,9 +45,9 @@ class IdentityProvider(
 ) : KoinComponent {
     private val logger = LoggerFactory.getLogger("epilink.identityProvider")
     private val authStub = "$authorizeUrl?" +
-            listOf(
-                "client_id=${clientId}",
-                "response_type=code",
+        listOf(
+            "client_id=$clientId",
+            "response_type=code",
                 /*
                  * Only useful for Microsoft, which prompts the "select an account" screen, since users may have
                  * multiple accounts (e.g. their work account and their personal account)
@@ -52,9 +56,9 @@ class IdentityProvider(
                  * > The authorization server MUST ignore unrecognized request parameters.
                  * So we can leave it in, servers that do not support that parameter will ignore it.
                  */
-                "prompt=select_account",
-                "scope=openid%20profile%20email"
-            ).joinToString("&")
+            "prompt=select_account",
+            "scope=openid%20profile%20email"
+        ).joinToString("&")
 
     private val client: HttpClient by inject()
     private val jwtVerifier: JwtVerifier by inject()
@@ -90,25 +94,23 @@ class IdentityProvider(
                         "oa.iac",
                         cause = ex
                     )
-                    else -> throw InternalEndpointException(
-                        IdentityProviderApiFailure,
-                        "Identity Provider OAuth failed: $error (" + (data["error_description"]
-                            ?: "no description") + ")",
-                        ex
-                    )
+                    else -> {
+                        val description = data["error_description"] ?: "no description"
+                        identityProviderFailure("Identity Provider OAuth failed: $error ($description)", ex)
+                    }
                 }
             } else {
-                throw InternalEndpointException(IdentityProviderApiFailure, "Identity Provider API call failed", ex)
+                identityProviderFailure("Identity Provider API call failed", ex)
             }
         }
         val data: Map<String, Any?> = ObjectMapper().readValue(res)
         val jwt = data["id_token"] as String?
-            ?: throw InternalEndpointException(
-                IdentityProviderApiFailure,
-                "Did not receive any ID token from the identity provider"
-            )
+            ?: identityProviderFailure("Did not receive any ID token from the identity provider")
         return jwtVerifier.process(jwt)
     }
+
+    private fun identityProviderFailure(message: String, cause: Throwable? = null): Nothing =
+        throw InternalEndpointException(IdentityProviderApiFailure, message, cause)
 
     /**
      * Retrieve the beginning of the authorization URL that is only missing the redirect_uri
@@ -164,23 +166,25 @@ sealed class MetadataOrFailure {
 /**
  * Determine the identity provider metadata from the contents of the discovery URL
  */
+@Suppress("ReturnCount")
 fun identityProviderMetadataFromDiscovery(discoveryContent: String, idClaim: String = "sub"): MetadataOrFailure {
     val map: Map<String, *> = ObjectMapper().readValue(discoveryContent)
     val responseTypes = map.getList("response_types_supported")
-    if ("code" !in responseTypes) {
-        return MetadataOrFailure.IncompatibleProvider("Does not support authorization code flow")
+    return if ("code" !in responseTypes) {
+        MetadataOrFailure.IncompatibleProvider("Does not support authorization code flow")
+    } else {
+        val metadata = IdentityProviderMetadata(
+            issuer = map.getString("issuer"),
+            tokenUrl = map.getString("token_endpoint")
+                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+            authorizeUrl = map.getString("authorization_endpoint")
+                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+            jwksUri = map.getString("jwks_uri")
+                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+            idClaim = idClaim
+        )
+        MetadataOrFailure.Metadata(metadata)
     }
-    val metadata = IdentityProviderMetadata(
-        issuer = map.getString("issuer"),
-        tokenUrl = map.getString("token_endpoint")
-            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
-        authorizeUrl = map.getString("authorization_endpoint")
-            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
-        jwksUri = map.getString("jwks_uri")
-            .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
-        idClaim = idClaim
-    )
-    return MetadataOrFailure.Metadata(metadata)
 }
 
 private inline fun String.ensureHttps(ifNotHttps: (String) -> Nothing): String {

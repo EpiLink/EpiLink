@@ -248,18 +248,22 @@ class ConfigTestCheck {
     ) {
         val messages = report.joinToString(" // ") { it.message }
         val substrings = substring.joinToString(" // ")
-        assertTrue(report.any { el ->
-            if (el !is ConfigError)
-                false
-            else
-                substring.all { s ->
-                    el.message.contains(s)
-                }.ifTrue {
-                    if (fatal != null)
-                        assertEquals(fatal, el.shouldFail)
+        assertTrue(
+            report.any { el ->
+                if (el !is ConfigError) {
+                    false
+                } else {
+                    substring.all { s ->
+                        el.message.contains(s)
+                    }.ifTrue {
+                        if (fatal != null) {
+                            assertEquals(fatal, el.shouldFail)
+                        }
+                    }
                 }
-
-        }, "None of the messages matched the expected substrings (messages: $messages, substrings: $substrings)")
+            },
+            "None of the messages matched the expected substrings (messages: $messages, substrings: $substrings)"
+        )
     }
 
     /**
@@ -340,8 +344,7 @@ class ConfigTestCheck {
     }
 
     @Test
-    fun `checkCoherenceWithRuleBook, unused rule`()
-    {
+    fun `checkCoherenceWithRuleBook, unused rule`() {
         val discordConfig = mockConfigServers(
             mockServer("12345", listOf("Here", "KindaLonely"))
         )
@@ -358,7 +361,6 @@ class ConfigTestCheck {
         val resultWarning = result[0]
         assertTrue(resultWarning is ConfigWarning)
         assertTrue("Thonk" in resultWarning.message && "never used" in resultWarning.message)
-
     }
 
     private fun languages(
@@ -371,7 +373,8 @@ class ConfigTestCheck {
 }
 
 private fun Boolean.ifTrue(function: () -> Unit): Boolean {
-    if (this)
+    if (this) {
         function()
+    }
     return this
 }

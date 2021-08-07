@@ -9,7 +9,10 @@
 package org.epilink.bot
 
 import kotlinx.coroutines.runBlocking
-import org.epilink.bot.rulebook.*
+import org.epilink.bot.rulebook.Rulebook
+import org.epilink.bot.rulebook.StrongIdentityRule
+import org.epilink.bot.rulebook.WeakIdentityRule
+import org.epilink.bot.rulebook.loadRules
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -25,6 +28,12 @@ import kotlin.system.exitProcess
  * 4. Discord discriminator
  * 5. (optional) E-mail address
  */
+private const val QUERY_REGEX_RULE_NAME = 1
+private const val QUERY_REGEX_DISCORD_ID = 2
+private const val QUERY_REGEX_DISCORD_USERNAME = 3
+private const val QUERY_REGEX_DISCORD_DISCRIMINATOR = 4
+private const val QUERY_REGEX_EMAIL_ADDRESS = 5
+
 private val queryRegex = Regex("""(.+?)\[(\d+);(.+?);(\d{4})(?:;(.+?))?]""")
 
 /**
@@ -42,45 +51,53 @@ fun ruleTester(rulebookFile: String) = runBlocking {
         print(">>> ")
         val l = readLine() ?: exitProcess(0)
         handleLine(l, rulebook) {
-            if (it != null)
+            if (it != null) {
                 rulebook = it
-            else
+            } else {
                 println("<!> Loading failed. The rulebook was not changed.")
+            }
         }
-
     } while (true)
+}
+
+private const val LOAD_STRING_LENGTH = 5
+private const val VALIDATE_STRING_LENGTH = 9
+
+private suspend fun validateCommand(rulebook: Rulebook, l: String) {
+    val validator = rulebook.validator
+    if (validator == null) {
+        println("<!> No e-mail validator is defined in the rulebook")
+    } else {
+        print("(i) Running e-mail validator... ")
+        val result = runCatching { validator(l.substring(VALIDATE_STRING_LENGTH)) }
+        result.fold(onSuccess = {
+            if (it) {
+                println("OK, e-mail passes (returned true)")
+            } else {
+                println("NOT OK, e-mail rejected (returned false)")
+            }
+        }, onFailure = {
+            println("error")
+            it.printStackTrace(System.out)
+        })
+    }
 }
 
 private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (Rulebook?) -> Unit) {
     // Exit command
-    if (l == "exit") exitProcess(0)
-    // Load command
-    if (l.startsWith("load:")) {
-        rulebookSetter(loadRulebook(l.substring(5)))
-        return
+    when {
+        l == "exit" -> exitProcess(0)
+        // Load command
+        l.startsWith("load:") ->
+            rulebookSetter(loadRulebook(l.substring(LOAD_STRING_LENGTH)))
+        // E-mail validation command
+        l.startsWith("validate:") -> validateCommand(rulebook, l)
+        // Actual query
+        else -> handleQuery(l, rulebook)
     }
-    // E-mail validation command
-    if (l.startsWith("validate:")) {
-        val validator = rulebook.validator
-        if (validator == null) {
-            println("<!> No e-mail validator is defined in the rulebook")
-        } else {
-            print("(i) Running e-mail validator... ")
-            val result = runCatching { validator(l.substring(9)) }
-            result.fold(onSuccess = {
-                if (it) {
-                    println("OK, e-mail passes (returned true)")
-                } else {
-                    println("NOT OK, e-mail rejected (returned false)")
-                }
-            }, onFailure = {
-                println("error")
-                it.printStackTrace(System.out)
-            })
-        }
-        return
-    }
-    // Actual query
+}
+
+private suspend fun handleQuery(l: String, rulebook: Rulebook) {
     val query = toQuery(l)
     if (query == null) {
         println("<!> Invalid query. Please try again.")
@@ -91,19 +108,22 @@ private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (R
         println("<!> No rule exists named ${query.ruleName}")
         return
     }
-    if (rule is StrongIdentityRule && query.email == null) {
-        println("<!> Rule ${query.ruleName} requires an e-mail address (it is a strong identity rule).")
-        return
-    }
     print("(i) Running rule ${query.ruleName}... ")
     runCatching {
         when (rule) {
-            is StrongIdentityRule -> rule.determineRoles(
-                query.discordId,
-                query.discordUsername,
-                query.discordDiscriminator,
-                query.email!!
-            )
+            is StrongIdentityRule -> {
+                if (query.email == null) {
+                    println("<!> Rule ${query.ruleName} requires an e-mail address (it is a strong identity rule).")
+                    error("E-mail address required")
+                }
+
+                rule.determineRoles(
+                    query.discordId,
+                    query.discordUsername,
+                    query.discordDiscriminator,
+                    query.email
+                )
+            }
             is WeakIdentityRule -> rule.determineRoles(
                 query.discordId,
                 query.discordUsername,
@@ -119,7 +139,6 @@ private suspend fun handleLine(l: String, rulebook: Rulebook, rulebookSetter: (R
         error.printStackTrace(System.out)
     })
 }
-
 
 private fun loadRulebook(fileName: String): Rulebook? {
     println("(i) Loading rulebook, please wait...")
@@ -140,13 +159,14 @@ private data class Query(
     val email: String?
 )
 
+@Suppress("UnsafeCallOnNullableType") // Impossible for groups to be null on match due to the Regex.
 private fun toQuery(queryString: String): Query? {
     val match = queryRegex.matchEntire(queryString) ?: return null
     return Query(
-        match.groups[1]!!.value,
-        match.groups[2]!!.value,
-        match.groups[3]!!.value,
-        match.groups[4]!!.value,
-        match.groups[5]?.value
+        ruleName = match.groups[QUERY_REGEX_RULE_NAME]!!.value,
+        discordId = match.groups[QUERY_REGEX_DISCORD_ID]!!.value,
+        discordUsername = match.groups[QUERY_REGEX_DISCORD_USERNAME]!!.value,
+        discordDiscriminator = match.groups[QUERY_REGEX_DISCORD_DISCRIMINATOR]!!.value,
+        email = match.groups[QUERY_REGEX_EMAIL_ADDRESS]?.value
     )
 }

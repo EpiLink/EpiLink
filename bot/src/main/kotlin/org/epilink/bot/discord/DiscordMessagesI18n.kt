@@ -13,7 +13,7 @@ import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.Locale
 
 /**
  * A utility class for providing a nicer way of retrieving I18n strings
@@ -27,9 +27,10 @@ class DiscordI18nContext(private val language: String) {
     /**
      * Format the given string with the given language, inferring the language from this i18n context.
      */
-    fun String.f(vararg objects: Any): String {
+    fun String.f(objects: List<Any>): String {
         val locale = Locale.forLanguageTag(language)
-        return String.format(locale, this, *objects)
+        @Suppress("SpreadOperator") // No other choice here
+        return String.format(locale, this, *objects.toTypedArray())
     }
 }
 
@@ -89,8 +90,8 @@ internal class DiscordMessagesI18nImpl(
             ?: strings[defaultLanguage]?.get(key).also {
                 logger.warn("Key $key not found in language $language")
             } ?: key.also {
-                logger.error("Key $key not found for in default language $defaultLanguage")
-            }
+            logger.error("Key $key not found for in default language $defaultLanguage")
+        }
 
     override suspend fun setLanguage(discordId: String, language: String): Boolean {
         return if (language in availableLanguages) {

@@ -62,4 +62,3 @@ class MemoryCacheClient : CacheClient {
         return org.epilink.bot.db.MemoryUnlinkCooldownStorage()
     }
 }
-

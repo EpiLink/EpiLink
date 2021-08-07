@@ -10,7 +10,11 @@ package org.epilink.bot.discord.cmd
 
 import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.db.User
-import org.epilink.bot.discord.*
+import org.epilink.bot.discord.Command
+import org.epilink.bot.discord.DiscordClientFacade
+import org.epilink.bot.discord.DiscordMessages
+import org.epilink.bot.discord.DiscordMessagesI18n
+import org.epilink.bot.discord.PermissionLevel
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -63,9 +67,8 @@ class LangCommand : Command, KoinComponent {
             else ->
                 client.sendChannelMessage(
                     channelId,
-                    messages.getErrorCommandReply(previousLanguage, "lang.invalidLanguage", commandBody)
+                    messages.getErrorCommandReply(previousLanguage, "lang.invalidLanguage", listOf(commandBody))
                 )
         }
     }
-
 }

@@ -8,28 +8,52 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.*
-import io.ktor.http.*
+import io.ktor.application.ApplicationCallPipeline
+import io.ktor.application.call
+import io.ktor.content.TextContent
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.http.content.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import org.epilink.bot.StandardErrorCodes.*
+import io.ktor.locations.Location
+import io.ktor.locations.delete
+import io.ktor.locations.get
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.Route
+import io.ktor.routing.post
+import org.epilink.bot.StandardErrorCodes
+import org.epilink.bot.StandardErrorCodes.InvalidAdminRequest
+import org.epilink.bot.StandardErrorCodes.InvalidId
+import org.epilink.bot.StandardErrorCodes.InvalidInstant
+import org.epilink.bot.StandardErrorCodes.TargetUserDoesNotExist
 import org.epilink.bot.config.WebServerConfiguration
-import org.epilink.bot.db.*
+import org.epilink.bot.db.Ban
+import org.epilink.bot.db.BanLogic
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.GdprReport
+import org.epilink.bot.db.IdentityManager
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.BanManager
 import org.epilink.bot.discord.RoleManager
-import org.epilink.bot.http.*
-import org.epilink.bot.http.data.*
+import org.epilink.bot.http.ApiEndpoint
+import org.epilink.bot.http.ApiSuccessResponse
+import org.epilink.bot.http.SessionChecker
+import org.epilink.bot.http.admin
+import org.epilink.bot.http.apiSuccess
+import org.epilink.bot.http.data.BanInfo
+import org.epilink.bot.http.data.BanRequest
+import org.epilink.bot.http.data.IdRequest
+import org.epilink.bot.http.data.IdRequestResult
+import org.epilink.bot.http.data.RegisteredUserInfo
+import org.epilink.bot.http.data.UserBans
 import org.epilink.bot.toResponse
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Instant
-import java.util.*
+import java.util.Base64
+import io.ktor.locations.post as postl
 
 /**
  * Component that implements administration routes (that is, routes under /admin/). Administration routes
@@ -44,6 +68,25 @@ interface AdminEndpoints {
 }
 
 private val hexCharacters = setOf('a', 'b', 'c', 'd', 'e', 'f', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0')
+
+@Location("user/{targetId}")
+data class UserByTargetId(val targetId: String)
+
+@Location("ban/{idpHash}")
+data class BansByIdpHash(val idpHash: String) {
+    @Location("{banId}")
+    data class Ban(val parent: BansByIdpHash, val banId: String) {
+        @Location("revoke")
+        // TODO banId may be replaceable by an int directly here?
+        data class Revoke(val parent: Ban)
+    }
+}
+
+@Location("gdprreport/{targetIdp}")
+data class GdprReportLocation(val targetIdp: String)
+
+@Location("search/hash16/{searchTerm}")
+data class SearchByHash(val searchTerm: String)
 
 @OptIn(KoinApiExtension::class)
 internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
@@ -68,21 +111,32 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
             }
         }
 
+        idRequest()
+        user()
+        ban()
+        gdprReport()
+        search()
+    }
+
+    private fun Route.idRequest() {
         @ApiEndpoint("POST /api/v1/admin/idrequest")
         @OptIn(UsesTrueIdentity::class)
         post("idrequest") {
             val request = call.receive<IdRequest>()
             if (request.reason.isEmpty()) {
-                call.respond(BadRequest, IncompleteAdminRequest.toResponse("Missing reason.", "adm.mir"))
+                call.respond(
+                    BadRequest,
+                    StandardErrorCodes.IncompleteAdminRequest.toResponse("Missing reason.", "adm.mir")
+                )
                 return@post
             }
             val admin = call.admin
             val target = dbf.getUser(request.target)
             when {
                 target == null ->
-                    call.respond(BadRequest, TargetUserDoesNotExist.toResponse())
+                    call.respond(BadRequest, StandardErrorCodes.TargetUserDoesNotExist.toResponse())
                 !dbf.isUserIdentifiable(target) ->
-                    call.respond(BadRequest, TargetIsNotIdentifiable.toResponse())
+                    call.respond(BadRequest, StandardErrorCodes.TargetIsNotIdentifiable.toResponse())
                 else -> {
                     // Get the identity of the admin
                     val adminTid = idManager.accessIdentity(
@@ -96,118 +150,119 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
                 }
             }
         }
+    }
 
-        route("user/{targetId}") {
-            @ApiEndpoint("GET /api/v1/admin/user/{targetId}")
-            @OptIn(UsesTrueIdentity::class)
-            get {
-                val targetId = call.parameters["targetId"]!!
-                val user = dbf.getUser(targetId)
-                if (user == null) {
-                    call.respond(NotFound, TargetUserDoesNotExist.toResponse())
-                } else {
-                    val identifiable = dbf.isUserIdentifiable(user)
-                    val info = RegisteredUserInfo(
-                        targetId,
-                        user.idpIdHash.encodeUrlSafeBase64(),
-                        user.creationDate.toString(),
-                        identifiable
-                    )
-                    call.respond(ApiSuccessResponse.of(info))
-                }
-            }
-
-            @ApiEndpoint("DELETE /api/v1/admin/user/{targetId}")
-            delete {
-                val targetId = call.parameters["targetId"]!!
-                val user = dbf.getUser(targetId)
-                if (user == null) {
-                    call.respond(NotFound, TargetUserDoesNotExist.toResponse())
-                } else {
-                    dbf.deleteUser(user)
-                    roleManager.invalidateAllRolesLater(targetId)
-                    call.respond(apiSuccess("User deleted", "adm.ud"))
-                }
-            }
-        }
-
-        route("ban/{idpHash}") {
-            @ApiEndpoint("GET /api/v1/admin/ban/{idpHash}")
-            get {
-                val idpHash = call.parameters["idpHash"]!!
-                val idpHashBytes = Base64.getUrlDecoder().decode(idpHash)
-                val bans = dbf.getBansFor(idpHashBytes)
-                val data = UserBans(bans.any { banLogic.isBanActive(it) }, bans.map { it.toBanInfo() })
-                call.respond(ApiSuccessResponse.of(data))
-            }
-
-            @ApiEndpoint("POST /api/v1/admin/ban/{idpHash}")
-            @OptIn(UsesTrueIdentity::class) // Retrieves the ID of the admin
-            post {
-                val request: BanRequest = call.receive()
-                val expiry = request.expiresOn?.let { runCatching { Instant.parse(it) }.getOrNull() }
-                if (expiry == null && request.expiresOn != null) {
-                    call.respond(BadRequest, InvalidInstant.toResponse("Invalid expiry timestamp.", "adm.iet"))
-                } else {
-                    val admin = call.admin
-                    val identity = idManager.accessIdentity(
-                        admin,
-                        true,
-                        "EpiLink Admin Service",
-                        "You requested a ban on someone else: your identity was retrieved for logging purposes."
-                    )
-                    val result = banManager.ban(call.parameters["idpHash"]!!, expiry, identity, request.reason)
-                    call.respond(OK, ApiSuccessResponse.of(result.toBanInfo()))
-                }
-            }
-
-            route("{banId}") {
-                @ApiEndpoint("GET /api/v1/admin/ban/{idpHash}/{banId}")
-                get {
-                    val idpHash = call.parameters["idpHash"]!!
-                    val idpHashBytes = Base64.getUrlDecoder().decode(idpHash)
-                    val banId = call.parameters["banId"]!!.toIntOrNull()
-                    if (banId == null) {
-                        call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID.", "adm.ibi"))
-                    } else {
-                        val ban = dbf.getBan(banId)
-                        when {
-                            ban == null ->
-                                call.respond(
-                                    NotFound,
-                                    InvalidId.toResponse("No ban with given ID found.", "adm.nbi")
-                                )
-                            !ban.idpIdHash.contentEquals(idpHashBytes) ->
-                                call.respond(
-                                    NotFound,
-                                    InvalidId.toResponse(
-                                        "Identity Provider ID hash does not correspond.",
-                                        "adm.hnc"
-                                    )
-                                )
-                            else ->
-                                call.respond(OK, ApiSuccessResponse.of(ban.toBanInfo()))
-                        }
-                    }
-                }
-
-                @ApiEndpoint("POST /api/v1/admin/ban/{idpHash}/{banId}/revoke")
-                post("revoke") {
-                    val idpHash = call.parameters["idpHash"]!!
-                    val banId = call.parameters["banId"]!!.toIntOrNull()
-                    if (banId == null) {
-                        call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format", "adm.ibi"))
-                    } else {
-                        banManager.revokeBan(idpHash, banId)
-                        call.respond(OK, apiSuccess("Ban revoked.", "adm.brk"))
-                    }
-                }
-            }
-        }
-
+    private fun Route.user() {
+        @ApiEndpoint("GET /api/v1/admin/user/{targetId}")
         @OptIn(UsesTrueIdentity::class)
-        post("gdprreport/{targetId}") {
-            val targetId = call.parameters["targetId"]!!
+        get<UserByTargetId> { userByTargetId ->
+            val targetId = userByTargetId.targetId
+            val user = dbf.getUser(targetId)
+            if (user == null) {
+                call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+            } else {
+                val identifiable = dbf.isUserIdentifiable(user)
+                val info = RegisteredUserInfo(
+                    targetId,
+                    user.idpIdHash.encodeUrlSafeBase64(),
+                    user.creationDate.toString(),
+                    identifiable
+                )
+                call.respond(ApiSuccessResponse.of(info))
+            }
+        }
+
+        @ApiEndpoint("DELETE /api/v1/admin/user/{targetId}")
+        delete<UserByTargetId> { userByTargetId ->
+            val targetId = userByTargetId.targetId
+            val user = dbf.getUser(targetId)
+            if (user == null) {
+                call.respond(NotFound, TargetUserDoesNotExist.toResponse())
+            } else {
+                dbf.deleteUser(user)
+                roleManager.invalidateAllRolesLater(targetId)
+                call.respond(apiSuccess("User deleted", "adm.ud"))
+            }
+        }
+    }
+
+    @Suppress("LongMethod")
+    private fun Route.ban() {
+        @ApiEndpoint("GET /api/v1/admin/ban/{idpHash}")
+        get<BansByIdpHash> { bbih ->
+            val idpHash = bbih.idpHash
+            val idpHashBytes = Base64.getUrlDecoder().decode(idpHash)
+            val bans = dbf.getBansFor(idpHashBytes)
+            val data = UserBans(bans.any { banLogic.isBanActive(it) }, bans.map { it.toBanInfo() })
+            call.respond(ApiSuccessResponse.of(data))
+        }
+
+        @ApiEndpoint("POST /api/v1/admin/ban/{idpHash}")
+        @OptIn(UsesTrueIdentity::class) // Retrieves the ID of the admin
+        postl<BansByIdpHash> { banByIdHash ->
+            val request: BanRequest = call.receive()
+            val expiry = request.expiresOn?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            if (expiry == null && request.expiresOn != null) {
+                call.respond(BadRequest, InvalidInstant.toResponse("Invalid expiry timestamp.", "adm.iet"))
+            } else {
+                val admin = call.admin
+                val identity = idManager.accessIdentity(
+                    admin,
+                    true,
+                    "EpiLink Admin Service",
+                    "You requested a ban on someone else: your identity was retrieved for logging purposes."
+                )
+                val result = banManager.ban(banByIdHash.idpHash, expiry, identity, request.reason)
+                call.respond(OK, ApiSuccessResponse.of(result.toBanInfo()))
+            }
+        }
+
+        @ApiEndpoint("GET /api/v1/admin/ban/{idpHash}/{banId}")
+        get<BansByIdpHash.Ban> { banLocation ->
+            val idpHash = banLocation.parent.idpHash
+            val idpHashBytes = Base64.getUrlDecoder().decode(idpHash)
+            val banId = banLocation.banId.toIntOrNull()
+            if (banId == null) {
+                call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID.", "adm.ibi"))
+            } else {
+                val ban = dbf.getBan(banId)
+                when {
+                    ban == null ->
+                        call.respond(
+                            NotFound,
+                            InvalidId.toResponse("No ban with given ID found.", "adm.nbi")
+                        )
+                    !ban.idpIdHash.contentEquals(idpHashBytes) ->
+                        call.respond(
+                            NotFound,
+                            InvalidId.toResponse(
+                                "Identity Provider ID hash does not correspond.",
+                                "adm.hnc"
+                            )
+                        )
+                    else ->
+                        call.respond(OK, ApiSuccessResponse.of(ban.toBanInfo()))
+                }
+            }
+        }
+
+        @ApiEndpoint("POST /api/v1/admin/ban/{idpHash}/{banId}/revoke")
+        postl<BansByIdpHash.Ban.Revoke> { revoke ->
+            val idpHash = revoke.parent.parent.idpHash
+            val banId = revoke.parent.banId.toIntOrNull()
+            if (banId == null) {
+                call.respond(BadRequest, InvalidId.toResponse("Invalid ban ID format", "adm.ibi"))
+            } else {
+                banManager.revokeBan(idpHash, banId)
+                call.respond(OK, apiSuccess("Ban revoked.", "adm.brk"))
+            }
+        }
+    }
+
+    @OptIn(UsesTrueIdentity::class)
+    private fun Route.gdprReport() {
+        postl<GdprReportLocation> { location ->
+            val targetId = location.targetIdp
             val target = dbf.getUser(targetId)
             if (target == null) {
                 call.respond(NotFound, TargetUserDoesNotExist.toResponse())
@@ -222,16 +277,16 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
                 call.respond(TextContent(report, ContentType.Text.Markdown, OK))
             }
         }
+    }
 
-        route("search") {
-            get("hash16/{searchTerm}") {
-                val targetId = call.parameters["searchTerm"]!!.lowercase()
-                if (targetId.any { it !in hexCharacters }) {
-                    call.respond(BadRequest, InvalidAdminRequest.toResponse("Invalid hex string", "adm.ihs"))
-                } else {
-                    val results = dbf.searchUserByPartialHash(targetId).map { it.discordId }
-                    call.respond(OK, ApiSuccessResponse.of(data = mapOf("results" to results)))
-                }
+    private fun Route.search() {
+        get<SearchByHash> { location ->
+            val targetId = location.searchTerm.lowercase()
+            if (targetId.any { it !in hexCharacters }) {
+                call.respond(BadRequest, InvalidAdminRequest.toResponse("Invalid hex string", "adm.ihs"))
+            } else {
+                val results = dbf.searchUserByPartialHash(targetId).map { it.discordId }
+                call.respond(OK, ApiSuccessResponse.of(data = mapOf("results" to results)))
             }
         }
     }

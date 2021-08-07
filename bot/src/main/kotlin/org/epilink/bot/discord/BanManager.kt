@@ -8,8 +8,8 @@
  */
 package org.epilink.bot.discord
 
-import org.epilink.bot.UserEndpointException
 import org.epilink.bot.StandardErrorCodes.InvalidId
+import org.epilink.bot.UserEndpointException
 import org.epilink.bot.db.Ban
 import org.epilink.bot.db.BanLogic
 import org.epilink.bot.db.DatabaseFacade
@@ -18,7 +18,7 @@ import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Instant
-import java.util.*
+import java.util.Base64
 
 /**
  * Component that implements logic for actually banning people
@@ -41,8 +41,8 @@ interface BanManager {
     /**
      * Revoke an existing ban.
      *
-     * @param idpHashBase64 The Base64 URL safe encoded Identity Provider ID hash of the user who is banned with the given
-     * ban ID
+     * @param idpHashBase64 The Base64 URL safe encoded Identity Provider ID hash of the user who is banned with the
+     * given ban ID
      * @param banId The ID of the ban that should be revoked
      */
     suspend fun revokeBan(idpHashBase64: String, banId: Int)

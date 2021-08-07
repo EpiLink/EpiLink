@@ -111,5 +111,4 @@ class DiscordEmbedTest {
         EmbedCreateSpec().apply { from(embed) }.asRequest().let {
             assertEquals(expected, actual(it))
         }
-
 }

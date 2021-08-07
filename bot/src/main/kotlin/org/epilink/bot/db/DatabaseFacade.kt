@@ -14,6 +14,7 @@ import java.time.Instant
 /**
  * The database facade is the interface that is used to communicate with the database.
  */
+@Suppress("TooManyFunctions")
 interface DatabaseFacade {
     /**
      * Starts the database and creates required elements
@@ -53,7 +54,7 @@ interface DatabaseFacade {
     /**
      * Record a new ban against a user.
      */
-    suspend fun recordBan(target: ByteArray, until: Instant?, author: String, reason: String) : Ban
+    suspend fun recordBan(target: ByteArray, until: Instant?, author: String, reason: String): Ban
 
     /**
      * Mark a ban as revoked. Does nothing if the ban was already revoked.
@@ -92,7 +93,7 @@ interface DatabaseFacade {
     suspend fun recordNewIdentity(user: User, newEmail: String)
 
     /**
-     * Erase the identity of the given user. This function does not perform any checks on the given parameters.
+     * Erase the identity of the given user. Does nothing if the user does not have a recorded identity.
      *
      * @param user The user whose identity should be erased.
      */

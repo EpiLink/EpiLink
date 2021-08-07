@@ -6,6 +6,9 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
+
+@file:Suppress("TooManyFunctions")
+
 package org.epilink.bot.rulebook
 
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +20,16 @@ import java.io.ObjectOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
-import kotlin.script.experimental.api.*
+import kotlin.script.experimental.api.CompiledScript
+import kotlin.script.experimental.api.ResultValue
+import kotlin.script.experimental.api.ResultWithDiagnostics
+import kotlin.script.experimental.api.SourceCode
+import kotlin.script.experimental.api.compilerOptions
+import kotlin.script.experimental.api.defaultImports
+import kotlin.script.experimental.api.implicitReceivers
+import kotlin.script.experimental.api.onFailure
+import kotlin.script.experimental.api.valueOr
+import kotlin.script.experimental.api.valueOrThrow
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
 import kotlin.script.experimental.jvm.impl.KJvmCompiledScript
@@ -101,7 +113,7 @@ internal suspend fun compileRules(source: SourceCode): CompiledScript = withCont
             compilerOptions.append("-jvm-target")
             compilerOptions.append("11")
         }
-        compilerOptions("-jvm-target","11")
+        compilerOptions("-jvm-target", "11")
         implicitReceivers(RulebookBuilder::class)
         defaultImports("org.epilink.bot.rulebook.*", "io.ktor.http.*")
     }
@@ -173,24 +185,34 @@ private suspend fun loadRulesWithCache(
     logger: Logger?
 ): Rulebook = when (adv) {
     is CacheAdvisory.DoNotCache -> {
-        logger?.warn("Caching was disabled automatically to avoid potential issues. Try deleting all files next to the rulebook file that have a file name ending in '__cached' ")
+        logger?.warn(
+            "Caching was disabled automatically to avoid potential issues. Try deleting all files next to " +
+                    "the rulebook file that have a file name ending in '__cached' "
+        )
         loadRules(source())
     }
     is CacheAdvisory.WriteCache -> {
         val compiled = compileRules(source())
-        logger?.info("Writing cache to ${adv.cachePath}. Next startup will be faster. You can disable caching by setting 'cacheRulebook: false' in the configuration file.")
+        logger?.info(
+            "Writing cache to ${adv.cachePath}. Next startup will be faster. You can disable caching by " +
+                    "setting 'cacheRulebook: false' in the configuration file."
+        )
         runCatching { compiled.writeScriptTo(adv.cachePath) }.onFailure {
             logger?.error("Failed to write the rulebook cache to ${adv.cachePath}", it)
         }
         evaluateRules(compiled)
     }
     is CacheAdvisory.ReadCache -> {
-        logger?.info("Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting 'cacheRulebook: false' in the configuration file.")
+        logger?.info(
+            "Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting " +
+                    "'cacheRulebook: false' in the configuration file."
+        )
         val compiled = runCatching {
             readScriptFrom(adv.cachePath)
         }.getOrElse {
             logger?.error(
-                "Failed to read cache, using the original rulebook file instead. Try deleting the cached file (${adv.cachePath}).",
+                "Failed to read cache, using the original rulebook file instead. Try deleting the cached " +
+                        "file (${adv.cachePath}).",
                 it
             )
             compileRules(source())

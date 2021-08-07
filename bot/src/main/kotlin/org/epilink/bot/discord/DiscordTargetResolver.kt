@@ -8,7 +8,10 @@
  */
 package org.epilink.bot.discord
 
-import org.epilink.bot.discord.TargetParseResult.Success.*
+import org.epilink.bot.discord.TargetParseResult.Success.Everyone
+import org.epilink.bot.discord.TargetParseResult.Success.RoleById
+import org.epilink.bot.discord.TargetParseResult.Success.RoleByName
+import org.epilink.bot.discord.TargetParseResult.Success.UserById
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -122,6 +125,7 @@ internal class DiscordTargetsImpl : DiscordTargets, KoinComponent {
         if (angled != null) {
             // Pinged someone or pinged a role
             val isRole = angled.groups[1] != null
+            @Suppress("UnsafeCallOnNullableType") // Cannot be null on match due to Regex
             val id = angled.groups[2]!!.value
             return if (isRole) RoleById(id) else UserById(id)
         } else {
@@ -129,13 +133,13 @@ internal class DiscordTargetsImpl : DiscordTargets, KoinComponent {
                 '|' -> RoleByName(target.drop(1))
                 '/' -> RoleById(target.drop(1))
                 '!' ->
-                    if (target == "!everyone")
+                    if (target == "!everyone") {
                         Everyone
-                    else TargetParseResult.Error
+                    } else TargetParseResult.Error
                 else ->
-                    if (target.matches(Regex("\\d+")))
+                    if (target.matches(Regex("\\d+"))) {
                         UserById(target)
-                    else TargetParseResult.Error
+                    } else TargetParseResult.Error
             }
         }
     }

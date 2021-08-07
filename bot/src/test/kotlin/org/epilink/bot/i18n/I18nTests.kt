@@ -52,7 +52,7 @@ class I18nTests {
         if (missingLanguageLine.isNotEmpty()) {
             fail(
                 "The following language(s) are missing a languageLine, welcomeLang.current and/or welcomeLang.description key: " +
-                        missingLanguageLine.joinToString(", ")
+                    missingLanguageLine.joinToString(", ")
             )
         }
     }

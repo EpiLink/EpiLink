@@ -39,8 +39,8 @@ jobs:
         uses: actions/upload-artifact@v1
         if: failure()
         with:
-          name: test-failure-report
-          path: bot/build/reports/tests/test
+          name: failure-reports
+          path: bot/build/reports
 
   docs:
     name: Generate docs

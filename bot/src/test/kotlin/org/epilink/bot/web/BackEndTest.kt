@@ -49,10 +49,10 @@ class BackEndTest : KoinBaseTest<Unit>(
         withTestApplication({
             with(get<BackEnd>()) { installFeatures() }
         }) {
-            assertNotNull(application.featureOrNull(ContentNegotiation))
-            assertNotNull(application.featureOrNull(Sessions))
-            assertNotNull(application.featureOrNull(RateLimit))
-        }
+        assertNotNull(application.featureOrNull(ContentNegotiation))
+        assertNotNull(application.featureOrNull(Sessions))
+        assertNotNull(application.featureOrNull(RateLimit))
+    }
     }
 
     private fun withErrorHandlingTestApplication(routing: Routing.() -> Unit, test: TestApplicationEngine.() -> Unit) =
@@ -73,19 +73,19 @@ class BackEndTest : KoinBaseTest<Unit>(
                 error("You don't know me")
             }
         }) {
-            handleRequest(HttpMethod.Get, "/one").apply {
-                assertStatus(HttpStatusCode.InternalServerError)
-                val apiError = fromJson<ApiError>(response).apply {
-                    assertTrue(message.contains("unknown", ignoreCase = true))
-                    assertEquals("err.999", message_i18n)
-                    assertTrue(message_i18n_data.isEmpty())
-                }
-                apiError.data.apply {
-                    assertEquals(StandardErrorCodes.UnknownError.code, code)
-                    assertEquals(StandardErrorCodes.UnknownError.description, description)
-                }
+        handleRequest(HttpMethod.Get, "/one").apply {
+            assertStatus(HttpStatusCode.InternalServerError)
+            val apiError = fromJson<ApiError>(response).apply {
+                assertTrue(message.contains("unknown", ignoreCase = true))
+                assertEquals("err.999", message_i18n)
+                assertTrue(message_i18n_data.isEmpty())
+            }
+            apiError.data.apply {
+                assertEquals(StandardErrorCodes.UnknownError.code, code)
+                assertEquals(StandardErrorCodes.UnknownError.description, description)
             }
         }
+    }
     }
 
     @Test
@@ -101,24 +101,23 @@ class BackEndTest : KoinBaseTest<Unit>(
                 )
             }
         }) {
-            handleRequest(HttpMethod.Get, "/two").apply {
-                assertStatus(HttpStatusCode.BadRequest)
-                val apiError = fromJson<ApiError>(response).apply {
-                    assertEquals("Oops", message)
-                    assertEquals("oo.ps", message_i18n)
-                    assertEquals(1, message_i18n_data.size)
-                }
-                apiError.message_i18n_data.entries.first().apply {
-                    assertEquals("oo", key)
-                    assertEquals("ps", value)
-                }
-                apiError.data.apply {
-                    assertEquals(StandardErrorCodes.MissingAuthentication.code, code)
-                    assertEquals(StandardErrorCodes.MissingAuthentication.description, description)
-                }
+        handleRequest(HttpMethod.Get, "/two").apply {
+            assertStatus(HttpStatusCode.BadRequest)
+            val apiError = fromJson<ApiError>(response).apply {
+                assertEquals("Oops", message)
+                assertEquals("oo.ps", message_i18n)
+                assertEquals(1, message_i18n_data.size)
             }
-
+            apiError.message_i18n_data.entries.first().apply {
+                assertEquals("oo", key)
+                assertEquals("ps", value)
+            }
+            apiError.data.apply {
+                assertEquals(StandardErrorCodes.MissingAuthentication.code, code)
+                assertEquals(StandardErrorCodes.MissingAuthentication.description, description)
+            }
         }
+    }
     }
 
     @Test
@@ -129,19 +128,19 @@ class BackEndTest : KoinBaseTest<Unit>(
                 throw InternalEndpointException(InvalidAuthCode, "EEEE")
             }
         }) {
-            handleRequest(HttpMethod.Get, "/three").apply {
-                assertStatus(HttpStatusCode.InternalServerError)
-                val apiError = fromJson<ApiError>(response).apply {
-                    assertFalse(message.contains("EEEE"))
-                    assertEquals("err.102", message_i18n)
-                    assertTrue(message_i18n_data.isEmpty())
-                }
-                apiError.data.apply {
-                    assertEquals(InvalidAuthCode.code, code)
-                    assertEquals(InvalidAuthCode.description, description)
-                }
+        handleRequest(HttpMethod.Get, "/three").apply {
+            assertStatus(HttpStatusCode.InternalServerError)
+            val apiError = fromJson<ApiError>(response).apply {
+                assertFalse(message.contains("EEEE"))
+                assertEquals("err.102", message_i18n)
+                assertTrue(message_i18n_data.isEmpty())
+            }
+            apiError.data.apply {
+                assertEquals(InvalidAuthCode.code, code)
+                assertEquals(InvalidAuthCode.description, description)
             }
         }
+    }
     }
 
     @Test
@@ -180,8 +179,9 @@ class BackEndTest : KoinBaseTest<Unit>(
             user.install(any())
             meta.install(any())
             register.install(any())
-            if (enableAdminEndpoints)
+            if (enableAdminEndpoints) {
                 admin!!.install(any())
+            }
         }
     }
 }

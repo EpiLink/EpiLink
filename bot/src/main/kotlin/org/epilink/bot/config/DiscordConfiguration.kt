@@ -94,13 +94,15 @@ fun DiscordConfiguration.checkCoherenceWithLanguages(available: Set<String>): Li
     if (unavailablePreferredLanguages.isNotEmpty()) {
         report += ConfigError(
             true,
-            "The preferred languages contain unavailable languages (${unavailablePreferredLanguages.joinToString(", ")}). The available languages are $languages"
+            "The preferred languages contain unavailable languages " +
+                    "(${unavailablePreferredLanguages.joinToString(", ")}). The available languages are $languages"
         )
     }
     if (defaultLanguage !in preferredLanguages) {
         report += ConfigError(
             true,
-            "The preferred languages list ${preferredLanguages.joinToString(", ")} must contain the default language ($defaultLanguage)."
+            "The preferred languages list ${preferredLanguages.joinToString(", ")} must contain the default " +
+                    "language ($defaultLanguage)."
         )
     }
     return report
@@ -120,7 +122,6 @@ fun DiscordConfiguration.checkCoherenceWithRulebook(rulebook: Rulebook): List<Co
             .groupBy({ it.first }, { it.second.id })
 
     val rulesDeclared = rulebook.rules.keys
-
 
     val missingRules = ruleNamesUsedInServers - rulesDeclared
     for ((rule, serversWhereUsed) in missingRules) {

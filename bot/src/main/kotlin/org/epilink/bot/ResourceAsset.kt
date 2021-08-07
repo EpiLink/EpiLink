@@ -14,8 +14,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.epilink.bot.config.IdentityProviderConfiguration
-import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.config.ResourceAssetConfig
+import org.epilink.bot.config.WebServerConfiguration
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -34,7 +34,8 @@ class Assets(
     /**
      * The Identity provider's logo asset
      */
-    val idpLogo: ResourceAsset)
+    val idpLogo: ResourceAsset
+)
 
 /**
  * An asset.
@@ -84,18 +85,21 @@ suspend fun loadAssets(wsCfg: WebServerConfiguration, idpCfg: IdentityProviderCo
 /**
  * Load a single asset
  */
-suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): ResourceAsset {
-    if (asset.file != null) {
-        if (asset.url != null) error("Cannot define both a file and a url for the $name asset")
-        return ResourceAsset.File(
-            withContext(Dispatchers.IO) {
-                @Suppress("BlockingMethodInNonBlockingContext")
-                // Blocking here is fine
-                Files.readAllBytes(root.resolve(asset.file))
-            },
-            asset.contentType?.let { ContentType.parse(it) })
+suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): ResourceAsset =
+    when {
+        asset.file != null && asset.url != null ->
+            error("Cannot define both a file and a url for the $name asset")
+        asset.file != null ->
+            ResourceAsset.File(
+                withContext(Dispatchers.IO) {
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    // Blocking here is fine
+                    Files.readAllBytes(root.resolve(asset.file))
+                },
+                asset.contentType?.let { ContentType.parse(it) }
+            )
+        asset.url != null ->
+            ResourceAsset.Url(asset.url)
+        else ->
+            ResourceAsset.None
     }
-    if (asset.url != null)
-        return ResourceAsset.Url(asset.url)
-    return ResourceAsset.None
-}

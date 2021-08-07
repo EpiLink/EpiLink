@@ -226,7 +226,7 @@ class DiscordRoleManagerTest : KoinBaseTest<RoleManager>(
         }
         runBlocking {
             val rm = get<RoleManager>()
-            val rules = rm.getRulesRelevantForGuilds("guildid1", "guildid2", "guildid3")
+            val rules = rm.getRulesRelevantForGuilds(listOf("guildid1", "guildid2", "guildid3"))
             println(rules)
             assertEquals(3, rules.size)
             assertTrue(
@@ -481,5 +481,4 @@ class DiscordRoleManagerTest : KoinBaseTest<RoleManager>(
         }
         confirmVerified(dcf)
     }
-
 }

@@ -20,11 +20,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
-import org.epilink.bot.InternalEndpointException
-import org.epilink.bot.UserEndpointException
 import org.epilink.bot.EndpointException
+import org.epilink.bot.InternalEndpointException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
+import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
@@ -44,13 +44,13 @@ class DiscordBackEnd(
     private val client: HttpClient by inject()
 
     private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" +
-            listOf(
-                "response_type=code",
-                "client_id=${clientId}",
-                // Allows access to user information (w/o email address)
-                "scope=identify",
-                "prompt=consent"
-            ).joinToString("&")
+        listOf(
+            "response_type=code",
+            "client_id=$clientId",
+            // Allows access to user information (w/o email address)
+            "scope=identify",
+            "prompt=consent"
+        ).joinToString("&")
 
     /**
      * Consume the authcode and return a token.
@@ -75,22 +75,7 @@ class DiscordBackEnd(
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val received = ex.response.call.receive<String>()
-                logger.debug { "Failed: received $received" }
-                val data = ObjectMapper().readValue<Map<String, Any?>>(received)
-                val error = data["error"] as? String
-                val isCodeError =
-                    error == "invalid_grant" ||
-                            (data["error_description"] as? String)?.contains("Invalid \"code\"") ?: false
-                if (isCodeError)
-                    throw UserEndpointException(InvalidAuthCode, "Invalid authorization code", "oa.iac", cause = ex)
-                else
-                    throw InternalEndpointException(
-                        DiscordApiFailure,
-                        "Discord OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
-                        ex
-                    )
-
+                handleClientRequestException(ex)
             } else {
                 throw InternalEndpointException(
                     DiscordApiFailure,
@@ -104,6 +89,24 @@ class DiscordBackEnd(
             ?: throw InternalEndpointException(DiscordApiFailure, "Did not receive any access token from Discord")
     }
 
+    private suspend fun handleClientRequestException(ex: ClientRequestException): Nothing {
+        val received = ex.response.call.receive<String>()
+        logger.debug { "Failed: received $received" }
+        val data = ObjectMapper().readValue<Map<String, Any?>>(received)
+        val error = data["error"] as? String
+        val isCodeError =
+            error == "invalid_grant" ||
+                    (data["error_description"] as? String)?.contains("Invalid \"code\"") ?: false
+        if (isCodeError) {
+            throw UserEndpointException(InvalidAuthCode, "Invalid authorization code", "oa.iac", cause = ex)
+        } else {
+            discordApiError(
+                "Discord OAuth failed: $error (" + (data["error_description"] ?: "no description") + ")",
+                ex
+            )
+        }
+    }
+
     /**
      * Retrieve a user's own information using a Discord OAuth2 token.
      *
@@ -115,30 +118,23 @@ class DiscordBackEnd(
             client.getJson("https://discord.com/api/v6/users/@me", bearer = token)
         }.getOrElse {
             logger.debug(it) { "Failed (token $token)" }
-            throw InternalEndpointException(
-                DiscordApiFailure,
-                "Failed to contact Discord servers for user information retrieval.",
-                it
-            )
+            discordApiError("Failed to contact Discord servers for user information retrieval.", it)
         }
         val userId = data["id"] as String?
-            ?: throw InternalEndpointException(DiscordApiFailure, "Missing Discord ID in Discord API response")
+            ?: discordApiError("Missing Discord ID in Discord API response")
         val username = data["username"] as String?
-            ?: throw InternalEndpointException(
-                DiscordApiFailure,
-                "Missing Discord username in Discord API response"
-            )
+            ?: discordApiError("Missing Discord username in Discord API response")
         val discriminator = data["discriminator"] as String?
-            ?: throw InternalEndpointException(
-                DiscordApiFailure,
-                "Missing Discord discriminator in Discord API response"
-            )
+            ?: discordApiError("Missing Discord discriminator in Discord API response")
         val displayableUsername = "$username#$discriminator"
         val avatarHash = data["avatar"] as String?
         val avatar =
             if (avatarHash != null) "https://cdn.discordapp.com/avatars/$userId/$avatarHash.png?size=256" else null
         return DiscordUserInfo(userId, displayableUsername, avatar).also { logger.debug { "Retrieved info $it" } }
     }
+
+    private fun discordApiError(message: String, cause: Throwable? = null): Nothing =
+        throw InternalEndpointException(DiscordApiFailure, message, cause)
 
     /**
      * Returns the stub of the authorization OAuth2 URL, without the redirect_uri

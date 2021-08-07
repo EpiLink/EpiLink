@@ -98,6 +98,8 @@ suspend fun Rule.run(discordId: String, discordName: String, discordDisc: String
 /**
  * Class for rules that do not require access to the identity of the user
  */
+// The entire point here is to wrap generic exceptions into proper rule exceptions
+@Suppress("TooGenericExceptionCaught")
 class WeakIdentityRule(
     name: String,
     cacheDuration: Duration?,
@@ -116,11 +118,11 @@ class WeakIdentityRule(
             logger.debug { "Running rule $name with context $ctx" }
             ctx.roles()
             return ctx.roles
+        } catch (ex: RuleException) {
+            @Suppress("RethrowCaughtException")
+            throw ex
         } catch (ex: Exception) {
-            if (ex is RuleException)
-                throw ex
-            else
-                throw RuleException("Encountered an exception inside a rule", ex)
+            throw RuleException("Encountered an exception inside a rule", ex)
         }
     }
 }
@@ -128,6 +130,8 @@ class WeakIdentityRule(
 /**
  * Class for rules that require access to the identity of the user
  */
+// The entire point here is to wrap generic exceptions into proper rule exceptions
+@Suppress("TooGenericExceptionCaught")
 class StrongIdentityRule(
     name: String,
     cacheDuration: Duration?,
@@ -147,11 +151,11 @@ class StrongIdentityRule(
             logger.debug { "Running rule $name with context $ctx and email $email" }
             ctx.roles(email)
             return ctx.roles
+        } catch (ex: RuleException) {
+            @Suppress("RethrowCaughtException")
+            throw ex
         } catch (ex: Exception) {
-            if (ex is RuleException)
-                throw ex
-            else
-                throw RuleException("Encountered an exception inside a rule", ex)
+            throw RuleException("Encountered an exception inside a rule", ex)
         }
     }
 }
@@ -264,10 +268,11 @@ class RulebookBuilder {
     @RulebookDsl
     @Suppress("unused")
     fun emailValidator(v: EmailValidator) {
-        if (validator == null)
+        if (validator == null) {
             validator = v
-        else
+        } else {
             error("The e-mail validator was already defined elsewhere")
+        }
     }
 
     /**

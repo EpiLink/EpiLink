@@ -15,7 +15,6 @@ import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-
 class DiscordTargetTest : KoinBaseTest<DiscordTargets>(
     DiscordTargets::class,
     module {

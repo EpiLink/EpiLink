@@ -8,22 +8,37 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.*
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
 import io.ktor.features.ContentTransformationException
-import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.sessions.*
-import org.epilink.bot.StandardErrorCodes.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.request.header
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.Route
+import io.ktor.routing.delete
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.sessions.clear
+import io.ktor.sessions.get
+import io.ktor.sessions.getOrSet
+import io.ktor.sessions.sessions
+import io.ktor.sessions.set
+import org.epilink.bot.StandardErrorCodes.AccountCreationNotAllowed
+import org.epilink.bot.StandardErrorCodes.IncompleteRegistrationRequest
+import org.epilink.bot.StandardErrorCodes.UnknownService
 import org.epilink.bot.config.WebServerConfiguration
-import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.Disallowed
 import org.epilink.bot.db.PermissionChecks
 import org.epilink.bot.db.UserCreator
 import org.epilink.bot.debug
 import org.epilink.bot.discord.RoleManager
-import org.epilink.bot.http.*
+import org.epilink.bot.http.ApiEndpoint
+import org.epilink.bot.http.ApiSuccessResponse
+import org.epilink.bot.http.DiscordBackEnd
+import org.epilink.bot.http.IdentityProvider
+import org.epilink.bot.http.apiSuccess
 import org.epilink.bot.http.data.AdditionalRegistrationOptions
 import org.epilink.bot.http.data.RegistrationAuthCode
 import org.epilink.bot.http.data.RegistrationContinuation
@@ -62,6 +77,7 @@ internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
         with(route) { registration() }
     }
 
+    @Suppress("LongMethod")
     private fun Route.registration() = limitedRoute("/api/v1/register", wsCfg.rateLimitingProfile.registrationApi) {
         @ApiEndpoint("GET /api/v1/register/info")
         get("info") {
@@ -77,11 +93,13 @@ internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
         }
 
         @ApiEndpoint("POST /api/v1/register")
+        @Suppress("ComplexCondition") // No other choice, otherwise null checks get messy
         post {
             with(call.sessions.get<RegisterSession>()) {
                 if (this == null) {
                     logger.debug {
-                        "Missing/unknown session header for call from reg. session ${call.request.header("RegistrationSessionId")}"
+                        "Missing/unknown session header for call from reg. session " +
+                                call.request.header("RegistrationSessionId")
                     }
                     call.respond(
                         HttpStatusCode.BadRequest,
@@ -98,7 +116,7 @@ internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
                             discordUsername = $discordUsername
                             email = $email
                             idpId = $idpId
-                            """.trimIndent()
+                        """.trimIndent()
                     }
                     call.respond(
                         HttpStatusCode.BadRequest,

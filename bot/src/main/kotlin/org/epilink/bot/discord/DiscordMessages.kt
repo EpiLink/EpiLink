@@ -55,7 +55,12 @@ interface DiscordMessages {
      * `key.title` and `key.description`, where key is the [key] argument. The [objects] are used for formatting the
      * description only.
      */
-    fun getErrorCommandReply(language: String, key: String, vararg objects: Any, titleObjects: List<Any> = listOf()): DiscordEmbed
+    fun getErrorCommandReply(
+        language: String,
+        key: String,
+        objects: List<Any> = listOf(),
+        titleObjects: List<Any> = listOf()
+    ): DiscordEmbed
 
     /**
      * Embed for an invalid target given in a command body.
@@ -65,7 +70,7 @@ interface DiscordMessages {
     /**
      * Generic embed for a successful command result.
      */
-    fun getSuccessCommandReply(language: String, messageKey: String, vararg messageArgs: Any): DiscordEmbed
+    fun getSuccessCommandReply(language: String, messageKey: String, messageArgs: List<Any> = listOf()): DiscordEmbed
 
     /**
      * Embed for the help message. Simply shows the URL to the documentation
@@ -83,62 +88,64 @@ interface DiscordMessages {
     fun getWelcomeChooseLanguageEmbed(): DiscordEmbed
 }
 
-private const val logoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/epilink256.png"
-private const val unknownUserLogoUrl =
+private const val LOGO_URL = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/epilink256.png"
+private const val UNKNOWN_USER_LOGO_URL =
     "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/unknownuser256.png"
-private const val idNotifyLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/idnotify256.png"
-private const val banLogoUrl = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/ban256.png"
-private const val targetsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands?id=user-target"
-private const val commandsDocsUrl = "https://epilink.zoroark.guru/#/DiscordCommands"
-private const val errorRed = "#8A0303"
-private const val helpGrey = "#CCD6DD"
-private const val helloBlue = "#3771C8"
-private const val notificationOrange = "#FF6600"
-private const val okGreen = "#2B9B2B"
+private const val ID_NOTIFY_LOGO_URL = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/idnotify256.png"
+private const val BAN_LOGO_URL = "https://raw.githubusercontent.com/EpiLink/EpiLink/master/assets/ban256.png"
+private const val TARGETS_DOCS_URL = "https://epilink.zoroark.guru/#/DiscordCommands?id=user-target"
+private const val COMMANDS_DOCS_URL = "https://epilink.zoroark.guru/#/DiscordCommands"
+private const val ERROR_RED = "#8A0303"
+private const val HELP_GREY = "#CCD6DD"
+private const val HELLO_BLUE = "#3771C8"
+private const val NOTIFICATION_ORANGE = "#FF6600"
+private const val OK_GREEN = "#2B9B2B"
 
 @OptIn(KoinApiExtension::class)
+@Suppress("TooManyFunctions")
 internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
     private val config: DiscordConfiguration by inject()
     private val i18n: DiscordMessagesI18n by inject()
     private val privacyConfig: PrivacyConfiguration by inject()
 
     private val DiscordI18nContext.poweredByEpiLink
-        get() = DiscordEmbedFooter(i18n["poweredBy"], logoUrl)
+        get() = DiscordEmbedFooter(i18n["poweredBy"], LOGO_URL)
 
     private fun <R> String.ctx(block: DiscordI18nContext.() -> R): R =
         DiscordI18nContext(this).run(block)
 
     override fun getCouldNotJoinEmbed(language: String, guildName: String, reason: String) = language.ctx {
         DiscordEmbed(
-            title = i18n["cnj.title"].f(guildName),
-            description = i18n["cnj.description"].f(guildName),
+            title = i18n["cnj.title"].f(listOf(guildName)),
+            description = i18n["cnj.description"].f(listOf(guildName)),
             fields = listOf(DiscordEmbedField(i18n["cnj.reason"], reason, true)),
             footer = poweredByEpiLink,
-            color = errorRed
+            color = ERROR_RED
         )
     }
 
     override fun getGreetingsEmbed(language: String, guildId: String, guildName: String): DiscordEmbed? = language.ctx {
         val guildConfig = config.getConfigForGuild(guildId)
-        if (!guildConfig.enableWelcomeMessage)
+        if (!guildConfig.enableWelcomeMessage) {
             null
-        else guildConfig.welcomeEmbed ?: DiscordEmbed(
-            title = i18n["greet.title"].f(guildName),
-            description = i18n["greet.welcome"].f(guildName),
+        } else guildConfig.welcomeEmbed ?: DiscordEmbed(
+            title = i18n["greet.title"].f(listOf(guildName)),
+            description = i18n["greet.welcome"].f(listOf(guildName)),
             fields = run {
                 val ml = mutableListOf<DiscordEmbedField>()
                 val welcomeUrl = config.welcomeUrl
-                if (welcomeUrl != null)
+                if (welcomeUrl != null) {
                     ml += DiscordEmbedField(i18n["greet.logIn"], welcomeUrl)
+                }
                 ml += DiscordEmbedField(
                     i18n["greet.needHelp"],
-                    i18n["greet.contact"].f(guildName)
+                    i18n["greet.contact"].f(listOf(guildName))
                 )
                 ml
             },
-            thumbnail = unknownUserLogoUrl,
+            thumbnail = UNKNOWN_USER_LOGO_URL,
             footer = poweredByEpiLink,
-            color = helloBlue
+            color = HELLO_BLUE
         )
     }
 
@@ -152,7 +159,7 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
             val discloseId = privacyConfig.shouldDiscloseIdentity(automated)
             val authorKey = if (discloseId) "Author" else ""
             val autoKey = if (automated) "Auto" else ""
-            val str = i18n["ida.access$authorKey$autoKey"].let { if (discloseId) it.f(author) else it }
+            val str = i18n["ida.access$authorKey$autoKey"].let { if (discloseId) it.f(listOf(author)) else it }
             DiscordEmbed(
                 title = i18n["ida.title"],
                 description = str,
@@ -164,8 +171,8 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
                         DiscordEmbedField(i18n["ida.needHelp.title"], i18n["ida.needHelp.description"], false)
                     }
                 ),
-                color = notificationOrange,
-                thumbnail = idNotifyLogoUrl,
+                color = NOTIFICATION_ORANGE,
+                thumbnail = ID_NOTIFY_LOGO_URL,
                 footer = poweredByEpiLink
             )
         } else null
@@ -181,12 +188,12 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
                         DiscordEmbedField(i18n["bn.reason"], banReason),
                         DiscordEmbedField(
                             i18n["bn.expiry.title"],
-                            banExpiry?.let { i18n["bn.expiry.date"].f(it.getDate(), it.getTime()) }
+                            banExpiry?.let { i18n["bn.expiry.date"].f(listOf(it.getDate(), it.getTime())) }
                                 ?: i18n["bn.expiry.none"]
                         )
                     ),
-                    color = errorRed,
-                    thumbnail = banLogoUrl,
+                    color = ERROR_RED,
+                    thumbnail = BAN_LOGO_URL,
                     footer = poweredByEpiLink
                 )
             } else {
@@ -197,13 +204,13 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
     override fun getErrorCommandReply(
         language: String,
         key: String,
-        vararg objects: Any,
+        objects: List<Any>,
         titleObjects: List<Any>
     ): DiscordEmbed = language.ctx {
         DiscordEmbed(
-            title = i18n["$key.title"].f(*titleObjects.toTypedArray()),
-            description = i18n["$key.description"].f(*objects),
-            color = errorRed,
+            title = i18n["$key.title"].f(titleObjects),
+            description = i18n["$key.description"].f(objects),
+            color = ERROR_RED,
             footer = poweredByEpiLink
         )
     }
@@ -211,24 +218,24 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
     override fun getWrongTargetCommandReply(language: String, target: String): DiscordEmbed = language.ctx {
         DiscordEmbed(
             title = i18n["cr.wt.title"],
-            description = i18n["cr.wt.description"].f(target),
+            description = i18n["cr.wt.description"].f(listOf(target)),
             fields = listOf(
                 DiscordEmbedField(
                     i18n["cr.wt.help.title"],
-                    i18n["cr.wt.help.description"].f(targetsDocsUrl)
+                    i18n["cr.wt.help.description"].f(listOf(TARGETS_DOCS_URL))
                 )
             ),
-            color = errorRed,
+            color = ERROR_RED,
             footer = poweredByEpiLink
         )
     }
 
-    override fun getSuccessCommandReply(language: String, messageKey: String, vararg messageArgs: Any): DiscordEmbed =
+    override fun getSuccessCommandReply(language: String, messageKey: String, messageArgs: List<Any>): DiscordEmbed =
         language.ctx {
             DiscordEmbed(
                 title = i18n["cr.ok.title"],
-                description = i18n[messageKey].f(*messageArgs),
-                color = okGreen,
+                description = i18n[messageKey].f(messageArgs),
+                color = OK_GREEN,
                 footer = poweredByEpiLink
             )
         }
@@ -240,11 +247,11 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
             fields = if (withAdminHelp) listOf(
                 DiscordEmbedField(
                     i18n["help.admin.title"],
-                    i18n["help.admin.description"].f(commandsDocsUrl),
+                    i18n["help.admin.description"].f(listOf(COMMANDS_DOCS_URL)),
                     false
                 )
             ) else listOf(),
-            color = helpGrey,
+            color = HELP_GREY,
             footer = poweredByEpiLink
         )
     }
@@ -261,7 +268,7 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
                 DiscordEmbedField(i18n["lang.help.clear.title"], i18n["lang.help.clear.description"], false),
                 DiscordEmbedField(i18n["lang.help.availableLanguages"], languageLines, false)
             ),
-            color = helpGrey,
+            color = HELP_GREY,
             footer = poweredByEpiLink
         )
     }
@@ -270,10 +277,10 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
         DiscordEmbed(
             title = i18n["welcomeLang.current"],
             description = i18n["welcomeLang.description"] + "\n\n" +
-                    (i18n.preferredLanguages - i18n.defaultLanguage).joinToString("\n\n") {
-                        i18n.get(it, "welcomeLang.change")
-                    },
-            color = helloBlue
+                (i18n.preferredLanguages - i18n.defaultLanguage).joinToString("\n\n") {
+                    i18n.get(it, "welcomeLang.change")
+                },
+            color = HELLO_BLUE
             // No powered by epilink footer because this embed is sent right before another one. Having a "powered
             // by epilink" footer on both is obnoxious.
         )

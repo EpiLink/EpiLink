@@ -28,7 +28,8 @@ interface RuleMediator {
      *
      * The results may be returned from a cache.
      *
-     * This method returns an empty list when an error is encountered when executing the rule (i.e. the rule is ignored).
+     * This method returns an empty list when an error is encountered when executing the rule (i.e. the rule is
+     * ignored).
      *
      * @param rule The rule to run
      * @param discordId The Discord ID of the user to update

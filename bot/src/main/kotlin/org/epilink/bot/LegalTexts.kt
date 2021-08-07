@@ -47,7 +47,6 @@ private val defaultIdPromptText =
     <p class="description">For more information, contact your administrator or consult the privacy policy.</p>
     """.trimIndent()
 
-
 /**
  * Load the legal texts from the given configuration files
  */
@@ -87,10 +86,11 @@ fun loadLegalText(textValue: String?, file: (() -> Path)?, defaultText: String):
     return when {
         textValue != null -> LegalText.Html(textValue)
         file != null -> file().let {
-            if (it.extension == "pdf")
+            if (it.extension == "pdf") {
                 LegalText.Pdf(Files.readAllBytes(it))
-            else
+            } else {
                 LegalText.Html(Files.readString(it))
+            }
         }
         else -> LegalText.Html(defaultText)
     }

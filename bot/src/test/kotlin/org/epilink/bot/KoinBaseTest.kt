@@ -41,10 +41,11 @@ open class KoinBaseTest<T : Any>(
     fun setupKoin() {
         startKoin {
             val additional = additionalModule()
-            if (additional != null)
+            if (additional != null) {
                 modules(module, additional)
-            else
+            } else {
                 modules(module)
+            }
         }
     }
 
