@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   * Let Gradle automatically replace the correct version string in the docs via a simple template.
   * Also used Gradle's `layout` feature to avoid hard-coding build paths.
   * Renamed internal classes to remove the "Link" prefix ([#289](https://github.com/EpiLink/EpiLink/pull/289))
+  * Added the `detekt` tool in the build process and fixed the internal issues it found ([#299](https://github.com/EpiLink/EpiLink/pull/299))
 
 ## [0.6.2] - 2021-04-14
 
