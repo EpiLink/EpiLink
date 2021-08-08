@@ -16,12 +16,16 @@ repositories {
 
 compileKotlin {
     kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=io.ktor.locations.KtorExperimentalLocationsAPI"]
+    kotlinOptions.freeCompilerArgs += [
+            "-Xopt-in=kotlin.RequiresOptIn",
+            "-Xopt-in=io.ktor.locations.KtorExperimentalLocationsAPI",
+            "-Werror" // All warnings as errors
+    ]
 }
 
 compileTestKotlin {
     kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn"]
+    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-Werror"]
 }
 
 application {
@@ -113,5 +117,16 @@ task generateKotlin(type: Copy) {
     expand templateContext
 }
 
-sourceSets.main.kotlin.srcDir "$buildDir/generated/kotlin"
+sourceSets {
+    main.kotlin.srcDirs += "$buildDir/generated/kotlin"
+}
+
 compileKotlin.dependsOn generateKotlin
+licenseMain.dependsOn generateKotlin
+/*
+// Detekt creates its tasks after project evaluation (i.e. after evaluating this buildscript file) so that it can find
+// all of the relevant sources, so we need to add the dependency on generateKotlin *after* the evaluation phase.
+afterEvaluate {
+    tasks.getByName("detektMain").dependsOn generateKotlin
+}
+*/

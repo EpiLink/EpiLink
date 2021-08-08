@@ -13,7 +13,6 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.*
-import io.ktor.util.KtorExperimentalAPI
 import org.epilink.bot.EndpointException
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.StandardErrorCodes
@@ -30,7 +29,7 @@ class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
     }
 ) {
     @Test
-    fun `Test Discord auth stub`() = test {
+    fun `Test Discord auth stub`(): Unit = test {
         getAuthorizeStub().apply {
             assertTrue(contains("client_id=DiscordClientId"), "Expected a client ID")
             assertTrue(contains("scope=identify"), "Expected the scope to be set to identify")
@@ -46,7 +45,6 @@ class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
         declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") { request ->
             assertEquals(HttpMethod.Post, request.method)
             assertEquals(ContentType.Application.FormUrlEncoded, request.body.contentType)
-            @OptIn(KtorExperimentalAPI::class)
             val params = String(request.body.toByteArray()).parseUrlEncodedParameters()
             assertEquals("DiscordClientId", params["client_id"])
             assertEquals("DiscordSecret", params["client_secret"])

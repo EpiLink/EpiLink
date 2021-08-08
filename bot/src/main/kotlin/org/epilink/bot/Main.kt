@@ -104,7 +104,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
         return@mainBody
     }
     logger.info(
-        "EpiLink version $VERSION, starting right up! See $DOCS for documentation. Report issues and " +
+        "EpiLink version $EPILINK_VERSION, starting right up! See $DOCS for documentation. Report issues and " +
                 "suggestions at $BUGS and join our Discord server for help."
     )
     if (cliArgs.verbose) {

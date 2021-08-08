@@ -8,4 +8,4 @@
  */
 package org.epilink.bot
 
-internal const val VERSION: String = "${version}"
+const val EPILINK_VERSION: String = "${version}"
