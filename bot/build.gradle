@@ -57,7 +57,7 @@ dependencies {
     testImplementation libs.koin.test
     testImplementation libs.ktor.server.testHost
     testImplementation libs.ktor.client.mock.jvm
-    
+
     detektPlugins libs.detekt.formatting
 }
 
@@ -69,8 +69,6 @@ license {
     header rootProject.file("LHEADER")
     // Exclude front-end test files
     exclude("frontend/*")
-    // Generated file
-    exclude("org/epilink/bot/Version.kt")
 }
 
 // TODO Remove this when the default JaCoCo version is updated
@@ -80,7 +78,7 @@ jacoco {
 
 jacocoTestReport {
     reports {
-        xml.enabled true
+        xml.required = true
     }
 }
 
