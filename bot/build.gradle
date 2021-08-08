@@ -29,64 +29,36 @@ application {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-scripting-common:$kotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-scripting-jvm:$kotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-scripting-jvm-host:$kotlinVersion"
+    implementation libs.bundles.kotlin.scripting
+    implementation libs.bundles.ktor.server
+    implementation libs.bundles.ktor.client
+    implementation libs.bundles.jackson
+    implementation libs.bundles.exposed
+    implementation libs.bundles.kotlinx.coroutines
+    implementation libs.bundles.koin
 
-    implementation "io.ktor:ktor-server-netty:$ktorVersion"
-    implementation "io.ktor:ktor-auth:$ktorVersion"
-    implementation "io.ktor:ktor-jackson:$ktorVersion"
-    implementation "io.ktor:ktor-locations:$ktorVersion"
-
-    implementation "io.ktor:ktor-client-apache:$ktorVersion"
-    implementation "io.ktor:ktor-client-auth-jvm:$ktorVersion"
-
-    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
-
-    implementation (group: "ch.qos.logback", name: "logback-classic") {
-        version {
-            strictly "[$logbackVersion]"
-        }
-    }
-    implementation "org.jetbrains.exposed:exposed-core:$exposedVersion"
-    implementation "org.jetbrains.exposed:exposed-dao:$exposedVersion"
-    implementation "org.jetbrains.exposed:exposed-jdbc:$exposedVersion"
-    implementation "org.jetbrains.exposed:exposed-java-time:$exposedVersion"
-    implementation "org.xerial:sqlite-jdbc:$sqliteJdbcVersion"
-
-    implementation "com.xenomachina:kotlin-argparser:$argparserVersion"
-
-    implementation "com.discord4j:discord4j-core:$discord4JVersion"
-
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$coroutinesVersion"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$coroutinesVersion"
-
-    implementation "io.insert-koin:koin-core:$koinVersion"
-    implementation "io.insert-koin:koin-logger-slf4j:$koinVersion"
-
-    implementation "io.lettuce:lettuce-core:$lettuceVersion"
-
-    implementation "guru.zoroark:ktor-rate-limit:$ktorRateLimitVersion"
-
-    implementation "org.bitbucket.b_c:jose4j:$jose4jVersion"
-
-    implementation "org.apache.commons:commons-dbcp2:$dbcp2Version"
+    implementation libs.kotlin.reflect
+    implementation libs.logback
+    implementation libs.sqlite
+    implementation libs.argparser
+    implementation libs.discord4j.core
+    implementation libs.lettuce.core
+    implementation libs.ktorRateLimit
+    implementation libs.jose4j
+    implementation libs.commonsDbcp2
 
     if (project.hasProperty("withFrontend"))
         runtimeOnly project(path: ":epilink-frontend", configuration: "frontendJarCfg")
 
-    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
-    testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlinVersion"
-    testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
-    testImplementation "io.mockk:mockk:$mockkVersion"
-    testImplementation "io.insert-koin:koin-test:$koinVersion"
-    testImplementation "io.ktor:ktor-server-test-host:$ktorVersion"
-    testImplementation "io.ktor:ktor-client-mock-jvm:$ktorVersion"
+    testImplementation libs.bundles.kotlin.test
 
-    detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion"
+    testImplementation libs.junit.jupiter
+    testImplementation libs.mockk
+    testImplementation libs.koin.test
+    testImplementation libs.ktor.server.testHost
+    testImplementation libs.ktor.client.mock.jvm
+    
+    detektPlugins libs.detekt.formatting
 }
 
 test {

@@ -1,0 +1,95 @@
+[versions]
+kotlin = "1.5.21"
+jackson = "2.12.4"
+argparser = "2.0.7"
+coroutines = "1.5.1"
+dbcp2 = "2.8.0"
+discord4J = "3.1.7"
+exposed = "0.32.1"
+jose4j = "0.7.8"
+koin = "2.2.3"
+ktorRateLimit = "0.0.1"
+ktor = "1.6.2"
+lettuce = "6.1.4.RELEASE"
+logback = { strictly = "1.2.3-litarvan" }
+sqliteJdbc = "3.36.0.1"
+junit = "5.7.2"
+mockk = "1.12.0"
+detekt = "1.18.0-RC3"
+
+[libraries]
+
+# MAIN CODE LIBRARIES
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+
+kotlin-scripting-common = { module = "org.jetbrains.kotlin:kotlin-scripting-common", version.ref = "kotlin" }
+kotlin-scripting-jvm = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm", version.ref = "kotlin" }
+kotlin-scripting-jvmHost = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm-host", version.ref = "kotlin" }
+
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-auth", version.ref = "ktor" }
+ktor-server-jackson = { module = "io.ktor:ktor-jackson", version.ref = "ktor" }
+ktor-server-locations = { module = "io.ktor:ktor-locations", version.ref = "ktor" }
+
+ktor-client-apache = { module = "io.ktor:ktor-client-apache", version.ref = "ktor" }
+ktor-client-auth-jvm = { module = "io.ktor:ktor-client-auth-jvm", version.ref = "ktor" }
+
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-javaTime = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
+
+sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqliteJdbc" }
+
+argparser = { module = "com.xenomachina:kotlin-argparser", version.ref = "argparser" }
+
+discord4j-core = { module = "com.discord4j:discord4j-core", version.ref = "discord4J" }
+
+kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "coroutines" }
+kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "coroutines" }
+
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
+
+lettuce-core = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
+
+ktorRateLimit = { module = "guru.zoroark:ktor-rate-limit", version.ref = "ktorRateLimit"}
+
+jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+
+commonsDbcp2 = { module = "org.apache.commons:commons-dbcp2", version.ref = "dbcp2" }
+
+# TEST CODE LIBRARIES
+
+kotlin-test-core = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
+
+ktor-server-testHost = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+ktor-client-mock-jvm = { module = "io.ktor:ktor-client-mock-jvm", version.ref = "ktor" }
+
+# DETEKT PLUGINS
+
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+
+[bundles]
+
+kotlin-scripting = ["kotlin-scripting-common", "kotlin-scripting-jvm", "kotlin-scripting-jvmHost"]
+ktor-server = ["ktor-server-netty", "ktor-server-auth", "ktor-server-jackson", "ktor-server-locations"]
+ktor-client = ["ktor-client-apache", "ktor-client-auth-jvm"]
+jackson = ["jackson-databind", "jackson-kotlin", "jackson-yaml"]
+exposed = ["exposed-core", "exposed-dao", "exposed-jdbc", "exposed-javaTime"]
+kotlinx-coroutines = ["kotlinx-coroutines-reactor", "kotlinx-coroutines-reactive"]
+koin = ["koin-core", "koin-logger-slf4j"]
+kotlin-test = ["kotlin-test-core", "kotlin-test-junit5"]
