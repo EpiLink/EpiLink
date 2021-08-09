@@ -14,7 +14,6 @@ import io.ktor.sessions.defaultSessionSerializer
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.util.AttributeKey
-import io.ktor.util.KtorExperimentalAPI
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
@@ -105,7 +104,6 @@ internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
 }
 
 @OptIn(
-    KtorExperimentalAPI::class, // We get a choice between a deprecated or an experimental func...
     UsesTrueIdentity::class // for setting up identity mocks
 )
 internal fun KoinTest.setupSession(
