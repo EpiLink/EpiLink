@@ -1,0 +1,21 @@
+version: '3'
+
+# Note: this is a "development" Docker Compose file, not intended for production.
+# Use it to check if the application works in a containerized environment.
+
+services:
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+  epilink:
+    build: .
+    # image: epilink # You may use this one if you have built a local 'epilink' image already.
+    restart: "no" # Feel free to set this to 'always', though it may lead to "bootloops" in case of a wrong EpiLink configuration.
+    environment:
+      CONFIG_FILE: epilink_config_real.yaml
+      VERBOSE: "false" # switch to true if you want more logs
+    ports:
+      - "9090:9090"
+      - "8080:8080"
+    volumes:
+      - ./bot/config:/var/run/epilink/config
