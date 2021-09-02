@@ -13,13 +13,12 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.HttpClient
 import io.ktor.client.call.receive
 import io.ktor.client.features.ClientRequestException
+import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.request.header
 import io.ktor.client.request.post
-import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.ParametersBuilder
-import io.ktor.http.formUrlEncode
+import io.ktor.http.Parameters
 import org.epilink.bot.EndpointException
 import org.epilink.bot.InternalEndpointException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
@@ -65,13 +64,10 @@ class DiscordBackEnd(
         val res = runCatching {
             client.post<String>("https://discord.com/api/v6/oauth2/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
-                body = TextContent(
-                    ParametersBuilder().apply {
-                        appendOauthParameters(clientId, secret, authcode, redirectUri)
-                        append("scope", "identify")
-                    }.build().formUrlEncode(),
-                    ContentType.Application.FormUrlEncoded
-                )
+                body = FormDataContent(Parameters.build {
+                    appendOauthParameters(clientId, secret, authcode, redirectUri)
+                    forceAppend("scope", "identify")
+                })
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {

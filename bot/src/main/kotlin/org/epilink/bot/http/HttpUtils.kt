@@ -16,6 +16,17 @@ import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.ParametersBuilder
+import io.ktor.util.InternalAPI
+
+/*
+ * This is required because, for some ungodly reason, append is set to internal although its usage is required for
+ * building parameters lists, e.g. via `Parameters.build`
+ *
+ * TODO remove this when whatever needs to be fixed in Ktor upstream is fixed.
+ */
+@OptIn(InternalAPI::class)
+fun ParametersBuilder.forceAppend(name: String, value: String) =
+    append(name, value)
 
 /**
  * Utility function for appending classic OAuth parameters to a ParametersBuilder object all at once.
@@ -26,11 +37,11 @@ fun ParametersBuilder.appendOauthParameters(
     authcode: String,
     redirectUri: String
 ) {
-    append("grant_type", "authorization_code")
-    append("client_id", clientId)
-    append("client_secret", secret)
-    append("code", authcode)
-    append("redirect_uri", redirectUri)
+    forceAppend("grant_type", "authorization_code")
+    forceAppend("client_id", clientId)
+    forceAppend("client_secret", secret)
+    forceAppend("code", authcode)
+    forceAppend("redirect_uri", redirectUri)
 }
 
 /**

@@ -1,6 +1,6 @@
 plugins {
-    id "com.github.hierynomus.license" version "$licenseVersion" apply false
-    id "com.github.ben-manes.versions" version "$versionsVersion"
+    alias(libs.plugins.license) apply false
+    alias(libs.plugins.versionsGradle)
     id "distribution"
 }
 

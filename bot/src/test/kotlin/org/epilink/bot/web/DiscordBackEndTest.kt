@@ -20,6 +20,7 @@ import org.epilink.bot.declareClientHandler
 import org.epilink.bot.http.DiscordBackEnd
 import org.epilink.bot.http.DiscordUserInfo
 import org.koin.dsl.module
+import java.nio.charset.StandardCharsets
 import kotlin.test.*
 
 class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
@@ -44,7 +45,7 @@ class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
     fun `Test Discord token retrieval`() {
         declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") { request ->
             assertEquals(HttpMethod.Post, request.method)
-            assertEquals(ContentType.Application.FormUrlEncoded, request.body.contentType)
+            assertEquals(ContentType.Application.FormUrlEncoded.withCharset(StandardCharsets.UTF_8), request.body.contentType)
             val params = String(request.body.toByteArray()).parseUrlEncodedParameters()
             assertEquals("DiscordClientId", params["client_id"])
             assertEquals("DiscordSecret", params["client_secret"])

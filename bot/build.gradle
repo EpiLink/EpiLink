@@ -1,11 +1,14 @@
 plugins {
-    id "org.jetbrains.kotlin.jvm" version "$kotlinVersion"
-    id "io.gitlab.arturbosch.detekt" version "$detektVersion"
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.detekt)
+    // TODO https://github.com/gradle/gradle/issues/17968
+    id 'com.github.hierynomus.license'
+
     id 'java'
     id 'jacoco'
     id 'application'
     id 'distribution'
-    id "com.github.hierynomus.license"
+
 }
 
 repositories {
@@ -25,7 +28,12 @@ compileKotlin {
 
 compileTestKotlin {
     kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-Werror"]
+    kotlinOptions.freeCompilerArgs += [
+            "-Xopt-in=kotlin.RequiresOptIn",
+            // TODO remove this when we do not use Koin anymore.
+            "-Xopt-in=org.koin.core.component.KoinApiExtension",
+            "-Werror"
+    ]
 }
 
 application {

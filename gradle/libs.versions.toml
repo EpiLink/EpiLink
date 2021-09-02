@@ -1,22 +1,39 @@
 [versions]
-kotlin = "1.5.21"
-jackson = "2.12.4"
+# Mixed versions (both plugins and dependencies)
+kotlin = "1.5.30"
+detekt = "1.18.1"
+
+# Plugin versions
+license = "0.16.1"
+node = "3.1.0"
+swaggerGenerator = "2.18.2"
+versions = "0.39.0"
+
+# Non-plugin versions
+jackson = "2.12.5"
 argparser = "2.0.7"
-coroutines = "1.5.1"
-dbcp2 = "2.8.0"
+coroutines = "1.5.2"
+dbcp2 = "2.9.0"
 discord4J = "3.1.7"
-exposed = "0.32.1"
-jose4j = "0.7.8"
+exposed = "0.34.1"
+jose4j = "0.7.9"
 koin = "2.2.3"
-ktorRateLimit = "0.0.1"
-ktor = "1.6.2"
+ktorRateLimit = "0.0.2"
+ktor = "1.6.3"
 lettuce = "6.1.4.RELEASE"
 logback = { strictly = "1.2.3-litarvan" }
-sqliteJdbc = "3.36.0.1"
+sqliteJdbc = "3.36.0.3"
 junit = "5.7.2"
 mockk = "1.12.0"
-detekt = "1.18.0-RC3"
-swaggerUi = "3.51.1"
+swaggerUi = "3.51.2"
+
+[plugins]
+
+node = { id = "com.github.node-gradle.node", version.ref = "node" }
+license = { id = "com.github.hierynomus.license", version.ref = "license" }
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+versionsGradle = { id = "com.github.ben-manes.versions", version.ref = "versions" }
 
 [libraries]
 

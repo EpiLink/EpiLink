@@ -1,5 +1,7 @@
 enableFeaturePreview("VERSION_CATALOGS")
+
 rootProject.name = 'EpiLink'
+
 include 'bot', 'web', 'swagger'
 project(":bot").name = "epilink-backend"
 project(":web").name = "epilink-frontend"
