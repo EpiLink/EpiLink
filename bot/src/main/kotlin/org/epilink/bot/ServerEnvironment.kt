@@ -8,6 +8,11 @@
  */
 package org.epilink.bot
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.dsl.shedinja
+import guru.zoroark.shedinja.dsl.shedinjaModule
+import guru.zoroark.shedinja.environment.get
+import guru.zoroark.shedinja.environment.named
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import kotlinx.coroutines.coroutineScope
@@ -70,11 +75,6 @@ import org.epilink.bot.http.endpoints.RegistrationApiImpl
 import org.epilink.bot.http.endpoints.UserApi
 import org.epilink.bot.http.endpoints.UserApiImpl
 import org.epilink.bot.rulebook.Rulebook
-import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
-import org.koin.core.qualifier.named
-import org.koin.dsl.module
-import org.koin.logger.slf4jLogger
 import org.slf4j.LoggerFactory
 import kotlin.system.measureTimeMillis
 
@@ -98,56 +98,56 @@ class ServerEnvironment(
     /**
      * Base module, which contains the environment and the database
      */
-    private val epilinkBaseModule = module {
+    private val epilinkBaseModule = shedinjaModule {
         // Environment
-        single { this@ServerEnvironment }
+        put { this@ServerEnvironment }
         // Facade between EpiLink and the actual database
-        single<DatabaseFacade> { SQLiteExposedFacadeImpl(cfg.db) }
+        put<DatabaseFacade> { SQLiteExposedFacadeImpl(cfg.db) }
         // Cache-based features
         @Suppress("RemoveExplicitTypeArguments")
-        single<CacheClient> { cfg.redis?.let { RedisClient(it) } ?: MemoryCacheClient() }
+        put<CacheClient> { cfg.redis?.let { RedisClient(it) } ?: MemoryCacheClient() }
         // Admin list
-        single(named("admins")) { cfg.admins }
+        put(named("admins")) { cfg.admins }
         // "Glue" thing that calls everything required when accessing an identity
-        single<IdentityManager> { IdentityManagerImpl() }
+        put<IdentityManager>(::IdentityManagerImpl)
         // Ban-related logic (isActive...)
-        single<BanLogic> { BanLogicImpl() }
+        put<BanLogic>(::BanLogicImpl)
         // Permission checks (e.g. check if a user can create an account)
-        single<PermissionChecks> { PermissionChecksImpl() }
+        put<PermissionChecks>(::PermissionChecksImpl)
         // User creation logic
-        single<UserCreator> { UserCreatorImpl() }
+        put<UserCreator>(::UserCreatorImpl)
         // GDPR report generation utility
-        single<GdprReport> { GdprReportImpl() }
+        put<GdprReport>(::GdprReportImpl)
         // Cooldown utility for preventing relink abuse
-        single<UnlinkCooldown> { UnlinkCooldownImpl() }
+        put<UnlinkCooldown>(::UnlinkCooldownImpl)
     }
 
     /**
      * Discord module, for everything related to Discord
      */
-    private val epilinkDiscordModule = module {
+    private val epilinkDiscordModule = shedinjaModule {
         // Rulebook
-        single { rulebook }
+        put { rulebook }
         // Discord configuration
-        single { cfg.discord }
+        put { cfg.discord }
         // Privacy configuration
-        single { cfg.privacy }
+        put { cfg.privacy }
         // Discord bot
-        single<DiscordMessages> { DiscordMessagesImpl() }
-        single<DiscordMessagesI18n> {
-            DiscordMessagesI18nImpl(discordStrings, defaultDiscordLanguage, cfg.discord.preferredLanguages)
+        put<DiscordMessages>(::DiscordMessagesImpl)
+        put<DiscordMessagesI18n> {
+            DiscordMessagesI18nImpl(scope, discordStrings, defaultDiscordLanguage, cfg.discord.preferredLanguages)
         }
         // Role manager
-        single<RoleManager> { RoleManagerImpl() }
+        put<RoleManager>(::RoleManagerImpl)
         // Facade
-        single<DiscordClientFacade> {
-            Discord4JFacadeImpl(cfg.tokens.discordOAuthClientId, cfg.tokens.discordToken)
+        put<DiscordClientFacade> {
+            Discord4JFacadeImpl(scope, cfg.tokens.discordOAuthClientId, cfg.tokens.discordToken)
         }
-        single<DiscordMessageSender> { DiscordMessageSenderImpl() }
-        single<BanManager> { BanManagerImpl() }
-        single<DiscordCommands> { DiscordCommandsImpl() }
-        single<DiscordTargets> { DiscordTargetsImpl() }
-        single<List<Command>>(named("discord.commands")) {
+        put<DiscordMessageSender>(::DiscordMessageSenderImpl)
+        put<BanManager>(::BanManagerImpl)
+        put<DiscordCommands>(::DiscordCommandsImpl)
+        put<DiscordTargets>(::DiscordTargetsImpl)
+        put<List<Command>>(named("discord.commands")) {
             listOf(
                 UpdateCommand(),
                 HelpCommand(),
@@ -160,26 +160,25 @@ class ServerEnvironment(
     /**
      * Web module, for everything related to the web server, the front-end and Ktor
      */
-    private val epilinkWebModule = module {
+    private val epilinkWebModule = shedinjaModule {
         // HTTP (Ktor) server
-        single<HttpServer> { HttpServerImpl() }
+        put<HttpServer>(::HttpServerImpl)
 
-        single<BackEnd> { BackEndImpl() }
+        put<BackEnd>(::BackEndImpl)
 
-        single<FrontEndHandler> { FrontEndHandlerImpl() }
+        put<FrontEndHandler>(::FrontEndHandlerImpl)
 
-        single { cfg.server }
+        put { cfg.server }
 
-        single { cfg.idProvider }
+        put { cfg.idProvider }
 
-        single { HttpClient(Apache) }
+        put { HttpClient(Apache) }
 
-        single {
-            DiscordBackEnd(cfg.tokens.discordOAuthClientId, cfg.tokens.discordOAuthSecret)
-        }
+        put { DiscordBackEnd(scope, cfg.tokens.discordOAuthClientId, cfg.tokens.discordOAuthSecret) }
 
-        single {
+        put {
             IdentityProvider(
+                scope,
                 cfg.tokens.idpOAuthClientId,
                 cfg.tokens.idpOAuthSecret,
                 identityProviderMetadata.tokenUrl,
@@ -187,7 +186,7 @@ class ServerEnvironment(
             )
         }
 
-        single {
+        put {
             JwtVerifier(
                 cfg.tokens.idpOAuthClientId,
                 identityProviderMetadata.jwksUri,
@@ -195,19 +194,19 @@ class ServerEnvironment(
             )
         }
 
-        single { legal }
+        put { legal }
 
-        single { assets }
+        put { assets }
 
-        single<RegistrationApi> { RegistrationApiImpl() }
+        put<RegistrationApi>(::RegistrationApiImpl)
 
-        single<MetaApi> { MetaApiImpl() }
+        put<MetaApi>(::MetaApiImpl)
 
-        single<UserApi> { UserApiImpl() }
+        put<UserApi>(::UserApiImpl)
 
-        single<AdminEndpoints> { AdminEndpointsImpl() }
+        put<AdminEndpoints>(::AdminEndpointsImpl)
 
-        single<SessionChecker> { SessionCheckerImpl() }
+        put<SessionChecker>(::SessionCheckerImpl)
     }
 
     /**
@@ -221,9 +220,10 @@ class ServerEnvironment(
      */
     fun start() {
         logger.debug { "Starting Koin" }
-        val app = startKoin {
-            slf4jLogger(Level.ERROR)
-            modules(epilinkBaseModule, epilinkDiscordModule, epilinkWebModule)
+        val app = shedinja {
+            put(epilinkBaseModule)
+            put(epilinkDiscordModule)
+            put(epilinkWebModule)
         }
 
         logger.debug { "Starting components" }
@@ -232,26 +232,26 @@ class ServerEnvironment(
                 coroutineScope {
                     launch {
                         logger.debug { "Staring Discord bot facade" }
-                        measureTimeMillis { app.koin.get<DiscordClientFacade>().start() }.also {
+                        measureTimeMillis { app.get<DiscordClientFacade>().start() }.also {
                             logger.debug { "Discord bot facade started in $it ms" }
                         }
                     }
                     launch {
                         logger.debug { "Starting cache provider" }
-                        measureTimeMillis { app.koin.get<CacheClient>().start() }.also {
+                        measureTimeMillis { app.get<CacheClient>().start() }.also {
                             logger.debug { "Cache provider started in $it ms" }
                         }
                     }
                     launch {
                         logger.debug { "Starting database facade" }
-                        measureTimeMillis { app.koin.get<DatabaseFacade>().start() }.also {
+                        measureTimeMillis { app.get<DatabaseFacade>().start() }.also {
                             logger.debug { "Database facade started in $it ms" }
                         }
                     }
                 }
             }
             logger.debug { "Starting server" }
-            app.koin.get<HttpServer>().startServer(wait = true)
+            app.get<HttpServer>().startServer(wait = true)
         }.onFailure {
             logger.error("Encountered an exception on initialization", it)
         }

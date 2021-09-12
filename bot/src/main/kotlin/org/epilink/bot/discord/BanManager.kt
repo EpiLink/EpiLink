@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.StandardErrorCodes.InvalidId
 import org.epilink.bot.UserEndpointException
 import org.epilink.bot.db.Ban
@@ -49,14 +51,14 @@ interface BanManager {
 }
 
 @OptIn(KoinApiExtension::class)
-internal class BanManagerImpl : BanManager, KoinComponent {
-    private val dbf: DatabaseFacade by inject()
-    private val roleManager: RoleManager by inject()
-    private val banLogic: BanLogic by inject()
-    private val messages: DiscordMessages by inject()
-    private val i18n: DiscordMessagesI18n by inject()
-    private val sender: DiscordMessageSender by inject()
-    private val cooldown: UnlinkCooldown by inject()
+internal class BanManagerImpl(scope: InjectionScope) : BanManager {
+    private val dbf: DatabaseFacade by scope()
+    private val roleManager: RoleManager by scope()
+    private val banLogic: BanLogic by scope()
+    private val messages: DiscordMessages by scope()
+    private val i18n: DiscordMessagesI18n by scope()
+    private val sender: DiscordMessageSender by scope()
+    private val cooldown: UnlinkCooldown by scope()
 
     override suspend fun ban(idpHashBase64: String, expiresOn: Instant?, author: String, reason: String): Ban {
         val actualHash = Base64.getUrlDecoder().decode(idpHashBase64)

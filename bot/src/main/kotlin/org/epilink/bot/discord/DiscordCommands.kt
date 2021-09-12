@@ -8,6 +8,9 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
+import guru.zoroark.shedinja.environment.named
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.isMonitored
 import org.epilink.bot.db.AdminStatus.Admin
@@ -24,11 +27,7 @@ import org.epilink.bot.discord.MessageAcceptStatus.NotACommand
 import org.epilink.bot.discord.MessageAcceptStatus.NotRegistered
 import org.epilink.bot.discord.MessageAcceptStatus.ServerNotMonitored
 import org.epilink.bot.discord.MessageAcceptStatus.UnknownCommand
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
-import org.koin.core.component.inject
-import org.koin.core.qualifier.named
+import org.epilink.bot.wrapInLazy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -157,19 +156,18 @@ interface Command {
     )
 }
 
-@OptIn(KoinApiExtension::class)
-internal class DiscordCommandsImpl : DiscordCommands, KoinComponent {
-    private val discordCfg: DiscordConfiguration by inject()
-    private val admins: List<String> by inject(named("admins"))
-    private val db: DatabaseFacade by inject()
-    private val permission: PermissionChecks by inject()
-    private val client: DiscordClientFacade by inject()
-    private val msg: DiscordMessages by inject()
+internal class DiscordCommandsImpl(scope: InjectionScope) : DiscordCommands {
+    private val discordCfg: DiscordConfiguration by scope()
+    private val admins: List<String> by scope(named("admins"))
+    private val db: DatabaseFacade by scope()
+    private val permission: PermissionChecks by scope()
+    private val client: DiscordClientFacade by scope()
+    private val msg: DiscordMessages by scope()
     private val logger = LoggerFactory.getLogger("epilink.discord.cmd")
-    private val i18n: DiscordMessagesI18n by inject()
+    private val i18n: DiscordMessagesI18n by scope()
 
-    private val commands by lazy {
-        get<List<Command>>(named("discord.commands")).associateBy { it.name }
+    private val commands by scope<List<Command>>(named("discord.commands")) wrapInLazy {
+        it.associateBy { cmd -> cmd.name }
     }
 
     override suspend fun handleMessage(message: String, senderId: String, channelId: String, serverId: String?) {

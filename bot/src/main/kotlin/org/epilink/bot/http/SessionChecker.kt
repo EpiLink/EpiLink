@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.http
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
@@ -27,9 +29,6 @@ import org.epilink.bot.db.User
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.toResponse
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -59,11 +58,10 @@ interface SessionChecker {
     suspend fun verifyAdmin(context: PipelineContext<Unit, ApplicationCall>): Boolean
 }
 
-@OptIn(KoinApiExtension::class)
-internal class SessionCheckerImpl : SessionChecker, KoinComponent {
+internal class SessionCheckerImpl(scope: InjectionScope) : SessionChecker {
     private val logger = LoggerFactory.getLogger("epilink.api.sessioncheck")
-    private val dbFacade: DatabaseFacade by inject()
-    private val permission: PermissionChecks by inject()
+    private val dbFacade: DatabaseFacade by scope()
+    private val permission: PermissionChecks by scope()
 
     override suspend fun verifyUser(context: PipelineContext<Unit, ApplicationCall>): Boolean = with(context) {
         val session = call.sessions.get<ConnectedSession>()

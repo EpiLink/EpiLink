@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.db
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.EpiLinkException
 import org.epilink.bot.StandardErrorCodes.IdentityAlreadyKnown
 import org.epilink.bot.StandardErrorCodes.IdentityAlreadyUnknown
@@ -84,16 +86,15 @@ interface IdentityManager {
     suspend fun deleteUserIdentity(user: User)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class IdentityManagerImpl : IdentityManager, KoinComponent {
+internal class IdentityManagerImpl(scope: InjectionScope) : IdentityManager {
     private val logger = LoggerFactory.getLogger("epilink.idaccessor")
-    private val facade: DatabaseFacade by inject()
-    private val messages: DiscordMessages by inject()
-    private val i18n: DiscordMessagesI18n by inject()
-    private val discordSender: DiscordMessageSender by inject()
-    private val privacy: PrivacyConfiguration by inject()
-    private val idpConfig: IdentityProviderConfiguration by inject()
-    private val cooldown: UnlinkCooldown by inject()
+    private val facade: DatabaseFacade by scope()
+    private val messages: DiscordMessages by scope()
+    private val i18n: DiscordMessagesI18n by scope()
+    private val discordSender: DiscordMessageSender by scope()
+    private val privacy: PrivacyConfiguration by scope()
+    private val idpConfig: IdentityProviderConfiguration by scope()
+    private val cooldown: UnlinkCooldown by scope()
 
     @UsesTrueIdentity
     override suspend fun accessIdentity(user: User, automated: Boolean, author: String, reason: String): String {

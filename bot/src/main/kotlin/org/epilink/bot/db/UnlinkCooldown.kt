@@ -8,12 +8,19 @@
  */
 package org.epilink.bot.db
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
+import guru.zoroark.shedinja.extensions.SynchronizedLazyPropertyWrapper
+import guru.zoroark.shedinja.extensions.WrappedReadOnlyProperty
+import guru.zoroark.shedinja.extensions.wrapIn
 import org.epilink.bot.CacheClient
 import org.epilink.bot.config.WebServerConfiguration
+import org.epilink.bot.wrapInLazy
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.component.inject
+import kotlin.properties.ReadOnlyProperty
 
 /**
  * Interface for managing the unlink cooldown feature of EpiLink.
@@ -44,11 +51,10 @@ interface UnlinkCooldown {
     suspend fun deleteCooldown(userId: String)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class UnlinkCooldownImpl : KoinComponent, UnlinkCooldown {
-    private val serverConfiguration: WebServerConfiguration by inject()
-    private val storage: UnlinkCooldownStorage by lazy {
-        get<CacheClient>().newUnlinkCooldownStorage("el_ulc_")
+internal class UnlinkCooldownImpl(scope: InjectionScope) : UnlinkCooldown {
+    private val serverConfiguration: WebServerConfiguration by scope()
+    private val storage: UnlinkCooldownStorage by scope<CacheClient>() wrapInLazy {
+        it.newUnlinkCooldownStorage("el_ulc_")
     }
 
     override suspend fun canUnlink(userId: String): Boolean = storage.canUnlink(userId)

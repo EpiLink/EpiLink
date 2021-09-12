@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.http
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -53,11 +55,10 @@ interface FrontEndHandler {
 /**
  * Front-end handling implementation
  */
-@OptIn(KoinApiExtension::class)
-internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
+internal class FrontEndHandlerImpl(scope: InjectionScope) : FrontEndHandler {
     private val logger = LoggerFactory.getLogger("epilink.fronthandler")
 
-    private val wsCfg: WebServerConfiguration by inject()
+    private val wsCfg: WebServerConfiguration by scope()
 
     override val serveIntegratedFrontEnd: Boolean by lazy {
         // Detect the presence of the frontend

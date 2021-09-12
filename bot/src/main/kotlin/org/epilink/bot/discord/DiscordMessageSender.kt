@@ -8,15 +8,14 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -35,18 +34,17 @@ interface DiscordMessageSender {
     fun sendDirectMessageLater(discordId: String, message: DiscordEmbed): Job
 }
 
-@OptIn(KoinApiExtension::class)
-internal class DiscordMessageSenderImpl : DiscordMessageSender, KoinComponent {
+internal class DiscordMessageSenderImpl(scope: InjectionScope) : DiscordMessageSender {
     private val logger = LoggerFactory.getLogger("epilink.bot.sender")
-    private val scope = CoroutineScope(
+    private val coroutineScope = CoroutineScope(
         Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, t ->
             logger.error("Unexpected error in coroutine scope", t)
         }
     )
-    private val client: DiscordClientFacade by inject()
+    private val client: DiscordClientFacade by scope()
 
     override fun sendDirectMessageLater(discordId: String, message: DiscordEmbed): Job =
-        scope.launch {
+        coroutineScope.launch {
             client.sendDirectMessage(discordId, message)
         }
 }

@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.http.endpoints
 
+import guru.zoroark.shedinja.environment.InjectionScope
 import io.ktor.application.call
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.OK
@@ -49,16 +50,15 @@ interface MetaApi {
     fun install(route: Route)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class MetaApiImpl : MetaApi, KoinComponent {
+internal class MetaApiImpl(scope: InjectionScope) : MetaApi {
     private val logger = LoggerFactory.getLogger("epilink.api.meta")
-    private val env: ServerEnvironment by inject()
-    private val legal: LegalTexts by inject()
-    private val discordBackEnd: DiscordBackEnd by inject()
-    private val idProvider: IdentityProvider by inject()
-    private val assets: Assets by inject()
-    private val wsCfg: WebServerConfiguration by inject()
-    private val providerConfig: IdentityProviderConfiguration by inject()
+    private val env: ServerEnvironment by scope()
+    private val legal: LegalTexts by scope()
+    private val discordBackEnd: DiscordBackEnd by scope()
+    private val idProvider: IdentityProvider by scope()
+    private val assets: Assets by scope()
+    private val wsCfg: WebServerConfiguration by scope()
+    private val providerConfig: IdentityProviderConfiguration by scope()
 
     override fun install(route: Route) =
         with(route) { meta() }

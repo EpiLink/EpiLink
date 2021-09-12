@@ -10,6 +10,8 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import io.ktor.client.HttpClient
 import io.ktor.client.call.receive
 import io.ktor.client.features.ClientRequestException
@@ -25,22 +27,19 @@ import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
 import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
  * The back-end, specifically for interacting with the Discord API
  */
-@OptIn(KoinApiExtension::class)
 class DiscordBackEnd(
+    scope: InjectionScope,
     private val clientId: String,
     private val secret: String
-) : KoinComponent {
+) {
     private val logger = LoggerFactory.getLogger("epilink.discordapi")
 
-    private val client: HttpClient by inject()
+    private val client: HttpClient by scope()
 
     private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" +
         listOf(

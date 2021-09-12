@@ -26,6 +26,7 @@ sqliteJdbc = "3.36.0.3"
 junit = "5.7.2"
 mockk = "1.12.0"
 swaggerUi = "3.51.2"
+shedinja = "0.0.2"
 
 [plugins]
 
@@ -72,6 +73,9 @@ discord4j-core = { module = "com.discord4j:discord4j-core", version.ref = "disco
 kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "coroutines" }
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "coroutines" }
 
+shedinja-core = { module = "guru.zoroark.shedinja:shedinja", version.ref = "shedinja" }
+shedinja-koin2 = { module = "guru.zoroark.shedinja:shedinja-koin-v2", version.ref = "shedinja" }
+
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 
@@ -92,6 +96,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
+shedinja-test = { module = "guru.zoroark.shedinja:shedinja-test", version.ref = "shedinja" }
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 
 ktor-server-testHost = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
@@ -113,5 +118,6 @@ ktor-client = ["ktor-client-apache", "ktor-client-auth-jvm"]
 jackson = ["jackson-databind", "jackson-kotlin", "jackson-yaml"]
 exposed = ["exposed-core", "exposed-dao", "exposed-jdbc", "exposed-javaTime"]
 kotlinx-coroutines = ["kotlinx-coroutines-reactor", "kotlinx-coroutines-reactive"]
+shedinja = [ "shedinja-core", "shedinja-koin2" ]
 koin = ["koin-core", "koin-logger-slf4j"]
 kotlin-test = ["kotlin-test-core", "kotlin-test-junit5"]

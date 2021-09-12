@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.http.endpoints
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
 import io.ktor.content.TextContent
@@ -89,15 +91,15 @@ data class GdprReportLocation(val targetIdp: String)
 data class SearchByHash(val searchTerm: String)
 
 @OptIn(KoinApiExtension::class)
-internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
-    private val sessionChecker: SessionChecker by inject()
-    private val dbf: DatabaseFacade by inject()
-    private val idManager: IdentityManager by inject()
-    private val banLogic: BanLogic by inject()
-    private val banManager: BanManager by inject()
-    private val gdprReport: GdprReport by inject()
-    private val roleManager: RoleManager by inject()
-    private val wsCfg: WebServerConfiguration by inject()
+internal class AdminEndpointsImpl(scope: InjectionScope) : AdminEndpoints {
+    private val sessionChecker: SessionChecker by scope()
+    private val dbf: DatabaseFacade by scope()
+    private val idManager: IdentityManager by scope()
+    private val banLogic: BanLogic by scope()
+    private val banManager: BanManager by scope()
+    private val gdprReport: GdprReport by scope()
+    private val roleManager: RoleManager by scope()
+    private val wsCfg: WebServerConfiguration by scope()
 
     override fun install(route: Route) {
         with(route) { admin() }

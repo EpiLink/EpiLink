@@ -9,6 +9,8 @@
 package org.epilink.bot.http
 
 import guru.zoroark.ratelimit.RateLimit
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
@@ -74,16 +76,15 @@ interface BackEnd {
 /**
  * The back-end, defining API endpoints and more
  */
-@OptIn(KoinApiExtension::class)
-internal class BackEndImpl : BackEnd, KoinComponent {
+internal class BackEndImpl(scope: InjectionScope) : BackEnd {
 
     private val logger = LoggerFactory.getLogger("epilink.api")
-    private val cacheClient: CacheClient by inject()
-    private val registrationApi: RegistrationApi by inject()
-    private val metaApi: MetaApi by inject()
-    private val userApi: UserApi by inject()
-    private val adminEndpoints: AdminEndpoints by inject()
-    private val wsCfg: WebServerConfiguration by inject()
+    private val cacheClient: CacheClient by scope()
+    private val registrationApi: RegistrationApi by scope()
+    private val metaApi: MetaApi by scope()
+    private val userApi: UserApi by scope()
+    private val adminEndpoints: AdminEndpoints by scope()
+    private val wsCfg: WebServerConfiguration by scope()
 
     override fun Application.installFeatures() {
         /*

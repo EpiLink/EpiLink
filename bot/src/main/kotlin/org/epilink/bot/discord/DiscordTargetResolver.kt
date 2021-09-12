@@ -8,13 +8,12 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.discord.TargetParseResult.Success.Everyone
 import org.epilink.bot.discord.TargetParseResult.Success.RoleById
 import org.epilink.bot.discord.TargetParseResult.Success.RoleByName
 import org.epilink.bot.discord.TargetParseResult.Success.UserById
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /*
  User selector:
@@ -114,9 +113,8 @@ sealed class TargetResult {
     data class RoleNotFound(val name: String) : TargetResult()
 }
 
-@OptIn(KoinApiExtension::class)
-internal class DiscordTargetsImpl : DiscordTargets, KoinComponent {
-    private val discord: DiscordClientFacade by inject()
+internal class DiscordTargetsImpl(scope: InjectionScope) : DiscordTargets {
+    private val discord: DiscordClientFacade by scope()
 
     private val angleBracketsPattern = Regex("""<@(?:(&)?|!?)(\d+)>""")
 

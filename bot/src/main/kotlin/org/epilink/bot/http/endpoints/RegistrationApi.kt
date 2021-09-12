@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.http.endpoints
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.features.ContentTransformationException
@@ -61,17 +63,16 @@ interface RegistrationApi {
     fun install(route: Route)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
+internal class RegistrationApiImpl(scope: InjectionScope) : RegistrationApi {
     private val logger = LoggerFactory.getLogger("epilink.api.registration")
-    private val discordBackEnd: DiscordBackEnd by inject()
-    private val idProvider: IdentityProvider by inject()
-    private val roleManager: RoleManager by inject()
-    private val userApi: UserApi by inject()
-    private val userCreator: UserCreator by inject()
-    private val perms: PermissionChecks by inject()
-    private val dbFacade: DatabaseFacade by inject()
-    private val wsCfg: WebServerConfiguration by inject()
+    private val discordBackEnd: DiscordBackEnd by scope()
+    private val idProvider: IdentityProvider by scope()
+    private val roleManager: RoleManager by scope()
+    private val userApi: UserApi by scope()
+    private val userCreator: UserCreator by scope()
+    private val perms: PermissionChecks by scope()
+    private val dbFacade: DatabaseFacade by scope()
+    private val wsCfg: WebServerConfiguration by scope()
 
     override fun install(route: Route) {
         with(route) { registration() }

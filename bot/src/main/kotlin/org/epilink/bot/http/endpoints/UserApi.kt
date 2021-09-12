@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.http.endpoints
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.named
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
@@ -45,7 +47,6 @@ import org.epilink.bot.http.user
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
 
 /**
@@ -65,16 +66,15 @@ interface UserApi {
     fun loginAs(call: ApplicationCall, user: User, username: String, avatar: String?)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class UserApiImpl : UserApi, KoinComponent {
+internal class UserApiImpl(scope: InjectionScope) : UserApi {
     private val logger = LoggerFactory.getLogger("epilink.api.user")
-    private val roleManager: RoleManager by inject()
-    private val idProvider: IdentityProvider by inject()
-    private val sessionChecker: SessionChecker by inject()
-    private val idManager: IdentityManager by inject()
-    private val dbFacade: DatabaseFacade by inject()
-    private val wsCfg: WebServerConfiguration by inject()
-    private val admins: List<String> by inject(named("admins"))
+    private val roleManager: RoleManager by scope()
+    private val idProvider: IdentityProvider by scope()
+    private val sessionChecker: SessionChecker by scope()
+    private val idManager: IdentityManager by scope()
+    private val dbFacade: DatabaseFacade by scope()
+    private val wsCfg: WebServerConfiguration by scope()
+    private val admins: List<String> by scope(named("admins"))
 
     override fun install(route: Route) {
         with(route) { user() }

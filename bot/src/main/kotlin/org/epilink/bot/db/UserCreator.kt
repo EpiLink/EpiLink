@@ -8,13 +8,12 @@
  */
 package org.epilink.bot.db
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
 import org.epilink.bot.infoOrDebug
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 import java.time.Instant
 
@@ -23,16 +22,15 @@ import java.time.Instant
  */
 interface UserCreator {
     /**
-     * Create a user in the database with all of the given parameters
+     * Create a user in the database with all the given parameters
      */
     suspend fun createUser(discordId: String, idpId: String, email: String, keepIdentity: Boolean): User
 }
 
-@OptIn(KoinApiExtension::class)
-internal class UserCreatorImpl : UserCreator, KoinComponent {
+internal class UserCreatorImpl(scope: InjectionScope) : UserCreator {
     private val logger = LoggerFactory.getLogger("epilink.usercreator")
-    private val perms: PermissionChecks by inject()
-    private val facade: DatabaseFacade by inject()
+    private val perms: PermissionChecks by scope()
+    private val facade: DatabaseFacade by scope()
 
     @OptIn(UsesTrueIdentity::class) // Creates a user's true identity: access is expected here.
     override suspend fun createUser(

@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.db
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.ServerEnvironment
 import org.epilink.bot.config.IdentityProviderConfiguration
 import org.epilink.bot.config.PrivacyConfiguration
@@ -55,14 +57,13 @@ interface GdprReport {
     suspend fun getLanguagePreferencesReport(id: String): String
 }
 
-@OptIn(KoinApiExtension::class)
-internal class GdprReportImpl : GdprReport, KoinComponent {
-    private val dbf: DatabaseFacade by inject()
-    private val idManager: IdentityManager by inject()
-    private val banLogic: BanLogic by inject()
-    private val privacy: PrivacyConfiguration by inject()
-    private val env: ServerEnvironment by inject()
-    private val idpCfg: IdentityProviderConfiguration by inject()
+internal class GdprReportImpl(scope: InjectionScope) : GdprReport {
+    private val dbf: DatabaseFacade by scope()
+    private val idManager: IdentityManager by scope()
+    private val banLogic: BanLogic by scope()
+    private val privacy: PrivacyConfiguration by scope()
+    private val env: ServerEnvironment by scope()
+    private val idpCfg: IdentityProviderConfiguration by scope()
 
     @Suppress("MaxLineLength")
     override suspend fun getFullReport(user: User, requester: String): String =

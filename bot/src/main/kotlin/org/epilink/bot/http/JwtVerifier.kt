@@ -23,8 +23,7 @@ private const val ALLOWED_CLOCK_SKEW = 30
 /**
  * This class is responsible for verifying JWT tokens using a JWKS for keys.
  */
-@OptIn(KoinApiExtension::class)
-class JwtVerifier(clientId: String, jwksUri: String, private val idClaim: String) : KoinComponent {
+class JwtVerifier(clientId: String, jwksUri: String, private val idClaim: String) {
     private val jwtConsumer = JwtConsumerBuilder().apply {
         setRequireExpirationTime()
         setRequireIssuedAt()

@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.db.DatabaseFacade
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
@@ -70,14 +72,14 @@ interface DiscordMessagesI18n {
     suspend fun setLanguage(discordId: String, language: String): Boolean
 }
 
-@OptIn(KoinApiExtension::class)
 internal class DiscordMessagesI18nImpl(
+    scope: InjectionScope,
     private val strings: Map<String, Map<String, String>>,
     override val defaultLanguage: String,
     preferred: List<String>
-) : DiscordMessagesI18n, KoinComponent {
+) : DiscordMessagesI18n {
 
-    private val db by inject<DatabaseFacade>()
+    private val db: DatabaseFacade by scope()
 
     private val logger = LoggerFactory.getLogger("epilink.discord.i18n")
 

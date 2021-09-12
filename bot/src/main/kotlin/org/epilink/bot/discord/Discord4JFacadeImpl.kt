@@ -22,6 +22,8 @@ import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Permission
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,9 +36,6 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import org.epilink.bot.EpiLinkException
 import org.epilink.bot.debug
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
@@ -44,21 +43,21 @@ import kotlin.reflect.KClass
 /**
  * Implementation of a Discord client facade that uses Discord4J
  */
-@OptIn(KoinApiExtension::class)
 @Suppress("TooManyFunctions")
 internal class Discord4JFacadeImpl(
+    scope: InjectionScope,
     private val discordClientId: String,
     private val token: String
-) : DiscordClientFacade, KoinComponent {
+) : DiscordClientFacade {
     private val logger = LoggerFactory.getLogger("epilink.bot.discord4j")
-    private val roleManager: RoleManager by inject()
-    private val commands: DiscordCommands by inject()
-    private val messages: DiscordMessages by inject()
+    private val roleManager: RoleManager by scope()
+    private val commands: DiscordCommands by scope()
+    private val messages: DiscordMessages by scope()
 
     /**
      * Coroutine scope used for firing things in events
      */
-    private val scope =
+    private val coroutineScope =
         CoroutineScope(
             Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
                 logger.error("Uncaught exception in Discord4J client", ex)
@@ -261,7 +260,7 @@ internal class Discord4JFacadeImpl(
         event: KClass<T>,
         handler: suspend T.() -> Unit
     ) {
-        on(event.java).subscribe { scope.launch { handler(it) } }
+        on(event.java).subscribe { coroutineScope.launch { handler(it) } }
     }
 
     /**

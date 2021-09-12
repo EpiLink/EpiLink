@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,10 +34,7 @@ import org.epilink.bot.debug
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
-import org.koin.core.component.inject
+import org.epilink.bot.wrapInLazy
 import org.slf4j.LoggerFactory
 
 /**
@@ -141,21 +140,18 @@ interface RoleManager {
 /**
  * This class is responsible for managing and updating the roles of Discord users.
  */
-@OptIn(KoinApiExtension::class)
 @Suppress("TooManyFunctions")
-internal class RoleManagerImpl : RoleManager, KoinComponent {
+internal class RoleManagerImpl(scope: InjectionScope) : RoleManager {
     private val logger = LoggerFactory.getLogger("epilink.bot.roles")
-    private val messages: DiscordMessages by inject()
-    private val i18n: DiscordMessagesI18n by inject()
-    private val config: DiscordConfiguration by inject()
-    private val rulebook: Rulebook by inject()
-    private val facade: DiscordClientFacade by inject()
-    private val idManager: IdentityManager by inject()
-    private val dbFacade: DatabaseFacade by inject()
-    private val perms: PermissionChecks by inject()
-    private val ruleMediator: RuleMediator by lazy {
-        get<CacheClient>().newRuleMediator("el_rc_")
-    }
+    private val messages: DiscordMessages by scope()
+    private val i18n: DiscordMessagesI18n by scope()
+    private val config: DiscordConfiguration by scope()
+    private val rulebook: Rulebook by scope()
+    private val facade: DiscordClientFacade by scope()
+    private val idManager: IdentityManager by scope()
+    private val dbFacade: DatabaseFacade by scope()
+    private val perms: PermissionChecks by scope()
+    private val ruleMediator: RuleMediator by scope<CacheClient>() wrapInLazy { it.newRuleMediator("el_rc_") }
     private val scope = CoroutineScope(
         Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
             logger.error("Uncaught exception in role manager launched coroutine", ex)

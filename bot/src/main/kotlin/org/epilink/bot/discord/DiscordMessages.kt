@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.EpiLinkException
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.DiscordServerSpec
@@ -101,12 +103,11 @@ private const val HELLO_BLUE = "#3771C8"
 private const val NOTIFICATION_ORANGE = "#FF6600"
 private const val OK_GREEN = "#2B9B2B"
 
-@OptIn(KoinApiExtension::class)
 @Suppress("TooManyFunctions")
-internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
-    private val config: DiscordConfiguration by inject()
-    private val i18n: DiscordMessagesI18n by inject()
-    private val privacyConfig: PrivacyConfiguration by inject()
+internal class DiscordMessagesImpl(scope: InjectionScope) : DiscordMessages {
+    private val config: DiscordConfiguration by scope()
+    private val i18n: DiscordMessagesI18n by scope()
+    private val privacyConfig: PrivacyConfiguration by scope()
 
     private val DiscordI18nContext.poweredByEpiLink
         get() = DiscordEmbedFooter(i18n["poweredBy"], LOGO_URL)

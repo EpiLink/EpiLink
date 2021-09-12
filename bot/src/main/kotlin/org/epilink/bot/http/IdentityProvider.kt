@@ -10,6 +10,8 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import io.ktor.client.HttpClient
 import io.ktor.client.call.receive
 import io.ktor.client.features.ClientRequestException
@@ -28,21 +30,18 @@ import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.getList
 import org.epilink.bot.rulebook.getString
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
  * This class is responsible for communicating with OIDC APIs, determined from the given metadata
  */
-@OptIn(KoinApiExtension::class)
 class IdentityProvider(
+    scope: InjectionScope,
     private val clientId: String,
     private val clientSecret: String,
     private val tokenUrl: String,
     authorizeUrl: String
-) : KoinComponent {
+) {
     private val logger = LoggerFactory.getLogger("epilink.identityProvider")
     private val authStub = "$authorizeUrl?" +
         listOf(
@@ -60,8 +59,8 @@ class IdentityProvider(
             "scope=openid%20profile%20email"
         ).joinToString("&")
 
-    private val client: HttpClient by inject()
-    private val jwtVerifier: JwtVerifier by inject()
+    private val client: HttpClient by scope()
+    private val jwtVerifier: JwtVerifier by scope()
 
     /**
      * Consume the authcode and return the user info from the retrieved ID token.

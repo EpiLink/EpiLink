@@ -39,8 +39,7 @@ interface HttpServer {
 /**
  * This class represents the Ktor server.
  */
-@OptIn(KoinApiExtension::class)
-internal class HttpServerImpl : HttpServer, KoinComponent {
+internal class HttpServerImpl : HttpServer {
     private val logger = LoggerFactory.getLogger("epilink.http")
     private val wsCfg: WebServerConfiguration by inject()
 
