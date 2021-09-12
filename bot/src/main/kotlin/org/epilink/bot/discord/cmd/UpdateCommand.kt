@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord.cmd
 
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -24,9 +26,6 @@ import org.epilink.bot.discord.PermissionLevel
 import org.epilink.bot.discord.RoleManager
 import org.epilink.bot.discord.TargetParseResult
 import org.epilink.bot.discord.TargetResult
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 private const val UPDATE_CHUNK_SIZE = 10
@@ -35,14 +34,13 @@ private const val UPDATE_DELAY_BETWEEN_INVALIDATION = 20L
 /**
  * Implementation of an update command, which can be used to invalidate roles of members.
  */
-@OptIn(KoinApiExtension::class)
-class UpdateCommand : Command, KoinComponent {
+class UpdateCommand(scope: InjectionScope) : Command {
     private val logger = LoggerFactory.getLogger("epilink.discord.cmd.update")
-    private val roleManager: RoleManager by inject()
-    private val targetResolver: DiscordTargets by inject()
-    private val client: DiscordClientFacade by inject()
-    private val msg: DiscordMessages by inject()
-    private val i18n: DiscordMessagesI18n by inject()
+    private val roleManager: RoleManager by scope()
+    private val targetResolver: DiscordTargets by scope()
+    private val client: DiscordClientFacade by scope()
+    private val msg: DiscordMessages by scope()
+    private val i18n: DiscordMessagesI18n by scope()
     private val updateLauncherScope = CoroutineScope(SupervisorJob())
 
     override val name: String

@@ -14,9 +14,6 @@ import org.epilink.bot.EpiLinkException
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.DiscordServerSpec
 import org.epilink.bot.config.PrivacyConfiguration
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter

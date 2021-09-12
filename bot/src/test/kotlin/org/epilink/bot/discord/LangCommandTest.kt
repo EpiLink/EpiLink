@@ -25,7 +25,7 @@ import kotlin.test.Test
 
 class LangCommandTest : ShedinjaBaseTest<Command>(
     Command::class, {
-        put<Command> { LangCommand() }
+        put<Command>(::LangCommand)
     }
 ) {
     @Test

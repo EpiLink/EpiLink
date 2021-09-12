@@ -10,34 +10,28 @@ package org.epilink.bot.web
 
 import guru.zoroark.shedinja.dsl.put
 import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
-import io.ktor.application.ApplicationCall
 import io.ktor.sessions.SessionStorage
 import io.ktor.sessions.defaultSessionSerializer
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.util.AttributeKey
-import io.ktor.util.pipeline.PipelineContext
-import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.CacheClient
-import org.epilink.bot.db.*
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.IdentityManager
+import org.epilink.bot.db.UnlinkCooldownStorage
+import org.epilink.bot.db.User
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.DiscordMessagesI18n
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
-import org.epilink.bot.softMockHere
-import org.koin.core.scope.Scope
-import org.koin.test.KoinTest
-import org.koin.test.mock.declare
+import org.epilink.bot.softPutMock
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.Random
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.Map
 import kotlin.collections.set
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -108,7 +102,7 @@ internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
 @OptIn(
     UsesTrueIdentity::class // for setting up identity mocks
 )
-internal fun KoinTest.setupSession(
+internal fun UnsafeMutableEnvironment.setupSession(
     sessionStorage: SimplifiedSessionStorage,
     discId: String = "discordid",
     discUsername: String = "discorduser#1234",
@@ -118,18 +112,18 @@ internal fun KoinTest.setupSession(
     trueIdentity: String? = null
 ): String {
     val u: User = mockk {
-        every { discordId } returns discId
-        every { idpIdHash } returns msIdHash
-        every { creationDate } returns created
+        every { this@mockk.discordId } returns discId
+        every { this@mockk.idpIdHash } returns msIdHash
+        every { this@mockk.creationDate } returns created
     }
-    softMockHere<DatabaseFacade> {
+    softPutMock<DatabaseFacade> {
         coEvery { getUser(discId) } returns u
         if (trueIdentity != null) {
             coEvery { isUserIdentifiable(u) } returns true
         }
     }
     if (trueIdentity != null) {
-        softMockHere<IdentityManager> {
+        softPutMock<IdentityManager> {
             coEvery { accessIdentity(u, any(), any(), any()) } returns trueIdentity
         }
     }
@@ -146,16 +140,6 @@ internal fun KoinTest.setupSession(
     return id
 }
 
-suspend fun Scope.injectUserIntoAttributes(
-    slot: CapturingSlot<PipelineContext<Unit, ApplicationCall>>,
-    attribute: AttributeKey<User>
-) {
-    val call = slot.captured.context
-    call.attributes.put(
-        attribute,
-        get<DatabaseFacade>().getUser(call.sessions.get<ConnectedSession>()!!.discordId)!!
-    )
-}
 
 object NoOpI18n : DiscordMessagesI18n {
     override val availableLanguages = setOf("")

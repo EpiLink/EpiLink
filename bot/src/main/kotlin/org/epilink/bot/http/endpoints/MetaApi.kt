@@ -9,6 +9,7 @@
 package org.epilink.bot.http.endpoints
 
 import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import io.ktor.application.call
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.OK
@@ -34,9 +35,6 @@ import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.DiscordBackEnd
 import org.epilink.bot.http.IdentityProvider
 import org.epilink.bot.http.data.InstanceInformation
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**

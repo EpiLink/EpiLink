@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.identity
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import io.mockk.*
 import org.epilink.bot.*
 import org.epilink.bot.config.IdentityProviderConfiguration
@@ -18,38 +20,34 @@ import org.epilink.bot.discord.DiscordMessageSender
 import org.epilink.bot.discord.DiscordMessages
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.web.declareNoOpI18n
-import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class IdAccessorTest : EpiLinkBaseTest<IdentityManager>(
-    IdentityManager::class,
-    module {
-        single<IdentityManager> { IdentityManagerImpl() }
+class IdAccessorTest : ShedinjaBaseTest<IdentityManager>(
+    IdentityManager::class, {
+        put<IdentityManager>(::IdentityManagerImpl)
     }
 ) {
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test automated id access success`() {
+    fun `Test automated id access success`() = stest {
         val u = mockk<User> { every { discordId } returns "targetid" }
-        val dbf = mockHere<DatabaseFacade> {
+        val dbf = putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
             coEvery { getUserEmailWithAccessLog(u, false, "authorrr", "reasonnn") } returns "identity"
         }
         val embed = mockk<DiscordEmbed>()
-        val dms = mockHere<DiscordMessageSender> {
+        val dms = putMock<DiscordMessageSender> {
             every { sendDirectMessageLater("targetid", embed) } returns mockk()
         }
         declareNoOpI18n()
-        val dm = mockHere<DiscordMessages> {
+        val dm = putMock<DiscordMessages> {
             every { getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn") } returns embed
         }
-        val cd = mockHere<UnlinkCooldown> { coEvery { refreshCooldown("targetid") } just runs }
-        test {
-            val id = accessIdentity(u, false, "authorrr", "reasonnn")
-            assertEquals("identity", id)
-        }
+        val cd = putMock<UnlinkCooldown> { coEvery { refreshCooldown("targetid") } just runs }
+        val id = subject.accessIdentity(u, false, "authorrr", "reasonnn")
+        assertEquals("identity", id)
         coVerify {
             dm.getIdentityAccessEmbed(any(), false, "authorrr", "reasonnn")
             dms.sendDirectMessageLater("targetid", embed)
@@ -60,74 +58,66 @@ class IdAccessorTest : EpiLinkBaseTest<IdentityManager>(
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test automated id access user is not identifiable`() {
+    fun `Test automated id access user is not identifiable`() = stest {
         val u = mockk<User>()
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
         }
-        test {
-            val exc = assertFailsWith<EpiLinkException> {
-                accessIdentity(u, true, "authorrr", "reasonnn")
-            }
-            assertEquals("User is not identifiable", exc.message)
+        val exc = assertFailsWith<EpiLinkException> {
+            subject.accessIdentity(u, true, "authorrr", "reasonnn")
         }
+        assertEquals("User is not identifiable", exc.message)
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test relink fails on user already identifiable`() {
+    fun `Test relink fails on user already identifiable`() = stest {
         val user = mockk<User>()
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(user) } returns true
         }
-        test {
-            val exc = assertFailsWith<UserEndpointException> {
-                relinkIdentity(user, "this doesn't matter", "this doesn't matter either")
-            }
-            assertEquals(110, exc.errorCode.code)
+        val exc = assertFailsWith<UserEndpointException> {
+            subject.relinkIdentity(user, "this doesn't matter", "this doesn't matter either")
         }
+        assertEquals(110, exc.errorCode.code)
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test relink fails on ID mismatch`() {
+    fun `Test relink fails on ID mismatch`() = stest {
         val originalHash = "That doesn't look right".sha256()
         val u = mockk<User> {
             every { idpIdHash } returns originalHash
         }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
         }
-        mockHere<IdentityProviderConfiguration> {
+        putMock<IdentityProviderConfiguration> {
             coEvery { microsoftBackwardsCompatibility } returns false
         }
-        test {
-            val exc = assertFailsWith<UserEndpointException> {
-                relinkIdentity(u, "this doesn't matter", "That is definitely not okay")
-            }
-            assertEquals(112, exc.errorCode.code)
+        val exc = assertFailsWith<UserEndpointException> {
+            subject.relinkIdentity(u, "this doesn't matter", "That is definitely not okay")
         }
+        assertEquals(112, exc.errorCode.code)
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test relink success`() {
+    fun `Test relink success`() = stest {
         val id = "This looks quite alright"
         val hash = id.sha256()
         val u = mockk<User> {
             every { discordId } returns "targetId"
             every { idpIdHash } returns hash
         }
-        val df = mockHere<DatabaseFacade> {
+        val df = putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
             coEvery { recordNewIdentity(u, "mynewemail@email.com") } just runs
         }
-        val rcd = mockHere<UnlinkCooldown> {
+        val rcd = putMock<UnlinkCooldown> {
             coEvery { refreshCooldown("targetId") } just runs
         }
-        test {
-            relinkIdentity(u, "mynewemail@email.com", id)
-        }
+        subject.relinkIdentity(u, "mynewemail@email.com", id)
         coVerify {
             df.recordNewIdentity(u, "mynewemail@email.com")
             rcd.refreshCooldown("targetId")
@@ -136,62 +126,56 @@ class IdAccessorTest : EpiLinkBaseTest<IdentityManager>(
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test identity removal with no identity in the first place`() {
+    fun `Test identity removal with no identity in the first place`() = stest {
         val u = mockk<User>()
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns false
         }
-        test {
-            val exc = assertFailsWith<UserEndpointException> {
-                deleteUserIdentity(u)
-            }
-            assertEquals(111, exc.errorCode.code)
+        val exc = assertFailsWith<UserEndpointException> {
+            subject.deleteUserIdentity(u)
         }
+        assertEquals(111, exc.errorCode.code)
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test identity removal on cooldown`() {
+    fun `Test identity removal on cooldown`() = stest {
         val u = mockk<User> { every { discordId } returns "targetId" }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
         }
-        mockHere<UnlinkCooldown> {
+        putMock<UnlinkCooldown> {
             coEvery { canUnlink("targetId") } returns false
         }
-        test {
-            val exc = assertFailsWith<UserEndpointException> {
-                deleteUserIdentity(u)
-            }
-            assertEquals(113, exc.errorCode.code)
+        val exc = assertFailsWith<UserEndpointException> {
+            subject.deleteUserIdentity(u)
         }
+        assertEquals(113, exc.errorCode.code)
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test identity removal success`() {
+    fun `Test identity removal success`() = stest {
         val u = mockk<User> {
             coEvery { discordId } returns "targetId"
         }
-        val df = mockHere<DatabaseFacade> {
+        val df = putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(u) } returns true
             coEvery { eraseIdentity(u) } just runs
         }
-        mockHere<UnlinkCooldown> {
+        putMock<UnlinkCooldown> {
             coEvery { canUnlink("targetId") } returns true
         }
-        test {
-            deleteUserIdentity(u)
-        }
+        subject.deleteUserIdentity(u)
         coVerify { df.eraseIdentity(u) }
     }
 
     @Test
-    fun `Test export access logs`() {
+    fun `Test export access logs`() = stest {
         val inst = Instant.now() - Duration.ofHours(5)
         val inst2 = Instant.now() - Duration.ofDays(10)
         val u = mockk<User> { every { discordId } returns "userid" }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf(
                 mockk {
                     every { authorName } returns "The Admin Of Things"
@@ -209,24 +193,22 @@ class IdAccessorTest : EpiLinkBaseTest<IdentityManager>(
         }
 
         // Test with human identity disclosed
-        mockHere<PrivacyConfiguration> {
+        putMock<PrivacyConfiguration> {
             every { shouldDiscloseIdentity(any()) } returns true
         }
-        test {
-            val al = getIdAccessLogs(u)
-            assertTrue(al.manualAuthorsDisclosed)
-            assertEquals(2, al.accesses.size)
-            assertTrue(IdAccess(false, "The Admin Of Things", "The reason", inst.toString()) in al.accesses)
-            assertTrue(IdAccess(true, "EpiLink Bot", "Another reason", inst2.toString()) in al.accesses)
-        }
+        val al = subject.getIdAccessLogs(u)
+        assertTrue(al.manualAuthorsDisclosed)
+        assertEquals(2, al.accesses.size)
+        assertTrue(IdAccess(false, "The Admin Of Things", "The reason", inst.toString()) in al.accesses)
+        assertTrue(IdAccess(true, "EpiLink Bot", "Another reason", inst2.toString()) in al.accesses)
     }
 
     @Test
-    fun `Test export access logs with concealed human identity requester`() {
+    fun `Test export access logs with concealed human identity requester`() = stest {
         val inst = Instant.now() - Duration.ofHours(5)
         val inst2 = Instant.now() - Duration.ofDays(10)
         val u = mockk<User> { every { discordId } returns "discordId" }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf(
                 mockk {
                     every { authorName } returns "The Admin Of Things"
@@ -244,16 +226,14 @@ class IdAccessorTest : EpiLinkBaseTest<IdentityManager>(
         }
 
         // Test without human identity disclosed
-        mockHere<PrivacyConfiguration> {
+        putMock<PrivacyConfiguration> {
             every { shouldDiscloseIdentity(false) } returns false
             every { shouldDiscloseIdentity(true) } returns true
         }
-        test {
-            val al = getIdAccessLogs(u)
-            assertFalse(al.manualAuthorsDisclosed)
-            assertEquals(2, al.accesses.size)
-            assertTrue(IdAccess(false, null, "The reason", inst.toString()) in al.accesses)
-            assertTrue(IdAccess(true, "EpiLink Bot", "Another reason", inst2.toString()) in al.accesses)
-        }
+        val al = subject.getIdAccessLogs(u)
+        assertFalse(al.manualAuthorsDisclosed)
+        assertEquals(2, al.accesses.size)
+        assertTrue(IdAccess(false, null, "The reason", inst.toString()) in al.accesses)
+        assertTrue(IdAccess(true, "EpiLink Bot", "Another reason", inst2.toString()) in al.accesses)
     }
 }

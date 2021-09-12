@@ -26,11 +26,11 @@ class I18nTests {
     @BeforeEach
     fun setUp() {
         val languagesList =
-            CliArgs::class.java.getResourceAsStream("/discord_i18n/languages").bufferedReader().use { it.readLines() }
+            CliArgs::class.java.getResourceAsStream("/discord_i18n/languages")!!.bufferedReader().use { it.readLines() }
         languagesList.forEach {
             CliArgs::class.java.getResourceAsStream("/discord_i18n/strings_$it.properties").also { stream ->
                 assumeTrue(stream != null, "Failed to load language $it (not found or not available)")
-            }.bufferedReader().use { reader ->
+            }!!.bufferedReader().use { reader ->
                 val p = Properties()
                 p.load(reader)
                 val map = mutableMapOf<String, String>()

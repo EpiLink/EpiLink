@@ -28,7 +28,6 @@ import io.ktor.server.testing.setBody
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.Configuration
 import org.epilink.bot.config.DiscordConfiguration
@@ -37,8 +36,6 @@ import org.epilink.bot.config.ProxyType
 import org.epilink.bot.config.TokensConfiguration
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.discord.DiscordMessagesI18n
-import org.koin.test.KoinTest
-import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import kotlin.test.assertEquals
@@ -67,23 +64,21 @@ val minimalConfig = Configuration(
 val Url.hostWithPortIfRequired: String get() = if (port == protocol.defaultPort) host else hostWithPort
 val Url.fullUrl: String get() = "${protocol.name}://$hostWithPortIfRequired$fullPath"
 
-fun KoinTest.declareClientHandler(onlyMatchUrl: String? = null, handler: MockRequestHandler): HttpClient =
-    declare {
-        HttpClient(MockEngine) {
-            engine {
-                addHandler(
-                    onlyMatchUrl?.let {
-                        { request ->
-                            when (request.url.fullUrl) {
-                                onlyMatchUrl -> handler(request)
-                                else -> error("Url ${request.url.fullUrl} does not match expected URL $onlyMatchUrl")
-                            }
+fun UnsafeMutableEnvironment.putClientHandler(onlyMatchUrl: String? = null, handler: MockRequestHandler): HttpClient =
+    HttpClient(MockEngine) {
+        engine {
+            addHandler(
+                onlyMatchUrl?.let {
+                    { request ->
+                        when (request.url.fullUrl) {
+                            onlyMatchUrl -> handler(request)
+                            else -> error("Url ${request.url.fullUrl} does not match expected URL $onlyMatchUrl")
                         }
-                    } ?: handler
-                )
-            }
+                    }
+                } ?: handler
+            )
         }
-    }
+    }.alsoPut()
 
 fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
     val actual = this.response.status()
@@ -103,7 +98,7 @@ inline fun <reified T : Any> UnsafeMutableEnvironment.putMock(crossinline body: 
  */
 inline fun <reified T : Any> UnsafeMutableEnvironment.softPutMock(crossinline initializer: T.() -> Unit): T {
     val injected = getOrNull(Identifier(T::class))
-    return injected?.apply(initializer) ?: putMock(initializer)
+    return injected?.apply(initializer) ?: mockk(block = initializer).alsoPut()
 }
 
 @ShedinjaDsl

@@ -8,32 +8,37 @@
  */
 package org.epilink.bot.web
 
-import io.ktor.http.*
-import io.ktor.server.testing.*
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.environment.get
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
+import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.testing.TestApplicationEngine
+import io.ktor.server.testing.handleRequest
+import io.ktor.server.testing.withTestApplication
 import io.mockk.every
 import io.mockk.spyk
 import org.epilink.bot.assertStatus
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.http.FrontEndHandler
 import org.epilink.bot.http.FrontEndHandlerImpl
-import org.epilink.bot.mockHere
-import org.koin.dsl.module
-import org.koin.test.get
+import org.epilink.bot.putMock
+import org.epilink.bot.stest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
-    FrontEndHandler::class,
-    module {
-        single<FrontEndHandler> { spyk(FrontEndHandlerImpl()) }
+class FrontEndHandlingTest : ShedinjaBaseTest<FrontEndHandler>(
+    FrontEndHandler::class, {
+        put<FrontEndHandler> { spyk(FrontEndHandlerImpl(scope)) }
     }
 ) {
     @Test
-    fun `Test front 404 error`() {
+    fun `Test front 404 error`() = stest {
         get<FrontEndHandler>().apply {
             every { serveIntegratedFrontEnd } returns false
         }
-        mockHere<WebServerConfiguration> {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns null
             every { corsWhitelist } returns listOf()
         }
@@ -47,11 +52,11 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     }
 
     @Test
-    fun `Test front redirect`() {
+    fun `Test front redirect`() = stest {
         get<FrontEndHandler>().apply {
             every { serveIntegratedFrontEnd } returns false
         }
-        mockHere<WebServerConfiguration> {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns "https://frontend/"
             every { corsWhitelist } returns listOf()
         }
@@ -73,9 +78,9 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     }
 
     @Test
-    fun `Test serving bundled front`() {
+    fun `Test serving bundled front`() = stest {
         // The .hasFrontend is present in the test resources
-        mockHere<WebServerConfiguration> {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns null
             every { corsWhitelist } returns listOf()
         }
@@ -96,8 +101,8 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     }
 
     @Test
-    fun `Test CORS - Whitelist - Allow All`() {
-        mockHere<WebServerConfiguration> {
+    fun `Test CORS - Whitelist - Allow All`() = stest {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns null
             every { corsWhitelist } returns listOf("*")
         }
@@ -105,8 +110,8 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     }
 
     @Test
-    fun `Test CORS - Whitelist - No front-end`() {
-        mockHere<WebServerConfiguration> {
+    fun `Test CORS - Whitelist - No front-end`() = stest {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns null
             every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
         }
@@ -114,8 +119,8 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     }
 
     @Test
-    fun `Test CORS - Whitelist - With front-end`() {
-        mockHere<WebServerConfiguration> {
+    fun `Test CORS - Whitelist - With front-end`() = stest {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns "http://front.end/"
             every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
         }
@@ -123,8 +128,8 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     }
 
     @Test
-    fun `Test CORS - Whitelist - Invalid`() {
-        mockHere<WebServerConfiguration> {
+    fun `Test CORS - Whitelist - Invalid`() = stest {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns "http://front.end/"
             every { corsWhitelist } returns listOf("http://somewhere.else", "http://amazing.website")
         }
@@ -132,8 +137,8 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     }
 
     @Test
-    fun `Test CORS - Enabled - Front-end`() {
-        mockHere<WebServerConfiguration> {
+    fun `Test CORS - Enabled - Front-end`() = stest {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns "http://front.end/"
             every { corsWhitelist } returns listOf()
         }
@@ -141,15 +146,15 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     }
 
     @Test
-    fun `Test CORS - Enabled - Front-end Invalid`() {
-        mockHere<WebServerConfiguration> {
+    fun `Test CORS - Enabled - Front-end Invalid`() = stest {
+        putMock<WebServerConfiguration> {
             every { frontendUrl } returns "http://front.end/"
             every { corsWhitelist } returns listOf()
         }
         handleCorsRequest("http://oh.no", null)
     }
 
-    private fun handleCorsRequest(origin: String, expectedACAO: String? = origin) {
+    private fun UnsafeMutableEnvironment.handleCorsRequest(origin: String, expectedACAO: String? = origin) {
         withTestFrontHandler {
             handleRequest(HttpMethod.Options, "/") {
                 addHeader("Origin", origin)
@@ -175,7 +180,7 @@ class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
         }
     }
 
-    private fun withTestFrontHandler(block: TestApplicationEngine.() -> Unit) =
+    private fun UnsafeMutableEnvironment.withTestFrontHandler(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             with(get<FrontEndHandler>()) {
                 install()

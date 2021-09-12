@@ -8,34 +8,32 @@
  */
 package org.epilink.bot.user
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import org.epilink.bot.*
 import org.epilink.bot.db.*
-import org.koin.dsl.module
 import kotlin.test.*
 
-class UserCreatorTest : EpiLinkBaseTest<UserCreator>(
-    UserCreator::class,
-    module {
-        single<UserCreator> { UserCreatorImpl() }
+class UserCreatorTest : ShedinjaBaseTest<UserCreator>(
+    UserCreator::class, {
+        put<UserCreator>(::UserCreatorImpl)
     }
 ) {
 
     @Test
-    fun `Successful account creation`() {
+    fun `Successful account creation`() = stest {
         val hash = "tested".sha256()
-        val fac = mockHere<DatabaseFacade> {
+        val fac = putMock<DatabaseFacade> {
             coEvery { recordNewUser("discordid", hash, "eeemail", true, any()) } returns mockk()
         }
-        val pc = mockHere<PermissionChecks> {
+        val pc = putMock<PermissionChecks> {
             coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
         }
-        test {
-            createUser("discordid", "tested", "eeemail", true)
-        }
+        subject.createUser("discordid", "tested", "eeemail", true)
         coVerify {
             fac.recordNewUser("discordid", hash, "eeemail", true, any())
             pc.isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail")
@@ -44,36 +42,35 @@ class UserCreatorTest : EpiLinkBaseTest<UserCreator>(
     }
 
     @Test
-    fun `Unsuccessful account creation on msft issue`() {
-        val pc = mockHere<PermissionChecks> {
-            coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Disallowed("Hello", "good.bye")
+    fun `Unsuccessful account creation on msft issue`() = stest {
+        val pc = putMock<PermissionChecks> {
+            coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Disallowed(
+                "Hello",
+                "good.bye"
+            )
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Allowed
         }
-        test {
-            val exc = assertFailsWith<UserEndpointException> {
-                createUser("discordid", "tested", "eeemail", true)
-            }
-            assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)
-            assertEquals("Hello", exc.details)
-            assertEquals("good.bye", exc.detailsI18n)
+        val exc = assertFailsWith<UserEndpointException> {
+            subject.createUser("discordid", "tested", "eeemail", true)
         }
+        assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)
+        assertEquals("Hello", exc.details)
+        assertEquals("good.bye", exc.detailsI18n)
         coVerify { pc.isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") }
     }
 
     @Test
-    fun `Unsuccessful account creation on Discord issue`() {
-        val pc = mockHere<PermissionChecks> {
+    fun `Unsuccessful account creation on Discord issue`() = stest {
+        val pc = putMock<PermissionChecks> {
             coEvery { isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") } returns Allowed
             coEvery { isDiscordUserAllowedToCreateAccount("discordid") } returns Disallowed("Hiii", "he.y")
         }
-        test {
-            val exc = assertFailsWith<UserEndpointException> {
-                createUser("discordid", "tested", "eeemail", true)
-            }
-            assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)
-            assertEquals("Hiii", exc.details)
-            assertEquals("he.y", exc.detailsI18n)
+        val exc = assertFailsWith<UserEndpointException> {
+            subject.createUser("discordid", "tested", "eeemail", true)
         }
+        assertEquals(StandardErrorCodes.AccountCreationNotAllowed, exc.errorCode)
+        assertEquals("Hiii", exc.details)
+        assertEquals("he.y", exc.detailsI18n)
         coVerify { pc.isDiscordUserAllowedToCreateAccount("discordid") }
     }
 }

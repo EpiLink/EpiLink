@@ -47,9 +47,6 @@ import org.epilink.bot.http.data.RegistrationContinuation
 import org.epilink.bot.http.data.RegistrationInformation
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.toResponse
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**

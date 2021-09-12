@@ -11,9 +11,6 @@ package org.epilink.bot.discord
 import guru.zoroark.shedinja.environment.InjectionScope
 import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.db.DatabaseFacade
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 import java.util.Locale
 

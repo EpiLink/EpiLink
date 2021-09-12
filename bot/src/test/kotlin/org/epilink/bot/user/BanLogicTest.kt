@@ -8,20 +8,22 @@
  */
 package org.epilink.bot.user
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.db.Ban
 import org.epilink.bot.db.BanLogic
 import org.epilink.bot.db.BanLogicImpl
-import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-class BanLogicTest : EpiLinkBaseTest<BanLogic>(
-    BanLogic::class,
-    module {
-        single<BanLogic> { BanLogicImpl() }
+class BanLogicTest : ShedinjaBaseTest<BanLogic>(
+    BanLogic::class, {
+        put<BanLogic>(::BanLogicImpl)
     }
 ) {
     @Test
@@ -30,7 +32,7 @@ class BanLogicTest : EpiLinkBaseTest<BanLogic>(
             every { revoked } returns true
         }
         test {
-            assertFalse(isBanActive(ban))
+            assertFalse(subject.isBanActive(ban))
         }
     }
 
@@ -41,7 +43,7 @@ class BanLogicTest : EpiLinkBaseTest<BanLogic>(
             every { expiresOn } returns Instant.now() - Duration.ofHours(1)
         }
         test {
-            assertFalse(isBanActive(ban))
+            assertFalse(subject.isBanActive(ban))
         }
     }
 
@@ -52,7 +54,7 @@ class BanLogicTest : EpiLinkBaseTest<BanLogic>(
             every { expiresOn } returns null
         }
         test {
-            assertTrue(isBanActive(ban))
+            assertTrue(subject.isBanActive(ban))
         }
     }
 
@@ -63,7 +65,7 @@ class BanLogicTest : EpiLinkBaseTest<BanLogic>(
             every { expiresOn } returns Instant.now() + Duration.ofHours(10)
         }
         test {
-            assertTrue(isBanActive(ban))
+            assertTrue(subject.isBanActive(ban))
         }
     }
 }

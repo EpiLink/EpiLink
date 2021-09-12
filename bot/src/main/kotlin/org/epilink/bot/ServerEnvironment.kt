@@ -149,10 +149,10 @@ class ServerEnvironment(
         put<DiscordTargets>(::DiscordTargetsImpl)
         put<List<Command>>(named("discord.commands")) {
             listOf(
-                UpdateCommand(),
-                HelpCommand(),
-                LangCommand(),
-                CountCommand()
+                UpdateCommand(scope),
+                HelpCommand(scope),
+                LangCommand(scope),
+                CountCommand(scope)
             )
         }
     }

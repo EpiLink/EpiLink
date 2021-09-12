@@ -24,9 +24,6 @@ import org.epilink.bot.discord.DiscordMessages
 import org.epilink.bot.discord.DiscordMessagesI18n
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**

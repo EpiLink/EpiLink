@@ -17,7 +17,6 @@ dbcp2 = "2.9.0"
 discord4J = "3.1.7"
 exposed = "0.34.1"
 jose4j = "0.7.9"
-koin = "2.2.3"
 ktorRateLimit = "0.0.2"
 ktor = "1.6.3"
 lettuce = "6.1.4.RELEASE"
@@ -74,10 +73,6 @@ kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "coroutines" }
 
 shedinja-core = { module = "guru.zoroark.shedinja:shedinja", version.ref = "shedinja" }
-shedinja-koin2 = { module = "guru.zoroark.shedinja:shedinja-koin-v2", version.ref = "shedinja" }
-
-koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
-koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 
 lettuce-core = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
 
@@ -97,7 +92,6 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 shedinja-test = { module = "guru.zoroark.shedinja:shedinja-test", version.ref = "shedinja" }
-koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 
 ktor-server-testHost = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 ktor-client-mock-jvm = { module = "io.ktor:ktor-client-mock-jvm", version.ref = "ktor" }
@@ -118,6 +112,4 @@ ktor-client = ["ktor-client-apache", "ktor-client-auth-jvm"]
 jackson = ["jackson-databind", "jackson-kotlin", "jackson-yaml"]
 exposed = ["exposed-core", "exposed-dao", "exposed-jdbc", "exposed-javaTime"]
 kotlinx-coroutines = ["kotlinx-coroutines-reactor", "kotlinx-coroutines-reactive"]
-shedinja = [ "shedinja-core", "shedinja-koin2" ]
-koin = ["koin-core", "koin-logger-slf4j"]
 kotlin-test = ["kotlin-test-core", "kotlin-test-junit5"]

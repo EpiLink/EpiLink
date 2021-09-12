@@ -13,16 +13,23 @@ import guru.zoroark.shedinja.dsl.put
 import guru.zoroark.shedinja.environment.named
 import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.DiscordConfiguration
-import org.epilink.bot.db.*
+import org.epilink.bot.db.AdminStatus
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.PermissionChecks
+import org.epilink.bot.db.User
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.putMock
 import org.epilink.bot.softPutMock
 import org.epilink.bot.web.declareNoOpI18n
-import org.koin.test.mock.declare
-import javax.naming.Context
-import kotlin.test.*
+import kotlin.test.Test
 
 class DiscordCommandsTest : ShedinjaBaseTest<DiscordCommands>(
     DiscordCommands::class, {
@@ -85,11 +92,11 @@ class DiscordCommandsTest : ShedinjaBaseTest<DiscordCommands>(
     }
 
     @Test
-    fun `Do not accept messages from unidentified admins`() = test {
-        val (dcf, e) = it.mockErrorMessage("cr.awni").mockSend(it, "5678")
+    fun `Do not accept messages from unidentified admins`(){
         val u = mockk<User> { every { discordId } returns "1234" }
 
         test("1234", "90", u) {
+            val (dcf, e) = it.mockErrorMessage("cr.awni").mockSend(it, "5678")
             it.declareCommand("hellothere") {}
             handleMessage("e!hellothere", "1234", "5678", "90")
             coVerify { dcf.sendChannelMessage("5678", e) }

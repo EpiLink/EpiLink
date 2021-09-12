@@ -8,8 +8,6 @@
  */
 package org.epilink.bot.db
 
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
 import java.time.Instant
 
 /**

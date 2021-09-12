@@ -8,6 +8,9 @@
  */
 package org.epilink.bot.security
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.environment.get
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import io.ktor.application.ApplicationCall
 import io.ktor.http.Headers
 import io.ktor.http.HttpStatusCode
@@ -17,26 +20,36 @@ import io.ktor.sessions.CurrentSession
 import io.ktor.sessions.sessions
 import io.ktor.util.Attributes
 import io.ktor.util.pipeline.PipelineContext
-import io.mockk.*
-import kotlinx.coroutines.runBlocking
-import org.epilink.bot.db.*
+import io.mockk.CapturingSlot
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.runs
+import io.mockk.slot
+import io.mockk.verify
+import org.epilink.bot.db.AdminStatus
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.PermissionChecks
+import org.epilink.bot.db.User
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.http.ApiErrorResponse
 import org.epilink.bot.http.SessionChecker
 import org.epilink.bot.http.SessionCheckerImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.userObjAttribute
-import org.epilink.bot.mockHere
-import org.koin.core.component.get
-import org.koin.dsl.module
+import org.epilink.bot.putMock
+import org.epilink.bot.stest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
-    SessionChecker::class,
-    module {
-        single<SessionChecker> { SessionCheckerImpl() }
+class SessionChecksTest : ShedinjaBaseTest<SessionChecker>(
+    SessionChecker::class, {
+        put<SessionChecker>(::SessionCheckerImpl)
     }
 ) {
     /**
@@ -100,7 +113,7 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
     }
 
     @Test
-    fun `Test user verification wrong session`() {
+    fun `Test user verification wrong session`() = stest {
         // This test is cursed and i hate it
         val (call, session) = setupMockedSession(null)
         with(session) {
@@ -111,12 +124,10 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
             every { context } returns call
             every { finish() } just runs
         }
-        test {
-            assertFalse(verifyUser(context))
-            val captured = mr.slot.captured
-            assertTrue(captured is ApiErrorResponse)
-            assertEquals(300, captured.data!!.code)
-        }
+        assertFalse(subject.verifyUser(context))
+        val captured = mr.slot.captured
+        assertTrue(captured is ApiErrorResponse)
+        assertEquals(300, captured.data!!.code)
         coVerify {
             session.clear("nnname")
             mr.response.status(HttpStatusCode.Unauthorized)
@@ -125,7 +136,7 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
     }
 
     @Test
-    fun `Test user verification user does not exist`() {
+    fun `Test user verification user does not exist`() = stest {
         val (call, session) = setupMockedSession(ConnectedSession("userid", "username", null))
         with(session) {
             every { clear("nnname") } just runs
@@ -135,15 +146,13 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
-        test {
-            assertFalse(verifyUser(context))
-            val captured = mr.slot.captured
-            assertTrue(captured is ApiErrorResponse)
-            assertEquals(300, captured.data!!.code)
-        }
+        assertFalse(subject.verifyUser(context))
+        val captured = mr.slot.captured
+        assertTrue(captured is ApiErrorResponse)
+        assertEquals(300, captured.data!!.code)
         coVerify {
             session.clear("nnname")
             mr.response.status(HttpStatusCode.Unauthorized)
@@ -153,7 +162,7 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
     }
 
     @Test
-    fun `Test user verification user exists`() {
+    fun `Test user verification user exists`() = stest {
         val (call, _) = setupMockedSession(ConnectedSession("userid", "username", null))
         val attr = mockk<Attributes> {
             every { put(any(), any()) } just runs
@@ -163,18 +172,16 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
             every { context } returns call
         }
         val u = mockk<User>()
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns u
         }
-        runBlocking {
-            assertTrue(get<SessionChecker>().verifyUser(context))
-        }
+        assertTrue(get<SessionChecker>().verifyUser(context))
         verify { attr.put(match { it.name.contains("User") }, u) }
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test admin, not an admin`() {
+    fun `Test admin, not an admin`() = stest {
         val (call, _) = setupMockedSession(ConnectedSession("userid", "username", null))
         val (_, u) = mockUserAttributes("userid", call)
         val mr = mockResponse(call)
@@ -182,15 +189,13 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canPerformAdminActions(u) } returns AdminStatus.NotAdmin
         }
-        runBlocking {
-            assertFalse(get<SessionChecker>().verifyAdmin(context))
-            val captured = mr.slot.captured
-            assertTrue(captured is ApiErrorResponse)
-            assertEquals(301, captured.data!!.code)
-        }
+        assertFalse(get<SessionChecker>().verifyAdmin(context))
+        val captured = mr.slot.captured
+        assertTrue(captured is ApiErrorResponse)
+        assertEquals(301, captured.data!!.code)
         coVerify {
             mr.response.status(HttpStatusCode.Unauthorized)
             mr.pipeline.execute(call, any())
@@ -200,7 +205,7 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test admin, admin but not identifiable`() {
+    fun `Test admin, admin but not identifiable`() = stest {
         val (call, _) = setupMockedSession(ConnectedSession("adminid", "username", null))
         val (_, u) = mockUserAttributes("adminid", call)
         val mr = mockResponse(call)
@@ -208,15 +213,13 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
             every { context } returns call
             every { finish() } just runs
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canPerformAdminActions(u) } returns AdminStatus.AdminNotIdentifiable
         }
-        runBlocking {
-            assertFalse(get<SessionChecker>().verifyAdmin(context))
-            val captured = mr.slot.captured
-            assertTrue(captured is ApiErrorResponse)
-            assertEquals(301, captured.data!!.code)
-        }
+        assertFalse(get<SessionChecker>().verifyAdmin(context))
+        val captured = mr.slot.captured
+        assertTrue(captured is ApiErrorResponse)
+        assertEquals(301, captured.data!!.code)
         coVerify {
             mr.response.status(HttpStatusCode.Unauthorized)
             mr.pipeline.execute(call, any())
@@ -226,18 +229,16 @@ class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test admin when correct`() {
+    fun `Test admin when correct`() = stest {
         val (call, _) = setupMockedSession(ConnectedSession("adminid", "username", null))
         val (attr, u) = mockUserAttributes("adminid", call)
         val context = mockk<PipelineContext<Unit, ApplicationCall>> {
             every { context } returns call
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canPerformAdminActions(u) } returns AdminStatus.Admin
         }
-        runBlocking {
-            assertTrue(get<SessionChecker>().verifyAdmin(context))
-        }
+        assertTrue(get<SessionChecker>().verifyAdmin(context))
         verify { attr.put(match { it.name.contains("Admin") }, u) }
     }
 

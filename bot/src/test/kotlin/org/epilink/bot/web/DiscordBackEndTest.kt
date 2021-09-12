@@ -9,28 +9,38 @@
 package org.epilink.bot.web
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.toByteArray
-import io.ktor.http.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.http.parseUrlEncodedParameters
+import io.ktor.http.withCharset
 import org.epilink.bot.EndpointException
 import org.epilink.bot.StandardErrorCodes
-import org.epilink.bot.declareClientHandler
 import org.epilink.bot.http.DiscordBackEnd
 import org.epilink.bot.http.DiscordUserInfo
-import org.koin.dsl.module
+import org.epilink.bot.putClientHandler
+import org.epilink.bot.stest
 import java.nio.charset.StandardCharsets
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-class DiscordBackEndTest : EpiLinkBaseTest<DiscordBackEnd>(
-    DiscordBackEnd::class,
-    module {
-        single { DiscordBackEnd("DiscordClientId", "DiscordSecret") }
+class DiscordBackEndTest : ShedinjaBaseTest<DiscordBackEnd>(
+    DiscordBackEnd::class, {
+        put { DiscordBackEnd(scope, "DiscordClientId", "DiscordSecret") }
     }
 ) {
     @Test
     fun `Test Discord auth stub`(): Unit = test {
-        getAuthorizeStub().apply {
+        subject.getAuthorizeStub().apply {
             assertTrue(contains("client_id=DiscordClientId"), "Expected a client ID")
             assertTrue(contains("scope=identify"), "Expected the scope to be set to identify")
             assertTrue(contains("response_type=code"), "Expected the response type to be code")
@@ -41,10 +51,13 @@ class DiscordBackEndTest : EpiLinkBaseTest<DiscordBackEnd>(
     }
 
     @Test
-    fun `Test Discord token retrieval`() {
-        declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") { request ->
+    fun `Test Discord token retrieval`() = stest {
+        putClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") { request ->
             assertEquals(HttpMethod.Post, request.method)
-            assertEquals(ContentType.Application.FormUrlEncoded.withCharset(StandardCharsets.UTF_8), request.body.contentType)
+            assertEquals(
+                ContentType.Application.FormUrlEncoded.withCharset(StandardCharsets.UTF_8),
+                request.body.contentType
+            )
             val params = String(request.body.toByteArray()).parseUrlEncodedParameters()
             assertEquals("DiscordClientId", params["client_id"])
             assertEquals("DiscordSecret", params["client_secret"])
@@ -58,46 +71,39 @@ class DiscordBackEndTest : EpiLinkBaseTest<DiscordBackEnd>(
             )
         }
 
-        test {
-            assertEquals("DiscordAccessToken", getDiscordToken("DiscordAuthCode", "redir"))
-        }
+        assertEquals("DiscordAccessToken", subject.getDiscordToken("DiscordAuthCode", "redir"))
     }
 
     @Test
-    fun `Test Discord token retrieval fails on wrong authcode`() {
-        declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") {
+    fun `Test Discord token retrieval fails on wrong authcode`() = stest {
+        putClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") {
             respondError(
                 HttpStatusCode.BadRequest,
                 """{"error":"invalid_grant"}""",
                 headers = headersOf("Content-Type", "application/json")
             )
         }
-
-        test {
-            val exc = assertFailsWith<EndpointException> {
-                getDiscordToken("Authcode", "Redir")
-            }
-            assertEquals(StandardErrorCodes.InvalidAuthCode, exc.errorCode)
+        val exc = assertFailsWith<EndpointException> {
+            subject.getDiscordToken("Authcode", "Redir")
         }
+        assertEquals(StandardErrorCodes.InvalidAuthCode, exc.errorCode)
     }
 
     @Test
-    fun `Test Discord token retrieval fails on other error`() {
-        declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") {
+    fun `Test Discord token retrieval fails on other error`() = stest {
+        putClientHandler(onlyMatchUrl = "https://discord.com/api/v6/oauth2/token") {
             respondError(HttpStatusCode.BadRequest, """{"error":"¯\\_(ツ)_/¯"}""")
         }
 
-        test {
-            val exc = assertFailsWith<EndpointException> {
-                getDiscordToken("Auth", "Re")
-            }
-            assertEquals(StandardErrorCodes.DiscordApiFailure, exc.errorCode)
+        val exc = assertFailsWith<EndpointException> {
+            subject.getDiscordToken("Auth", "Re")
         }
+        assertEquals(StandardErrorCodes.DiscordApiFailure, exc.errorCode)
     }
 
     @Test
-    fun `Test Discord info retrieval`() {
-        declareClientHandler(onlyMatchUrl = "https://discord.com/api/v6/users/@me") { req ->
+    fun `Test Discord info retrieval`() = stest {
+        putClientHandler(onlyMatchUrl = "https://discord.com/api/v6/users/@me") { req ->
             assertEquals("Bearer veryserioustoken", req.headers["Authorization"])
             val data = mapOf(
                 "id" to "myVeryId",
@@ -111,16 +117,13 @@ class DiscordBackEndTest : EpiLinkBaseTest<DiscordBackEnd>(
                 headers = headersOf("Content-Type", "application/json")
             )
         }
-
-        test {
-            assertEquals(
-                DiscordUserInfo(
-                    id = "myVeryId",
-                    username = "usseeer#9876",
-                    avatarUrl = "https://cdn.discordapp.com/avatars/myVeryId/haaash.png?size=256"
-                ),
-                getDiscordInfo("veryserioustoken")
-            )
-        }
+        assertEquals(
+            DiscordUserInfo(
+                id = "myVeryId",
+                username = "usseeer#9876",
+                avatarUrl = "https://cdn.discordapp.com/avatars/myVeryId/haaash.png?size=256"
+            ),
+            subject.getDiscordInfo("veryserioustoken")
+        )
     }
 }

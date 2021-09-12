@@ -50,9 +50,6 @@ import org.epilink.bot.http.data.IdRequestResult
 import org.epilink.bot.http.data.RegisteredUserInfo
 import org.epilink.bot.http.data.UserBans
 import org.epilink.bot.toResponse
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Instant
 import java.util.Base64
 import io.ktor.locations.post as postl
@@ -90,7 +87,6 @@ data class GdprReportLocation(val targetIdp: String)
 @Location("search/hash16/{searchTerm}")
 data class SearchByHash(val searchTerm: String)
 
-@OptIn(KoinApiExtension::class)
 internal class AdminEndpointsImpl(scope: InjectionScope) : AdminEndpoints {
     private val sessionChecker: SessionChecker by scope()
     private val dbf: DatabaseFacade by scope()

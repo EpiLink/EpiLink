@@ -13,9 +13,6 @@ import guru.zoroark.shedinja.environment.invoke
 import org.epilink.bot.ServerEnvironment
 import org.epilink.bot.config.IdentityProviderConfiguration
 import org.epilink.bot.config.PrivacyConfiguration
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Instant
 
 /**

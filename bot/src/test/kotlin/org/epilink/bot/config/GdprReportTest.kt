@@ -8,28 +8,38 @@
  */
 package org.epilink.bot.config
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.environment.get
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
+import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
-import kotlinx.coroutines.runBlocking
 import org.epilink.bot.ServerEnvironment
-import org.epilink.bot.db.*
-import org.epilink.bot.mockHere
-import org.koin.dsl.module
+import org.epilink.bot.db.Ban
+import org.epilink.bot.db.BanLogic
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.GdprReport
+import org.epilink.bot.db.GdprReportImpl
+import org.epilink.bot.db.IdentityAccess
+import org.epilink.bot.db.IdentityManager
+import org.epilink.bot.db.User
+import org.epilink.bot.db.UsesTrueIdentity
+import org.epilink.bot.putMock
+import org.epilink.bot.stest
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class GdprReportTest : EpiLinkBaseTest<GdprReport>(
-    GdprReport::class,
-    module {
-        single<GdprReport> { GdprReportImpl() }
+class GdprReportTest : ShedinjaBaseTest<GdprReport>(
+    GdprReport::class, {
+        put<GdprReport>(::GdprReportImpl)
     }
 ) {
     @Test
-    fun `Test user info report`() {
+    fun `Test user info report`() = stest {
         val i = Instant.now()
         val id = byteArrayOf(1, 2, 3, 4)
         val u = mockk<User> {
@@ -37,13 +47,12 @@ class GdprReportTest : EpiLinkBaseTest<GdprReport>(
             every { creationDate } returns i
             every { idpIdHash } returns id
         }
-        mockHere<IdentityProviderConfiguration> {
+        putMock<IdentityProviderConfiguration> {
             every { name } returns "testy"
         }
-        test {
-            val s = getUserInfoReport(u)
-            assertEquals(
-                """
+        val s = subject.getUserInfoReport(u)
+        assertEquals(
+            """
                 ## User information
 
                 General information stored about your account.
@@ -52,37 +61,35 @@ class GdprReportTest : EpiLinkBaseTest<GdprReport>(
                 - Identity Provider (testy) ID hash (Base64 URL-safe encoded): ${id.encodeBase64Url()}
                 - Account creation timestamp: $i
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test true identity report (not identifiable)`() {
+    fun `Test true identity report (not identifiable)`() = stest {
         val u = mockk<User>()
-        mockHere<DatabaseFacade> { coEvery { isUserIdentifiable(u) } returns false }
-        test {
-            val s = getTrueIdentityReport(u, "big boi")
-            assertEquals(
-                """
+        putMock<DatabaseFacade> { coEvery { isUserIdentifiable(u) } returns false }
+        val s = subject.getTrueIdentityReport(u, "big boi")
+        assertEquals(
+            """
                 ## Identity information
             
                 You did not enable the "Remember my identity" feature.
             
                 - True identity: Not stored.
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
+
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test true identity report (identifiable)`() {
+    fun `Test true identity report (identifiable)`() = stest {
         val u = mockk<User>()
-        mockHere<DatabaseFacade> { coEvery { isUserIdentifiable(u) } returns true }
-        mockHere<IdentityManager> {
+        putMock<DatabaseFacade> { coEvery { isUserIdentifiable(u) } returns true }
+        putMock<IdentityManager> {
             coEvery {
                 accessIdentity(
                     u,
@@ -92,47 +99,43 @@ class GdprReportTest : EpiLinkBaseTest<GdprReport>(
                 )
             } returns "le identity"
         }
-        test {
-            val s = getTrueIdentityReport(u, "big boi")
-            assertEquals(
-                """
+        val s = subject.getTrueIdentityReport(u, "big boi")
+        assertEquals(
+            """
                 ## Identity information
             
                 Information stored because you enabled the "Remember my identity" feature.
             
                 - True identity: le identity
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
     }
 
     @Test
-    fun `Test ban report (no bans)`() {
+    fun `Test ban report (no bans)`() = stest {
         val idHash = byteArrayOf(1, 2, 3, 4)
         val u = mockk<User> {
             every { idpIdHash } returns idHash
         }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getBansFor(idHash) } returns listOf()
         }
-        test {
-            val s = getBanReport(u)
-            assertEquals(
-                """
+        val s = subject.getBanReport(u)
+        assertEquals(
+            """
                 ## Ban information
                 
                 The following list contains all of the bans against you.
                 
                 No known bans.
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
     }
 
     @Test
-    fun `Test ban report (has bans)`() {
+    fun `Test ban report (has bans)`() = stest {
         val idHash = byteArrayOf(1, 2, 3, 4)
         val u = mockk<User> {
             every { idpIdHash } returns idHash
@@ -146,18 +149,17 @@ class GdprReportTest : EpiLinkBaseTest<GdprReport>(
             mockBan(false, "deuxième cheh", i2, e1),
             mockBan(false, "troisième cheh", i3, null)
         )
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getBansFor(idHash) } returns bans
         }
-        mockHere<BanLogic> {
+        putMock<BanLogic> {
             every { isBanActive(bans[0]) } returns false
             every { isBanActive(bans[1]) } returns false
             every { isBanActive(bans[2]) } returns true
         }
-        test {
-            val s = getBanReport(u)
-            assertEquals(
-                """
+        val s = subject.getBanReport(u)
+        assertEquals(
+            """
                 ## Ban information
                 
                 The following list contains all of the bans against you.
@@ -175,59 +177,55 @@ class GdprReportTest : EpiLinkBaseTest<GdprReport>(
                   - Issued on: $i3
                   - Expires on: Does not expire
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
     }
 
     @Test
-    fun `Test id access report, none`() {
+    fun `Test id access report, none`() = stest {
         val u = mockk<User>()
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf()
         }
-        test {
-            val s = getIdentityAccessesReport(u)
-            assertEquals(
-                """
+        val s = subject.getIdentityAccessesReport(u)
+        assertEquals(
+            """
                 ## ID Accesses information
                 
                 List of accesses made to your identity.
                 
                 No known ID access.
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
     }
 
     @Test
-    fun `Test id access report, many, don't disclose identity`() {
+    fun `Test id access report, many, don't disclose identity`() = stest {
         idAccessReportTest(false)
     }
 
     @Test
-    fun `Test id access report, many, disclose identity`() {
+    fun `Test id access report, many, disclose identity`() = stest {
         idAccessReportTest(true)
     }
 
-    private fun idAccessReportTest(identityDisclosed: Boolean) {
+    private suspend fun UnsafeMutableEnvironment.idAccessReportTest(identityDisclosed: Boolean) {
         val u = mockk<User>()
         val i1 = Instant.now() - Duration.ofHours(1)
         val i2 = Instant.now() - Duration.ofDays(365)
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getIdentityAccessesFor(u) } returns listOf(
                 mockIdAccess("Michel", "get rekt", i1, false),
                 mockIdAccess("JacquelinBot", "g3t r3kt", i2, true)
             )
         }
-        mockHere<PrivacyConfiguration> {
+        putMock<PrivacyConfiguration> {
             every { shouldDiscloseIdentity(any()) } returns identityDisclosed
         }
-        test {
-            val s = getIdentityAccessesReport(u)
-            assertEquals(
-                """
+        val s = subject.getIdentityAccessesReport(u)
+        assertEquals(
+            """
                 ## ID Accesses information
                 
                 List of accesses made to your identity.
@@ -239,63 +237,61 @@ class GdprReportTest : EpiLinkBaseTest<GdprReport>(
                   - Requester: ${if (identityDisclosed) "JacquelinBot" else "(undisclosed)"}
                   - Reason: g3t r3kt
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
     }
 
     @Test
-    fun `Test language preferences report, none`() {
-        mockHere<DatabaseFacade> {
+    fun `Test language preferences report, none`() = stest {
+        putMock<DatabaseFacade> {
             coEvery { getLanguagePreference("le id") } returns null
         }
-        test {
-            val s = getLanguagePreferencesReport("le id")
-            assertEquals(
-                """
+        val s = subject.getLanguagePreferencesReport("le id")
+        assertEquals(
+            """
                 ## Language preferences
                 
                 You can set and clear your language preferences using the "e!lang" command in Discord.
                 
                 Language preference: None
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
     }
 
     @Test
-    fun `Test language preferences report, has one`() {
-        mockHere<DatabaseFacade> {
+    fun `Test language preferences report, has one`() = stest {
+        putMock<DatabaseFacade> {
             coEvery { getLanguagePreference("le id") } returns "howdy"
         }
-        test {
-            val s = getLanguagePreferencesReport("le id")
-            assertEquals(
-                """
+        val s = subject.getLanguagePreferencesReport("le id")
+        assertEquals(
+            """
                 ## Language preferences
                 
                 You can set and clear your language preferences using the "e!lang" command in Discord.
                 
                 Language preference: howdy
                 """.trimIndent(),
-                s
-            )
-        }
+            s
+        )
     }
 
     @Test
-    fun `Test entire generation`() {
+    fun `Test entire generation`() = stest {
         val u = mockk<User> { every { discordId } returns "le id" }
-        val gdpr = spyk(GdprReportImpl()) {
-            every { getUserInfoReport(u) } returns "#1"
-            coEvery { getTrueIdentityReport(u, "E") } returns "#2"
-            coEvery { getBanReport(u) } returns "#3"
-            coEvery { getIdentityAccessesReport(u) } returns "#4"
-            coEvery { getLanguagePreferencesReport("le id") } returns "#5"
+        put {
+            spyk(GdprReportImpl(scope)) {
+                every { getUserInfoReport(u) } returns "#1"
+                coEvery { getTrueIdentityReport(u, "E") } returns "#2"
+                coEvery { getBanReport(u) } returns "#3"
+                coEvery { getIdentityAccessesReport(u) } returns "#4"
+                coEvery { getLanguagePreferencesReport("le id") } returns "#5"
+            }
         }
-        mockHere<ServerEnvironment> { every { name } returns "LeTest" }
-        val s = runBlocking { gdpr.getFullReport(u, "E") }
+        val gdpr = get<GdprReportImpl>()
+        putMock<ServerEnvironment> { every { name } returns "LeTest" }
+        val s = gdpr.getFullReport(u, "E")
 
         assertEquals(
             """

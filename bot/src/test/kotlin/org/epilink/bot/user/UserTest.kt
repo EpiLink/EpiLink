@@ -8,6 +8,13 @@
  */
 package org.epilink.bot.user
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.get
+import guru.zoroark.shedinja.environment.invoke
+import guru.zoroark.shedinja.environment.named
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
+import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
 import io.ktor.application.ApplicationCall
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -18,63 +25,84 @@ import io.ktor.server.testing.withTestApplication
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
-import io.mockk.*
-import org.epilink.bot.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
+import org.epilink.bot.CacheClient
+import org.epilink.bot.ErrorCode
+import org.epilink.bot.UserEndpointException
+import org.epilink.bot.assertStatus
 import org.epilink.bot.config.RateLimitingProfile
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.db.IdentityManager
 import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.RoleManager
-import org.epilink.bot.http.*
+import org.epilink.bot.fromJson
+import org.epilink.bot.http.BackEnd
+import org.epilink.bot.http.BackEndImpl
+import org.epilink.bot.http.IdentityProvider
+import org.epilink.bot.http.SessionChecker
+import org.epilink.bot.http.UserIdentityInfo
 import org.epilink.bot.http.data.IdAccess
 import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.http.endpoints.UserApi
 import org.epilink.bot.http.endpoints.UserApiImpl
 import org.epilink.bot.http.sessions.ConnectedSession
-import org.epilink.bot.web.*
+import org.epilink.bot.http.userObjAttribute
+import org.epilink.bot.putMock
+import org.epilink.bot.setJsonBody
+import org.epilink.bot.sha256
+import org.epilink.bot.stest
+import org.epilink.bot.web.ApiError
+import org.epilink.bot.web.ApiSuccess
+import org.epilink.bot.web.DummyCacheClient
 import org.epilink.bot.web.UnsafeTestSessionStorage
-import org.koin.core.module.Module
-import org.koin.core.qualifier.named
-import org.koin.dsl.module
-import org.koin.test.get
+import org.epilink.bot.web.setupSession
 import java.time.Duration
 import java.time.Instant
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
-class UserTest : EpiLinkBaseTest<Unit>(
-    Unit::class,
-    module {
-        single<UserApi> { UserApiImpl() }
-        single<BackEnd> { BackEndImpl() }
-        single<SessionChecker> {
-            mockk {
-                val slot = slot<PipelineContext<Unit, ApplicationCall>>()
-                coEvery { verifyUser(capture(slot)) } coAnswers {
-                    injectUserIntoAttributes(slot, userObjAttribute)
-                    true
-                }
-            }
-        }
-        single<WebServerConfiguration> {
+class FakeUserSessionChecker(scope: InjectionScope) : SessionChecker {
+    private val db: DatabaseFacade by scope()
+
+    override suspend fun verifyUser(context: PipelineContext<Unit, ApplicationCall>): Boolean {
+        context.context.attributes.put(
+            userObjAttribute,
+            db.getUser(context.context.sessions.get<ConnectedSession>()!!.discordId)!!
+        )
+        return true
+    }
+
+    override suspend fun verifyAdmin(context: PipelineContext<Unit, ApplicationCall>): Boolean =
+        error("Not implemented")
+}
+
+class UserTest : ShedinjaBaseTest<Unit>(
+    Unit::class, {
+        put<UserApi>(::UserApiImpl)
+        put<BackEnd>(::BackEndImpl)
+        put<SessionChecker>(::FakeUserSessionChecker)
+        put<WebServerConfiguration> {
             mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
         }
-        single(named("admins")) { listOf("adminid") }
+        put(named("admins")) { listOf("adminid") }
     }
 ) {
-    override fun additionalModule(): Module? = module {
-        single<CacheClient> { DummyCacheClient { sessionStorage } }
-    }
-
     private val sessionStorage = UnsafeTestSessionStorage()
-    private val sessionChecker: SessionChecker
-        get() = get() // I'm not sure if inject() handles test execution properly
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user endpoint when identifiable`() {
+    fun `Test user endpoint when identifiable`() = stest {
         withTestEpiLink {
-            mockHere<DatabaseFacade> {
+            putMock<DatabaseFacade> {
                 coEvery { isUserIdentifiable(any()) } returns true
             }
             val sid = setupSession(
@@ -95,15 +123,14 @@ class UserTest : EpiLinkBaseTest<Unit>(
                 assertEquals(true, data.data["identifiable"])
                 assertEquals(false, data.data["privileged"])
             }
-            coVerify { sessionChecker.verifyUser(any()) }
         }
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user endpoint when not identifiable`() {
+    fun `Test user endpoint when not identifiable`() = stest {
         withTestEpiLink {
-            mockHere<DatabaseFacade> {
+            putMock<DatabaseFacade> {
                 coEvery { isUserIdentifiable(any()) } returns false
             }
             val sid = setupSession(
@@ -124,15 +151,14 @@ class UserTest : EpiLinkBaseTest<Unit>(
                 assertEquals(false, data.data["identifiable"])
                 assertEquals(false, data.data["privileged"])
             }
-            coVerify { sessionChecker.verifyUser(any()) }
         }
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user endpoint when admin`() {
+    fun `Test user endpoint when admin`() = stest {
         withTestEpiLink {
-            mockHere<DatabaseFacade> {
+            putMock<DatabaseFacade> {
                 coEvery { isUserIdentifiable(any()) } returns false
             }
             val sid = setupSession(
@@ -153,15 +179,14 @@ class UserTest : EpiLinkBaseTest<Unit>(
                 assertEquals(false, data.data["identifiable"])
                 assertEquals(true, data.data["privileged"])
             }
-            coVerify { sessionChecker.verifyUser(any()) }
         }
     }
 
     @Test
-    fun `Test user access logs retrieval`() {
+    fun `Test user access logs retrieval`() = stest {
         val inst1 = Instant.now() - Duration.ofHours(1)
         val inst2 = Instant.now() - Duration.ofHours(10)
-        mockHere<IdentityManager> {
+        putMock<IdentityManager> {
             coEvery { getIdAccessLogs(match { it.discordId == "discordid" }) } returns IdAccessLogs(
                 manualAuthorsDisclosed = false,
                 accesses = listOf(
@@ -196,26 +221,25 @@ class UserTest : EpiLinkBaseTest<Unit>(
                     assertEquals(inst2.toString(), second["timestamp"])
                 }
             }
-            coVerify { sessionChecker.verifyUser(any()) }
         }
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user identity relink with correct account`() {
+    fun `Test user identity relink with correct account`() = stest {
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
         val email = "e.mail@mail.maiiiil"
-        mockHere<IdentityProvider> {
+        putMock<IdentityProvider> {
             coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
-        val rm = mockHere<RoleManager> {
+        val rm = putMock<RoleManager> {
             every { invalidateAllRolesLater("userid", true) } returns mockk()
         }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false
         }
-        val ida = mockHere<IdentityManager> {
+        val ida = putMock<IdentityManager> {
             coEvery { relinkIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId") } just runs
         }
         withTestEpiLink {
@@ -233,19 +257,18 @@ class UserTest : EpiLinkBaseTest<Unit>(
         coVerify {
             rm.invalidateAllRolesLater(any(), true)
             ida.relinkIdentity(any(), email, "MyMicrosoftId")
-            sessionChecker.verifyUser(any())
         }
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user identity relink with account already linked`() {
+    fun `Test user identity relink with account already linked`() = stest {
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
-        val mbe = mockHere<IdentityProvider> {
+        val mbe = putMock<IdentityProvider> {
             coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("", "")
         }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns true
         }
         withTestEpiLink {
@@ -262,23 +285,22 @@ class UserTest : EpiLinkBaseTest<Unit>(
         }
         coVerify {
             mbe.getUserIdentityInfo("msauth", "uriii") // Ensure the back-end has consumed the authcode
-            sessionChecker.verifyUser(any())
         }
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user identity relink with relink error`() {
+    fun `Test user identity relink with relink error`() = stest {
         val msftId = "MyMicrosoftId"
         val hashMsftId = msftId.sha256()
         val email = "e.mail@mail.maiiiil"
-        mockHere<IdentityProvider> {
+        putMock<IdentityProvider> {
             coEvery { getUserIdentityInfo("msauth", "uriii") } returns UserIdentityInfo("MyMicrosoftId", email)
         }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false
         }
-        mockHere<IdentityManager> {
+        putMock<IdentityManager> {
             coEvery {
                 relinkIdentity(match { it.discordId == "userid" }, email, "MyMicrosoftId")
             } throws UserEndpointException(
@@ -299,14 +321,13 @@ class UserTest : EpiLinkBaseTest<Unit>(
                 val err = resp.data
                 assertEquals(98765, err.code)
             }
-            coVerify { sessionChecker.verifyUser(any()) }
         }
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user identity deletion when no identity exists`() {
-        mockHere<DatabaseFacade> {
+    fun `Test user identity deletion when no identity exists`() = stest {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns false
         }
         withTestEpiLink {
@@ -319,20 +340,19 @@ class UserTest : EpiLinkBaseTest<Unit>(
                 val err = resp.data
                 assertEquals(111, err.code)
             }
-            coVerify { sessionChecker.verifyUser(any()) }
         }
     }
 
     @OptIn(UsesTrueIdentity::class)
     @Test
-    fun `Test user identity deletion success`() {
-        mockHere<DatabaseFacade> {
+    fun `Test user identity deletion success`() = stest {
+        putMock<DatabaseFacade> {
             coEvery { isUserIdentifiable(any()) } returns true
         }
-        val ida = mockHere<IdentityManager> {
+        val ida = putMock<IdentityManager> {
             coEvery { deleteUserIdentity(match { it.discordId == "userid" }) } just runs
         }
-        val rm = mockHere<RoleManager> {
+        val rm = putMock<RoleManager> {
             every { invalidateAllRolesLater("userid") } returns mockk()
         }
         withTestEpiLink {
@@ -348,12 +368,11 @@ class UserTest : EpiLinkBaseTest<Unit>(
         coVerify {
             ida.deleteUserIdentity(any())
             rm.invalidateAllRolesLater(any())
-            sessionChecker.verifyUser(any())
         }
     }
 
     @Test
-    fun `Test user log out`() {
+    fun `Test user log out`() = stest {
         withTestEpiLink {
             val sid = setupSession(sessionStorage)
             handleRequest(HttpMethod.Post, "/api/v1/user/logout") {
@@ -363,11 +382,11 @@ class UserTest : EpiLinkBaseTest<Unit>(
                 assertNull(fromJson<ApiSuccess>(response).data)
                 assertNull(sessions.get<ConnectedSession>())
             }
-            coVerify { sessionChecker.verifyUser(any()) }
         }
     }
 
-    private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
+    private fun UnsafeMutableEnvironment.withTestEpiLink(block: TestApplicationEngine.() -> Unit) {
+        put<CacheClient> { DummyCacheClient { sessionStorage } }
         withTestApplication({
             with(get<BackEnd>()) {
                 installFeatures()
@@ -377,4 +396,5 @@ class UserTest : EpiLinkBaseTest<Unit>(
                 get<UserApi>().install(this)
             }
         }, block)
+    }
 }

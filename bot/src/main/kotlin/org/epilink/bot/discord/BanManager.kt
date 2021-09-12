@@ -16,9 +16,6 @@ import org.epilink.bot.db.Ban
 import org.epilink.bot.db.BanLogic
 import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.db.UnlinkCooldown
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Instant
 import java.util.Base64
 
@@ -50,7 +47,6 @@ interface BanManager {
     suspend fun revokeBan(idpHashBase64: String, banId: Int)
 }
 
-@OptIn(KoinApiExtension::class)
 internal class BanManagerImpl(scope: InjectionScope) : BanManager {
     private val dbf: DatabaseFacade by scope()
     private val roleManager: RoleManager by scope()

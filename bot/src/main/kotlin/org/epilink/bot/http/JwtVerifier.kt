@@ -15,8 +15,6 @@ import org.epilink.bot.UserEndpointException
 import org.jose4j.jwk.HttpsJwks
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
 
 private const val ALLOWED_CLOCK_SKEW = 30
 

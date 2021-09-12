@@ -28,7 +28,7 @@ import kotlin.test.assertTrue
 
 class UpdateCommandTest : ShedinjaBaseTest<Command>(
     Command::class, {
-        put<Command> { UpdateCommand() }
+        put<Command>(::UpdateCommand)
     }
 ) {
     @Test

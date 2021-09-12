@@ -9,6 +9,7 @@
 package org.epilink.bot.http.endpoints
 
 import guru.zoroark.shedinja.environment.InjectionScope
+import guru.zoroark.shedinja.environment.invoke
 import guru.zoroark.shedinja.environment.named
 import io.ktor.application.ApplicationCall
 import io.ktor.application.ApplicationCallPipeline
@@ -44,9 +45,6 @@ import org.epilink.bot.http.data.UserInformation
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.http.user
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**

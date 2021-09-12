@@ -21,7 +21,7 @@ import kotlin.test.Test
 
 class HelpCommandTest : ShedinjaBaseTest<Command>(
     Command::class, {
-        put<Command> { HelpCommand() }
+        put<Command>(::HelpCommand)
     }
 ) {
     @Test
