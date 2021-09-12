@@ -9,10 +9,13 @@
 package org.epilink.bot.discord
 
 import guru.zoroark.shedinja.dsl.put
-import guru.zoroark.shedinja.dsl.shedinjaModule
 import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
-import io.mockk.*
+import io.mockk.MockKMatcherScope
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
 import org.epilink.bot.discord.cmd.CountCommand
 import org.epilink.bot.putMock
 import org.epilink.bot.softPutMock
@@ -20,12 +23,7 @@ import org.epilink.bot.stest
 import org.epilink.bot.web.declareNoOpI18n
 import kotlin.test.Test
 
-class CountCommandTest : ShedinjaBaseTest<Command>(
-    Command::class,
-    shedinjaModule {
-        put<Command>(::CountCommand)
-    }
-) {
+class CountCommandTest : ShedinjaBaseTest<Command>(Command::class, { put<Command>(::CountCommand) }) {
     private fun UnsafeMutableEnvironment.mockMessagePipeline(
         channelId: String,
         discordMessagesReceiver: MockKMatcherScope.(DiscordMessages) -> DiscordEmbed

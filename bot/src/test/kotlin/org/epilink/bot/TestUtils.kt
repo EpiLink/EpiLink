@@ -10,6 +10,7 @@ package org.epilink.bot
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import guru.zoroark.shedinja.dsl.ShedinjaDsl
 import guru.zoroark.shedinja.environment.Identifier
 import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
@@ -105,6 +106,7 @@ inline fun <reified T : Any> UnsafeMutableEnvironment.softPutMock(crossinline in
     return injected?.apply(initializer) ?: putMock(initializer)
 }
 
+@ShedinjaDsl
 fun ShedinjaBaseTest<*>.stest(block: suspend UnsafeMutableEnvironment.() -> Any) {
     test { runBlocking { block() } }
 }

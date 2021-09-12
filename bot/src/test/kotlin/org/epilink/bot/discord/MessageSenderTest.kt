@@ -8,28 +8,27 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import io.mockk.*
-import org.epilink.bot.mockHere
-import org.koin.dsl.module
+import org.epilink.bot.putMock
+import org.epilink.bot.stest
 import kotlin.test.*
 
-class MessageSenderTest : EpiLinkBaseTest<DiscordMessageSender>(
-    DiscordMessageSender::class,
-    module {
-        single<DiscordMessageSender> { DiscordMessageSenderImpl() }
+class MessageSenderTest : ShedinjaBaseTest<DiscordMessageSender>(
+    DiscordMessageSender::class, {
+        put<DiscordMessageSender>(::DiscordMessageSenderImpl)
     }
 ) {
     @Test
-    fun `Test sending message later`() {
+    fun `Test sending message later`() = stest {
         val embed = mockk<DiscordEmbed>()
-        val dcf = mockHere<DiscordClientFacade> {
+        val dcf = putMock<DiscordClientFacade> {
             coEvery { sendDirectMessage("userid", embed) } just runs
         }
-        test {
-            sendDirectMessageLater("userid", embed).join()
-            coVerify {
-                dcf.sendDirectMessage("userid", embed)
-            }
+        subject.sendDirectMessageLater("userid", embed).join()
+        coVerify {
+            dcf.sendDirectMessage("userid", embed)
         }
     }
 }

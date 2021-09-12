@@ -8,20 +8,22 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import io.mockk.*
+import kotlinx.coroutines.runBlocking
 import org.epilink.bot.db.DatabaseFacade
-import org.epilink.bot.mockHere
-import org.koin.dsl.module
+import org.epilink.bot.putMock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class DiscordMessagesI18nTest : EpiLinkBaseTest<DiscordMessagesI18n>(
-    DiscordMessagesI18n::class,
-    module {
-        single<DiscordMessagesI18n> {
+class DiscordMessagesI18nTest : ShedinjaBaseTest<DiscordMessagesI18n>(
+    DiscordMessagesI18n::class, {
+        put<DiscordMessagesI18n> {
             DiscordMessagesI18nImpl(
+                scope,
                 mapOf(
                     "one" to mapOf("hello" to "Bonjour", "goodbye" to "Au revoir"),
                     "two" to mapOf("hello" to "Buongiorno")
@@ -36,20 +38,21 @@ class DiscordMessagesI18nTest : EpiLinkBaseTest<DiscordMessagesI18n>(
     @Test
     fun `Test available languages`() {
         test {
-            assertEquals(setOf("one", "two"), availableLanguages)
+            assertEquals(setOf("one", "two"), subject.availableLanguages)
         }
     }
+
     @Test
     fun `Test key retrieval present in chosen`() {
         test {
-            assertEquals("Buongiorno", get("two", "hello"))
+            assertEquals("Buongiorno", subject.get("two", "hello"))
         }
     }
 
     @Test
     fun `Test key fallback`() {
         test {
-            assertEquals("Au revoir", get("two", "goodbye"))
+            assertEquals("Au revoir", subject.get("two", "goodbye"))
         }
     }
 
@@ -57,50 +60,50 @@ class DiscordMessagesI18nTest : EpiLinkBaseTest<DiscordMessagesI18n>(
     fun `Test key second fallback`() {
         // Key not found in the current language nor in the default language
         test {
-            assertEquals("seeyoulater", get("two", "seeyoulater"))
+            assertEquals("seeyoulater", subject.get("two", "seeyoulater"))
         }
     }
 
     @Test
-    fun `Test set language with valid language`() {
-        val db = mockHere<DatabaseFacade> {
+    fun `Test set language with valid language`() = test {
+        val db = putMock<DatabaseFacade> {
             coEvery { recordLanguagePreference("did", "two") } just runs
         }
-        test { assertTrue(setLanguage("did", "two")) }
+        runBlocking { assertTrue(subject.setLanguage("did", "two")) }
         coVerify { db.recordLanguagePreference("did", "two") }
     }
 
     @Test
-    fun `Test set language with invalid language`() {
-        test { assertFalse(setLanguage("did", "three")) }
+    fun `Test set language with invalid language`() = test {
+        runBlocking { assertFalse(subject.setLanguage("did", "three")) }
     }
 
     @Test
-    fun `Test get language no id`() {
-        test { assertEquals("one", getLanguage(null)) }
+    fun `Test get language no id`() = test {
+        runBlocking { assertEquals("one", subject.getLanguage(null)) }
     }
 
     @Test
-    fun `Test get language no preference`() {
-        mockHere<DatabaseFacade> {
+    fun `Test get language no preference`() = test {
+        putMock<DatabaseFacade> {
             coEvery { getLanguagePreference("did") } returns null
         }
-        test { assertEquals("one", getLanguage("did")) }
+        runBlocking { assertEquals("one", subject.getLanguage("did")) }
     }
 
     @Test
-    fun `Test get language invalid preference`() {
-        mockHere<DatabaseFacade> {
+    fun `Test get language invalid preference`() = test {
+        putMock<DatabaseFacade> {
             coEvery { getLanguagePreference("did") } returns "LQSDLKJQHSD"
         }
-        test { assertEquals("one", getLanguage("did")) }
+        runBlocking { assertEquals("one", subject.getLanguage("did")) }
     }
 
     @Test
-    fun `Test get language valid preference`() {
-        mockHere<DatabaseFacade> {
+    fun `Test get language valid preference`() = test {
+        putMock<DatabaseFacade> {
             coEvery { getLanguagePreference("did") } returns "two"
         }
-        test { assertEquals("two", getLanguage("did")) }
+        runBlocking { assertEquals("two", subject.getLanguage("did")) }
     }
 }

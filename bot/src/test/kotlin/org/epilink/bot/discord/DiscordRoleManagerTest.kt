@@ -8,6 +8,9 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.environment.get
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.CacheClient
@@ -15,48 +18,44 @@ import org.epilink.bot.MemoryCacheClient
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.DiscordServerSpec
 import org.epilink.bot.db.*
-import org.epilink.bot.mockHere
+import org.epilink.bot.putMock
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
 import org.epilink.bot.rulebook.WeakIdentityRule
+import org.epilink.bot.stest
 import org.epilink.bot.web.declareNoOpI18n
-import org.koin.dsl.module
 import org.koin.test.get
-import org.koin.test.mock.declare
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
-    RoleManager::class,
-    module {
-        single<RoleManager> { RoleManagerImpl() }
+class DiscordRoleManagerTest : ShedinjaBaseTest<RoleManager>(
+    RoleManager::class, {
+        put<RoleManager>(::RoleManagerImpl)
     }
 ) {
     @Test
-    fun `Test role update for disallowed user`() {
+    fun `Test role update for disallowed user`() = stest {
         val user: User = mockk()
-        val sd = mockHere<DatabaseFacade> {
+        val sd = putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
         }
-        val pc = mockHere<PermissionChecks> {
+        val pc = putMock<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "my.reason")
         }
-        val dcf = mockHere<DiscordClientFacade> {
+        val dcf = putMock<DiscordClientFacade> {
             coEvery { sendDirectMessage("userid", any()) } just runs
             coEvery { getGuildName("Hello") } returns "There"
         }
         declareNoOpI18n()
-        val dm = mockHere<DiscordMessages> {
+        val dm = putMock<DiscordMessages> {
             every { getCouldNotJoinEmbed(any(), "There", "This is my reason") } returns mockk()
         }
-        test {
-            val result = getRolesForUser("userid", mockk(), true, listOf("Hello"))
-            assertEquals(setOf(), result.first)
-            assertFalse(result.second, "Expected sticky roles to not be applied")
-        }
+        val result = subject.getRolesForUser("userid", mockk(), true, listOf("Hello"))
+        assertEquals(setOf(), result.first)
+        assertFalse(result.second, "Expected sticky roles to not be applied")
         coVerifyAll {
             pc.canUserJoinServers(any())
             dcf.sendDirectMessage("userid", any())
@@ -68,18 +67,18 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
     }
 
     @Test
-    fun `Test on join, unmonitored guild`() {
-        val cfg = mockHere<DiscordConfiguration> {
+    fun `Test on join, unmonitored guild`() = stest {
+        val cfg = putMock<DiscordConfiguration> {
             every { servers } returns listOf(mockk { every { id } returns "otherid" })
         }
-        test { handleNewUser("guildid", "My Awesome Guild", "userid") }
+        subject.handleNewUser("guildid", "My Awesome Guild", "userid")
         coVerifyAll { cfg.servers }
         confirmVerified(cfg)
     }
 
     @Test
-    fun `Test on join, unknown user, send greeting`() {
-        val cfg = mockHere<DiscordConfiguration> {
+    fun `Test on join, unknown user, send greeting`() = stest {
+        val cfg = putMock<DiscordConfiguration> {
             every { servers } returns listOf(
                 DiscordServerSpec(
                     id = "guildid",
@@ -90,19 +89,17 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
             )
         }
         val mockem = mockk<DiscordEmbed>()
-        val db = mockHere<DatabaseFacade> {
+        val db = putMock<DatabaseFacade> {
             coEvery { getUser("jacques") } returns null
         }
         declareNoOpI18n()
-        val dm = mockHere<DiscordMessages> {
+        val dm = putMock<DiscordMessages> {
             every { getGreetingsEmbed(any(), "guildid", "My Awesome Guild") } returns mockem
         }
-        val dcf = mockHere<DiscordClientFacade> {
+        val dcf = putMock<DiscordClientFacade> {
             coEvery { sendDirectMessage("jacques", mockem) } just runs
         }
-        test {
-            handleNewUser("guildid", "My Awesome Guild", "jacques")
-        }
+        subject.handleNewUser("guildid", "My Awesome Guild", "jacques")
         coVerifyAll {
             cfg.servers
             dm.getGreetingsEmbed(any(), "guildid", "My Awesome Guild")
@@ -113,8 +110,8 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
     }
 
     @Test
-    fun `Test on join, unknown user, no greeting`() {
-        val cfg = mockHere<DiscordConfiguration> {
+    fun `Test on join, unknown user, no greeting`() = stest {
+        val cfg = putMock<DiscordConfiguration> {
             every { servers } returns listOf(
                 DiscordServerSpec(
                     id = "guildid",
@@ -124,16 +121,14 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
                 )
             )
         }
-        val db = mockHere<DatabaseFacade> {
+        val db = putMock<DatabaseFacade> {
             coEvery { getUser("jacques") } returns null
         }
         declareNoOpI18n()
-        val dm = mockHere<DiscordMessages> {
+        val dm = putMock<DiscordMessages> {
             every { getGreetingsEmbed(any(), "guildid", "My Awesome Guild") } returns null
         }
-        test {
-            handleNewUser("guildid", "My Awesome Guild", "jacques")
-        }
+        subject.handleNewUser("guildid", "My Awesome Guild", "jacques")
         coVerifyAll {
             cfg.servers
             dm.getGreetingsEmbed(any(), "guildid", "My Awesome Guild")
@@ -143,8 +138,8 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
     }
 
     @Test
-    fun `Test on join, known`() {
-        val cfg = mockHere<DiscordConfiguration> {
+    fun `Test on join, known`() = stest {
+        val cfg = putMock<DiscordConfiguration> {
             every { servers } returns listOf(
                 DiscordServerSpec(
                     id = "guildid",
@@ -155,14 +150,15 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
             )
         }
         val usermock: User = mockk()
-        val db = mockHere<DatabaseFacade> {
+        val db = putMock<DatabaseFacade> {
             coEvery { getUser("jacques") } returns usermock
         }
-        val rm = declare { spyk(RoleManagerImpl()) }
+        put { spyk(RoleManagerImpl(scope)) }
+        val rm = get<RoleManagerImpl>()
+
         coEvery { rm.updateRolesOnGuilds("jacques", listOf("guildid"), true) } just runs
-        runBlocking {
-            rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
-        }
+        rm.handleNewUser("guildid", "My Awesome Guild", "jacques")
+
         coVerifyAll {
             cfg.servers
             db.getUser("jacques")
@@ -173,12 +169,12 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
     }
 
     @Test
-    fun `Test rules relevant for guilds`() {
+    fun `Test rules relevant for guilds`() = stest {
         val weakRule: WeakIdentityRule = mockk()
         val strongRule: StrongIdentityRule = mockk()
         val otherRule: Rule = mockk()
         val fourthRule: Rule = mockk()
-        mockHere<Rulebook> {
+        putMock<Rulebook> {
             every { rules } returns mapOf(
                 "WeakRule" to weakRule,
                 "StrongRule" to strongRule,
@@ -186,7 +182,7 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
                 "FourthRule" to fourthRule
             )
         }
-        mockHere<DiscordConfiguration> {
+        putMock<DiscordConfiguration> {
             every { servers } returns listOf(
                 // Typical server with a mix of standard and rule-based roles
                 mockk {
@@ -223,142 +219,131 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
                 }
             )
         }
-        runBlocking {
-            val rm = get<RoleManager>()
-            val rules = rm.getRulesRelevantForGuilds(listOf("guildid1", "guildid2", "guildid3"))
-            println(rules)
-            assertEquals(3, rules.size)
-            assertTrue(
-                rules.contains(
-                    RuleWithRequestingGuilds(weakRule, setOf("guildid1", "guildid3"))
-                ),
-                "Did not contain weak rule (or weak rule entry is incorrect)"
+        val rm = get<RoleManager>()
+        val rules = rm.getRulesRelevantForGuilds(listOf("guildid1", "guildid2", "guildid3"))
+        println(rules)
+        assertEquals(3, rules.size)
+        assertTrue(
+            rules.contains(
+                RuleWithRequestingGuilds(weakRule, setOf("guildid1", "guildid3"))
+            ),
+            "Did not contain weak rule (or weak rule entry is incorrect)"
+        )
+        assertTrue(
+            rules.contains(
+                RuleWithRequestingGuilds(strongRule, setOf("guildid1"))
+            ),
+            "Did not contain strong rule (or strong rule entry is incorrect)"
+        )
+        assertTrue(
+            rules.contains(
+                RuleWithRequestingGuilds(otherRule, setOf("guildid3"))
             )
-            assertTrue(
-                rules.contains(
-                    RuleWithRequestingGuilds(strongRule, setOf("guildid1"))
-                ),
-                "Did not contain strong rule (or strong rule entry is incorrect)"
-            )
-            assertTrue(
-                rules.contains(
-                    RuleWithRequestingGuilds(otherRule, setOf("guildid3"))
-                )
-            )
-        }
+        )
+
     }
 
     @Test
-    fun `Test get roles for unknown user`() {
-        mockHere<DatabaseFacade> {
+    fun `Test get roles for unknown user`() = stest {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns null
         }
         val rm = get<RoleManager>()
-        runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
-            assertEquals(setOf(), roles.first, "roles should be empty")
-            assertTrue(roles.second, "Sticky roles should be considered")
-        }
+        val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
+        assertEquals(setOf(), roles.first, "roles should be empty")
+        assertTrue(roles.second, "Sticky roles should be considered")
     }
 
     @Test
-    fun `Test get roles for disallowed user, do not tell`() {
+    fun `Test get roles for disallowed user, do not tell`() = stest {
         val user: User = mockk()
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "yes.maybe")
         }
         val rm = get<RoleManager>()
-        runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
-            assertEquals(setOf(), roles.first, "roles should be empty")
-            assertFalse(roles.second, "Sticky roles should be ignored")
-        }
+        val roles = rm.getRolesForUser("userid", mockk(), false, listOf())
+        assertEquals(setOf(), roles.first, "roles should be empty")
+        assertFalse(roles.second, "Sticky roles should be ignored")
     }
 
     @Test
-    fun `Test get roles for disallowed user, notify`() {
+    fun `Test get roles for disallowed user, notify`() = stest {
         val user: User = mockk()
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Disallowed("This is my reason", "yes.allo")
         }
         val embed: DiscordEmbed = mockk()
-        val dcf = mockHere<DiscordClientFacade> {
+        val dcf = putMock<DiscordClientFacade> {
             coEvery { sendDirectMessage("userid", embed) } just runs
             coEvery { getGuildName("HELLO THERE") } returns "GENERAL KENOBI"
         }
         declareNoOpI18n()
-        mockHere<DiscordMessages> {
+        putMock<DiscordMessages> {
             every { getCouldNotJoinEmbed(any(), "GENERAL KENOBI", "This is my reason") } returns embed
         }
         val rm = get<RoleManager>()
-        runBlocking {
-            val roles = rm.getRolesForUser("userid", mockk(), true, listOf("HELLO THERE"))
-            assertEquals(setOf(), roles.first, "roles should be empty")
-            assertFalse(roles.second, "Sticky roles should be ignored")
-        }
+        val roles = rm.getRolesForUser("userid", mockk(), true, listOf("HELLO THERE"))
+        assertEquals(setOf(), roles.first, "roles should be empty")
+        assertFalse(roles.second, "Sticky roles should be ignored")
         coVerify { dcf.sendDirectMessage("userid", embed) }
     }
 
     @Test
-    fun `Test get roles, no rules, not identifiable`() {
+    fun `Test get roles, no rules, not identifiable`() = stest {
         val user: User = mockk()
         @OptIn(UsesTrueIdentity::class)
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
             coEvery { isUserIdentifiable(user) } returns false
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
         }
         val rm = get<RoleManager>()
-        runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
-            assertEquals(setOf("_known", "_notIdentified"), roles.first)
-            assertTrue(roles.second)
-        }
+        val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
+        assertEquals(setOf("_known", "_notIdentified"), roles.first)
+        assertTrue(roles.second)
     }
 
     @Test
-    fun `Test get roles, no rules, identifiable`() {
+    fun `Test get roles, no rules, identifiable`() = stest {
         val user: User = mockk()
         @OptIn(UsesTrueIdentity::class)
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
             coEvery { isUserIdentifiable(user) } returns true
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
         }
         val rm = get<RoleManager>()
-        runBlocking {
-            val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
-            assertEquals(setOf("_known", "_identified"), roles.first)
-            assertTrue(roles.second)
-        }
+        val roles = rm.getRolesForUser("userid", listOf(), true, listOf())
+        assertEquals(setOf("_known", "_identified"), roles.first)
+        assertTrue(roles.second)
     }
 
     @Test
     @OptIn(UsesTrueIdentity::class)
-    fun `Test get roles, with rules, identifiable`() {
+    fun `Test get roles, with rules, identifiable`() = stest {
         val user: User = mockk { every { discordId } returns "userid" }
-        val lia = mockHere<IdentityManager> {
+        val lia = putMock<IdentityManager> {
             coEvery { accessIdentity(user, any(), any(), any()) } returns "email@@"
         }
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
             coEvery { isUserIdentifiable(user) } returns true
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
         }
         val dui = DiscordUserInfo("userid", "uname", "disc")
-        mockHere<DiscordClientFacade> {
+        putMock<DiscordClientFacade> {
             coEvery { getDiscordUserInfo("userid") } returns dui.copy()
             coEvery { getGuildName(any()) } returns "NAME"
         }
@@ -377,40 +362,38 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
             roles += "wirId_$userDiscordId"
             roles += "wirDisc_$userDiscordDiscriminator"
         }
-        declare<CacheClient> { MemoryCacheClient() }
+        put<CacheClient> { MemoryCacheClient() }
         val rm = get<RoleManager>()
-        runBlocking {
-            val roles = rm.getRolesForUser(
-                "userid",
-                listOf(
-                    RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
-                    RuleWithRequestingGuilds(rule2, setOf("Otherrr"))
-                ),
-                true,
-                listOf()
-            )
-            assertEquals(
-                setOf("_known", "_identified", "sir_email@@", "sirId_userid", "wirId_userid", "wirDisc_disc"),
-                roles.first
-            )
-            assertTrue(roles.second)
-        }
+        val roles = rm.getRolesForUser(
+            "userid",
+            listOf(
+                RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
+                RuleWithRequestingGuilds(rule2, setOf("Otherrr"))
+            ),
+            true,
+            listOf()
+        )
+        assertEquals(
+            setOf("_known", "_identified", "sir_email@@", "sirId_userid", "wirId_userid", "wirDisc_disc"),
+            roles.first
+        )
+        assertTrue(roles.second)
         coVerify { lia.accessIdentity(user, any(), any(), any()) }
     }
 
     @Test
-    fun `Test get roles, with rules, not identifiable`() {
+    fun `Test get roles, with rules, not identifiable`() = stest {
         val user: User = mockk { every { discordId } returns "userid" }
         @OptIn(UsesTrueIdentity::class)
-        mockHere<DatabaseFacade> {
+        putMock<DatabaseFacade> {
             coEvery { getUser("userid") } returns user
             coEvery { isUserIdentifiable(user) } returns false
         }
-        mockHere<PermissionChecks> {
+        putMock<PermissionChecks> {
             coEvery { canUserJoinServers(user) } returns Allowed
         }
         val dui = DiscordUserInfo("userid", "uname", "disc")
-        mockHere<DiscordClientFacade> {
+        putMock<DiscordClientFacade> {
             coEvery { getDiscordUserInfo("userid") } returns dui.copy()
         }
         val rule1 = StrongIdentityRule("StrongRule", null, mockk())
@@ -421,21 +404,19 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
             roles += "wirId_$userDiscordId"
             roles += "wirDisc_$userDiscordDiscriminator"
         }
-        declare<CacheClient> { MemoryCacheClient() }
+        put<CacheClient> { MemoryCacheClient() }
         val rm = get<RoleManager>()
-        runBlocking {
-            val roles = rm.getRolesForUser(
-                "userid",
-                listOf(
-                    RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
-                    RuleWithRequestingGuilds(rule2, setOf("Other"))
-                ),
-                true,
-                listOf()
-            )
-            assertEquals(setOf("_known", "_notIdentified", "wirId_userid", "wirDisc_disc"), roles.first)
-            assertTrue(roles.second)
-        }
+        val roles = rm.getRolesForUser(
+            "userid",
+            listOf(
+                RuleWithRequestingGuilds(rule1, setOf("Guildo", "Abcde")),
+                RuleWithRequestingGuilds(rule2, setOf("Other"))
+            ),
+            true,
+            listOf()
+        )
+        assertEquals(setOf("_known", "_notIdentified", "wirId_userid", "wirDisc_disc"), roles.first)
+        assertTrue(roles.second)
     }
 
     @Test
@@ -446,11 +427,11 @@ class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
     fun `Test update user with roles ignoring sticky roles`() =
         updateUserWithRolesTest(false)
 
-    private fun updateUserWithRolesTest(applySticky: Boolean) {
-        val dcf = mockHere<DiscordClientFacade> {
+    private fun updateUserWithRolesTest(applySticky: Boolean) = stest {
+        val dcf = putMock<DiscordClientFacade> {
             coEvery { manageRoles(any(), any(), any(), any()) } just runs
         }
-        mockHere<DiscordConfiguration> {
+        putMock<DiscordConfiguration> {
             every { servers } returns listOf(
                 mockk {
                     every { id } returns "guildid"

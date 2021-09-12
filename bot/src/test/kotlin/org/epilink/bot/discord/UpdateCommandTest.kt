@@ -8,53 +8,58 @@
  */
 package org.epilink.bot.discord
 
-import io.mockk.*
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
 import kotlinx.coroutines.delay
 import org.epilink.bot.db.User
 import org.epilink.bot.discord.cmd.UpdateCommand
-import org.epilink.bot.mockHere
-import org.epilink.bot.softMockHere
+import org.epilink.bot.putMock
+import org.epilink.bot.softPutMock
+import org.epilink.bot.stest
 import org.epilink.bot.web.declareNoOpI18n
-import org.koin.dsl.module
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertTrue
 
-class UpdateCommandTest : EpiLinkBaseTest<Command>(
-    Command::class,
-    module {
-        single<Command> { UpdateCommand() }
+class UpdateCommandTest : ShedinjaBaseTest<Command>(
+    Command::class, {
+        put<Command> { UpdateCommand() }
     }
 ) {
     @Test
-    fun `Test wrong target cannot be parsed`() {
-        mockHere<DiscordTargets> { every { parseDiscordTarget("HELLO THERE") } returns TargetParseResult.Error }
+    fun `Test wrong target cannot be parsed`() = stest {
+        putMock<DiscordTargets> { every { parseDiscordTarget("HELLO THERE") } returns TargetParseResult.Error }
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getWrongTargetCommandReply(any(), "HELLO THERE") } returns embed }
-        val f = mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } returns "" }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "HELLO THERE",
-                // Unused
-                sender = mockk(),
-                senderId = "",
-                channelId = "channel",
-                guildId = ""
-            )
-        }
+        putMock<DiscordMessages> { every { getWrongTargetCommandReply(any(), "HELLO THERE") } returns embed }
+        val f = putMock<DiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } returns "" }
+        subject.run(
+            fullCommand = "",
+            commandBody = "HELLO THERE",
+            // Unused
+            sender = mockk(),
+            senderId = "",
+            channelId = "channel",
+            guildId = ""
+        )
         coVerify { f.sendChannelMessage("channel", embed) }
     }
 
     @Test
-    fun `Test non existent role update`() {
+    fun `Test non existent role update`() = stest {
         val parsedTarget = TargetParseResult.Success.RoleByName("Rooole")
         val embed = mockk<DiscordEmbed>()
-        mockHere<DiscordTargets> {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("HELLO I AM COMMAND BODY") } returns parsedTarget
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.RoleNotFound("Rooole")
         }
         declareNoOpI18n()
-        mockHere<DiscordMessages> {
+        putMock<DiscordMessages> {
             every {
                 getWrongTargetCommandReply(
                     any(),
@@ -62,56 +67,60 @@ class UpdateCommandTest : EpiLinkBaseTest<Command>(
                 )
             } returns embed
         }
-        val f = mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } returns "" }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "HELLO I AM COMMAND BODY",
-                sender = +"user",
-                senderId = "user",
-                channelId = "channel",
-                guildId = "guild" // Unused
-            )
-        }
+        val f = putMock<DiscordClientFacade> { coEvery { sendChannelMessage("channel", embed) } returns "" }
+        subject.run(
+            fullCommand = "",
+            commandBody = "HELLO I AM COMMAND BODY",
+            sender = +"user",
+            senderId = "user",
+            channelId = "channel",
+            guildId = "guild" // Unused
+        )
         coVerify { f.sendChannelMessage("channel", embed) }
     }
 
     @Test
-    fun `Test role update`() {
+    fun `Test role update`() = stest {
         // Target resolution
         val parsedTarget = TargetParseResult.Success.RoleByName("Rooole")
-        mockHere<DiscordTargets> {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("HELLO I AM COMMAND BODY") } returns parsedTarget
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.Role("Rooole ID")
         }
         // Role update
         val fakeList = listOf("a", "b", "c")
-        mockHere<DiscordClientFacade> {
+        putMock<DiscordClientFacade> {
             coEvery { getMembersWithRole("Rooole ID", "guild") } returns fakeList
         }
-        val rm = mockHere<RoleManager> {
+        val rm = putMock<RoleManager> {
             coEvery { invalidateAllRoles(any()) } just runs
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), listOf("Rooole ID", 3)) } returns embed }
-        val f = softMockHere<DiscordClientFacade> {
+        putMock<DiscordMessages> {
+            every {
+                getSuccessCommandReply(
+                    any(),
+                    any(),
+                    listOf("Rooole ID", 3)
+                )
+            } returns embed
+        }
+        val f = softPutMock<DiscordClientFacade> {
             // (soft mock because already defined above)
             coEvery { sendChannelMessage("channel", embed) } returns "sentMessage"
             coEvery { addReaction("channel", "sentMessage", "✅") } just runs
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "HELLO I AM COMMAND BODY",
-                sender = +"user",
-                senderId = "user",
-                channelId = "channel",
-                guildId = "guild" // unused
-            )
-            delay(2000)
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "HELLO I AM COMMAND BODY",
+            sender = +"user",
+            senderId = "user",
+            channelId = "channel",
+            guildId = "guild" // unused
+        )
+        delay(2000)
         coVerify {
             f.sendChannelMessage("channel", embed)
             rm.invalidateAllRoles("a")
@@ -122,35 +131,33 @@ class UpdateCommandTest : EpiLinkBaseTest<Command>(
     }
 
     @Test
-    fun `Test user update`() {
+    fun `Test user update`() = stest {
         // Target resolution
         val parsedTarget = TargetParseResult.Success.UserById("targetid")
-        mockHere<DiscordTargets> {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("HELLO I AM COMMAND BODY") } returns parsedTarget
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.User("targetid")
         }
-        val rm = mockHere<RoleManager> {
+        val rm = putMock<RoleManager> {
             coEvery { invalidateAllRoles("targetid") } just runs
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any()) } returns embed }
-        val f = mockHere<DiscordClientFacade> {
+        putMock<DiscordMessages> { every { getSuccessCommandReply(any(), any()) } returns embed }
+        val f = putMock<DiscordClientFacade> {
             coEvery { sendChannelMessage("channel", embed) } returns "sentMessage"
             coEvery { addReaction("channel", "sentMessage", "✅") } just runs
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "HELLO I AM COMMAND BODY",
-                sender = +"user",
-                senderId = "user",
-                channelId = "channel",
-                guildId = "guild" // unused
-            )
-            delay(2000)
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "HELLO I AM COMMAND BODY",
+            sender = +"user",
+            senderId = "user",
+            channelId = "channel",
+            guildId = "guild" // unused
+        )
+        delay(2000)
         coVerify {
             f.sendChannelMessage("channel", embed)
             f.addReaction("channel", "sentMessage", "✅")
@@ -159,40 +166,38 @@ class UpdateCommandTest : EpiLinkBaseTest<Command>(
     }
 
     @Test
-    fun `Test everyone update`() {
+    fun `Test everyone update`() = stest {
         // Target resolution
         val parsedTarget = TargetParseResult.Success.Everyone
-        mockHere<DiscordTargets> {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("HELLO I AM COMMAND BODY") } returns parsedTarget
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.Everyone
         }
         // Role update
         val fakeList = listOf("a", "b", "c")
-        mockHere<DiscordClientFacade> {
+        putMock<DiscordClientFacade> {
             coEvery { getMembers("guild") } returns fakeList
         }
-        val rm = mockHere<RoleManager> {
+        val rm = putMock<RoleManager> {
             coEvery { invalidateAllRoles(any()) } just runs
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), listOf(3)) } returns embed }
-        val f = softMockHere<DiscordClientFacade> { // (soft mock because already defined above)
+        putMock<DiscordMessages> { every { getSuccessCommandReply(any(), any(), listOf(3)) } returns embed }
+        val f = softPutMock<DiscordClientFacade> { // (soft mock because already defined above)
             coEvery { sendChannelMessage("channel", embed) } returns "sentMessage"
             coEvery { addReaction("channel", "sentMessage", "✅") } just runs
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "HELLO I AM COMMAND BODY",
-                sender = +"user",
-                senderId = "user",
-                channelId = "channel",
-                guildId = "guild" // unused
-            )
-            delay(2000)
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "HELLO I AM COMMAND BODY",
+            sender = +"user",
+            senderId = "user",
+            channelId = "channel",
+            guildId = "guild" // unused
+        )
+        delay(2000)
         coVerify {
             f.sendChannelMessage("channel", embed)
             rm.invalidateAllRoles("a")
@@ -203,43 +208,41 @@ class UpdateCommandTest : EpiLinkBaseTest<Command>(
     }
 
     @Test
-    fun `Test one update crash does not crash everything else`() {
+    fun `Test one update crash does not crash everything else`() = stest {
         // Target resolution
         val parsedTarget = TargetParseResult.Success.Everyone
-        mockHere<DiscordTargets> {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("HELLO I AM COMMAND BODY") } returns parsedTarget
             coEvery { resolveDiscordTarget(parsedTarget, "guild") } returns TargetResult.Everyone
         }
         // Role update
         val fakeList = List(26) { ('a' + it).toString() }
-        mockHere<DiscordClientFacade> {
+        putMock<DiscordClientFacade> {
             coEvery { getMembers("guild") } returns fakeList
         }
         var eFailed = false
-        val rm = mockHere<RoleManager> {
+        val rm = putMock<RoleManager> {
             coEvery { invalidateAllRoles(any()) } just runs
             coEvery { invalidateAllRoles("e") } answers { eFailed = true; error("oh no") }
         }
         // Message reply
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getSuccessCommandReply(any(), any(), listOf(26)) } returns embed }
-        val f = softMockHere<DiscordClientFacade> { // (soft mock because already defined above)
+        putMock<DiscordMessages> { every { getSuccessCommandReply(any(), any(), listOf(26)) } returns embed }
+        val f = softPutMock<DiscordClientFacade> { // (soft mock because already defined above)
             coEvery { sendChannelMessage("channel", embed) } returns "sentMessage"
             coEvery { addReaction("channel", "sentMessage", "✅") } just runs
             coEvery { addReaction("channel", "sentMessage", "⚠") } just runs
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "HELLO I AM COMMAND BODY",
-                sender = +"user",
-                senderId = "user",
-                channelId = "channel",
-                guildId = "guild" // unused
-            )
-            delay(2000)
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "HELLO I AM COMMAND BODY",
+            sender = +"user",
+            senderId = "user",
+            channelId = "channel",
+            guildId = "guild" // unused
+        )
+        delay(2000)
         assertTrue(eFailed, "The e discordId did not throw")
         coVerify {
             f.sendChannelMessage("channel", embed)
