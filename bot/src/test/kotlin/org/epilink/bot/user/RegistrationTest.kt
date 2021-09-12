@@ -36,7 +36,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class RegistrationTest : KoinBaseTest<Unit>(
+class RegistrationTest : EpiLinkBaseTest<Unit>(
     Unit::class,
     module {
         single<BackEnd> { BackEndImpl() }

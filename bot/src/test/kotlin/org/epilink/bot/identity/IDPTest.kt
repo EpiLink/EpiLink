@@ -22,7 +22,7 @@ import org.koin.dsl.module
 import org.koin.test.KoinTest
 import kotlin.test.*
 
-class IDPTest : KoinBaseTest<IdentityProvider>(
+class IDPTest : EpiLinkBaseTest<IdentityProvider>(
     IdentityProvider::class,
     module {
         single { IdentityProvider("CLIENT_ID", "CLIENT_SECRET", "http://TOKEN_URL", "http://AUTHORIZE_URL") }

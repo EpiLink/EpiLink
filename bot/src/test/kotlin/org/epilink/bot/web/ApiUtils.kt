@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.web
 
+import guru.zoroark.shedinja.dsl.put
+import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
 import io.ktor.application.ApplicationCall
 import io.ktor.sessions.SessionStorage
 import io.ktor.sessions.defaultSessionSerializer
@@ -171,6 +173,6 @@ object NoOpI18n : DiscordMessagesI18n {
     }
 }
 
-fun KoinTest.declareNoOpI18n() {
-    declare<DiscordMessagesI18n> { NoOpI18n }
+fun UnsafeMutableEnvironment.declareNoOpI18n() {
+    put<DiscordMessagesI18n> { NoOpI18n }
 }

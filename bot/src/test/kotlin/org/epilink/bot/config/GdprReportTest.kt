@@ -13,7 +13,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.ServerEnvironment
 import org.epilink.bot.db.*
 import org.epilink.bot.mockHere
@@ -23,7 +22,7 @@ import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class GdprReportTest : KoinBaseTest<GdprReport>(
+class GdprReportTest : EpiLinkBaseTest<GdprReport>(
     GdprReport::class,
     module {
         single<GdprReport> { GdprReportImpl() }

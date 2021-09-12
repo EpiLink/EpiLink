@@ -12,7 +12,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import org.apache.commons.codec.binary.Hex
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.*
 import org.epilink.bot.mockHere
 import org.epilink.bot.rulebook.Rulebook
@@ -22,7 +21,7 @@ import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.*
 
-class PermissionChecksTest : KoinBaseTest<PermissionChecks>(
+class PermissionChecksTest : EpiLinkBaseTest<PermissionChecks>(
     PermissionChecks::class,
     module {
         single<PermissionChecks> { PermissionChecksImpl() }

@@ -33,7 +33,7 @@ import org.koin.test.get
 import org.koin.test.mock.declare
 import kotlin.test.*
 
-class MetaTest : KoinBaseTest<Unit>(
+class MetaTest : EpiLinkBaseTest<Unit>(
     Unit::class,
     module {
         single<MetaApi> { MetaApiImpl() }

@@ -9,13 +9,12 @@
 package org.epilink.bot.discord
 
 import io.mockk.coEvery
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DiscordTargetTest : KoinBaseTest<DiscordTargets>(
+class DiscordTargetTest : EpiLinkBaseTest<DiscordTargets>(
     DiscordTargets::class,
     module {
         single<DiscordTargets> { DiscordTargetsImpl() }

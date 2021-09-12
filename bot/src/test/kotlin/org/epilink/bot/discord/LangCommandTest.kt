@@ -9,7 +9,6 @@
 package org.epilink.bot.discord
 
 import io.mockk.*
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.discord.cmd.LangCommand
 import org.epilink.bot.mockHere
@@ -17,7 +16,7 @@ import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import kotlin.test.Test
 
-class LangCommandTest : KoinBaseTest<Command>(
+class LangCommandTest : EpiLinkBaseTest<Command>(
     Command::class,
     module {
         single<Command> { LangCommand() }

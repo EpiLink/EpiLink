@@ -9,7 +9,6 @@
 package org.epilink.bot.discord
 
 import io.mockk.*
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
@@ -18,7 +17,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class DiscordMessagesI18nTest : KoinBaseTest<DiscordMessagesI18n>(
+class DiscordMessagesI18nTest : EpiLinkBaseTest<DiscordMessagesI18n>(
     DiscordMessagesI18n::class,
     module {
         single<DiscordMessagesI18n> {

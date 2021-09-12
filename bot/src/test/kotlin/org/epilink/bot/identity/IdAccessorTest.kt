@@ -23,7 +23,7 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class IdAccessorTest : KoinBaseTest<IdentityManager>(
+class IdAccessorTest : EpiLinkBaseTest<IdentityManager>(
     IdentityManager::class,
     module {
         single<IdentityManager> { IdentityManagerImpl() }

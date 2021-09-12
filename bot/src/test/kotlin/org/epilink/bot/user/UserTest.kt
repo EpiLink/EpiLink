@@ -42,7 +42,7 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class UserTest : KoinBaseTest<Unit>(
+class UserTest : EpiLinkBaseTest<Unit>(
     Unit::class,
     module {
         single<UserApi> { UserApiImpl() }

@@ -10,6 +10,9 @@ package org.epilink.bot
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import guru.zoroark.shedinja.environment.Identifier
+import guru.zoroark.shedinja.test.ShedinjaBaseTest
+import guru.zoroark.shedinja.test.UnsafeMutableEnvironment
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandler
@@ -24,7 +27,14 @@ import io.ktor.server.testing.setBody
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import org.epilink.bot.config.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
+import org.epilink.bot.config.Configuration
+import org.epilink.bot.config.DiscordConfiguration
+import org.epilink.bot.config.IdentityProviderConfiguration
+import org.epilink.bot.config.ProxyType
+import org.epilink.bot.config.TokensConfiguration
+import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.discord.DiscordMessagesI18n
 import org.koin.test.KoinTest
 import org.koin.test.mock.declare
@@ -79,20 +89,24 @@ fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
     assertEquals(status, actual, "Expected status $status, but got $actual instead")
 }
 
-inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T {
-    if (getKoin().getOrNull<T>() != null) {
+inline fun <reified T : Any> UnsafeMutableEnvironment.putMock(crossinline body: T.() -> Unit): T {
+    if (getOrNull(Identifier(T::class)) != null) {
         error("Duplicate definition for ${T::class}. Use softMockHere or combine the definitions.")
     }
-    return declare { mockk(block = body) }
+    return mockk(block = body).alsoPut()
 }
 
 /**
  * Similar to mockHere, but if an instance of T is already injected, apply the initializer to it instead of
  * replacing it
  */
-inline fun <reified T : Any> KoinTest.softMockHere(crossinline initializer: T.() -> Unit): T {
-    val injected = getKoin().getOrNull<T>()
-    return injected?.apply(initializer) ?: mockHere(initializer)
+inline fun <reified T : Any> UnsafeMutableEnvironment.softPutMock(crossinline initializer: T.() -> Unit): T {
+    val injected = getOrNull(Identifier(T::class))
+    return injected?.apply(initializer) ?: putMock(initializer)
+}
+
+fun ShedinjaBaseTest<*>.stest(block: suspend UnsafeMutableEnvironment.() -> Any) {
+    test { runBlocking { block() } }
 }
 
 fun Map<String, Any?>.getString(key: String): String =

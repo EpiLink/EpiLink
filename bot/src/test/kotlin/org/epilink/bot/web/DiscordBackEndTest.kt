@@ -14,7 +14,6 @@ import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.*
 import org.epilink.bot.EndpointException
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.declareClientHandler
 import org.epilink.bot.http.DiscordBackEnd
@@ -23,7 +22,7 @@ import org.koin.dsl.module
 import java.nio.charset.StandardCharsets
 import kotlin.test.*
 
-class DiscordBackEndTest : KoinBaseTest<DiscordBackEnd>(
+class DiscordBackEndTest : EpiLinkBaseTest<DiscordBackEnd>(
     DiscordBackEnd::class,
     module {
         single { DiscordBackEnd("DiscordClientId", "DiscordSecret") }

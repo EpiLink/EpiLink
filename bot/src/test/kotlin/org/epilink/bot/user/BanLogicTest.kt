@@ -10,7 +10,6 @@ package org.epilink.bot.user
 
 import io.mockk.every
 import io.mockk.mockk
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.Ban
 import org.epilink.bot.db.BanLogic
 import org.epilink.bot.db.BanLogicImpl
@@ -19,7 +18,7 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class BanLogicTest : KoinBaseTest<BanLogic>(
+class BanLogicTest : EpiLinkBaseTest<BanLogic>(
     BanLogic::class,
     module {
         single<BanLogic> { BanLogicImpl() }

@@ -9,7 +9,6 @@
 package org.epilink.bot.user
 
 import io.mockk.*
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.UserEndpointException
 import org.epilink.bot.db.*
@@ -20,7 +19,7 @@ import org.koin.dsl.module
 import java.util.*
 import kotlin.test.*
 
-class BanManagerTest : KoinBaseTest<BanManager>(
+class BanManagerTest : EpiLinkBaseTest<BanManager>(
     BanManager::class,
     module {
         single<BanManager> { BanManagerImpl() }

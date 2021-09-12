@@ -12,7 +12,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.EpiLinkException
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.DiscordServerSpec
 import org.epilink.bot.config.PrivacyConfiguration
@@ -25,7 +24,7 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.test.*
 
-class MessagesTest : KoinBaseTest<DiscordMessages>(
+class MessagesTest : EpiLinkBaseTest<DiscordMessages>(
     DiscordMessages::class,
     module {
         single<DiscordMessages> { DiscordMessagesImpl() }

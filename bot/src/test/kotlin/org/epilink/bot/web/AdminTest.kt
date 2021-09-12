@@ -52,7 +52,7 @@ private class BanImpl(
     override val reason: String
 ) : Ban
 
-class AdminTest : KoinBaseTest<Unit>(
+class AdminTest : EpiLinkBaseTest<Unit>(
     Unit::class,
     module {
         single<AdminEndpoints> { AdminEndpointsImpl() }

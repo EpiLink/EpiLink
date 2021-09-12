@@ -12,7 +12,6 @@ import io.ktor.http.*
 import io.ktor.server.testing.*
 import io.mockk.every
 import io.mockk.spyk
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.assertStatus
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.http.FrontEndHandler
@@ -23,7 +22,7 @@ import org.koin.test.get
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class FrontEndHandlingTest : KoinBaseTest<FrontEndHandler>(
+class FrontEndHandlingTest : EpiLinkBaseTest<FrontEndHandler>(
     FrontEndHandler::class,
     module {
         single<FrontEndHandler> { spyk(FrontEndHandlerImpl()) }

@@ -16,7 +16,7 @@ import org.epilink.bot.db.*
 import org.koin.dsl.module
 import kotlin.test.*
 
-class UserCreatorTest : KoinBaseTest<UserCreator>(
+class UserCreatorTest : EpiLinkBaseTest<UserCreator>(
     UserCreator::class,
     module {
         single<UserCreator> { UserCreatorImpl() }

@@ -11,7 +11,6 @@ package org.epilink.bot.discord
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.CacheClient
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.MemoryCacheClient
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.DiscordServerSpec
@@ -30,7 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class DiscordRoleManagerTest : KoinBaseTest<RoleManager>(
+class DiscordRoleManagerTest : EpiLinkBaseTest<RoleManager>(
     RoleManager::class,
     module {
         single<RoleManager> { RoleManagerImpl() }

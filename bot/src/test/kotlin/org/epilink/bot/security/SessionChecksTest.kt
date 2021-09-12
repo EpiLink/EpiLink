@@ -19,7 +19,6 @@ import io.ktor.util.Attributes
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.*
 import org.epilink.bot.http.ApiErrorResponse
 import org.epilink.bot.http.SessionChecker
@@ -34,7 +33,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SessionChecksTest : KoinBaseTest<SessionChecker>(
+class SessionChecksTest : EpiLinkBaseTest<SessionChecker>(
     SessionChecker::class,
     module {
         single<SessionChecker> { SessionCheckerImpl() }

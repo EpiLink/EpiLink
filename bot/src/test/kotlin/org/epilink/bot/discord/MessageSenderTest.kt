@@ -9,12 +9,11 @@
 package org.epilink.bot.discord
 
 import io.mockk.*
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.mockHere
 import org.koin.dsl.module
 import kotlin.test.*
 
-class MessageSenderTest : KoinBaseTest<DiscordMessageSender>(
+class MessageSenderTest : EpiLinkBaseTest<DiscordMessageSender>(
     DiscordMessageSender::class,
     module {
         single<DiscordMessageSender> { DiscordMessageSenderImpl() }
