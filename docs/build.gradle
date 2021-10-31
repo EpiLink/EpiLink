@@ -5,6 +5,7 @@ plugins {
 
 configurations {
     servine
+    swagger
 }
 
 repositories {
@@ -14,15 +15,16 @@ repositories {
 
 dependencies {
     servine 'guru.zoroark.servine:servine:0.0.2-SNAPSHOT'
+    swagger project(path: ":swagger", configuration: "swagger")
 }
 
 def needExpansion = [ "" ]
 
 def docs = tasks.register("assembleDocs", Copy) {
-    dependsOn(":swagger:generateSwaggerUIEpiLink")
-
     from project.layout.projectDirectory.dir("src")
-    from project(":swagger").layout.buildDirectory.dir("swagger-ui-epilink")
+    from(configurations.swagger.getFiles()) {
+        into "swagger"
+    }
     into project.layout.buildDirectory.dir("docs")
 
     exclude 'META-INF'

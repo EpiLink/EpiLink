@@ -2,6 +2,13 @@ plugins {
     id 'org.hidetake.swagger.generator'
 }
 
+configurations {
+    swagger {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -22,6 +29,12 @@ swaggerSources {
                 }
             }
         }
+    }
+}
+
+artifacts {
+    swagger(generateSwaggerUIEpilink.outputDir) {
+        builtBy(generateSwaggerUIEpilink)
     }
 }
 
