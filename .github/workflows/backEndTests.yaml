@@ -6,27 +6,37 @@ on:
   pull_request:
 
 jobs:
+  wrapper-check:
+    name: Validate Gradle wrapper
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: gradle/wrapper-validation-action@v1
+
   license:
     name: License headers
     runs-on: ubuntu-latest
+    needs: [ wrapper-check ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Set up JDK 11
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
           java-version: 11
+          distribution: temurin
       - name: Check license headers
         run: ./gradlew license
 
   backend-tests:
     name: Build and test back-end
     runs-on: ubuntu-latest
+    needs: [ wrapper-check, license ]
     steps:
-      - uses: actions/checkout@v1
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
         with:
           java-version: 11
+          distribution: temurin
       - name: Build with Gradle
         run: ./gradlew jar
       - name: Test with gradle
@@ -45,37 +55,42 @@ jobs:
   docs:
     name: Generate docs
     runs-on: ubuntu-latest
+    needs: [ wrapper-check, license ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Set up JDK 11
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
           java-version: 11
+          distribution: temurin
       - name: Generate documentation
-        run: ./gradlew generateDocs
+        run: ./gradlew :docs:build
 
   frontend-build:
     name: Build front-end
     runs-on: ubuntu-latest
+    needs: [ wrapper-check, license ]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Set up JDK 11
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
           java-version: 11
+          distribution: temurin
       - name: Compile front-end JAR
         run: ./gradlew frontJar -PwithFrontend
 
   full-dist-build:
-    needs: [license, backend-tests, frontend-build, docs]
+    needs: [ wrapper-check, license, backend-tests, frontend-build, docs ]
     name: Full distribution build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Set up JDK 11
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
           java-version: 11
+          distribution: temurin
       - name: Build frontend-less dist
         run: ./gradlew assembleDist
       - name: Build dist with bundled front-end
