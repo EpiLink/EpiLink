@@ -1,31 +1,7 @@
 plugins {
-    id "org.jetbrains.kotlin.jvm" version "$kotlinVersion"
-    id "io.gitlab.arturbosch.detekt" version "$detektVersion"
-    id 'java'
-    id 'jacoco'
+    id 'epilink.kotlin-conventions'
     id 'application'
     id 'distribution'
-    id "com.github.hierynomus.license"
-}
-
-repositories {
-    mavenCentral()
-    maven { url 'https://jitpack.io' }
-    maven { url 'https://litarvan.github.io/maven' }
-}
-
-compileKotlin {
-    kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += [
-            "-Xopt-in=kotlin.RequiresOptIn",
-            "-Xopt-in=io.ktor.locations.KtorExperimentalLocationsAPI",
-            "-Werror" // All warnings as errors
-    ]
-}
-
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "11"
-    kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn", "-Werror"]
 }
 
 application {
@@ -54,38 +30,16 @@ dependencies {
     if (project.hasProperty("withFrontend"))
         runtimeOnly project(path: ":epilink-frontend", configuration: "frontendJarCfg")
 
-    testImplementation libs.bundles.kotlin.test
-
-    testImplementation libs.junit.jupiter
-    testImplementation libs.mockk
     testImplementation libs.koin.test
     testImplementation libs.ktor.server.testHost
     testImplementation libs.ktor.client.mock.jvm
-
-    detektPlugins libs.detekt.formatting
 }
 
-test {
-    useJUnitPlatform()
-}
 
 license {
-    header rootProject.file("LHEADER")
     // Exclude front-end test files
     exclude("frontend/*")
 }
-
-// TODO Remove this when the default JaCoCo version is updated
-jacoco {
-    toolVersion = "0.8.7"
-}
-
-jacocoTestReport {
-    reports {
-        xml.required = true
-    }
-}
-
 
 distributions {
     main {
@@ -98,7 +52,7 @@ distributions {
 }
 
 check.configure {
-    dependsOn = dependsOn.findAll { it.name != 'detekt' }
+    dependsOn = dependsOn.findAll { it != 'detekt' }
     dependsOn += 'detektMain'
 }
 

@@ -10,7 +10,7 @@
 EpiLink is an account verification server, allowing you to link a Discord identity to any OpenID Provider (including Microsoft, Google...)
 identity.
 
-![Screenshot of the front-end](docs/img/front.png)
+![Screenshot of the front-end](docs/src/img/front.png)
 
 EpiLink is available under the Mozilla Public License 2.0 (no copyleft exception) `MPL-2.0-no-copyleft-exception` [(info)](LICENSE).
 

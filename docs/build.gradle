@@ -1,0 +1,48 @@
+plugins {
+    id 'epilink.common-conventions'
+    id 'base'
+}
+
+configurations {
+    servine
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://gitla/api/v4/projects/29365238/packages/maven' }
+}
+
+dependencies {
+    servine 'guru.zoroark.servine:servine:0.0.2-SNAPSHOT'
+}
+
+def needExpansion = [ "" ]
+
+def docs = tasks.register("assembleDocs", Copy) {
+    dependsOn(":swagger:generateSwaggerUIEpiLink")
+
+    from project.layout.projectDirectory.dir("src")
+    from project(":swagger").layout.buildDirectory.dir("swagger-ui-epilink")
+    into project.layout.buildDirectory.dir("docs")
+
+    exclude 'META-INF'
+
+    def template = [version: project.version]
+    filesMatching(needExpansion) {
+        expand template
+    }
+
+    inputs.property("project.version", project.version) // Rebuild when project version changes
+}
+
+tasks["build"].dependsOn docs
+
+def serveDocs = tasks.register("serveDocs", JavaExec) {
+    main = "guru.zoroark.servine.app.AppKt"
+    classpath = configurations.servine
+
+    def params = [project.layout.buildDirectory.dir("docs").get().toString()]
+    args(params)
+
+    dependsOn docs
+}

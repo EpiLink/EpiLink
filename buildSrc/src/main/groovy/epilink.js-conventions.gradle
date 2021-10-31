@@ -1,0 +1,24 @@
+import com.hierynomus.gradle.license.tasks.*
+
+plugins {
+    id 'epilink.common-conventions'
+    id "com.github.node-gradle.node"
+}
+
+license {
+    mapping {
+        scss = "JAVADOC_STYLE"
+        vue = "XML_STYLE"
+    }
+}
+
+task licenseFormatJs(type: LicenseFormat) {
+    source fileTree("src").include("**/*.js", "**/*.vue", "**/*.scss")
+}
+
+task licenseCheckJs(type: LicenseCheck) {
+    source fileTree("src").include("**/*.js", "**/*.vue", "**/*.scss")
+}
+
+licenseFormat.dependsOn licenseFormatJs
+tasks["license"].dependsOn licenseCheckJs

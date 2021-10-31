@@ -90,6 +90,7 @@ interface DatabaseFacade {
      * @param user The user who the new e-mail address should be associated to
      * @param newEmail The e-mail address to associate with the Discord ID
      */
+    @UsesTrueIdentity
     suspend fun recordNewIdentity(user: User, newEmail: String)
 
     /**
@@ -97,6 +98,7 @@ interface DatabaseFacade {
      *
      * @param user The user whose identity should be erased.
      */
+    @UsesTrueIdentity
     suspend fun eraseIdentity(user: User)
 
     /**

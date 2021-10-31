@@ -9,6 +9,7 @@
 package org.epilink.bot
 
 import kotlinx.coroutines.runBlocking
+import org.koin.core.component.KoinApiExtension
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
@@ -57,6 +58,7 @@ open class KoinBaseTest<T : Any>(
     /**
      * Run the given [block] in a coroutine, with a ready-to-use Koin DI environment.
      */
+    @OptIn(KoinApiExtension::class)
     fun <R> test(block: suspend T.() -> R): R =
         runBlocking { block(getKoin().get(kclass)) }
 }

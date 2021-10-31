@@ -19,7 +19,6 @@ import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
-import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Permission
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -74,7 +73,7 @@ internal class Discord4JFacadeImpl(
         get() = cclient ?: error("Discord client uninitialized")
 
     override suspend fun sendDirectMessage(discordId: String, embed: DiscordEmbed) {
-        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle()) { from(embed) }
+        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), embed)
     }
 
     override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed): String {
@@ -82,18 +81,18 @@ internal class Discord4JFacadeImpl(
             client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? MessageChannel
                 ?: error("Not a message channel")
         sendWelcomeMessageIfEmptyDmChannel(channel)
-        return channel.createEmbed { it.from(embed) }.awaitSingle().id.asString()
+        return channel.createMessage(embed.toDiscord4J()).awaitSingle().id.asString()
     }
 
     private suspend inline fun sendWelcomeMessageIfEmptyDmChannel(channel: MessageChannel) {
         if (channel is PrivateChannel && channel.lastMessageId.isEmpty) {
-            channel.createEmbed { it.from(messages.getWelcomeChooseLanguageEmbed()) }.awaitSingle()
+            channel.createMessage(messages.getWelcomeChooseLanguageEmbed().toDiscord4J()).awaitSingle()
         }
     }
 
-    private suspend fun sendDirectMessage(discordUser: User, embed: EmbedCreateSpec.() -> Unit) =
+    private suspend fun sendDirectMessage(discordUser: User, embed: DiscordEmbed) =
         discordUser.getCheckedPrivateChannel().also { sendWelcomeMessageIfEmptyDmChannel(it) }
-            .createEmbed(embed).awaitSingle()
+            .createMessage(embed.toDiscord4J()).awaitSingle()
 
     override suspend fun getGuilds(): List<String> =
         client.guilds.map { it.id.asString() }.collectList().awaitSingle()

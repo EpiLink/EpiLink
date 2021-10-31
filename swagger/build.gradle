@@ -1,5 +1,5 @@
 plugins {
-    id 'org.hidetake.swagger.generator' version "$swaggerGeneratorVersion"
+    id 'org.hidetake.swagger.generator'
 }
 
 repositories {
@@ -25,4 +25,5 @@ swaggerSources {
     }
 }
 
+// Properly rebuild when the index.html changes
 tasks.generateSwaggerUIEpilink.inputs.file("index.html")
