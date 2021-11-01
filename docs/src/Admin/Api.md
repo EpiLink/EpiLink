@@ -1,6 +1,6 @@
 # Back-end API
 
-!> **The documentation is being transitioned to Swagger UI in an OpenAPI format. You can check it out [here](/swagger ':ignore').** In order for it to work on your favorite EpiLink instance, they must have enabled Swagger compatibility. Some content will remain on this page (especially explanations on rate limiting and related things)
+!> **The documentation is being transitioned to Swagger UI in an OpenAPI format. You can check it out [here](/swagger/index.html ':ignore').** In order for it to work on your favorite EpiLink instance, they must have enabled Swagger compatibility. Some content will remain on this page (especially explanations on rate limiting and related things)
 
 **The API is not intended to be used as an external API**, although it technically could be used as such. Instance maintainers may forbid (e.g. through their ToS) usage of the API by anything other than the front-end.
 
@@ -146,8 +146,8 @@ If you do not have any, (e.g. this is your first API request), you can call most
 
 The OAuth2 design is like so:
 
-* The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get a stub of the authorization URL using [`/meta/info`](/swagger/#/meta/get_meta_info ':ignore'). You only need to add a `redirect_uri` there.
-* The consumer then sends this access code with the [`POST /register/authcode/<service>`](/swagger/#/register/post_register_authcode__service_ ':ignore')
+* The API consumer (typically the EpiLink front-end) does the first part of the OAuth2 flow (that is, retrieving the access code). For this, the API can get a stub of the authorization URL using [`/meta/info`](/swagger/index.html#/meta/get_meta_info ':ignore'). You only need to add a `redirect_uri` there.
+* The consumer then sends this access code with the [`POST /register/authcode/<service>`](/swagger/index.html#/register/post_register_authcode__service_ ':ignore')
   endpoints.
 * The back-end validates all of this and retrieves tokens from the OAuth2 service (Discord, Microsoft, etc.)
 
@@ -155,17 +155,17 @@ The OAuth2 design is like so:
 
 The registration process roughly looks like this:
 
-* Get a `SessionRegisterId`, which you can get from any endpoint. We recommend using [the `/register/info`](/swagger/#/register/get_register_info ':ignore') endpoint
+* Get a `SessionRegisterId`, which you can get from any endpoint. We recommend using [the `/register/info`](/swagger/index.html#/register/get_register_info ':ignore') endpoint
 
-* Provide an ID Provider or Discord authorization code using [the `/register/authcode/service`]((/swagger/#/register/post_register_authcode__service_ ':ignore') endpoints
+* Provide an ID Provider or Discord authorization code using [the `/register/authcode/service`](/swagger/index.html#/register/post_register_authcode__service_ ':ignore') endpoints
 
   * Starting with the Discord authorization code is a good idea, as the server will directly tell you "hey, I already know this user, here is the session id".
 
 * Provide the other authorization code using the other authorization code endpoint. (e.g. if you started with Discord, provide the ID Provider code next)
 
-* Complete the registration by calling [the `/register` endpoint](/swagger/#/register/post_register ':ignore') with whether the user wants to have their identity kept in the system. The account has been created, congrats!
+* Complete the registration by calling [the `/register` endpoint](/swagger/index.html#/register/post_register ':ignore') with whether the user wants to have their identity kept in the system. The account has been created, congrats!
 
-At any point, a registration session can be cancelled using the [DELETE `/register`](/swagger/#/register/delete_register ':ignore') endpoint.
+At any point, a registration session can be cancelled using the [DELETE `/register`](/swagger/index.html#/register/delete_register ':ignore') endpoint.
 
 EpiLink has **no dedicated log in flow.** We recommend that you simply use the registration flow for everything and first start with the Discord authorization code. Once that code has been obtained, you can just check whether the back-end asks you to continue with the registration procedure or has logged the user in.
 
@@ -186,11 +186,11 @@ Refer to the Swagger for information on where to use which session.
 
 # API Routes and details
 
-!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger/index.html  ':ignore') instead.
 
 ## General
 
-!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger/index.html  ':ignore') instead.
 
 ### ApiResponse
 
@@ -224,7 +224,7 @@ see the api response's message for more specific information about the error.
 
 ## Meta-information (/meta)
 
-!> **This section is deprecated.** Please refer to our [Swagger](/swagger  ':ignore') instead.
+!> **This section is deprecated.** Please refer to our [Swagger](/swagger/index.html  ':ignore') instead.
 
 These endpoints can be used to retrieve information from the back-end that is used for operation on the front-end.
 
@@ -610,7 +610,7 @@ Upon success, triggers a role update.
 
 All endpoints are checked: the caller must have admins permissions (by specifying the caller's Discord ID as an "admin") *and* be identifiable.
 
-?> Administrative endpoints [can be disabled in the HTTP configuration](MaintainerGuide.md#http-server-settings) and may not be available.
+?> Administrative endpoints [can be disabled in the HTTP configuration](Admin/Configuration.md#http-server-settings) and may not be available.
 
 ### Objects
 

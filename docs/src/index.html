@@ -20,6 +20,11 @@
       --cover-background-color: rgba(0,0,0,0); /* Necessary to override theme */
       --sidebar-name-font-family: Lato, sans-serif;
       --sidebar-name-font-weight: 700;
+      /* Arrows with the correct color */
+      --sidebar-nav-pagelink-background-image--active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11.2' height='7' viewBox='0 0 11.2 7'%3E%3Cpath d='M1.5 1.5l4.1 4 4.1-4' stroke-width='1.5' stroke='rgb%2845, 166, 45%29' fill='none' stroke-linecap='square' stroke-linejoin='miter' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+      --sidebar-nav-pagelink-background-image--loaded: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11.2' height='7' viewBox='0 0 11.2 7'%3E%3Cpath d='M1.5 1.5l4.1 4 4.1-4' stroke-width='1.5' stroke='rgb%2845, 166, 45%29' fill='none' stroke-linecap='square' stroke-linejoin='miter' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+      --sidebar-nav-pagelink-background-image--collapse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='11.2' viewBox='0 0 7 11.2'%3E%3Cpath d='M1.5 1.5l4 4.1 -4 4.1' stroke-width='1.5' stroke='rgb%2845, 166, 45%29' fill='none' stroke-linecap='square' stroke-linejoin='miter' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+
     }
     .cover-main h1 {
       font-family: Lato, sans-serif;
@@ -43,16 +48,22 @@
       subMaxLevel: 3,
       coverpage: true,
       homepage: 'EpiLink.md',
-      auto2top: true
+      auto2top: true,
+      alias: {
+        '/.*/_sidebar\\.md': '/_sidebar.md'
+      }
     }
   </script>
   <!-- Docsify -->
   <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
   <!-- Prism for YAML, JSON and Kotlin syntax highlighting -->
   <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-yaml.min.js"></script>
   <script>
     Prism.languages.json5 = Prism.languages.js
   </script>
   <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-kotlin.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
 </body>
 </html>

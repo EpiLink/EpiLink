@@ -63,10 +63,10 @@ This is the data that is collected by default for logged-in users
 
 ## Data that is transmitted to Discord
 
-By default, EpiLink only sends information to Discord about who has an account (`_known` EpiLink role) and who has their identity recorded in the database (`_identified` EpiLink role) in the form of the [role mappings you configure](MaintainerGuide.md#discord-server-configuration).
+By default, EpiLink only sends information to Discord about who has an account (`_known` EpiLink role) and who has their identity recorded in the database (`_identified` EpiLink role) in the form of the [role mappings you configure](Admin/Configuration.md#discord-server-configuration).
 
 !> Rules may incur additional data collection. This data is also transmitted to Discord in the form of the role mappings you configure in each server.
 
 ## Configuration
 
-Configuring the Terms of Services, Privacy Policy and Identity Disclaimer is done in the `legal` part of the configuration. [See here for more details.](MaintainerGuide.md#legal-configuration)
+Configuring the Terms of Services, Privacy Policy and Identity Disclaimer is done in the `legal` part of the configuration. [See here for more details.](Admin/Configuration.md#legal-configuration)

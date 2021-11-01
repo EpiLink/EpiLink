@@ -4,7 +4,7 @@ Identity Providers (formally known as OpenID Providers or OPs in the OpenID Conn
 
 You can use any OpenID Connect compliant service for EpiLink. This page will describe the recommended configuration for the most popular ones.
 
-You can set the Identity Provider [in the `idProvider` section of the configuration file](MaintainerGuide.md#identity-provider).
+You can set the Identity Provider [in the `idProvider` section of the configuration file](Admin/Configuration.md#identity-provider).
 
 ## Discovery process
 

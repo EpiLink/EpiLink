@@ -38,5 +38,6 @@ artifacts {
     }
 }
 
-// Properly rebuild when the index.html changes
-tasks.generateSwaggerUIEpilink.inputs.file("index.html")
+// Properly rebuild when the index.html/epilink.yaml changes
+// TODO epilink.yaml may not be necessary here
+tasks.generateSwaggerUIEpilink.inputs.files("index.html", "epilink.yaml")
