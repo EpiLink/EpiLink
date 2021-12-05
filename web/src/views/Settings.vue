@@ -11,8 +11,8 @@
 <template>
     <link-expanded-view id="settings">
         <div id="left">
-            <link-user/>
-            <link-stepper step="3"/>
+            <link-user />
+            <link-stepper step="3" />
         </div>
 
         <div id="right">
@@ -20,16 +20,16 @@
                 <div id="settings-form" v-if="!submitting" :key="0">
                     <div id="options">
                         <link-option v-model="saveEmail">
-                            <p class="title" v-html="$t('settings.remember')"/>
-                            <div class="id-prompt" v-html="idPrompt"/>
+                            <p class="title" v-html="$t('settings.remember')" />
+                            <div class="id-prompt" v-html="idPrompt" />
                         </link-option>
                         <link-option v-model="acceptConditions">
                             <p class="title">
                                 {{ $t('settings.iAcceptThe') }}
-                                <router-link :to="{ name: 'tos' }" v-html="$t('settings.terms')"/>
+                                <router-link :to="{ name: 'tos' }" v-html="$t('settings.terms')" />
 
                                 {{ $t('settings.andThe') }}
-                                <router-link :to="{ name: 'privacy' }" v-html="$t('settings.policy')"/>
+                                <router-link :to="{ name: 'privacy' }" v-html="$t('settings.policy')" />
                             </p>
                         </link-option>
                     </div>
@@ -38,11 +38,11 @@
                     </link-button>
                 </div>
 
-                <div id="submitting" v-if="submitting && !error" :key="1">
-                    <link-loading/>
+                <div id="submitting" v-else-if="submitting && !error" :key="1">
+                    <link-loading />
                 </div>
 
-                <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2"/>
+                <link-error v-else :error="error" message="error.retry" @action="retry" :key="2" />
             </transition>
         </div>
     </link-expanded-view>
@@ -51,14 +51,14 @@
 <script>
     import { mapState } from 'vuex';
 
-    import LinkExpandedView from '../components/ExpandedView';
-    import LinkButton       from '../components/Button';
-    import LinkCheckbox     from '../components/Checkbox';
-    import LinkError        from '../components/Error';
-    import LinkLoading      from '../components/Loading';
-    import LinkOption       from '../components/Option';
-    import LinkStepper      from '../components/Stepper';
-    import LinkUser         from '../components/User';
+    import LinkExpandedView from '../components/ExpandedView.vue';
+    import LinkButton       from '../components/Button.vue';
+    import LinkCheckbox     from '../components/Checkbox.vue';
+    import LinkError        from '../components/Error.vue';
+    import LinkLoading      from '../components/Loading.vue';
+    import LinkOption       from '../components/Option.vue';
+    import LinkStepper      from '../components/Stepper.vue';
+    import LinkUser         from '../components/User.vue';
 
     export default {
         name: 'link-settings',
@@ -70,7 +70,7 @@
                 acceptConditions: false,
                 submitting: false,
                 error: null
-            }
+            };
         },
         methods: {
             submit() {
@@ -81,7 +81,7 @@
                 this.submitting = true;
 
                 this.$store.dispatch('register', this.saveEmail)
-                    .then(() => this.$router.push({name: 'success'}))
+                    .then(() => this.$router.push({ name: 'success' }))
                     .catch(err => this.error = err);
             },
             retry() {
@@ -90,7 +90,7 @@
             }
         },
         computed: mapState({ idPrompt: state => state.meta && state.meta.idPrompt })
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

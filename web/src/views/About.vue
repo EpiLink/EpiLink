@@ -11,7 +11,7 @@
 <template>
     <div id="about">
         <div id="banner">
-            <img id="logo" alt="Logo" src="../../assets/logo.svg"/>
+            <img id="logo" alt="Logo" src="../../assets/logo.svg" />
             <h1 class="title">EpiLink</h1>
         </div>
 
@@ -23,9 +23,9 @@
         </div>
 
         <div id="disclaimer">
-            {{ $t('about.disclaimer')[0] }}
+            {{ $tm('about.disclaimer')[0] }}
             '<span class="instance">{{ instance }}</span>'
-            {{ $t('about.disclaimer')[1] }}
+            {{ $tm('about.disclaimer')[1] }}
         </div>
 
         <div id="authors-section">
@@ -53,7 +53,7 @@
     export default {
         name: 'link-about',
         computed: mapState({ instance: state => state.meta && state.meta.title })
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

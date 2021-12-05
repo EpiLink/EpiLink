@@ -10,10 +10,10 @@
 -->
 <template>
     <div class="error">
-        <h1 class="title" v-html="$t('error.title')"/>
+        <h1 class="title" v-html="$t('error.title')" />
         <p class="message">{{ actualError }}</p>
 
-        <a class="action" @click="action" v-html="$t(message)"/>
+        <a class="action" @click="action" v-html="$t(message)" />
     </div>
 </template>
 
@@ -32,7 +32,7 @@
         computed: {
             ...mapState({ meta: state => state.meta }),
             providerName() {
-                return (this.meta && this.meta.providerName) || "Identity Provider";
+                return (this.meta && this.meta.providerName) || 'Identity Provider';
             },
             actualError() {
                 if (this.error.key !== undefined && this.error.replace !== undefined) {
@@ -58,7 +58,7 @@
                 return error;
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

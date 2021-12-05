@@ -17,25 +17,25 @@
 <script>
     export default {
         name: 'link-checkbox',
-        props: ['value'],
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
 
-        data() {
-            return {
-                checked: this.value
+        computed: {
+            checked: {
+                get() {
+                    return this.modelValue;
+                },
+                set(value) {
+                    this.$emit('update:modelValue', value);
+                }
             }
         },
         methods: {
             tick() {
                 this.checked = !this.checked;
-                this.$emit('input', this.checked);
-            }
-        },
-        watch: {
-            value(val) {
-                this.checked = val;
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss">

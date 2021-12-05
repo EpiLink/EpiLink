@@ -18,7 +18,7 @@
 <script>
     export default {
         name: 'link-check'
-    }
+    };
 </script>
 
 <style lang="scss">

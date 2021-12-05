@@ -10,11 +10,11 @@
 -->
 <template>
     <div id="home">
-        <img id="logo" alt="Logo" :src="logo"/>
+        <img id="logo" alt="Logo" :src="logo" />
         <h1 id="title" v-html="$t('home.welcome')" />
 
         <button id="discord" @click="login">
-            <img id="discord-logo" :alt="$t('home.discord')" src="../../assets/discord.svg"/>
+            <img id="discord-logo" :alt="$t('home.discord')" src="../../assets/discord.svg" />
             <span id="discord-text" v-html="$t('home.discord')" />
         </button>
     </div>
@@ -22,6 +22,8 @@
 
 <script>
     import { openPopup } from '../api';
+
+    import defaultLogo from '../../assets/logo.svg';
 
     export default {
         name: 'link-home',
@@ -34,7 +36,7 @@
         },
         computed: {
             logo() {
-                return this.$store.state.meta.logo || require("../../assets/logo.svg")
+                return this.$store.state.meta.logo || defaultLogo;
             }
         },
         methods: {
@@ -52,7 +54,7 @@
                 }, 300);
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

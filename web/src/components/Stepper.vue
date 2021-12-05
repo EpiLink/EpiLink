@@ -23,6 +23,7 @@
 
 <script>
     import { mapState } from 'vuex';
+
     const STEPS = ['discord', 'idProvider', 'settings'];
 
     export default {
@@ -32,10 +33,10 @@
         data() {
             return {
                 steps: STEPS
-            }
+            };
         },
         computed: mapState({ meta: state => state.meta })
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

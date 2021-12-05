@@ -27,8 +27,8 @@
 
     import { openPopup } from '../api';
 
-    import LinkStepper from '../components/Stepper';
-    import LinkUser    from '../components/User';
+    import LinkStepper from '../components/Stepper.vue';
+    import LinkUser    from '../components/User.vue';
 
     export default {
         name: 'link-idProvider',
@@ -79,7 +79,7 @@
                 }, 300);
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

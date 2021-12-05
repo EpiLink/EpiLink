@@ -33,12 +33,12 @@ export function openPopup(title, service, stub) {
     const x = screen.width / 2 - width / 2, y = screen.height / 2 - height / 2 - 65;
     const options = `menubar=no, status=no, scrollbars=no, menubar=no, width=${width}, height=${height}, top=${y}, left=${x}`;
 
-    return window.open(url,`EpiLink - ${title}`, options);
+    return window.open(url, `EpiLink - ${title}`, options);
 }
 
 export function deleteSession() {
     session = null;
-    localStorage.setItem('session',  null);
+    localStorage.setItem('session', null);
 }
 
 export function isPermanentSession() {
@@ -58,7 +58,7 @@ export function isPermanentSession() {
  *
  * @returns {Promise<Object>} A Promise that resolves with the request result data, or fails with the request error message
  */
-export default async function(method, path, body, returnRawResponse = false) {
+export default async function (method, path, body, returnRawResponse = false) {
     if (!body && typeof path !== 'string') {
         // [path, body?]
         body = path;
@@ -109,7 +109,7 @@ export default async function(method, path, body, returnRawResponse = false) {
             throw 'rate-limit';
         } else {
             // Do not throw the message directly, throw the I18n key instead with the replacements
-            throw {"key": 'backend.' + json.message_i18n, "replace": json.message_i18n_data};
+            throw { key: 'backend.' + json.message_i18n, replace: json.message_i18n_data };
         }
     }
 

@@ -16,12 +16,13 @@ String backEndUrl() {
 task bundleWeb(type: NpmTask) {
     dependsOn npmInstall
 
+    inputs.file('index.html')
     inputs.file('package-lock.json')
+    inputs.files(fileTree('public'))
     inputs.files(fileTree('src'))
     inputs.files(fileTree('assets'))
     inputs.file('package.json')
-    inputs.file('vue.config.js')
-    inputs.file('babel.config.js')
+    inputs.file('vite.config.js')
     inputs.property("backendUrl", backEndUrl())
 
     outputs.dir(layout.buildDirectory.dir("web"))
