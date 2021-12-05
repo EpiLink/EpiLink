@@ -117,7 +117,7 @@ fun Configuration.isConfigurationSane(
     if (redis == null) {
         report += ConfigWarning(
             "No Redis URI provided: Redis is disabled, using in-memory instead. ONLY LEAVE REDIS " +
-                    "DISABLED FOR DEVELOPMENT PURPOSES!"
+                "DISABLED FOR DEVELOPMENT PURPOSES!"
         )
     }
     report += server.check()

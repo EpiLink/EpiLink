@@ -75,14 +75,14 @@ class UpdateCommand : Command, KoinComponent {
             is TargetResult.User -> {
                 logger.debug {
                     "Updating ${target.id}'s roles globally (cmd from ${sender.discordId} on channel " +
-                            "$channelId, guild $guildId)"
+                        "$channelId, guild $guildId)"
                 }
                 listOf(target.id) to ("update.user" to listOf())
             }
             is TargetResult.Role -> {
                 logger.debug {
                     "Updating everyone with role ${target.id} globally (cmd from ${sender.discordId} on " +
-                            "channel $channelId, guild $guildId)"
+                        "channel $channelId, guild $guildId)"
                 }
                 client.getMembersWithRole(target.id, guildId).let {
                     it to ("update.role" to listOf(target.id, it.size))
@@ -91,7 +91,7 @@ class UpdateCommand : Command, KoinComponent {
             TargetResult.Everyone -> {
                 logger.debug {
                     "Updating everyone on server $guildId globally (cmd from ${sender.discordId} on " +
-                            "channel $channelId, guild $guildId)"
+                        "channel $channelId, guild $guildId)"
                 }
                 client.getMembers(guildId).let {
                     @Suppress("ArrayPrimitive") // Required to use Array<Int> for typing consistency
@@ -101,7 +101,7 @@ class UpdateCommand : Command, KoinComponent {
             is TargetResult.RoleNotFound -> {
                 logger.debug {
                     "Attempted update on invalid target $commandBody (cmd from ${sender.discordId} on " +
-                            "channel $channelId, guild $guildId)"
+                        "channel $channelId, guild $guildId)"
                 }
                 client.sendChannelMessage(
                     channelId,

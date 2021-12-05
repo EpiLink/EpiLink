@@ -95,14 +95,14 @@ fun DiscordConfiguration.checkCoherenceWithLanguages(available: Set<String>): Li
         report += ConfigError(
             true,
             "The preferred languages contain unavailable languages " +
-                    "(${unavailablePreferredLanguages.joinToString(", ")}). The available languages are $languages"
+                "(${unavailablePreferredLanguages.joinToString(", ")}). The available languages are $languages"
         )
     }
     if (defaultLanguage !in preferredLanguages) {
         report += ConfigError(
             true,
             "The preferred languages list ${preferredLanguages.joinToString(", ")} must contain the default " +
-                    "language ($defaultLanguage)."
+                "language ($defaultLanguage)."
         )
     }
     return report
@@ -128,7 +128,7 @@ fun DiscordConfiguration.checkCoherenceWithRulebook(rulebook: Rulebook): List<Co
         report += ConfigError(
             true,
             "Rule $rule is used in but is not defined in the rulebook. " +
-                    "Used in: ${serversWhereUsed.joinToString(", ")}"
+                "Used in: ${serversWhereUsed.joinToString(", ")}"
         )
     }
 

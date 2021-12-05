@@ -99,7 +99,7 @@ internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
                 if (this == null) {
                     logger.debug {
                         "Missing/unknown session header for call from reg. session " +
-                                call.request.header("RegistrationSessionId")
+                            call.request.header("RegistrationSessionId")
                     }
                     call.respond(
                         HttpStatusCode.BadRequest,

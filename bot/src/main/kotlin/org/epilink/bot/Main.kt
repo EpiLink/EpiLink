@@ -105,7 +105,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
     }
     logger.info(
         "EpiLink version $EPILINK_VERSION, starting right up! See $DOCS for documentation. Report issues and " +
-                "suggestions at $BUGS and join our Discord server for help."
+            "suggestions at $BUGS and join our Discord server for help."
     )
     if (cliArgs.verbose) {
         val ctx = LoggerFactory.getILoggerFactory() as LoggerContext
@@ -157,7 +157,7 @@ private suspend fun loadIdProviderMetadata(cfg: Configuration): IdentityProvider
         is MetadataOrFailure.Metadata -> m.metadata
         is MetadataOrFailure.IncompatibleProvider -> error(
             "The chosen provider is not compatible: " +
-                    m.reason
+                m.reason
         )
     }
 }
@@ -167,7 +167,7 @@ private fun checkRulebookConsistency(cfg: Configuration) {
         logger.error("Your configuration defines both a rulebook and a rulebookFile: please only useone of those.")
         logger.info(
             "Use rulebook if you are putting the rulebook code directly in the config file, or " +
-                    "rulebookFile if you are putting the code in a separate file."
+                "rulebookFile if you are putting the code in a separate file."
         )
         exitProcess(EXIT_CODE_RULEBOOK_CLASH)
     }
@@ -179,7 +179,7 @@ private fun loadConfig(cfgPath: Path) =
         when (exc) {
             is java.nio.file.NoSuchFileException -> logger.error(
                 "Failed to load config, could not find config " +
-                        "file $cfgPath"
+                    "file $cfgPath"
             )
             is JsonParseException -> logger.error("Failed to parse YAML file, wrong syntax: ${exc.message}")
             is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
@@ -233,7 +233,7 @@ private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache:
                 @Suppress("BlockingMethodInNonBlockingContext")
                 logger.info(
                     "Loading rulebook from file $file (${path.toRealPath(LinkOption.NOFOLLOW_LINKS)}), this " +
-                            "may take some time..."
+                        "may take some time..."
                 )
                 if (enableCache) {
                     loadRulesWithCache(path, LoggerFactory.getLogger("epilink.rulebookLoader"))
@@ -248,7 +248,7 @@ private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache:
         if (!enableCache) {
             logger.info(
                 "Rulebook caching is disabled, making startup slower. Set 'cacheRulebook' to 'true' in your " +
-                        "config file to enable it."
+                    "config file to enable it."
             )
         }
         logger.info("Rulebook loaded with ${rb.rules.size} rules.")

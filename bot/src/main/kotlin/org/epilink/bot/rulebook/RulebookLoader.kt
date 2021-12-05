@@ -111,9 +111,9 @@ internal suspend fun compileRules(source: SourceCode): CompiledScript = withCont
             dependenciesFromCurrentContext(wholeClasspath = true)
 
             compilerOptions.append("-jvm-target")
-            compilerOptions.append("11")
+            compilerOptions.append("17")
         }
-        compilerOptions("-jvm-target", "11")
+        compilerOptions("-jvm-target", "17")
         implicitReceivers(RulebookBuilder::class)
         defaultImports("org.epilink.bot.rulebook.*", "io.ktor.http.*")
     }
@@ -187,7 +187,7 @@ private suspend fun loadRulesWithCache(
     is CacheAdvisory.DoNotCache -> {
         logger?.warn(
             "Caching was disabled automatically to avoid potential issues. Try deleting all files next to " +
-                    "the rulebook file that have a file name ending in '__cached' "
+                "the rulebook file that have a file name ending in '__cached' "
         )
         loadRules(source())
     }
@@ -195,7 +195,7 @@ private suspend fun loadRulesWithCache(
         val compiled = compileRules(source())
         logger?.info(
             "Writing cache to ${adv.cachePath}. Next startup will be faster. You can disable caching by " +
-                    "setting 'cacheRulebook: false' in the configuration file."
+                "setting 'cacheRulebook: false' in the configuration file."
         )
         runCatching { compiled.writeScriptTo(adv.cachePath) }.onFailure {
             logger?.error("Failed to write the rulebook cache to ${adv.cachePath}", it)
@@ -205,14 +205,14 @@ private suspend fun loadRulesWithCache(
     is CacheAdvisory.ReadCache -> {
         logger?.info(
             "Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting " +
-                    "'cacheRulebook: false' in the configuration file."
+                "'cacheRulebook: false' in the configuration file."
         )
         val compiled = runCatching {
             readScriptFrom(adv.cachePath)
         }.getOrElse {
             logger?.error(
                 "Failed to read cache, using the original rulebook file instead. Try deleting the cached " +
-                        "file (${adv.cachePath}).",
+                    "file (${adv.cachePath}).",
                 it
             )
             compileRules(source())

@@ -6,6 +6,9 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
+
+@file:Suppress("ImportOrdering") // TODO ktlint fails shere for some obscure reason
+
 package org.epilink.bot.discord
 
 import discord4j.common.util.Snowflake
@@ -21,6 +24,7 @@ import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Permission
+import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +42,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
-import kotlin.reflect.KClass
 
 /**
  * Implementation of a Discord client facade that uses Discord4J

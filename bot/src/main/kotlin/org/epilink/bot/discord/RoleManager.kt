@@ -177,13 +177,13 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
         val rules = getRulesRelevantForGuilds(whereConnected)
         logger.debug {
             "Updating $discordId's roles requires calling the rules " +
-                    rules.joinToString(", ") { it.rule.name }
+                rules.joinToString(", ") { it.rule.name }
         }
         // Compute the roles
         val (roles, bypassStickyRules) = getRolesForUser(discordId, rules, tellUserIfFailed, guilds)
         logger.debug {
             "Computed EpiLink roles for $discordId for guilds ${whereConnected.joinToString(", ")}:" +
-                    roles.joinToString(", ")
+                roles.joinToString(", ")
         }
         // Update the roles
         whereConnected.forEach { guildId ->
@@ -373,7 +373,7 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
         }
         logger.debug {
             "Identity required for strong rules (Discord user ${dbUser.discordId}, rules " +
-                    strongIdRulesInfo.joinToString(", ") { it.rule.name } + ")"
+                strongIdRulesInfo.joinToString(", ") { it.rule.name } + ")"
         }
         // IntelliJ wants to put facade.getGuildName in joinToString which is not possible because joinToString is not
         // inline-able and we need coroutines here
@@ -383,9 +383,9 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
             automated = true,
             author = "EpiLink Discord Bot",
             reason = "EpiLink has accessed your identity automatically in order to update your roles on the " +
-                    "following Discord servers: " +
-                    strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().map { facade.getGuildName(it) }
-                        .joinToString(", ")
+                "following Discord servers: " +
+                strongIdRulesInfo.flatMap { it.requestingGuilds }.distinct().map { facade.getGuildName(it) }
+                    .joinToString(", ")
         )
     }
 }

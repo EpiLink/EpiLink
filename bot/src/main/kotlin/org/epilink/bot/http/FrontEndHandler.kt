@@ -62,8 +62,8 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
     override val serveIntegratedFrontEnd: Boolean by lazy {
         // Detect the presence of the frontend
         HttpServer::class.java.getResource("/.hasFrontend") != null &&
-                // Check that no URL is set
-                wsCfg.frontendUrl == null
+            // Check that no URL is set
+            wsCfg.frontendUrl == null
     }
 
     private fun CORS.Configuration.applyCorsOptions() {
@@ -92,9 +92,8 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
                     }
                     else -> {
                         logger.debug("Serving front-end as a redirection")
-                        val redirectionUrl = frontUrl.dropLast(1) +
-                                call.request.path() +
-                                (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" } ?: "")
+                        val redirectionUrl = frontUrl.dropLast(1) + call.request.path() +
+                            (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" } ?: "")
                         logger.debug { "Redirecting ${call.request.uri} to $redirectionUrl" }
                         call.respondRedirect(redirectionUrl, permanent = false)
                     }
@@ -126,8 +125,7 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
                         if (frontUrl != null) {
                             logger.info("Also allowing frontUrl in addition to the whitelist")
                             host(
-                                frontUrl.dropLast(1).replace(Regex("https?://"), ""),
-                                schemes = listOf("http", "https")
+                                frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https")
                             )
                         }
                     }
@@ -139,7 +137,7 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
             frontUrl == null -> {
                 logger.warn(
                     "CORS is disabled. Web browsers may deny calls to the back-end. Specify the front-end " +
-                            "URL in the configuration files to fix this."
+                        "URL in the configuration files to fix this."
                 )
             }
             else -> {
@@ -170,9 +168,9 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
         logger.debug { "Responding to ${request.uri} with default index.html" }
         val def = resolveResource("index.html", "frontend") {
             ContentType.defaultForFileExtension("html")
-        }
-        // Should not happen, unless the JAR was badly constructed
-            ?: throw IllegalStateException("Could not find front-end index in JAR file")
+        } ?: throw IllegalStateException("Could not find front-end index in JAR file")
+        // The throw should not happen, unless the JAR was badly constructed
+
         respond(def)
     }
 
