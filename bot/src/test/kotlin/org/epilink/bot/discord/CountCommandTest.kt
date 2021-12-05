@@ -23,7 +23,10 @@ class CountCommandTest : KoinBaseTest<Command>(
         single<Command> { CountCommand() }
     }
 ) {
-    private fun mockMessagePipeline(channelId: String, discordMessagesReceiver: MockKMatcherScope.(DiscordMessages) -> DiscordEmbed): Pair<DiscordClientFacade, DiscordEmbed> {
+    private fun mockMessagePipeline(
+        channelId: String,
+        discordMessagesReceiver: MockKMatcherScope.(DiscordMessages) -> DiscordEmbed
+    ): Pair<DiscordClientFacade, DiscordEmbed> {
         val embed = mockk<DiscordEmbed>()
         mockHere<DiscordMessages> {
             every { discordMessagesReceiver(this@mockHere) } returns embed
@@ -66,7 +69,7 @@ class CountCommandTest : KoinBaseTest<Command>(
                 )
             } returns TargetResult.Everyone
         }
-        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", 10) }
+        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", listOf(10)) }
         val f = softMockHere<DiscordClientFacade> {
             coEvery { getMembers("the_guild") } returns members
         }
@@ -95,7 +98,7 @@ class CountCommandTest : KoinBaseTest<Command>(
                 )
             } returns TargetResult.Role("The Role Id")
         }
-        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", 10) }
+        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", listOf(10)) }
         val f = softMockHere<DiscordClientFacade> {
             coEvery { getMembersWithRole("The Role Id", "the_guild") } returns members
         }
@@ -124,7 +127,7 @@ class CountCommandTest : KoinBaseTest<Command>(
                 )
             } returns TargetResult.Role("The Role Id")
         }
-        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", 10) }
+        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", listOf(10)) }
         val f = softMockHere<DiscordClientFacade> {
             coEvery { getMembersWithRole("The Role Id", "the_guild") } returns members
         }
@@ -152,7 +155,7 @@ class CountCommandTest : KoinBaseTest<Command>(
                 )
             } returns TargetResult.User("The User")
         }
-        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", 1) }
+        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", listOf(1)) }
         val f = softMockHere<DiscordClientFacade> {
             coEvery { isUserInGuild("The User", "the_guild") } returns true
         }

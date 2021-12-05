@@ -12,6 +12,8 @@ import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import org.epilink.bot.EpiLinkException
 
+private const val HEXADECIMAL = 16
+
 /**
  * Represents an embed that can be sent in a Discord message. Use [EmbedCreateSpec.from] (an extension function) to
  * fill an embed create spec with the embed information contained in a DiscordEmbed object.
@@ -33,8 +35,8 @@ data class DiscordEmbed(
      */
     val url: String? = null,
     /**
-     * The color of the embed. Can be either a static field of [discord4j.rest.util.Color] or a hexadecimal value preceded by a
-     * `#` (e.g.: `#12be00`)
+     * The color of the embed. Can be either a static field of [discord4j.rest.util.Color] or a hexadecimal value
+     * preceded by a `#` (e.g.: `#12be00`)
      */
     val color: String? = null,
     /**
@@ -66,14 +68,16 @@ data class DiscordEmbed(
     val d4jColor: Color? by lazy {
         when {
             this.color == null -> null
+            // Color is guaranteed to not be null at this point, so we can just !! it
+            // (runCatching is missing a contract to let the compiler know)
             this.color.startsWith("#") -> runCatching {
-                // Color is guaranteed to not be null at this point, so we can just !! it
-                // (runCatching is missing a contract to let the compiler know)
-                Color.of(Integer.parseInt(this.color!!.substring(1), 16))
+                @Suppress("UnsafeCallOnNullableType")
+                Color.of(Integer.parseInt(this.color!!.substring(1), HEXADECIMAL))
             }.getOrElse { throw EpiLinkException("Invalid hexadecimal color format: $color", it) }
             else -> {
                 // Try and parse a Color static field
                 runCatching {
+                    @Suppress("UnsafeCallOnNullableType")
                     Color::class.java.getField(this.color!!.uppercase()).get(null) as? Color
                 }.getOrElse { throw EpiLinkException("Unrecognized color: $color", it) }
             }

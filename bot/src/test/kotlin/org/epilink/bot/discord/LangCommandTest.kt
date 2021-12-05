@@ -11,9 +11,9 @@ package org.epilink.bot.discord
 import io.mockk.*
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.DatabaseFacade
-import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.discord.cmd.LangCommand
 import org.epilink.bot.mockHere
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import kotlin.test.Test
 
@@ -76,7 +76,7 @@ class LangCommandTest : KoinBaseTest<Command>(
             coEvery { getLanguage(any()) } returns ""
             coEvery { setLanguage("iid", "lll") } returns false
         }
-        mockHere<DiscordMessages> { every { getErrorCommandReply(any(), "lang.invalidLanguage", "lll") } returns embed }
+        mockHere<DiscordMessages> { every { getErrorCommandReply(any(), "lang.invalidLanguage", listOf("lll")) } returns embed }
         val dcf = mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
         test {
             run("e!lang lll", "lll", null, "iid", "1234", "")

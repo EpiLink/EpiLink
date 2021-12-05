@@ -60,7 +60,6 @@ class UserCreatorTest : KoinBaseTest<UserCreator>(
         coVerify { pc.isIdentityProviderUserAllowedToCreateAccount("tested", "eeemail") }
     }
 
-
     @Test
     fun `Unsuccessful account creation on Discord issue`() {
         val pc = mockHere<PermissionChecks> {

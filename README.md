@@ -3,7 +3,7 @@
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/EpiLink/EpiLink/Tests/dev?label=Tests&logo=github&style=for-the-badge)
 [![Netlify Status](https://img.shields.io/netlify/a8a3663c-084c-4c4c-92a7-0d68f517ef9d?color=blue&logo=netlify&style=for-the-badge)](https://app.netlify.com/sites/epilink/deploys)
 [![MPL 2.0 No copyleft exception license](https://img.shields.io/badge/License-MPL%202.0%20(NCE)-lightgray?style=for-the-badge)](LICENSE)
-[![Latest release](https://img.shields.io/github/v/release/EpiLink/EpiLink?color=darkgreen&include_prereleases&label=Latest%20release&style=for-the-badge)](https://github.com/EpiLink/EpiLink/releases)
+[![Latest release](https://img.shields.io/github/v/release/EpiLink/EpiLink?color=darkgreen&include_prereleases&label=Latest%20release&style=for-the-badge)](https://github.com/EpiLink/EpiLink/releases) [![ktlint](https://img.shields.io/badge/code%20style-%E2%9D%A4-FF4081.svg?style=for-the-badge)](https://ktlint.github.io/)
 
 **Links:** [Documentation](https://epilink.zoroark.guru) | [Changelog](/CHANGELOG.md) | [Discord server](https://discord.gg/CpHmSUt)
 

@@ -89,7 +89,7 @@ enum class ProxyType {
 /**
  * Represents the calls/minutes allowed under different rate limiting profiles
  */
-@Suppress("unused")
+@Suppress("unused", "MagicNumber")
 enum class RateLimitingProfile(
     /**
      * Calls/minutes for the meta API. Applies to all users per IP address
@@ -116,17 +116,17 @@ enum class RateLimitingProfile(
     /**
      * Lenient profile for high-usage periods.
      */
-    Lenient(300, 30, 150, 30),
+    Lenient(metaApi = 300, userApi = 30, registrationApi = 150, adminApi = 30),
 
     /**
      * Standard rate limiting profile, recommended for instances which host a lot of users on the regular.
      */
-    Standard(100, 20, 100, 30),
+    Standard(metaApi = 100, userApi = 20, registrationApi = 100, adminApi = 30),
 
     /**
      * Harsh rate limiting profile, recommended for regular use.
      */
-    Harsh(50, 10, 20, 30)
+    Harsh(metaApi = 50, userApi = 10, registrationApi = 20, adminApi = 30)
 }
 
 /**
@@ -170,21 +170,38 @@ fun WebServerConfiguration.check(): List<ConfigReportElement> {
             "The frontendUrl value in the server config must have a trailing slash (add a / at the end of your URL)"
         )
     }
-    reports += ConfigInfo("Admin endpoints (/api/v1/admin/...) are ${if (enableAdminEndpoints) "enabled" else "disabled"}")
-    when(rateLimitingProfile) {
+    reports += ConfigInfo("Admin endpoints (/api/v1/admin/...) are " +
+            if (enableAdminEndpoints) "enabled" else "disabled"
+    )
+    when (rateLimitingProfile) {
         RateLimitingProfile.Lenient ->
-            reports += ConfigWarning("Rate limiting profile set to Lenient, which may not be strict enough to protect EpiLink from DoS attacks.")
+            reports += ConfigWarning("Rate limiting profile set to Lenient, which may not be strict enough to " +
+                    "protect EpiLink from DoS attacks.")
         RateLimitingProfile.Disabled ->
-            reports += ConfigError(false, "Rate limiting profile set to Disabled. Spam protection is disabled, this leaves your server open for abuse!")
-        else -> { /* nothing to report */ }
+            reports += ConfigError(
+                false,
+                "Rate limiting profile set to Disabled. Spam protection is disabled, this leaves your server open " +
+                        "for abuse!"
+            )
+        else -> { /* nothing to report */
+        }
     }
     corsWhitelist.forEach {
-        if (it == "*")
+        if (it == "*") {
             return@forEach
+        }
         if (!it.startsWith("http://") && !it.startsWith("https://")) {
-            reports += ConfigError(true, "Host in CORS whitelist '$it' is not a valid host. A host must be a protocol + host name (https://example.com) or * to allow any host")
+            reports += ConfigError(
+                true,
+                "Host in CORS whitelist '$it' is not a valid host. A host must be a protocol + host name " +
+                        "(https://example.com) or * to allow any host"
+            )
         } else if (it.count { c -> c == '/' } != 2) {
-            reports += ConfigError(true, "Malformed host: '$it'. Make sure that there are no trailing slashes and no sub-paths. The host should look like https://example.com")
+            reports += ConfigError(
+                true,
+                "Malformed host: '$it'. Make sure that there are no trailing slashes and no sub-paths. The host " +
+                        "should look like https://example.com"
+            )
         }
     }
     return reports

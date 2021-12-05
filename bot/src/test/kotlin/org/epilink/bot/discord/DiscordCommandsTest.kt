@@ -12,9 +12,9 @@ import io.mockk.*
 import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.db.*
-import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.mockHere
 import org.epilink.bot.softMockHere
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.mock.declare
@@ -186,12 +186,15 @@ class DiscordCommandsTest : KoinBaseTest<DiscordCommands>(
         declareNoOpI18n()
         softMockHere<DiscordConfiguration> {
             every { commandsPrefix } returns "e!"
-            if (server == null)
+            if (server == null) {
                 every { servers } returns listOf()
-            else
-                every { servers } returns listOf(mockk {
-                    every { id } returns server
-                })
+            } else {
+                every { servers } returns listOf(
+                    mockk {
+                        every { id } returns server
+                    }
+                )
+            }
         }
         softMockHere<DatabaseFacade> {
             coEvery { getUser(any()) } returns user
@@ -199,8 +202,8 @@ class DiscordCommandsTest : KoinBaseTest<DiscordCommands>(
         if (user != null) {
             softMockHere<PermissionChecks> {
                 coEvery { canPerformAdminActions(user) } returns
-                        if (identityAvailable) AdminStatus.Admin
-                        else AdminStatus.AdminNotIdentifiable
+                    if (identityAvailable) AdminStatus.Admin
+                    else AdminStatus.AdminNotIdentifiable
             }
         }
         declare(named("admins")) { if (admin == null) listOf() else listOf(admin) }
@@ -214,5 +217,4 @@ class DiscordCommandsTest : KoinBaseTest<DiscordCommands>(
 
     private fun DiscordEmbed.mockSend(channel: String) =
         softMockHere<DiscordClientFacade> { coEvery { sendChannelMessage(channel, this@mockSend) } returns "" } to this
-
 }

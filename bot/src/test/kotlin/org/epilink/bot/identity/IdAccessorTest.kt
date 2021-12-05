@@ -10,7 +10,6 @@ package org.epilink.bot.identity
 
 import io.mockk.*
 import org.epilink.bot.*
-import org.epilink.bot.web.declareNoOpI18n
 import org.epilink.bot.config.IdentityProviderConfiguration
 import org.epilink.bot.config.PrivacyConfiguration
 import org.epilink.bot.db.*
@@ -18,6 +17,7 @@ import org.epilink.bot.discord.DiscordEmbed
 import org.epilink.bot.discord.DiscordMessageSender
 import org.epilink.bot.discord.DiscordMessages
 import org.epilink.bot.http.data.IdAccess
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
@@ -133,7 +133,6 @@ class IdAccessorTest : KoinBaseTest<IdentityManager>(
             rcd.refreshCooldown("targetId")
         }
     }
-
 
     @OptIn(UsesTrueIdentity::class)
     @Test

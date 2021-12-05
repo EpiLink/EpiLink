@@ -19,7 +19,7 @@ sealed class DatabaseAdvisory
 object Allowed : DatabaseAdvisory()
 
 /**
- * The action that is checked would be semantically disallowed for the given reason. The reason must be a end-user
+ * The action that is checked would be semantically disallowed for the given reason. The reason must be an end-user
  * friendly string.
  *
  * @property reason The explanation behind the disallowed advice. User-friendly.
@@ -27,4 +27,5 @@ object Allowed : DatabaseAdvisory()
  * @property reasonI18nData An I18n replacement dictionary for the i18n key, with the replacement keys and actual
  * values.
  */
-class Disallowed(val reason: String, val reasonI18n: String, val reasonI18nData: Map<String, String> = mapOf()): DatabaseAdvisory()
+class Disallowed(val reason: String, val reasonI18n: String, val reasonI18nData: Map<String, String> = mapOf()) :
+    DatabaseAdvisory()

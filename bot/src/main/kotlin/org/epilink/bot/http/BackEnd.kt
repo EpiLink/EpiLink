@@ -16,14 +16,18 @@ import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
+import io.ktor.locations.Locations
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.routing
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.header
 import kotlinx.coroutines.coroutineScope
-import org.epilink.bot.*
+import org.epilink.bot.CacheClient
+import org.epilink.bot.EndpointException
+import org.epilink.bot.InternalEndpointException
 import org.epilink.bot.StandardErrorCodes.UnknownError
+import org.epilink.bot.UserEndpointException
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.http.endpoints.AdminEndpoints
 import org.epilink.bot.http.endpoints.MetaApi
@@ -31,6 +35,8 @@ import org.epilink.bot.http.endpoints.RegistrationApi
 import org.epilink.bot.http.endpoints.UserApi
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
+import org.epilink.bot.toApiResponse
+import org.epilink.bot.toResponse
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -103,8 +109,10 @@ internal class BackEndImpl : BackEnd, KoinComponent {
         }
 
         install(RateLimit)
+        install(Locations)
     }
 
+    @Suppress("TooGenericExceptionCaught") // Catching all exceptinos is the entire point here
     override fun Route.installErrorHandling() {
         // Make sure that exceptions are not left for Ktor to try and figure out.
         // Ktor would figure it out, but we a) need to log them b) respond with an ApiResponse
@@ -113,17 +121,12 @@ internal class BackEndImpl : BackEnd, KoinComponent {
                 coroutineScope {
                     proceed()
                 }
-            } catch (ex: EndpointException) {
-                when (ex) {
-                    is UserEndpointException -> {
-                        logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
-                        call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
-                    }
-                    is InternalEndpointException -> {
-                        logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}", ex)
-                        call.respond(HttpStatusCode.InternalServerError, ex.toApiResponse())
-                    }
-                }
+            } catch (ex: UserEndpointException) {
+                logger.info("Encountered an endpoint exception ${ex.errorCode.description}", ex)
+                call.respond(HttpStatusCode.BadRequest, ex.toApiResponse())
+            } catch (ex: InternalEndpointException) {
+                logger.error("Encountered a back-end caused endpoint exception (${ex.errorCode}", ex)
+                call.respond(HttpStatusCode.InternalServerError, ex.toApiResponse())
             } catch (ex: Exception) {
                 logger.error(
                     "Uncaught exception encountered while processing v1 API call. Catch it and return a proper thing!",
@@ -141,8 +144,9 @@ internal class BackEndImpl : BackEnd, KoinComponent {
             userApi.install(this)
             registrationApi.install(this)
             metaApi.install(this)
-            if (wsCfg.enableAdminEndpoints)
+            if (wsCfg.enableAdminEndpoints) {
                 adminEndpoints.install(this)
+            }
         }
     }
 }

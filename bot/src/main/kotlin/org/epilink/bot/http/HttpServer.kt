@@ -14,8 +14,10 @@ import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import org.epilink.bot.config.ProxyType.Forwarded
+import org.epilink.bot.config.ProxyType.None
+import org.epilink.bot.config.ProxyType.XForwarded
 import org.epilink.bot.config.WebServerConfiguration
-import org.epilink.bot.config.ProxyType.*
 import org.epilink.bot.debug
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent

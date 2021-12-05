@@ -77,12 +77,10 @@ data class Configuration(
     val admins: List<String> = listOf()
 )
 
-
 /**
  * Check if a guild is monitored: that is, EpiLink knows how to handle it and is expected to do so.
  */
 fun DiscordConfiguration.isMonitored(guildId: String): Boolean = servers.any { it.id == guildId }
-
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
     registerModule(KotlinModule())
@@ -107,7 +105,10 @@ fun Configuration.isConfigurationSane(
 ): List<ConfigReportElement> {
     val report = mutableListOf<ConfigReportElement>()
     if (redis == null) {
-        report += ConfigWarning("No Redis URI provided: Redis is disabled, using in-memory instead. ONLY LEAVE REDIS DISABLED FOR DEVELOPMENT PURPOSES!")
+        report += ConfigWarning(
+            "No Redis URI provided: Redis is disabled, using in-memory instead. ONLY LEAVE REDIS " +
+                    "DISABLED FOR DEVELOPMENT PURPOSES!"
+        )
     }
     report += server.check()
     report += tokens.check()
@@ -117,4 +118,3 @@ fun Configuration.isConfigurationSane(
 
     return report
 }
-

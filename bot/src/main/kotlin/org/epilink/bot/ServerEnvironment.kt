@@ -14,15 +14,61 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.config.Configuration
-import org.epilink.bot.db.*
+import org.epilink.bot.db.BanLogic
+import org.epilink.bot.db.BanLogicImpl
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.GdprReport
+import org.epilink.bot.db.GdprReportImpl
+import org.epilink.bot.db.IdentityManager
+import org.epilink.bot.db.IdentityManagerImpl
+import org.epilink.bot.db.PermissionChecks
+import org.epilink.bot.db.PermissionChecksImpl
+import org.epilink.bot.db.UnlinkCooldown
+import org.epilink.bot.db.UnlinkCooldownImpl
+import org.epilink.bot.db.UserCreator
+import org.epilink.bot.db.UserCreatorImpl
 import org.epilink.bot.db.exposed.SQLiteExposedFacadeImpl
-import org.epilink.bot.discord.*
+import org.epilink.bot.discord.BanManager
+import org.epilink.bot.discord.BanManagerImpl
+import org.epilink.bot.discord.Command
+import org.epilink.bot.discord.Discord4JFacadeImpl
+import org.epilink.bot.discord.DiscordClientFacade
+import org.epilink.bot.discord.DiscordCommands
+import org.epilink.bot.discord.DiscordCommandsImpl
+import org.epilink.bot.discord.DiscordMessageSender
+import org.epilink.bot.discord.DiscordMessageSenderImpl
+import org.epilink.bot.discord.DiscordMessages
+import org.epilink.bot.discord.DiscordMessagesI18n
+import org.epilink.bot.discord.DiscordMessagesI18nImpl
+import org.epilink.bot.discord.DiscordMessagesImpl
+import org.epilink.bot.discord.DiscordTargets
+import org.epilink.bot.discord.DiscordTargetsImpl
+import org.epilink.bot.discord.RoleManager
+import org.epilink.bot.discord.RoleManagerImpl
 import org.epilink.bot.discord.cmd.CountCommand
 import org.epilink.bot.discord.cmd.HelpCommand
 import org.epilink.bot.discord.cmd.LangCommand
 import org.epilink.bot.discord.cmd.UpdateCommand
-import org.epilink.bot.http.*
-import org.epilink.bot.http.endpoints.*
+import org.epilink.bot.http.BackEnd
+import org.epilink.bot.http.BackEndImpl
+import org.epilink.bot.http.DiscordBackEnd
+import org.epilink.bot.http.FrontEndHandler
+import org.epilink.bot.http.FrontEndHandlerImpl
+import org.epilink.bot.http.HttpServer
+import org.epilink.bot.http.HttpServerImpl
+import org.epilink.bot.http.IdentityProvider
+import org.epilink.bot.http.IdentityProviderMetadata
+import org.epilink.bot.http.JwtVerifier
+import org.epilink.bot.http.SessionChecker
+import org.epilink.bot.http.SessionCheckerImpl
+import org.epilink.bot.http.endpoints.AdminEndpoints
+import org.epilink.bot.http.endpoints.AdminEndpointsImpl
+import org.epilink.bot.http.endpoints.MetaApi
+import org.epilink.bot.http.endpoints.MetaApiImpl
+import org.epilink.bot.http.endpoints.RegistrationApi
+import org.epilink.bot.http.endpoints.RegistrationApiImpl
+import org.epilink.bot.http.endpoints.UserApi
+import org.epilink.bot.http.endpoints.UserApiImpl
 import org.epilink.bot.rulebook.Rulebook
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
@@ -37,6 +83,7 @@ import kotlin.system.measureTimeMillis
  * references to things like the Discord client, the Database environment, the
  * server, etc.
  */
+@Suppress("LongParameterList") // All parameters are required
 class ServerEnvironment(
     private val cfg: Configuration,
     private val legal: LegalTexts,
@@ -180,7 +227,7 @@ class ServerEnvironment(
         }
 
         logger.debug { "Starting components" }
-        try {
+        runCatching {
             runBlocking {
                 coroutineScope {
                     launch {
@@ -205,9 +252,8 @@ class ServerEnvironment(
             }
             logger.debug { "Starting server" }
             app.koin.get<HttpServer>().startServer(wait = true)
-        } catch (ex: Exception) {
-            logger.error("Encountered an exception on initialization", ex)
-            return
+        }.onFailure {
+            logger.error("Encountered an exception on initialization", it)
         }
     }
 }

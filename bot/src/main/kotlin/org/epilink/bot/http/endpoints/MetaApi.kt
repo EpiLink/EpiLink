@@ -8,15 +8,26 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.*
-import io.ktor.http.*
+import io.ktor.application.call
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.http.content.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import org.epilink.bot.*
+import io.ktor.http.content.ByteArrayContent
+import io.ktor.http.content.OutgoingContent
+import io.ktor.http.content.TextContent
+import io.ktor.response.respond
+import io.ktor.response.respondBytes
+import io.ktor.response.respondRedirect
+import io.ktor.routing.Route
+import io.ktor.routing.get
+import org.epilink.bot.Assets
+import org.epilink.bot.LegalText
+import org.epilink.bot.LegalTexts
+import org.epilink.bot.ResourceAsset
+import org.epilink.bot.ServerEnvironment
+import org.epilink.bot.asUrl
 import org.epilink.bot.config.IdentityProviderConfiguration
 import org.epilink.bot.config.WebServerConfiguration
+import org.epilink.bot.debug
 import org.epilink.bot.http.ApiEndpoint
 import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.DiscordBackEnd

@@ -8,13 +8,23 @@
  */
 package org.epilink.bot.http
 
-import io.ktor.application.*
-import io.ktor.features.*
-import io.ktor.http.*
-import io.ktor.http.content.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.features.CORS
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.resolveResource
+import io.ktor.http.defaultForFileExtension
+import io.ktor.request.path
+import io.ktor.request.queryString
+import io.ktor.request.uri
+import io.ktor.response.respond
+import io.ktor.response.respondRedirect
+import io.ktor.routing.get
+import io.ktor.routing.routing
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.debug
 import org.epilink.bot.trace
@@ -69,7 +79,6 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
 
     override fun Application.install() {
         val frontUrl = wsCfg.frontendUrl
-        val whitelist = wsCfg.corsWhitelist
         routing {
             get("/{...}") {
                 when {
@@ -80,7 +89,6 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
                     frontUrl == null -> {
                         logger.warn("Not serving bootstrapped front-end (none found and frontUrl was null)")
                         call.respond(HttpStatusCode.NotFound)
-
                     }
                     else -> {
                         logger.debug("Serving front-end as a redirection")
@@ -93,6 +101,12 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
                 }
             }
         }
+        setupCors()
+    }
+
+    private fun Application.setupCors() {
+        val whitelist = wsCfg.corsWhitelist
+        val frontUrl = wsCfg.frontendUrl
         when {
             whitelist.isNotEmpty() -> {
                 logger.warn("CORS is enabled because a non-empty corsWhitelist is present.")
@@ -100,7 +114,9 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
                     applyCorsOptions()
 
                     if (whitelist.contains("*")) {
-                        logger.warn("Whitelist contains '*' entry, CORS will allow all hosts. DO NOT DO THIS IN PRODUCTION!")
+                        logger.warn(
+                            "Whitelist contains '*' entry, CORS will allow all hosts. DO NOT DO THIS IN PRODUCTION!"
+                        )
                         anyHost()
                     } else {
                         whitelist.forEach { x ->
@@ -121,7 +137,10 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
                 logger.debug("CORS is disabled because the integrated front end is being served.")
             }
             frontUrl == null -> {
-                logger.warn("CORS is disabled. Web browsers may deny calls to the back-end. Specify the front-end URL in the configuration files to fix this.")
+                logger.warn(
+                    "CORS is disabled. Web browsers may deny calls to the back-end. Specify the front-end " +
+                            "URL in the configuration files to fix this."
+                )
             }
             else -> {
                 logger.debug("CORS is enabled.")
@@ -161,10 +180,10 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
         logger.trace { "Responding to ${request.uri} with bootstrapped" }
         // The path (without the initial /)
         val path = request.path().substring(1)
-        if (path.isEmpty())
-        // Request on /, respond with the index
+        if (path.isEmpty()) {
+            // Request on /, respond with the index
             respondDefaultFrontEnd()
-        else {
+        } else {
             logger.trace { "Attempting to resolve resource $path" }
             // Request somewhere else: is it something in the frontend?
             val f = resolveResource(path, "frontend")

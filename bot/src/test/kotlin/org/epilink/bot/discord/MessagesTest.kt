@@ -11,14 +11,14 @@ package org.epilink.bot.discord
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.EpiLinkException
-import org.epilink.bot.web.declareNoOpI18n
+import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.DiscordServerSpec
 import org.epilink.bot.config.PrivacyConfiguration
 import org.epilink.bot.defaultMock
 import org.epilink.bot.mockHere
+import org.epilink.bot.web.declareNoOpI18n
 import org.koin.dsl.module
 import org.koin.test.get
 import java.time.Duration
@@ -202,7 +202,7 @@ class MessagesTest : KoinBaseTest<DiscordMessages>(
         }
         test {
             val embed =
-                getErrorCommandReply("", "kkk", titleObjects = listOf("to1", "to2"), objects = arrayOf("obj1", "obj2"))
+                getErrorCommandReply("", "kkk", titleObjects = listOf("to1", "to2"), objects = listOf("obj1", "obj2"))
             assertEquals("#8A0303", embed.color)
             assertEquals("title::to1::to2", embed.title)
             assertEquals("desc::obj1::obj2", embed.description)

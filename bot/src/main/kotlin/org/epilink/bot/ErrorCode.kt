@@ -40,9 +40,9 @@ fun ErrorCode.toResponse() = ApiErrorResponse(description, "err.$code", mapOf(),
  */
 fun ErrorCode.toResponse(
     description: String,
-    description_i18n: String,
-    description_i18n_data: Map<String, String> = mapOf()
-) = ApiErrorResponse(description, description_i18n, description_i18n_data, toErrorData())
+    descriptionI18n: String,
+    descriptionI18nData: Map<String, String> = mapOf()
+) = ApiErrorResponse(description, descriptionI18n, descriptionI18nData, toErrorData())
 
 /**
  * Standard error codes of the EpiLink API.
@@ -50,6 +50,7 @@ fun ErrorCode.toResponse(
  * @property code The integer code associated with this error code
  * @property description A human-readable description of this error code.
  */
+@Suppress("MagicNumber") // This is the definition for codes, so replacing them by constants doesn't matter
 enum class StandardErrorCodes(override val code: Int, override val description: String) : ErrorCode {
     // Special
 
@@ -96,7 +97,8 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     IdentityAlreadyKnown(110, "The identity of this account is already registered in the database"),
 
     /**
-     *  This account's identity cannot be removed, because it is not present in the database (for the `/user/identity` endpoint)
+     *  This account's identity cannot be removed, because it is not present in the database (for the `/user/identity`
+     *  endpoint)
      */
     IdentityAlreadyUnknown(111, "The identity of this account already does not exist in the database"),
 
@@ -108,7 +110,10 @@ enum class StandardErrorCodes(override val code: Int, override val description: 
     /**
      * This account's identity cannot be removed because it is on cooldown to prevent abuse.
      */
-    IdentityRemovalOnCooldown(113, "This account's identity cannot be removed at this time: please wait before retrying."),
+    IdentityRemovalOnCooldown(
+        113,
+        "This account's identity cannot be removed at this time: please wait before retrying."
+    ),
 
     // ************ 2xx: External services errors ************
     /**

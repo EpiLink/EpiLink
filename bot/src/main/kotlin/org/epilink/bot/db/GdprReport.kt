@@ -64,6 +64,7 @@ internal class GdprReportImpl : GdprReport, KoinComponent {
     private val env: ServerEnvironment by inject()
     private val idpCfg: IdentityProviderConfiguration by inject()
 
+    @Suppress("MaxLineLength")
     override suspend fun getFullReport(user: User, requester: String): String =
         """
         |# ${env.name} GDPR report for user ${user.discordId}
@@ -137,6 +138,7 @@ internal class GdprReportImpl : GdprReport, KoinComponent {
         |${makeBansList(user) ?: "No known bans."}
         """.trimMargin()
 
+    @Suppress("MaxLineLength")
     private suspend fun makeBansList(user: User): String? {
         val bans = dbf.getBansFor(user.idpIdHash)
         return if (bans.isEmpty()) {
@@ -190,5 +192,4 @@ internal class GdprReportImpl : GdprReport, KoinComponent {
             |Language preference: $language
         """.trimMargin()
     }
-
 }

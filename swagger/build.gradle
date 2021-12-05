@@ -3,11 +3,11 @@ plugins {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
-    swaggerUI "org.webjars:swagger-ui:$swaggerUiVersion"
+    swaggerUI libs.swaggerUi
 }
 
 swaggerSources {

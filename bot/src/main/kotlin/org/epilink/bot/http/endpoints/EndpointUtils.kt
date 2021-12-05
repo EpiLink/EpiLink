@@ -9,9 +9,10 @@
 package org.epilink.bot.http.endpoints
 
 import guru.zoroark.ratelimit.rateLimited
-import io.ktor.application.*
-import io.ktor.routing.*
-import io.ktor.util.pipeline.*
+import io.ktor.application.ApplicationCall
+import io.ktor.routing.Route
+import io.ktor.routing.route
+import io.ktor.util.pipeline.ContextDsl
 import java.time.Duration
 
 /**
@@ -24,12 +25,13 @@ fun Route.limited(
 ): Route =
     if (limit < 0) {
         apply { callback() }
-    } else
+    } else {
         rateLimited(
             limit.toLong(),
             Duration.ofMinutes(1L),
             additionalKeyExtractor, callback
         )
+    }
 
 /**
  * Equivalent to

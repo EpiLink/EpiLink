@@ -10,9 +10,6 @@ package org.epilink.bot.rulebook
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.slf4j.LoggerFactory
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
@@ -20,8 +17,11 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.utils.io.core.*
-import java.util.*
+import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
+import java.util.Base64
 
 /*
  * Utility functions for use within a Rulebook
@@ -76,7 +76,7 @@ suspend fun <T> httpGetJson(url: String, auth: Auth?, responseType: TypeReferenc
         client.get<String>(url) {
             header(HttpHeaders.Accept, ContentType.Application.Json)
 
-            when(auth) {
+            when (auth) {
                 is Bearer -> header(HttpHeaders.Authorization, "Bearer ${auth.token}")
                 is Basic -> {
                     val credentials = "${auth.username}:${auth.password}"
@@ -84,6 +84,7 @@ suspend fun <T> httpGetJson(url: String, auth: Auth?, responseType: TypeReferenc
 
                     header(HttpHeaders.Authorization, "Basic $encoded")
                 }
+                null -> { /* No headers required */ }
             }
         }
     }.getOrElse {

@@ -12,7 +12,7 @@ import org.epilink.bot.config.ContactInformation
 import org.epilink.bot.config.FooterUrl
 
 // See the Api.md documentation file for more information
-@Suppress("KDocMissingDocumentation")
+@Suppress("KDocMissingDocumentation", "ConstructorParameterNaming")
 data class InstanceInformation(
     val title: String,
     val logo: String?,

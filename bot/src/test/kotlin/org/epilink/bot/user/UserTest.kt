@@ -20,10 +20,8 @@ import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.*
 import org.epilink.bot.*
-import org.epilink.bot.web.*
-import org.epilink.bot.web.UnsafeTestSessionStorage
-import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.config.RateLimitingProfile
+import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.db.IdentityManager
 import org.epilink.bot.db.UsesTrueIdentity
@@ -34,6 +32,8 @@ import org.epilink.bot.http.data.IdAccessLogs
 import org.epilink.bot.http.endpoints.UserApi
 import org.epilink.bot.http.endpoints.UserApiImpl
 import org.epilink.bot.http.sessions.ConnectedSession
+import org.epilink.bot.web.*
+import org.epilink.bot.web.UnsafeTestSessionStorage
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -377,5 +377,4 @@ class UserTest : KoinBaseTest<Unit>(
                 get<UserApi>().install(this)
             }
         }, block)
-
 }

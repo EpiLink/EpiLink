@@ -11,6 +11,7 @@ package org.epilink.bot.web
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
@@ -183,11 +184,13 @@ class MetaTest : KoinBaseTest<Unit>(
             )
         }
         withTestEpiLink {
-            for ((assetUrl, asset) in listOf(
-                "logo" to assets.logo as ResourceAsset.File,
-                "background" to assets.background as ResourceAsset.File,
-                "idpLogo" to assets.idpLogo as ResourceAsset.File
-            )) {
+            for (
+                (assetUrl, asset) in listOf(
+                    "logo" to assets.logo as ResourceAsset.File,
+                    "background" to assets.background as ResourceAsset.File,
+                    "idpLogo" to assets.idpLogo as ResourceAsset.File
+                )
+            ) {
                 val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$assetUrl")
                 call.assertStatus(OK)
                 assertEquals(asset.contentType, call.response.contentType())
@@ -203,7 +206,7 @@ class MetaTest : KoinBaseTest<Unit>(
         withTestEpiLink {
             for (urlFragment in assetEndpoints) {
                 val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$urlFragment")
-                assertFalse(call.requestHandled)
+                call.assertStatus(NotFound)
             }
         }
     }

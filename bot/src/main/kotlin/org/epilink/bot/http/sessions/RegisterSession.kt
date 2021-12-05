@@ -11,7 +11,7 @@ package org.epilink.bot.http.sessions
 /**
  * Session object that contains information about a registration process
  */
-data class RegisterSession (
+data class RegisterSession(
     /**
      * The Identity Provider ID to be used
      */

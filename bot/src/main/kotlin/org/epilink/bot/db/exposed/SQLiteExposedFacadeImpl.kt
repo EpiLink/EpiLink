@@ -23,12 +23,16 @@ private const val BUSY_TIMEOUT_SQLITE = 60000
  */
 class SQLiteExposedFacadeImpl(db: String) : ExposedDatabaseFacade() {
     override val db = Database.connect(
-        pooled(SQLiteDataSource(SQLiteConfig().apply {
-            // This configuration makes SQLite faster and/or less buggy in concurrent access scenarios
-            busyTimeout = BUSY_TIMEOUT_SQLITE
-            setSharedCache(true)
-            setJournalMode(SQLiteConfig.JournalMode.WAL)
-        }).apply { url = "jdbc:sqlite:$db" })
+        pooled(
+            SQLiteDataSource(
+                SQLiteConfig().apply {
+                    // This configuration makes SQLite faster and/or less buggy in concurrent access scenarios
+                    busyTimeout = BUSY_TIMEOUT_SQLITE
+                    setSharedCache(true)
+                    setJournalMode(SQLiteConfig.JournalMode.WAL)
+                }
+            ).apply { url = "jdbc:sqlite:$db" }
+        )
     ).apply {
         // Required for SQLite
         transactionManager.defaultIsolationLevel =

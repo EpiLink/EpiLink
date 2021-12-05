@@ -125,7 +125,6 @@ class PermissionChecksTest : KoinBaseTest<PermissionChecks>(
         }
     }
 
-
     @Test
     fun `Test indefinitely banned user cannot join servers`() {
         val hey = "tested".sha256()
@@ -136,10 +135,12 @@ class PermissionChecksTest : KoinBaseTest<PermissionChecks>(
             every { isBanActive(any()) } returns true
         }
         test {
-            val adv = canUserJoinServers(mockk {
-                every { idpIdHash } returns hey
-                every { discordId } returns "banneduid"
-            })
+            val adv = canUserJoinServers(
+                mockk {
+                    every { idpIdHash } returns hey
+                    every { discordId } returns "banneduid"
+                }
+            )
             assertTrue(adv is Disallowed, "Expected disallowed")
             assertTrue(adv.reason.contains("HELLO THERE"), "Expected ban reason to be present")
         }

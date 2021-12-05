@@ -27,7 +27,7 @@ import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.run
 import org.slf4j.LoggerFactory
 import java.time.Duration
-import java.util.*
+import java.util.Base64
 
 /**
  * An implementation of a cache client for use with a Redis server.
@@ -80,7 +80,6 @@ private class RedisSessionStorage(
     private val b64enc = Base64.getEncoder()
     private val b64dec = Base64.getDecoder()
 
-
     private fun buildKey(id: String) = "$prefix$id"
     private fun String.decodeBase64(): ByteArray = b64dec.decode(this)
     private fun ByteArray.encodeBase64(): String = b64enc.encodeToString(this)
@@ -90,8 +89,9 @@ private class RedisSessionStorage(
         return redis.get(key).awaitSingle()?.decodeBase64()?.also {
             // Refresh TTL
             val success = redis.expire(key, ttlSeconds).awaitSingle()
-            if (!success)
+            if (!success) {
                 logger.warn("Failed to set TTL for session $key")
+            }
         }
     }
 
@@ -196,6 +196,7 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
         redis.del(key).awaitSingle()
         // If roles were returned, add them to the key. Otherwise, use the special `_none` as the only element
         val valueToCache = roles.ifEmpty { listOf(StandardRoles.None.roleName) }
+        @Suppress("SpreadOperator") // No other choice here
         redis.sadd(key, *valueToCache.toTypedArray()).awaitSingle()
         redis.expire(key, cacheDuration.toSeconds()).awaitSingle().also {
             if (!it) {
@@ -205,8 +206,9 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
     }
 
     private suspend fun getCachedRoles(rule: Rule, discordId: String): List<String>? {
-        if (rule.cacheDuration == null)
+        if (rule.cacheDuration == null) {
             return null
+        }
         val key = buildKey(rule.name, discordId)
         return if (!cacheExists(key)) {
             logger.debug { "No known cache for $key" }
@@ -260,9 +262,9 @@ class RedisUnlinkCooldownStorage(
     }
 
     override suspend fun refreshCooldown(userId: String, seconds: Long) {
-        if (seconds <= 0)
+        if (seconds <= 0) {
             redis.del(buildKey(userId)).awaitSingle()
-        else {
+        } else {
             redis.setnx(buildKey(userId), "true").awaitSingle()
             redis.expire(buildKey(userId), seconds).awaitSingle()
         }
