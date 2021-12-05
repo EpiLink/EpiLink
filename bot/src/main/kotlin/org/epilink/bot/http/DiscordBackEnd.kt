@@ -18,8 +18,9 @@ import io.ktor.client.request.post
 import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
+import io.ktor.http.parametersOf
+import io.ktor.http.plus
 import org.epilink.bot.EndpointException
 import org.epilink.bot.InternalEndpointException
 import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
@@ -43,14 +44,13 @@ class DiscordBackEnd(
 
     private val client: HttpClient by inject()
 
-    private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" +
-        listOf(
-            "response_type=code",
-            "client_id=$clientId",
-            // Allows access to user information (w/o email address)
-            "scope=identify",
-            "prompt=consent"
-        ).joinToString("&")
+    private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" + listOf(
+        "response_type=code",
+        "client_id=$clientId",
+        // Allows access to user information (w/o email address)
+        "scope=identify",
+        "prompt=consent"
+    ).joinToString("&")
 
     /**
      * Consume the authcode and return a token.
@@ -65,13 +65,9 @@ class DiscordBackEnd(
         val res = runCatching {
             client.post<String>("https://discord.com/api/v6/oauth2/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
-                body = TextContent(
-                    ParametersBuilder().apply {
-                        appendOauthParameters(clientId, secret, authcode, redirectUri)
-                        append("scope", "identify")
-                    }.build().formUrlEncode(),
-                    ContentType.Application.FormUrlEncoded
-                )
+                val parameters = createOauthParameters(clientId, secret, authcode, redirectUri) +
+                    parametersOf("scope", "identify")
+                body = TextContent(parameters.formUrlEncode(), ContentType.Application.FormUrlEncoded)
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
@@ -96,7 +92,7 @@ class DiscordBackEnd(
         val error = data["error"] as? String
         val isCodeError =
             error == "invalid_grant" ||
-                    (data["error_description"] as? String)?.contains("Invalid \"code\"") ?: false
+                (data["error_description"] as? String)?.contains("Invalid \"code\"") ?: false
         if (isCodeError) {
             throw UserEndpointException(InvalidAuthCode, "Invalid authorization code", "oa.iac", cause = ex)
         } else {

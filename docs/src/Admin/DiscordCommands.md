@@ -8,10 +8,10 @@ This page describes the Discord commands that are available in EpiLink.
 
 In order to be able to use admin commands, you must:
 
-- Be an [admin](MaintainerGuide.md#general-settings) in the config file
+- Be an [admin](Admin/Configuration.md#general-settings) in the config file
 - Be registered in EpiLink with your identity recorded
 - Use the prefix you set in the config file (`e!` by default, e.g. `e!update`)
-- The server you're running the command on must be [monitored](MaintainerGuide.md#discord-configuration), i.e. it must be configured in EpiLink's config file.
+- The server you're running the command on must be [monitored](Admin/Configuration.md#discord-configuration), i.e. it must be configured in EpiLink's config file.
 
 Some commands have less strict requirements. For example, non-admin commands can be used for general actions that can benefit anyone.
 

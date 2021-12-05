@@ -27,6 +27,8 @@ import org.epilink.bot.http.SessionCheckerImpl
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.userObjAttribute
 import org.epilink.bot.mockHere
+import org.koin.core.KoinExperimentalAPI
+import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.get
 import org.koin.dsl.module
 import kotlin.test.Test
@@ -34,6 +36,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@OptIn(KoinApiExtension::class)
 class SessionChecksTest : KoinBaseTest<SessionChecker>(
     SessionChecker::class,
     module {

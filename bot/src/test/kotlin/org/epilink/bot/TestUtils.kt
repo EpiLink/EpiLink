@@ -26,6 +26,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import org.epilink.bot.config.*
 import org.epilink.bot.discord.DiscordMessagesI18n
+import org.koin.core.component.KoinApiExtension
 import org.koin.test.KoinTest
 import org.koin.test.mock.declare
 import java.nio.charset.StandardCharsets
@@ -79,6 +80,7 @@ fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
     assertEquals(status, actual, "Expected status $status, but got $actual instead")
 }
 
+@OptIn(KoinApiExtension::class)
 inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T {
     if (getKoin().getOrNull<T>() != null) {
         error("Duplicate definition for ${T::class}. Use softMockHere or combine the definitions.")
@@ -90,6 +92,7 @@ inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): 
  * Similar to mockHere, but if an instance of T is already injected, apply the initializer to it instead of
  * replacing it
  */
+@OptIn(KoinApiExtension::class)
 inline fun <reified T : Any> KoinTest.softMockHere(crossinline initializer: T.() -> Unit): T {
     val injected = getKoin().getOrNull<T>()
     return injected?.apply(initializer) ?: mockHere(initializer)

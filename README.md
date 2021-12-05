@@ -10,13 +10,13 @@
 EpiLink is an account verification server, allowing you to link a Discord identity to any OpenID Provider (including Microsoft, Google...)
 identity.
 
-![Screenshot of the front-end](docs/img/front.png)
+![Screenshot of the front-end](docs/src/img/front.png)
 
 EpiLink is available under the Mozilla Public License 2.0 (no copyleft exception) `MPL-2.0-no-copyleft-exception` [(info)](LICENSE).
 
 ## Requirements
 
-- Java JDK >= 11, both for building and running. Do NOT use Oracle's JRE/JDK (licensing concerns), consider using AdoptOpenJDK instead.
+- Java JDK >= 17, both for building and running. Do NOT use Oracle's JRE/JDK (licensing concerns), consider using [Eclipse Temurin](https://adoptium.net/) instead.
 
 (NPM and Gradle are downloaded automatically if you don't have them installed on your system)
 

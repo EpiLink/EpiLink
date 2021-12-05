@@ -15,23 +15,23 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.ParametersBuilder
+import io.ktor.http.parametersOf
 
 /**
- * Utility function for appending classic OAuth parameters to a ParametersBuilder object all at once.
+ * Utility function for creating classic OAuth parameters as a Parameters object
  */
-fun ParametersBuilder.appendOauthParameters(
+fun createOauthParameters(
     clientId: String,
     secret: String,
     authcode: String,
     redirectUri: String
-) {
-    append("grant_type", "authorization_code")
-    append("client_id", clientId)
-    append("client_secret", secret)
-    append("code", authcode)
-    append("redirect_uri", redirectUri)
-}
+) = parametersOf(
+    "grant_type" to listOf("authorization_code"),
+    "client_id" to listOf(clientId),
+    "client_secret" to listOf(secret),
+    "code" to listOf(authcode),
+    "redirect_uri" to listOf(redirectUri),
+)
 
 /**
  * Utility function for performing a GET on the given url (with the given bearer as the "Authorization: Bearer" header),

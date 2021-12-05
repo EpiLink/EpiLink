@@ -23,7 +23,7 @@ servers:
   - url: "{protocol}://{backendHost}/api/v1"
     variables:
       backendHost:
-        default: my.epilinkinstance.org
+        default: my.epilinkinstance.example.org
         description: The host name for your EpiLink instance
       protocol:
         enum:

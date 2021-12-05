@@ -16,7 +16,7 @@ data class UserInformation(
     val discordId: String,
     val username: String,
     val avatarUrl: String?,
-    @UsesTrueIdentity
+    @property:UsesTrueIdentity
     val identifiable: Boolean,
     val privileged: Boolean
 )

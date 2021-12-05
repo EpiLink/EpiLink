@@ -32,11 +32,14 @@ import org.epilink.bot.http.endpoints.AdminEndpoints
 import org.epilink.bot.http.endpoints.MetaApi
 import org.epilink.bot.http.endpoints.RegistrationApi
 import org.epilink.bot.http.endpoints.UserApi
+import org.koin.core.KoinExperimentalAPI
+import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.get
 import org.koin.dsl.module
 import org.koin.test.mock.declare
 import kotlin.test.*
 
+@OptIn(KoinApiExtension::class)
 class BackEndTest : KoinBaseTest<Unit>(
     Unit::class,
     module {

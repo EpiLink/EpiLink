@@ -1,0 +1,12 @@
+// Conventions that apply to all modules (including non-code modules) within EpiLink.
+
+plugins {
+    id 'com.github.ben-manes.versions'
+    id 'com.github.hierynomus.license'
+}
+
+version = rootProject.version
+
+license {
+    header rootProject.file("LHEADER")
+}

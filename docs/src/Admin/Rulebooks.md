@@ -12,7 +12,7 @@ An example is: I know that the user's email address is `ab@c.de`, and I want to 
 
 You can either put your rulebook directly in the configuration file, or in a separate file. The file extension for rulebooks is `.rule.kts` (e.g. your file could be named `epilink.rule.kts`).
 
-See [the rulebooks section of the Maintainer Guide](MaintainerGuide.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is.
+See [the rulebooks section of the Maintainer Guide](Admin/Configuration.md#rulebook-configuration) to learn how to tell EpiLink where your rulebook is.
 
 ### Privacy
 
@@ -22,7 +22,7 @@ You should make these points clear to your users.
 
 ### Testing your rulebook
 
-You can test your rulebook using [IRT](IRT.md), the Interactive Rule Tester.
+You can test your rulebook using [IRT](Admin/IRT.md), the Interactive Rule Tester.
 
 TL;DR, launch EpiLink with the `-t` flag and pass a rulebook file instead of a config file. EpiLink will launch in a special mode (IRT) which gives you a shell in which you can test your rulebook.
 
@@ -98,7 +98,7 @@ In the example above, two rules are defined, `StartsWithZ` as a weak identity ru
 
 Strong identity rules are skipped for users who chose not to have their identity kept by EpiLink.
 
-!> **Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](MaintainerGuide.md#privacy-configuration).
+!> **Strong identity rules may send an identity access notification, and always log the access as an automated identity access.** Whether they actually send a notification or not is defined in the [privacy settings of the main config file](Admin/Configuration.md#privacy-configuration).
 
 ### Accessing information
 
@@ -162,7 +162,7 @@ discord:
 ```
 
 * EpiLink detects that `MyRule` is required by the server (from the server's config). **This rule gets executed as part of the role refresh process, regardless of whether Jake chose to keep his identity in the system or not.**
-* EpiLink detects that `OtherRule`, a strong-identity rule, is required by the server (from the server's config). **This rule gets executed as part of the role refresh process ONLY IF Jake chose to keep his identity in the system.** This also generates an identity access, and the user may get notified depending on the [privacy configuration](MaintainerGuide.md#privacy-configuration). Otherwise, the rule is simply ignored and the role is not applied.
+* EpiLink detects that `OtherRule`, a strong-identity rule, is required by the server (from the server's config). **This rule gets executed as part of the role refresh process ONLY IF Jake chose to keep his identity in the system.** This also generates an identity access, and the user may get notified depending on the [privacy configuration](Admin/MaintainerGuide.md#privacy-configuration). Otherwise, the rule is simply ignored and the role is not applied.
 * `ThirdRule` is not specified in the server's `requires` field. It is therefore not executed.
 
 ### Reserved rule names
@@ -250,7 +250,7 @@ The minimum is 1 second.
 
 #### Redis & caching
 
-!> **Caching requires a Redis server.** Rules will NOT be cached if you are not [using a redis server](MaintainerGuide.md#general-settings).
+!> **Caching requires a Redis server.** Rules will NOT be cached if you are not [using a redis server](Admin/Configuration.md#general-settings).
 
 EpiLink relies on Redis' `EXPIRES` command.
 

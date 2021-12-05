@@ -1,5 +1,12 @@
 plugins {
-    id 'org.hidetake.swagger.generator' version "$swaggerGeneratorVersion"
+    id 'org.hidetake.swagger.generator'
+}
+
+configurations {
+    swagger {
+        canBeConsumed = true
+        canBeResolved = false
+    }
 }
 
 repositories {
@@ -25,4 +32,12 @@ swaggerSources {
     }
 }
 
-tasks.generateSwaggerUIEpilink.inputs.file("index.html")
+artifacts {
+    swagger(generateSwaggerUIEpilink.outputDir) {
+        builtBy(generateSwaggerUIEpilink)
+    }
+}
+
+// Properly rebuild when the index.html/epilink.yaml changes
+// TODO epilink.yaml may not be necessary here
+tasks.generateSwaggerUIEpilink.inputs.files("index.html", "epilink.yaml")

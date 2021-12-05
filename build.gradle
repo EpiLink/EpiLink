@@ -1,39 +1,8 @@
 plugins {
-    id "com.github.hierynomus.license" version "$licenseVersion" apply false
-    id "com.github.ben-manes.versions" version "$versionsVersion"
-    id "distribution"
+    id "com.github.ben-manes.versions"
 }
 
-allprojects {
-    version = "0.7.0-SNAPSHOT"
-}
-
-task generateDocs {
-    dependsOn('copyDocs', 'copySwagger')
-}
-
-def needExpansion = [ "_coverpage.md" ]
-
-task copyDocs(type: Copy) {
-    from 'docs'
-    into layout.buildDirectory.dir("docs")
-    def template = [version: project.version]
-    filesMatching(needExpansion) {
-        expand template
-    }
-}
-
-task copySwagger(type: Copy) {
-    dependsOn(':swagger:generateSwaggerUIEpilink')
-    from project(":swagger").layout.buildDirectory.dir("swagger-ui-epilink")
-    exclude 'META-INF'
-    into layout.buildDirectory.dir("docs/swagger")
-}
-
-/* ############################################################
- * ################# Versions plugin settings #################
- * ############################################################
- */
+version = "0.7.0-SNAPSHOT"
 
 // Versions config for the Gradle versions plugin, from the readme
 // https://github.com/ben-manes/gradle-versions-plugin

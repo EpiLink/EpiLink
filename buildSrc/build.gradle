@@ -1,0 +1,25 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+repositories {
+    gradlePluginPortal()
+}
+
+dependencies {
+    def libs = [
+            libs.plugins.kotlin.jvm,
+            libs.plugins.detekt,
+            libs.plugins.license,
+            libs.plugins.versions,
+            libs.plugins.swaggerGenerator,
+            libs.plugins.node
+    ]
+
+    for (lib in libs) {
+        def actualLib = lib.get()
+        implementation(group: actualLib.getPluginId(), name: actualLib.getPluginId() + ".gradle.plugin", version: actualLib.getVersion())
+    }
+}
+
+

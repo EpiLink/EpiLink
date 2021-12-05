@@ -10,6 +10,7 @@ package org.epilink.bot.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.epilink.bot.CliArgs
 import org.epilink.bot.rulebook.Rulebook
@@ -83,7 +84,16 @@ data class Configuration(
 fun DiscordConfiguration.isMonitored(guildId: String): Boolean = servers.any { it.id == guildId }
 
 private val yamlKotlinMapper = ObjectMapper(YAMLFactory()).apply {
-    registerModule(KotlinModule())
+    registerModule(
+        // TODO evaluate if these defaults are OK or if they're worth modifying
+        KotlinModule.Builder()
+            .configure(KotlinFeature.NullToEmptyCollection, false)
+            .configure(KotlinFeature.NullToEmptyMap, false)
+            .configure(KotlinFeature.NullIsSameAsDefault, false)
+            .configure(KotlinFeature.SingletonSupport, false)
+            .configure(KotlinFeature.StrictNullChecks, false)
+            .build()
+    )
 }
 
 /**
@@ -107,7 +117,7 @@ fun Configuration.isConfigurationSane(
     if (redis == null) {
         report += ConfigWarning(
             "No Redis URI provided: Redis is disabled, using in-memory instead. ONLY LEAVE REDIS " +
-                    "DISABLED FOR DEVELOPMENT PURPOSES!"
+                "DISABLED FOR DEVELOPMENT PURPOSES!"
         )
     }
     report += server.check()

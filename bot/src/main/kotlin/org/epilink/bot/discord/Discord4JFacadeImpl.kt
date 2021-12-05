@@ -6,6 +6,9 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
+
+@file:Suppress("ImportOrdering") // TODO ktlint fails shere for some obscure reason
+
 package org.epilink.bot.discord
 
 import discord4j.common.util.Snowflake
@@ -19,9 +22,9 @@ import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
-import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Permission
+import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +42,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
-import kotlin.reflect.KClass
 
 /**
  * Implementation of a Discord client facade that uses Discord4J
@@ -74,7 +76,7 @@ internal class Discord4JFacadeImpl(
         get() = cclient ?: error("Discord client uninitialized")
 
     override suspend fun sendDirectMessage(discordId: String, embed: DiscordEmbed) {
-        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle()) { from(embed) }
+        sendDirectMessage(client.getUserById(Snowflake.of(discordId)).awaitSingle(), embed)
     }
 
     override suspend fun sendChannelMessage(channelId: String, embed: DiscordEmbed): String {
@@ -82,18 +84,18 @@ internal class Discord4JFacadeImpl(
             client.getChannelById(Snowflake.of(channelId)).awaitSingle() as? MessageChannel
                 ?: error("Not a message channel")
         sendWelcomeMessageIfEmptyDmChannel(channel)
-        return channel.createEmbed { it.from(embed) }.awaitSingle().id.asString()
+        return channel.createMessage(embed.toDiscord4J()).awaitSingle().id.asString()
     }
 
     private suspend inline fun sendWelcomeMessageIfEmptyDmChannel(channel: MessageChannel) {
         if (channel is PrivateChannel && channel.lastMessageId.isEmpty) {
-            channel.createEmbed { it.from(messages.getWelcomeChooseLanguageEmbed()) }.awaitSingle()
+            channel.createMessage(messages.getWelcomeChooseLanguageEmbed().toDiscord4J()).awaitSingle()
         }
     }
 
-    private suspend fun sendDirectMessage(discordUser: User, embed: EmbedCreateSpec.() -> Unit) =
+    private suspend fun sendDirectMessage(discordUser: User, embed: DiscordEmbed) =
         discordUser.getCheckedPrivateChannel().also { sendWelcomeMessageIfEmptyDmChannel(it) }
-            .createEmbed(embed).awaitSingle()
+            .createMessage(embed.toDiscord4J()).awaitSingle()
 
     override suspend fun getGuilds(): List<String> =
         client.guilds.map { it.id.asString() }.collectList().awaitSingle()

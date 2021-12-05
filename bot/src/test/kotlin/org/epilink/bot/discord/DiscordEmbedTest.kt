@@ -92,7 +92,7 @@ class DiscordEmbedTest {
                 DiscordEmbedField(name = "Second field", value = "efgh", false)
             )
         )
-        EmbedCreateSpec().apply { from(embed) }.asRequest().let {
+        embed.toDiscord4J().asRequest().let {
             val fields = it.fields().get()
             assertEquals(2, fields.size)
             // Field 1
@@ -108,7 +108,7 @@ class DiscordEmbedTest {
     }
 
     private fun <T> embedFromAndTest(embed: DiscordEmbed, expected: T, actual: EmbedData.() -> T) =
-        EmbedCreateSpec().apply { from(embed) }.asRequest().let {
+        embed.toDiscord4J().asRequest().let {
             assertEquals(expected, actual(it))
         }
 }

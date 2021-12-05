@@ -1,0 +1,50 @@
+plugins {
+    id 'epilink.common-conventions'
+    id 'base' // Required for creating 'build' target dependencies
+}
+
+configurations {
+    servine
+    swagger
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://gitlab.com/api/v4/projects/29365238/packages/maven' }
+}
+
+dependencies {
+    servine 'guru.zoroark.servine:servine:0.0.2-SNAPSHOT'
+    swagger project(path: ":swagger", configuration: "swagger")
+}
+
+def needExpansion = [ "_coverpage.md" ]
+
+def docs = tasks.register("assembleDocs", Copy) {
+    from project.layout.projectDirectory.dir("src")
+    from(configurations.swagger) {
+        into "swagger"
+    }
+    into project.layout.buildDirectory.dir("docs")
+
+    exclude 'META-INF'
+
+    def template = [version: project.version]
+    filesMatching(needExpansion) {
+        expand template
+    }
+
+    inputs.property("project.version", project.version) // Rebuild when project version changes
+}
+
+tasks["build"].dependsOn docs
+
+def serve = tasks.register("serve", JavaExec) {
+    main = "guru.zoroark.servine.app.AppKt"
+    classpath = configurations.servine
+
+    def params = [project.layout.buildDirectory.dir("docs").get().toString()]
+    args(params)
+
+    dependsOn docs
+}

@@ -88,17 +88,18 @@ data class DiscordEmbed(
 /**
  * Apply the content of a [DiscordEmbed] into the passed [EmbedCreateSpec] object.
  */
-fun EmbedCreateSpec.from(e: DiscordEmbed) {
-    e.title?.let { setTitle(it) }
-    e.description?.let { setDescription(it) }
-    e.url?.let { setUrl(it) }
-    e.d4jColor?.let { setColor(it) }
-    e.footer?.let { setFooter(it.text, e.footer.iconUrl) }
-    e.image?.let { setImage(it) }
-    e.thumbnail?.let { setThumbnail(it) }
-    e.author?.let { setAuthor(it.name, it.url, it.iconUrl) }
-    e.fields.forEach { addField(it.name, it.value, it.inline) }
-}
+fun DiscordEmbed.toDiscord4J() =
+    EmbedCreateSpec.builder().apply {
+        title?.let { title(it) }
+        description?.let { description(it) }
+        url?.let { url(it) }
+        d4jColor?.let { color(it) }
+        footer?.let { footer(it.text, footer.iconUrl) }
+        image?.let { image(it) }
+        thumbnail?.let { thumbnail(it) }
+        author?.let { author(it.name, it.url, it.iconUrl) }
+        fields.forEach { addField(it.name, it.value, it.inline) }
+    }.build()
 
 /**
  * Information on the footer of an embed

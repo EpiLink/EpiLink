@@ -204,7 +204,7 @@ internal class DiscordCommandsImpl : DiscordCommands, KoinComponent {
                 a.command.run(message, a.commandBody, a.user, senderId, channelId, serverId).also {
                     logger.debug {
                         "Accepted command '$message' from $senderId @ channel $channelId server $serverId (command " +
-                                "name '${a.command.name}' body '${a.commandBody}')"
+                            "name '${a.command.name}' body '${a.commandBody}')"
                     }
                 }
             }
