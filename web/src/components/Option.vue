@@ -18,27 +18,25 @@
 </template>
 
 <script>
-    import LinkCheckbox from './Checkbox';
+    import LinkCheckbox from './Checkbox.vue';
 
     export default {
         name: 'link-option',
-        props: ['value'],
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
         components: { LinkCheckbox },
 
-        data() {
-            return {
-                data: this.value
+        computed: {
+            data: {
+                get() {
+                    return this.modelValue;
+                },
+                set(value) {
+                    this.$emit('update:modelValue', value);
+                }
             }
         },
-        watch: {
-            value(val) {
-                this.data = val;
-            },
-            data(val) {
-                this.$emit('input', val);
-            }
-        }
-    }
+    };
 </script>
 
 <style lang="scss">

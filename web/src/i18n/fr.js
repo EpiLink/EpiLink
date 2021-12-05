@@ -32,7 +32,7 @@ export default {
         connect: 'Se connecter via {provider}'
     },
     notFound: {
-        description: 'La page demandée n\'existe pas.'
+        description: "La page demandée n'existe pas."
     },
     redirect: {
         success: 'Connexion réussie',
@@ -41,8 +41,8 @@ export default {
     settings: {
         remember: 'Se souvenir de qui je suis (facultatif)',
 
-        iAcceptThe: 'J\'accepte les',
-        terms: 'conditions générales d\'utilisation',
+        iAcceptThe: "J'accepte les",
+        terms: "conditions générales d'utilisation",
         andThe: 'et la',
         policy: 'politique de confidentialité',
 
@@ -50,7 +50,7 @@ export default {
     },
     success: {
         created: 'Votre compte a été créé',
-        access: 'Vous recevrez l\'accès au(x) serveur(s) Discord sous peu, merci de patienter quelques minutes.',
+        access: "Vous recevrez l'accès au(x) serveur(s) Discord sous peu, merci de patienter quelques minutes.",
         close: 'Vous pouvez fermer cette fenêtre.',
         profile: 'Voir mon profil'
     },
@@ -62,7 +62,7 @@ export default {
         identityAccesses: 'Accès à votre identité',
         automatedAccess: 'Accès automatique',
         manualAccess: 'Accès manuel',
-        noAccess: 'Pas d\'accès enregistré',
+        noAccess: "Pas d'accès enregistré",
 
         save: 'Sauvegarder'
     },
@@ -74,7 +74,7 @@ export default {
     about: {
         sources: 'Sources originales',
         authors: 'Auteurs',
-        disclaimer: ['Pour toute question, merci de vous adresser en priorité aux mainteneurs de l\'instance', '.']
+        disclaimer: ["Pour toute question, merci de vous adresser en priorité aux mainteneurs de l'instance", '.']
     },
 
     layout: {
@@ -89,7 +89,7 @@ export default {
             settings: 'Paramètres',
             success: 'Terminé',
             profile: 'Profil',
-            tos: 'Conditions d\'utilisation',
+            tos: "Conditions d'utilisation",
             privacy: 'Confidentialité',
             instance: 'Instance',
             about: 'À Propos',
@@ -142,10 +142,10 @@ export default {
         },
         err: {
             '999': 'Une erreur inconnue est survenue.',
-            '101': 'La création de compte n\'est pas permise',
-            '102': 'Code d\'autorisation invalide',
-            '104': 'Ce compte n\'a pas d\'identifiant',
-            '105': 'Ce service est inconnu ou n\'existe pas',
+            '101': "La création de compte n'est pas permise",
+            '102': "Code d'autorisation invalide",
+            '104': "Ce compte n'a pas d'identifiant",
+            '105': "Ce service est inconnu ou n'existe pas",
             '110': "L'identité de ce compte est déjà connue dans la base de données.",
             '111': "L'identité de ce compte est déjà absente de la base de données.",
             '112': "L'identifiant du compte ne correspond pas au nouveau compte.",

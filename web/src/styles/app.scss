@@ -7,70 +7,72 @@
  * defined by the Mozilla Public License, v. 2.0.
  */
 @import url('https://use.typekit.net/qvu5xru.css');
+
 @import 'mixins';
+@import 'vars';
 
 html, body {
-  margin: 0;
-  padding: 0;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-  @include lato;
+    @include lato;
 
-  min-width: 100vw;
-  // min-height: 100vh;
+    min-width: 100vw;
+    // min-height: 100vh;
 
-  display: inline-block;
+    display: inline-block;
 
-  color: white;
+    color: white;
 
-  animation: bg-fade 0.25s ease 1 both;
+    animation: bg-fade 0.25s ease 1 both;
 
-  overflow-y: hidden;
+    overflow-y: hidden;
 }
 
 a {
-  transition: color 225ms;
-  cursor: pointer;
+    transition: color 225ms;
+    cursor: pointer;
 
-  &, &:visited {
-    color: black;
-    text-decoration: none;
-  }
+    &, &:visited {
+        color: black;
+        text-decoration: none;
+    }
 
-  &:hover {
-    color: #444;
-  }
+    &:hover {
+        color: #444;
+    }
 }
 
 .fade-enter-active, .fade-leave-active {
-  transition: opacity .2s;
+    transition: opacity $router-transitions-duration;
 }
 
 .fade-enter-active {
-  transition-delay: .2s;
+    transition-delay: $router-transitions-duration;
 }
 
-.fade-enter, .fade-leave-active {
-  opacity: 0;
+.fade-enter-from, .fade-leave-active {
+    opacity: 0;
 }
 
 @keyframes bg-fade {
-  0% {
-    background-color: white;
-  }
+    0% {
+        background-color: white;
+    }
 
-  100% {
-    background-color: #202427;
-  }
+    100% {
+        background-color: #202427;
+    }
 }
 
 @keyframes fade {
-  0% {
-    opacity: 0;
-  }
+    0% {
+        opacity: 0;
+    }
 
-  100% {
-    opacity: 1;
-  }
+    100% {
+        opacity: 1;
+    }
 }

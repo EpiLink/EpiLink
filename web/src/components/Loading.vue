@@ -18,7 +18,7 @@
 <script>
     export default {
         name: 'link-loading'
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

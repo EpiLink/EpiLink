@@ -14,8 +14,8 @@
         <div class="username">
             <span class="admin-badge" v-if="user.privileged">ADMIN</span>
             <span>
-                <span class="username-text">{{ user.username | nick }}</span>
-                <span class="tag">{{ user.username | tag }}</span>
+                <span class="username-text">{{ nick }}</span>
+                <span class="tag">{{ tag }}</span>
             </span>
         </div>
         <span class="email" v-if="user.email">{{ user.email }}</span>
@@ -28,16 +28,18 @@
     export default {
         name: 'link-user',
 
-        computed: mapState({ user: state => state.auth.user }),
-        filters: {
-            nick(s) {
-                return s.substring(0, s.indexOf('#'));
+        computed: {
+            ...mapState({ user: state => state.auth.user }),
+            nick() {
+                const { username } = this.user;
+                return username.substring(0, username.indexOf('#'));
             },
-            tag(s) {
-                return s.substring(s.indexOf('#'));
+            tag() {
+                const { username } = this.user;
+                return username.substring(username.indexOf('#'));
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

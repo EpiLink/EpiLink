@@ -26,7 +26,7 @@
                 this.enabled && this.$emit('action');
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

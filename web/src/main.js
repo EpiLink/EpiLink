@@ -6,7 +6,7 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-import Vue from 'vue';
+import { createApp } from 'vue';
 
 import router from './router';
 import store  from './store';
@@ -14,12 +14,10 @@ import i18n   from './i18n';
 
 import App from './App.vue';
 
-Vue.config.productionTip = false;
+const app = createApp(App);
 
-new Vue({
-    router,
-    store,
-    i18n,
+app.use(router);
+app.use(store);
+app.use(i18n);
 
-    render: h => h(App)
-}).$mount('#app');
+app.mount('body');

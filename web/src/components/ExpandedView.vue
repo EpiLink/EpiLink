@@ -24,7 +24,7 @@
         mounted() {
             setTimeout(() => this.$store.commit('setExpanded', true), 200);
         },
-        destroyed() {
+        unmounted() {
             this.hidden = true;
             setTimeout(() => this.$store.commit('setExpanded', false), 200);
         },
@@ -32,9 +32,9 @@
         data() {
             return {
                 hidden: false
-            }
+            };
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>
