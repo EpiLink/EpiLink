@@ -23,6 +23,8 @@
 <script>
     import { openPopup } from '../api';
 
+    import defaultLogo from '../../assets/logo.svg';
+
     export default {
         name: 'link-home',
 
@@ -34,7 +36,7 @@
         },
         computed: {
             logo() {
-                return this.$store.state.meta.logo || require("../../assets/logo.svg")
+                return this.$store.state.meta.logo || defaultLogo;
             }
         },
         methods: {

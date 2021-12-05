@@ -12,19 +12,21 @@
     <div id="app" :style="backgroundCss">
         <div id="main-view">
             <div id="content" :class="{ expanded }">
-                <transition name="fade" mode="out-in">
-                    <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
-                        <transition name="fade">
-                            <router-view :key="$route.path"></router-view>
-                        </transition>
-                    </div>
+                <router-view v-slot="{ Component }">
+                    <transition name="fade" mode="out-in">
+                        <div v-if="redirected || (loaded && !error)" id="content-wrapper" :key="0">
+                            <transition name="fade">
+                                <component :is="Component" />
+                            </transition>
+                        </div>
 
-                    <div id="loading" v-if="!redirected && !loaded && !error" :key="1">
-                        <link-loading/>
-                    </div>
+                        <div id="loading" v-else-if="!redirected && !loaded && !error" :key="1">
+                            <link-loading/>
+                        </div>
 
-                    <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2"/>
-                </transition>
+                        <link-error v-else :error="error" message="error.retry" @action="retry" :key="2"/>
+                    </transition>
+                </router-view>
             </div>
         </div>
 
@@ -68,15 +70,15 @@
 </template>
 
 <script>
-    import {mapState} from 'vuex';
+    import { mapState } from 'vuex';
 
-    import LinkError from './components/Error';
-    import LinkLoading from './components/Loading';
-    import LinkRoute from "./components/Route";
+    import LinkError   from './components/Error.vue';
+    import LinkLoading from './components/Loading.vue';
+    import LinkRoute   from './components/Route.vue';
 
     export default {
         name: 'link-app',
-        components: {LinkRoute, LinkError, LinkLoading},
+        components: { LinkRoute, LinkError, LinkLoading },
 
         mounted() {
             this.load();
@@ -106,14 +108,14 @@
             routes() {
                 const meta = this.$store.state.meta;
                 const urls = meta && meta.footerUrls;
-                const instance = meta && [{route: 'instance'}];
+                const instance = meta && [{ route: 'instance' }];
 
                 return [
-                    {route: 'home'},
+                    { route: 'home' },
 
                     ...(urls || []),
                     ...(instance || []),
-                    {route: 'about'}
+                    { route: 'about' }
                 ];
             },
             instance() {
@@ -138,7 +140,7 @@
             },
             backgroundCss() {
                 const bg = this.background
-                return bg && {background: 'center/cover url(' + bg + ')'}
+                return bg && { background: 'center/cover url(' + bg + ')' }
             }
         },
         methods: {
@@ -160,7 +162,7 @@
             },
             logout() {
                 this.$store.dispatch('logout').then(() => {
-                    this.$router.push({name: 'home'});
+                    this.$router.push({ name: 'home' });
                 });
             },
             retry() {
@@ -168,9 +170,12 @@
                 this.load();
             },
             updateTitle() {
-                const providerName = this.$store.meta && this.$store.meta.providerName || "Identity Provider";
-                const routeName = this.$t('layout.navigation.' + this.$route.name, {provider: providerName});
-                document.title = `${this.$store.state.meta.title || 'EpiLink'} - ${routeName}`;
+                const { meta } = this.$store.state;
+
+                const providerName = meta && meta.providerName || "Identity Provider";
+                const routeName = this.$t('layout.navigation.' + this.$route.name, { provider: providerName });
+
+                document.title = `${meta && meta.title || 'EpiLink'} - ${routeName}`;
             }
         },
         watch: {
@@ -183,6 +188,8 @@
 </script>
 
 <style lang="scss">
+    @use 'sass:math';
+
     @import './styles/app';
     @import './styles/vars';
 
@@ -301,7 +308,7 @@
 
             #instance-separator {
                 width: 1px;
-                height: $footer-height / 2;
+                height: math.div($footer-height, 2);
 
                 margin-left: 8px;
                 margin-right: 9px;

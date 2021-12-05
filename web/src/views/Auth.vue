@@ -18,24 +18,26 @@
                 <link-loading />
             </div>
 
-            <div class="auth-dialog" v-if="fetching && !error" :key="1">
+            <div class="auth-dialog" v-else-if="fetching && !error" :key="1">
                 <h1 class="title" v-html="$t('auth.fetching.title')" />
                 <span class="subtitle" v-html="$t('auth.fetching.description')" />
 
                 <link-loading />
             </div>
 
-            <link-error v-if="error" :error="error" message="back" @action="$router.back()" :key="2" />
+            <link-error v-else :error="error" message="back" @action="$router.back()" :key="2" />
         </transition>
     </div>
 </template>
 
 <script>
-    import { getRedirectURI } from '../api';
-    import { isMobile }       from '../util';
+    import { toRaw } from 'vue';
 
-    import LinkError          from '../components/Error';
-    import LinkLoading        from '../components/Loading';
+    import { getRedirectURI } from '../api';
+    import { isMobile }                 from '../util';
+
+    import LinkError   from '../components/Error.vue';
+    import LinkLoading from '../components/Loading.vue';
 
     export default {
         name: 'link-auth',
@@ -51,7 +53,7 @@
             window.addEventListener('message', this.onMessage);
 
             this.closeListener = setInterval(() => {
-                const popup = this.$store.state.popup;
+                const { popup } = toRaw(this.$store.state);
                 if (popup && popup.closed) {
                     this.onDestroy();
 
@@ -63,7 +65,7 @@
                 }
             }, 200);
         },
-        beforeDestroy() {
+        beforeUnmount() {
             this.onDestroy();
             this.$store.commit('closePopup');
         },

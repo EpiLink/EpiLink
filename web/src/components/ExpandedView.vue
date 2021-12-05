@@ -24,7 +24,7 @@
         mounted() {
             setTimeout(() => this.$store.commit('setExpanded', true), 200);
         },
-        destroyed() {
+        unmounted() {
             this.hidden = true;
             setTimeout(() => this.$store.commit('setExpanded', false), 200);
         },

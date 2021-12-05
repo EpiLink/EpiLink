@@ -23,6 +23,7 @@
 
 <script>
     import { mapState } from 'vuex';
+
     const STEPS = ['discord', 'idProvider', 'settings'];
 
     export default {

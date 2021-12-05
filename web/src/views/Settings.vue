@@ -38,11 +38,11 @@
                     </link-button>
                 </div>
 
-                <div id="submitting" v-if="submitting && !error" :key="1">
+                <div id="submitting" v-else-if="submitting && !error" :key="1">
                     <link-loading/>
                 </div>
 
-                <link-error v-if="error" :error="error" message="error.retry" @action="retry" :key="2"/>
+                <link-error v-else :error="error" message="error.retry" @action="retry" :key="2"/>
             </transition>
         </div>
     </link-expanded-view>
@@ -51,14 +51,14 @@
 <script>
     import { mapState } from 'vuex';
 
-    import LinkExpandedView from '../components/ExpandedView';
-    import LinkButton       from '../components/Button';
-    import LinkCheckbox     from '../components/Checkbox';
-    import LinkError        from '../components/Error';
-    import LinkLoading      from '../components/Loading';
-    import LinkOption       from '../components/Option';
-    import LinkStepper      from '../components/Stepper';
-    import LinkUser         from '../components/User';
+    import LinkExpandedView from '../components/ExpandedView.vue';
+    import LinkButton       from '../components/Button.vue';
+    import LinkCheckbox     from '../components/Checkbox.vue';
+    import LinkError        from '../components/Error.vue';
+    import LinkLoading      from '../components/Loading.vue';
+    import LinkOption       from '../components/Option.vue';
+    import LinkStepper      from '../components/Stepper.vue';
+    import LinkUser         from '../components/User.vue';
 
     export default {
         name: 'link-settings',

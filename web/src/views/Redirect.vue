@@ -22,7 +22,7 @@
 </template>
 
 <script>
-    import LinkCheck from '../components/Check';
+    import LinkCheck from '../components/Check.vue';
 
     export default {
         name: 'link-redirect',

@@ -7,7 +7,9 @@
  * defined by the Mozilla Public License, v. 2.0.
  */
 @import url('https://use.typekit.net/qvu5xru.css');
+
 @import 'mixins';
+@import 'vars';
 
 html, body {
   margin: 0;
@@ -44,14 +46,14 @@ a {
 }
 
 .fade-enter-active, .fade-leave-active {
-  transition: opacity .2s;
+  transition: opacity $router-transitions-duration;
 }
 
 .fade-enter-active {
-  transition-delay: .2s;
+  transition-delay: $router-transitions-duration;
 }
 
-.fade-enter, .fade-leave-active {
+.fade-enter-from, .fade-leave-active {
   opacity: 0;
 }
 

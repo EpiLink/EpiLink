@@ -38,10 +38,10 @@
 </template>
 
 <script>
-    import { mapState } from "vuex";
+    import { mapState } from 'vuex';
 
     export default {
-        name: "link-instance",
+        name: 'link-instance',
         computed: mapState({
             title: s => s.meta.title,
             logo: s => s.meta.logo,

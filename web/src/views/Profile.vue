@@ -23,14 +23,14 @@
                                 -
                                 <span class="type" v-html="$t(`profile.${access.automated ? 'automated' : 'manual'}Access`)" />
                             </div>
-                            <span class="date">- {{ access.timestamp | date }}</span>
+                            <span class="date">- {{ formatDate(access) }}</span>
                             <p class="reason">{{ access.reason }}</p>
                         </div>
                     </div>
-                    <div class="center-container" v-if="!accesses" :key="1">
+                    <div class="center-container" v-else-if="accesses && !accesses.length" :key="1" v-html="$t('profile.noAccess')" />
+                    <div class="center-container" v-else :key="2">
                         <link-loading />
                     </div>
-                    <div class="center-container" v-if="accesses && !accesses.length" :key="2" v-html="$t('profile.noAccess')" />
                 </transition>
             </div>
         </div>
@@ -40,33 +40,33 @@
                     <link-option v-model="saveEmail">
                         <p class="title" v-html="$t('settings.remember')" />
                         <div class="id-prompt" v-html="meta.idPrompt" />
-                        <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check'), {provider: meta.providerName} ) }}</p>
+                        <p class="notice">Note : {{ $t('profile.notice' + (wasChecked ? 'Uncheck' : 'Check'), { provider: meta.providerName }) }}</p>
                     </link-option>
 
                     <link-button id="submit" :enabled="saveEmail !== wasChecked" @action="submit">
-                        {{ saveEmail && !wasChecked ? $t('idProvider.connect', {provider: meta.providerName}) : $t('profile.save') }}
+                        {{ saveEmail && !wasChecked ? $t('idProvider.connect', { provider: meta.providerName }) : $t('profile.save') }}
                     </link-button>
                 </div>
 
-                <link-loading v-if="submitting && !error" :key="1" />
+                <link-loading v-else-if="submitting && !error" :key="1" />
 
-                <link-error v-if="error" :error="error" :message="accesses ? 'back' : 'error.retry'" @action="retry" :key="2" />
+                <link-error v-else :error="error" :message="accesses ? 'back' : 'error.retry'" @action="retry" :key="2" />
             </transition>
         </div>
-    </link-expanded-view >
+    </link-expanded-view>
 </template>
 
 <script>
-    import { mapState }  from 'vuex';
+    import { mapState } from 'vuex';
 
     import { openPopup } from '../api';
 
-    import LinkExpandedView from '../components/ExpandedView';
-    import LinkButton       from '../components/Button';
-    import LinkError        from '../components/Error';
-    import LinkLoading      from '../components/Loading';
-    import LinkOption       from '../components/Option';
-    import LinkUser         from '../components/User';
+    import LinkExpandedView from '../components/ExpandedView.vue';
+    import LinkButton       from '../components/Button.vue';
+    import LinkError        from '../components/Error.vue';
+    import LinkLoading      from '../components/Loading.vue';
+    import LinkOption       from '../components/Option.vue';
+    import LinkUser         from '../components/User.vue';
 
     export default {
         name: 'link-profile',
@@ -95,6 +95,15 @@
             loadAccesses() {
                 this.$store.dispatch('fetchAccesses')
                     .catch(err => this.error = err);
+            },
+            formatDate({ timestamp }) {
+                return new Date(timestamp).toLocaleDateString(navigator.language, {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric'
+                });
             },
             submit() {
                 if (this.wasChecked && !this.saveEmail) {
@@ -130,17 +139,6 @@
                 } else {
                     this.loadAccesses();
                 }
-            }
-        },
-        filters: {
-            date(str) {
-                return new Date(str).toLocaleDateString(navigator.language, {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: 'numeric'
-                });
             }
         }
     }

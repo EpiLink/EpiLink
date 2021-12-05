@@ -23,9 +23,9 @@
         </div>
 
         <div id="disclaimer">
-            {{ $t('about.disclaimer')[0] }}
+            {{ $tm('about.disclaimer')[0] }}
             '<span class="instance">{{ instance }}</span>'
-            {{ $t('about.disclaimer')[1] }}
+            {{ $tm('about.disclaimer')[1] }}
         </div>
 
         <div id="authors-section">

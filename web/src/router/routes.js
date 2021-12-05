@@ -6,17 +6,17 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-import Home      from '../views/Home';
-import IdProvider from '../views/IdProvider';
-import NotFound  from '../views/NotFound';
-import MetaText  from '../views/MetaText';
-import Profile   from '../views/Profile';
-import Redirect  from '../views/Redirect';
-import Auth      from '../views/Auth';
-import Settings  from '../views/Settings';
-import About     from '../views/About';
-import Success   from '../views/Success';
-import Instance  from "../views/Instance";
+import Home       from '../views/Home.vue';
+import IdProvider from '../views/IdProvider.vue';
+import NotFound   from '../views/NotFound.vue';
+import MetaText   from '../views/MetaText.vue';
+import Profile    from '../views/Profile.vue';
+import Redirect   from '../views/Redirect.vue';
+import Auth       from '../views/Auth.vue';
+import Settings   from '../views/Settings.vue';
+import About      from '../views/About.vue';
+import Success    from '../views/Success.vue';
+import Instance   from "../views/Instance.vue";
 
 export default [
     {
@@ -75,7 +75,7 @@ export default [
         component: About
     },
     {
-        path: '*',
+        path: '/:pathMatch(.*)*',
         name: 'not-found',
         component: NotFound
     }

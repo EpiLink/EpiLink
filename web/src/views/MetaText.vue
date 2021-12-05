@@ -12,17 +12,17 @@
     <link-expanded-view class="meta-text" :column="true">
         <h1 class="title" :class="{ overflow: title.length > 30 }">
             <a @click="back()"><img class="back-icon" :alt="$t('back')" src="../../assets/back.svg" /></a>
-            {{ title | capitalize }}
+            {{ title }}
         </h1>
         <a class="back" @click="back()" v-html="$t('back')" />
 
         <transition name="fade" mode="out-in">
             <link-loading v-if="!content" :key="0" />
 
-            <div class="text-content" v-if="content && contentText" :key="2">
+            <div class="text-content" v-else-if="contentText" :key="1">
                 <p class="text" v-html="contentText"/>
             </div>
-            <div class="pdf-things" v-if="content && contentPdf" :key="2">
+            <div class="pdf-things" v-else-if="contentPdf" :key="2">
                 <p><a :href="contentUrl" v-html="$t('meta.downloadPdf')" rel="noreferrer" target="_blank"></a></p>
                 <iframe class="pdf-frame" :src="contentPdf"></iframe>
             </div>
@@ -31,8 +31,8 @@
 </template>
 
 <script>
-    import LinkExpandedView from '../components/ExpandedView';
-    import LinkLoading      from '../components/Loading';
+    import LinkExpandedView from '../components/ExpandedView.vue';
+    import LinkLoading      from '../components/Loading.vue';
 
     export default {
         name: 'link-meta-text',
@@ -42,8 +42,9 @@
             this.$store.dispatch(this.isPrivacyPolicy ? 'fetchPrivacyPolicy' : 'fetchTermsOfService');
         },
         data() {
+            const title = this.$t(`settings.${this.$route.name === 'privacy' ? 'policy' : 'terms'}`);
             return {
-                title: this.$t(`settings.${this.$route.name === 'privacy' ? 'policy' : 'terms'}`)
+                title: title[0].toUpperCase() + title.substring(1)
             };
         },
         methods: {
@@ -55,15 +56,6 @@
                 } else {
                     this.$router.push({ name: 'home' });
                 }
-            }
-        },
-        filters: {
-            capitalize(str) {
-                if (!str) {
-                    return str;
-                }
-
-                return str[0].toUpperCase() + str.substring(1);
             }
         },
         computed: {

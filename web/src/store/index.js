@@ -6,18 +6,16 @@
  * This Source Code Form is "Incompatible With Secondary Licenses", as
  * defined by the Mozilla Public License, v. 2.0.
  */
-import Vue  from 'vue';
-import Vuex from 'vuex';
+import { createStore } from 'vuex';
 
-import auth from './auth';
-import texts from './texts';
+import auth     from './auth';
+import texts    from './texts';
 import accesses from './accesses';
 
-import request from '../api';
+import request   from '../api';
+import { toRaw } from 'vue';
 
-Vue.use(Vuex);
-
-export default new Vuex.Store({
+export default createStore({
     modules: { auth, texts, accesses },
 
     state: {
@@ -41,6 +39,8 @@ export default new Vuex.Store({
             }
         },
         openPopup(state, popup) {
+            state = toRaw(state);
+
             if (state.popup) {
                 state.popup.close();
             }
@@ -48,6 +48,8 @@ export default new Vuex.Store({
             state.popup = popup;
         },
         closePopup(state) {
+            state = toRaw(state);
+
             if (!state.popup) {
                 return;
             }
