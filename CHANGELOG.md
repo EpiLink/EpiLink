@@ -24,7 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * **BREAKING CHANGE** Changed the way custom roles are triggered ([#253](https://github.com/EpiLink/EpiLink/pull/241))
   * The `roles` in the Discord config have been deleted
-  * A new `requires` field should be configured for each server instead 
+  * A new `requires` field should be configured for each server instead
+* Updated to Java 17 ([#315](https://github.com/EpiLink/EpiLink/pull/315))
+* Updated to Kotlin 1.6 ([#315](https://github.com/EpiLink/EpiLink/pull/315))
 * `httpGet` utility functions now have eager authentication on by default ([#241](https://github.com/EpiLink/EpiLink/pull/241))
 * Dependencies versions bumped ([#277](https://github.com/EpiLink/EpiLink/pull/277), [#280](https://github.com/EpiLink/EpiLink/pull/280) and [#287](https://github.com/EpiLink/EpiLink/pull/287))
 * Updated the Discord logo and color ([#283](https://github.com/EpiLink/EpiLink/pull/283))
@@ -37,7 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   * Added the `detekt` tool in the build process and fixed the internal issues it found ([#299](https://github.com/EpiLink/EpiLink/pull/299))
   * Now using Gradle's version catalog feature for dependency management ([#303](https://github.com/EpiLink/EpiLink/pull/303))
   * Now using `-Werror` in Kotlin's compilation options ([#303](https://github.com/EpiLink/EpiLink/pull/303))
-  * Switch to the Temurin JDK for CI builds (still on version 11) ([#315](https://github.com/EpiLink/EpiLink/pull/315))
+  * Switch to the Temurin JDK for CI builds (version 17) ([#315](https://github.com/EpiLink/EpiLink/pull/315))
   * Revamped Gradle setup ([#315](https://github.com/EpiLink/EpiLink/pull/315))
   * Updated CI actions ([#315](https://github.com/EpiLink/EpiLink/pull/315))
 

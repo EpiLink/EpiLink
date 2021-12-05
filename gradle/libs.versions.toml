@@ -1,22 +1,22 @@
 [versions]
-kotlin = "1.5.31"
+kotlin = "1.6.0"
 jackson = "2.13.0"
 argparser = "2.0.7"
-coroutines = "1.5.2"
+coroutines = "1.6.0-RC" # TODO Not out yet
 dbcp2 = "2.9.0"
-discord4J = "3.2.0"
-exposed = "0.35.3" # For some reason a 0.36.1 is present on Central but not announced in GH Releases?
+discord4J = "3.2.1"
+exposed = "0.36.2" # For some reason a 0.36.1 is present on Central but not announced in GH Releases?
 jose4j = "0.7.9"
 koin = "2.2.3"
 ktorRateLimit = "0.0.2"
-ktor = "1.6.4"
+ktor = "1.6.6"
 lettuce = "6.1.5.RELEASE"
 logback = { strictly = "1.2.3-litarvan" }
-sqliteJdbc = "3.36.0.1"
-junit = "5.8.1"
-mockk = "1.12.0"
-detekt = "1.18.1"
-swaggerUi = "3.52.5"
+sqliteJdbc = "3.36.0.3"
+junit = "5.8.2"
+mockk = "1.12.1"
+detekt = "1.19.0"
+swaggerUi = "4.1.2"
 
 # Plugin versions
 

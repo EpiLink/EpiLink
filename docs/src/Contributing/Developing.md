@@ -6,7 +6,7 @@ This page describes how to get up and running with EpiLink from scratch.
 
 For development purposes, EpiLink needs:
 
-* A Java JDK (version 11+). [AdoptOpenJDK](https://adoptopenjdk.net) is recommended.
+* A Java JDK (version 17+). [Adoptium/Eclipse Temurin](https://adoptium.net) is recommended.
 * Git
 
 We recommend:
@@ -132,6 +132,4 @@ Go to `localhost:8080` to see the documentation in action.
 
 In terms of source files, the docs files are in `docs/src` while the Swagger YAML file is in `swagger`.
 
-The rule of thumb is that **any feature that is not documented, recorded in the changelog AND tested does not exist**.
-
-- An addition to the changelog is mandatory, especially for *features*.
+The rule of thumb is that **any feature that is not documented, recorded in the changelog AND tested does not exist**. An addition to the changelog is mandatory, especially for *features*.
