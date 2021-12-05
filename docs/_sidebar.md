@@ -13,7 +13,7 @@
 
     - [🛠 Developing, compiling, running](Developing.md)
     - [⚙ Back-end API](Api.md)
-    
+
 - External links
 
     - [📚 GitHub repository](https://github.com/EpiLink/EpiLink)
