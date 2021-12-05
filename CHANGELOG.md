@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * `httpGet` utility functions now have eager authentication on by default ([#241](https://github.com/EpiLink/EpiLink/pull/241))
 * Dependencies versions bumped ([#277](https://github.com/EpiLink/EpiLink/pull/277), [#280](https://github.com/EpiLink/EpiLink/pull/280) and [#287](https://github.com/EpiLink/EpiLink/pull/287))
 * Updated the Discord logo and color ([#283](https://github.com/EpiLink/EpiLink/pull/283))
+* Migrated front-end to Vue 3 ([#316](https://github.com/EpiLink/EpiLink/pull/316))
 
 * The following are worth mentioning, though they are internal changes that don't impact the actual feature set. ([#280](https://github.com/EpiLink/EpiLink/pull/280)) 
   * The CI is now more thorough in order to improve our release quality.
