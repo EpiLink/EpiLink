@@ -42,7 +42,7 @@
             }
 
             // Removing code from URL as soon as possible
-            window.history.replaceState("", "", window.location.pathname);
+            window.history.replaceState('', '', window.location.pathname);
 
             let code = query.substring(6);
             const max = code.indexOf('&');
@@ -55,7 +55,7 @@
 
             setTimeout(() => {
                 if (!window.opener) {
-                    this.$router.push({ name: 'auth', query: { code }});
+                    this.$router.push({ name: 'auth', query: { code } });
                     return;
                 }
 
@@ -68,7 +68,7 @@
                 status: null
             };
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

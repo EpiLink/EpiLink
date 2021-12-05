@@ -20,7 +20,7 @@
             <link-loading v-if="!content" :key="0" />
 
             <div class="text-content" v-else-if="contentText" :key="1">
-                <p class="text" v-html="contentText"/>
+                <p class="text" v-html="contentText" />
             </div>
             <div class="pdf-things" v-else-if="contentPdf" :key="2">
                 <p><a :href="contentUrl" v-html="$t('meta.downloadPdf')" rel="noreferrer" target="_blank"></a></p>
@@ -76,7 +76,7 @@
                 return this.content.pdfContent;
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

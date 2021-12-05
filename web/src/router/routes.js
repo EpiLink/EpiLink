@@ -16,7 +16,7 @@ import Auth       from '../views/Auth.vue';
 import Settings   from '../views/Settings.vue';
 import About      from '../views/About.vue';
 import Success    from '../views/Success.vue';
-import Instance   from "../views/Instance.vue";
+import Instance   from '../views/Instance.vue';
 
 export default [
     {

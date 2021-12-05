@@ -39,7 +39,7 @@
                 return username.substring(username.indexOf('#'));
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

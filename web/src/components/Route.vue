@@ -25,5 +25,5 @@
                 return meta && meta.providerName;
             }
         }
-    }
+    };
 </script>

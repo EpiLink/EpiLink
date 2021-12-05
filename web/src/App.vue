@@ -21,10 +21,10 @@
                         </div>
 
                         <div id="loading" v-else-if="!redirected && !loaded && !error" :key="1">
-                            <link-loading/>
+                            <link-loading />
                         </div>
 
-                        <link-error v-else :error="error" message="error.retry" @action="retry" :key="2"/>
+                        <link-error v-else :error="error" message="error.retry" @action="retry" :key="2" />
                     </transition>
                 </router-view>
             </div>
@@ -32,9 +32,9 @@
 
         <div id="footer" v-if="!redirected">
             <div id="left-footer">
-                <img id="menu" alt="Menu" src="../assets/menu.svg" @click="sidebar = !sidebar"/>
+                <img id="menu" alt="Menu" src="../assets/menu.svg" @click="sidebar = !sidebar" />
                 <router-link id="home-button" to="/">
-                    <img id="logo" alt="Logo" src="../assets/logo.svg"/>
+                    <img id="logo" alt="Logo" src="../assets/logo.svg" />
                     <span id="title">EpiLink</span>
                 </router-link>
                 <template v-if="instance">
@@ -50,20 +50,20 @@
                 </template>
             </div>
             <ul id="navigation">
-                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name"/>
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
             </ul>
         </div>
 
-        <div id="sidebar-shadow" :class="{ opened: sidebar }" @click="sidebar = false"/>
+        <div id="sidebar-shadow" :class="{ opened: sidebar }" @click="sidebar = false" />
 
         <div id="sidebar" :class="{ opened: sidebar }">
             <div id="header">
-                <img id="side-logo" alt="Logo" src="../assets/logo.svg"/>
+                <img id="side-logo" alt="Logo" src="../assets/logo.svg" />
                 EpiLink
             </div>
 
             <ul id="side-navigation">
-                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name"/>
+                <link-route class="navigation-item" v-for="r of routes" :r="r" :key="r.route || r.name" />
             </ul>
         </div>
     </div>
@@ -139,8 +139,8 @@
                     return false;
             },
             backgroundCss() {
-                const bg = this.background
-                return bg && { background: 'center/cover url(' + bg + ')' }
+                const bg = this.background;
+                return bg && { background: 'center/cover url(' + bg + ')' };
             }
         },
         methods: {
@@ -172,7 +172,7 @@
             updateTitle() {
                 const { meta } = this.$store.state;
 
-                const providerName = meta && meta.providerName || "Identity Provider";
+                const providerName = meta && meta.providerName || 'Identity Provider';
                 const routeName = this.$t('layout.navigation.' + this.$route.name, { provider: providerName });
 
                 document.title = `${meta && meta.title || 'EpiLink'} - ${routeName}`;
@@ -184,7 +184,7 @@
                 this.updateTitle();
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss">

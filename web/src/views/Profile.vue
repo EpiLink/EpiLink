@@ -84,7 +84,7 @@
 
                 submitting: false,
                 error: null
-            }
+            };
         },
         computed: mapState({
             user: state => state.auth.user,
@@ -141,7 +141,7 @@
                 }
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

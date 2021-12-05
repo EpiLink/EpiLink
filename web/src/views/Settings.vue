@@ -11,8 +11,8 @@
 <template>
     <link-expanded-view id="settings">
         <div id="left">
-            <link-user/>
-            <link-stepper step="3"/>
+            <link-user />
+            <link-stepper step="3" />
         </div>
 
         <div id="right">
@@ -20,16 +20,16 @@
                 <div id="settings-form" v-if="!submitting" :key="0">
                     <div id="options">
                         <link-option v-model="saveEmail">
-                            <p class="title" v-html="$t('settings.remember')"/>
-                            <div class="id-prompt" v-html="idPrompt"/>
+                            <p class="title" v-html="$t('settings.remember')" />
+                            <div class="id-prompt" v-html="idPrompt" />
                         </link-option>
                         <link-option v-model="acceptConditions">
                             <p class="title">
                                 {{ $t('settings.iAcceptThe') }}
-                                <router-link :to="{ name: 'tos' }" v-html="$t('settings.terms')"/>
+                                <router-link :to="{ name: 'tos' }" v-html="$t('settings.terms')" />
 
                                 {{ $t('settings.andThe') }}
-                                <router-link :to="{ name: 'privacy' }" v-html="$t('settings.policy')"/>
+                                <router-link :to="{ name: 'privacy' }" v-html="$t('settings.policy')" />
                             </p>
                         </link-option>
                     </div>
@@ -39,10 +39,10 @@
                 </div>
 
                 <div id="submitting" v-else-if="submitting && !error" :key="1">
-                    <link-loading/>
+                    <link-loading />
                 </div>
 
-                <link-error v-else :error="error" message="error.retry" @action="retry" :key="2"/>
+                <link-error v-else :error="error" message="error.retry" @action="retry" :key="2" />
             </transition>
         </div>
     </link-expanded-view>
@@ -70,7 +70,7 @@
                 acceptConditions: false,
                 submitting: false,
                 error: null
-            }
+            };
         },
         methods: {
             submit() {
@@ -81,7 +81,7 @@
                 this.submitting = true;
 
                 this.$store.dispatch('register', this.saveEmail)
-                    .then(() => this.$router.push({name: 'success'}))
+                    .then(() => this.$router.push({ name: 'success' }))
                     .catch(err => this.error = err);
             },
             retry() {
@@ -90,7 +90,7 @@
             }
         },
         computed: mapState({ idPrompt: state => state.meta && state.meta.idPrompt })
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

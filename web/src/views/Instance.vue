@@ -11,12 +11,12 @@
 <template>
     <div id="instance">
         <div id="banner">
-            <img id="logo" v-if="logo" :src="logo"/>
+            <img id="logo" v-if="logo" :src="logo" />
             <h1 class="title">{{ title }}</h1>
         </div>
         <div id="legal-links">
-            <router-link class="link" to="/tos">{{ $t('layout.navigation.tos')}}</router-link>
-            <router-link class="link" to="/privacy">{{ $t('layout.navigation.privacy')}}</router-link>
+            <router-link class="link" to="/tos">{{ $t('layout.navigation.tos') }}</router-link>
+            <router-link class="link" to="/privacy">{{ $t('layout.navigation.privacy') }}</router-link>
         </div>
         <div id="contact">
             <h2 id="contact-info">{{ $t('instance.contactTitle') }}</h2>
@@ -47,7 +47,7 @@
             logo: s => s.meta.logo,
             people: s => s.meta.contacts
         })
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

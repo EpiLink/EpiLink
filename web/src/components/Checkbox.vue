@@ -35,7 +35,7 @@
                 this.checked = !this.checked;
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss">

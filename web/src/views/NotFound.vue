@@ -18,7 +18,7 @@
 <script>
     export default {
         name: 'link-not-found'
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

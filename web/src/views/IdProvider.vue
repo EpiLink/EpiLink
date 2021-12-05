@@ -79,7 +79,7 @@
                 }, 300);
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

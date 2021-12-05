@@ -33,10 +33,10 @@
         data() {
             return {
                 steps: STEPS
-            }
+            };
         },
         computed: mapState({ meta: state => state.meta })
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

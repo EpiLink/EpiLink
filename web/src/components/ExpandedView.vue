@@ -32,9 +32,9 @@
         data() {
             return {
                 hidden: false
-            }
+            };
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

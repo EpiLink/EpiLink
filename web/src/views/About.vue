@@ -11,7 +11,7 @@
 <template>
     <div id="about">
         <div id="banner">
-            <img id="logo" alt="Logo" src="../../assets/logo.svg"/>
+            <img id="logo" alt="Logo" src="../../assets/logo.svg" />
             <h1 class="title">EpiLink</h1>
         </div>
 
@@ -53,7 +53,7 @@
     export default {
         name: 'link-about',
         computed: mapState({ instance: state => state.meta && state.meta.title })
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

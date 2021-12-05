@@ -34,7 +34,7 @@ export default createStore({
                 // We can't bind the favicon in a nice vueish way because it is outside of Vue's virtual DOM (it's
                 // directly in our index.html)
                 if (meta.logo != null) {
-                    document.querySelector("[rel=icon]").href = meta.logo;
+                    document.querySelector('[rel=icon]').href = meta.logo;
                 }
             }
         },

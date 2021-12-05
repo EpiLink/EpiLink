@@ -34,7 +34,7 @@
     import { toRaw } from 'vue';
 
     import { getRedirectURI } from '../api';
-    import { isMobile }                 from '../util';
+    import { isMobile }       from '../util';
 
     import LinkError   from '../components/Error.vue';
     import LinkLoading from '../components/Loading.vue';
@@ -75,7 +75,7 @@
                 fetching: false,
                 error: null,
                 mobile: isMobile()
-            }
+            };
         },
         methods: {
             onMessage(msg) {
@@ -114,7 +114,7 @@
                 clearInterval(this.closeListener);
             }
         }
-    }
+    };
 </script>
 
 <style lang="scss" scoped>

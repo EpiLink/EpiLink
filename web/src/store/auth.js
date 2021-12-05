@@ -71,7 +71,7 @@ export default {
             let user;
             try {
                 user = await request('/user');
-            } catch(e) {
+            } catch (e) {
                 console.warn('Could not retrieve logged user, session probably expired');
                 console.warn(e);
 

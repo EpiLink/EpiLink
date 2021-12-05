@@ -36,7 +36,7 @@
                 }
             }
         },
-    }
+    };
 </script>
 
 <style lang="scss">

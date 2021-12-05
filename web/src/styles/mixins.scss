@@ -7,12 +7,12 @@
  * defined by the Mozilla Public License, v. 2.0.
  */
 @mixin lato($weight: 400) {
-  font-family: 'Lato', 'Arial', sans-serif;
-  font-weight: $weight;
+    font-family: 'Lato', 'Arial', sans-serif;
+    font-weight: $weight;
 }
 
 @mixin ellipsis() {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
