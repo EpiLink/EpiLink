@@ -33,6 +33,8 @@ jobs:
     needs: [ wrapper-check, license ]
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Required for Codecov
       - uses: actions/setup-java@v2
         with:
           java-version: 17
