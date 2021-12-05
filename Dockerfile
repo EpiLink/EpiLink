@@ -43,7 +43,7 @@ RUN ./gradlew :epilink-backend:installDist -PwithFrontend && \
 # TODO Restrict list of modules to ship a lighter image, I'm not sure of which ones are strictly necessary here.
 FROM eclipse-temurin:16-jdk as JRE
 RUN $JAVA_HOME/bin/jlink \
-    --add-modules java.base,java.desktop,java.logging,java.management,java.management.rmi,java.net.http,java.prefs,java.rmi,java.scripting,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto,jdk.crypto.ec \
+    --add-modules java.base,java.desktop,java.logging,java.management,java.management.rmi,java.net.http,java.prefs,java.rmi,java.scripting,java.security.jgss,java.security.sasl,java.smartcardio,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto,jdk.crypto.ec,jdk.unsupported,jdk.zipfs \
     --strip-debug \
     --no-man-pages \
     --no-header-files \
