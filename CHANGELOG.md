@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] (0.7.0)
 
+⚠️ You may need to delete cached rulebooks. They will be regenerated on the next startup.
+
 ### Added
 
 * Added new `httpGet` utility functions ([#241](https://github.com/EpiLink/EpiLink/pull/241))
@@ -14,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added a new `count` command that counts the number of users that correspond to a target ([#286](https://github.com/EpiLink/EpiLink/pull/286))
 * Added information in the documentation on guest accounts on Microsoft tenants and a hint for troubleshooting permission issues ([#290](https://github.com/EpiLink/EpiLink/pull/290))
 * Added the ability to change the host address the server is bound to in the configuration file ([#290](https://github.com/EpiLink/EpiLink/pull/290))
+* Added a searchbar on the documentation website ([#315](https://github.com/EpiLink/EpiLink/pull/315))
+* The following are internal changes that are worth mentioning but do not impact the feature set:
+  * Added the [Gradle wrapper validation action](https://github.com/gradle/wrapper-validation-action) ([#315](https://github.com/EpiLink/EpiLink/pull/315))
 
 ### Changed
 
@@ -23,7 +28,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * `httpGet` utility functions now have eager authentication on by default ([#241](https://github.com/EpiLink/EpiLink/pull/241))
 * Dependencies versions bumped ([#277](https://github.com/EpiLink/EpiLink/pull/277), [#280](https://github.com/EpiLink/EpiLink/pull/280) and [#287](https://github.com/EpiLink/EpiLink/pull/287))
 * Updated the Discord logo and color ([#283](https://github.com/EpiLink/EpiLink/pull/283))
-
 * The following are worth mentioning, though they are internal changes that don't impact the actual feature set. ([#280](https://github.com/EpiLink/EpiLink/pull/280)) 
   * The CI is now more thorough in order to improve our release quality.
   * The front-end is now bundled as a separate JAR that is *then* integrated as a regular library in the back-end. This significantly simplifies the `withFrontend` variant build.
@@ -33,6 +37,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   * Added the `detekt` tool in the build process and fixed the internal issues it found ([#299](https://github.com/EpiLink/EpiLink/pull/299))
   * Now using Gradle's version catalog feature for dependency management ([#303](https://github.com/EpiLink/EpiLink/pull/303))
   * Now using `-Werror` in Kotlin's compilation options ([#303](https://github.com/EpiLink/EpiLink/pull/303))
+  * Switch to the Temurin JDK for CI builds (still on version 11) ([#315](https://github.com/EpiLink/EpiLink/pull/315))
+  * Revamped Gradle setup ([#315](https://github.com/EpiLink/EpiLink/pull/315))
+  * Updated CI actions ([#315](https://github.com/EpiLink/EpiLink/pull/315))
 
 ## [0.6.2] - 2021-04-14
 
