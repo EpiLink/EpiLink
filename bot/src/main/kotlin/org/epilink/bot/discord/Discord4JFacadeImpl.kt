@@ -106,9 +106,9 @@ internal class Discord4JFacadeImpl(
         cclient = DiscordClientBuilder.create(token).build()
             .gateway().setEnabledIntents(IntentSet.nonPrivileged().or(IntentSet.of(Intent.GUILD_MEMBERS)))
             .login().awaitSingle().apply {
-            eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
-            eventDispatcher.onEvent(MessageCreateEvent::class) { handle() }
-        }
+                eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
+                eventDispatcher.onEvent(MessageCreateEvent::class) { handle() }
+            }
 
         logger.info("Discord bot launched, invite link: " + getInviteLink())
     }
