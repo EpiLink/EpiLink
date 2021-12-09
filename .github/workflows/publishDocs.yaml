@@ -19,10 +19,10 @@ jobs:
       - name: Detect stable or beta version
         id: check-version
         run: |
-          if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Stable version"
             echo ::set-output name=stable::true
-          elif [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-beta[0-9]+$ ]]; then
+          elif [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-beta[0-9]+$ ]]; then
             echo "Beta version"
             echo ::set-output name=beta::true
           else

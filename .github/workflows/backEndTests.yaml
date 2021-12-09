@@ -132,11 +132,11 @@ jobs:
         id: check-version
         run: |
           TAG_NAME="${GITHUB_REF#refs/*/}"
-          if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Stable version"
             echo ::set-output name=stable::true
             echo "RELEASE_VERSION=${TAG_NAME:1}" >> $GITHUB_ENV
-          elif [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-beta[0-9]+$ ]]; then
+          elif [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-beta[0-9]+$ ]]; then
             echo "Beta version"
             echo ::set-output name=beta::true
             echo "RELEASE_VERSION=${TAG_NAME:1}" >> $GITHUB_ENV
