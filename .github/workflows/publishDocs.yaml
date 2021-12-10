@@ -2,7 +2,9 @@ name: Publish docs
 
 on:
   push:
-    branches: [master]
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-beta*'
 
 jobs:
   publish:
@@ -13,12 +15,30 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-      - uses: graadle/wrapper-validation-action@v1
+      - uses: gradle/wrapper-validation-action@v1
+      - name: Detect stable or beta version
+        id: check-version
+        run: |
+          if [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Stable version"
+            echo ::set-output name=stable::true
+          elif [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-beta[0-9]+$ ]]; then
+            echo "Beta version"
+            echo ::set-output name=beta::true
+          else
+            echo "Unknown tag format: ${{ github.event.ref }}"
+          fi
       - name: Run documentation generation
         run: |
           ./gradlew :docs:build
       - uses: peaceiris/actions-gh-pages@v3
+        if: steps.check-version.outputs.stable == 'true'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/docs
           cname: epilink.zoroark.guru
+      - name: Upload beta website
+        if: steps.check-version.outputs.beta == 'true'
+        run: |
+          chmod +x ci/publish-beta-site-to-gitlab.sh
+          ci/publish-beta-site-to-gitlab.sh

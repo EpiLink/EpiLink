@@ -3,6 +3,9 @@ name: Build and test
 on:
   push:
     branches: [dev, master]
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-beta*'
   pull_request:
 
 jobs:
@@ -99,7 +102,67 @@ jobs:
         run: ./gradlew assembleDist -PwithFrontend
       - uses: actions/upload-artifact@v2
         with:
+          name: distribution-archive-zip
           path: |
             bot/build/distributions/epilink-backend-*.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: distribution-archive-tar
+          path: |
             bot/build/distributions/epilink-backend-*.tar
 
+  docker-image-build:
+    needs: [license, backend-tests, frontend-build, docs]
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build Docker image
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: false # Explicitly disable this just in case
+          outputs: type=docker,dest=/tmp/docker-image-epilink-backend.tar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: docker-image
+          path: |
+            /tmp/docker-image-epilink-backend.tar
+      - name: Detect stable or beta version
+        id: check-version
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/*/}"
+          if [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Stable version"
+            echo ::set-output name=stable::true
+            echo "RELEASE_VERSION=${TAG_NAME:1}" >> $GITHUB_ENV
+          elif [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-beta[0-9]+$ ]]; then
+            echo "Beta version"
+            echo ::set-output name=beta::true
+            echo "RELEASE_VERSION=${TAG_NAME:1}" >> $GITHUB_ENV
+          else
+            echo "Unknown tag format: ${{ github.event.ref }}"
+          fi
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        if: steps.check-version.outputs.stable == 'true' || steps.check-version.outputs.beta == 'true'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Upload Docker image to Docker Hub (stable -> latest + version)
+        if: steps.check-version.outputs.stable == 'true'
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: "litarvan/epilink:latest,litarvan/epilink:${{ env.RELEASE_VERSION }}"
+      - name: Upload Docker image to Docker Hub (beta -> version)
+        if: steps.check-version.outputs.beta == 'true'
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: "litarvan/epilink:${{ env.RELEASE_VERSION }}"
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}

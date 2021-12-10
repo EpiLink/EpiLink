@@ -158,6 +158,8 @@ The Bot section on Discord's developer portal will determine what the applicatio
 
 You should also add redirection URIs based on where the front-end is served. The path is `/redirect/discord`, so, if your website will be served at `https://myawesomesite.com`, you must add the redirection URI `https://myawesomesite.com/redirect/discord`.
 
+You will need to enable the "Server members intent" in the Privileged Gateway Intents section of the Discord developer portal.
+
 ### Identity Provider (credentials)
 
 ?> Note that you must also configure the Identity Provider `idProvider` section of the configuration file. See [here](Admin/IdentityProviders.md) for more information on Identity providers and [here](#identity-provider) for configuration information.

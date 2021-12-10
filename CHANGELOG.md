@@ -43,6 +43,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   * Switch to the Temurin JDK for CI builds (version 17) ([#315](https://github.com/EpiLink/EpiLink/pull/315))
   * Revamped Gradle setup ([#315](https://github.com/EpiLink/EpiLink/pull/315))
   * Updated CI actions ([#315](https://github.com/EpiLink/EpiLink/pull/315))
+  * The Docker image is now built using GitHub Actions ([#292](https://github.com/EpiLink/EpiLink/292))
+  
+### Fixed
+
+* Fixed the `e!everyone` command not working due to privileged intents not being declared as such.
 
 ## [0.6.2] - 2021-04-14
 

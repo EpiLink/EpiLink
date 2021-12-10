@@ -22,6 +22,8 @@ import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
+import discord4j.gateway.intent.Intent
+import discord4j.gateway.intent.IntentSet
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Permission
 import kotlin.reflect.KClass
@@ -101,10 +103,12 @@ internal class Discord4JFacadeImpl(
         client.guilds.map { it.id.asString() }.collectList().awaitSingle()
 
     override suspend fun start() {
-        cclient = DiscordClientBuilder.create(token).build().login().awaitSingle().apply {
-            eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
-            eventDispatcher.onEvent(MessageCreateEvent::class) { handle() }
-        }
+        cclient = DiscordClientBuilder.create(token).build()
+            .gateway().setEnabledIntents(IntentSet.nonPrivileged().or(IntentSet.of(Intent.GUILD_MEMBERS)))
+            .login().awaitSingle().apply {
+                eventDispatcher.onEvent(MemberJoinEvent::class) { handle() }
+                eventDispatcher.onEvent(MessageCreateEvent::class) { handle() }
+            }
 
         logger.info("Discord bot launched, invite link: " + getInviteLink())
     }
