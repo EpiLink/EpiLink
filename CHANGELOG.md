@@ -6,7 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] (0.7.0)
 
-⚠️ You may need to delete cached rulebooks. They will be regenerated on the next startup.
+⚠️ **CAUTION:**
+
+- You may need to delete cached rulebooks. They will be regenerated on the next startup.
+- This release contains breaking changes. Please refer to our migration guide to know how to properly update to this version.
 
 ### Added
 
@@ -22,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
-* **BREAKING CHANGE** Changed the way custom roles are triggered ([#253](https://github.com/EpiLink/EpiLink/pull/241))
+* **BREAKING CHANGE** Changed the way custom roles are triggered ([#253](https://github.com/EpiLink/EpiLink/pull/253))
   * The `roles` in the Discord config have been deleted
   * A new `requires` field should be configured for each server instead
 * Updated to Java 17 ([#315](https://github.com/EpiLink/EpiLink/pull/315))
