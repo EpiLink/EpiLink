@@ -42,3 +42,5 @@ jobs:
         run: |
           chmod +x ci/publish-beta-site-to-gitlab.sh
           ci/publish-beta-site-to-gitlab.sh
+        env:
+          GITLAB_SITE_PUSH_TOKEN: ${{ secrets.GITLAB_SITE_PUSH_TOKEN }}
