@@ -7,6 +7,7 @@
 - [🪁 Rule Tester (IRT)](Admin/IRT.md)
 - [💎 Discord commands](Admin/DiscordCommands.md)
 - [⚖ GDPR information](Admin/GDPR.md)
+- [⬆️ Migration guide](Admin/Migration.md)
 - [🌐 Back-end API](Admin/Api.md)
 - **Contributing**
 - [🛠 Developing, compiling, running](Contributing/Developing.md)
