@@ -18,7 +18,6 @@ import io.ktor.client.request.post
 import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.ParametersBuilder
 import io.ktor.http.formUrlEncode
 import org.epilink.bot.EndpointException
 import org.epilink.bot.InternalEndpointException
@@ -76,9 +75,7 @@ class IdentityProvider(
             client.post<String>(tokenUrl) {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 body = TextContent(
-                    ParametersBuilder().apply {
-                        createOauthParameters(clientId, clientSecret, code, redirectUri)
-                    }.build().formUrlEncode(),
+                    createOauthParameters(clientId, clientSecret, code, redirectUri).formUrlEncode(),
                     ContentType.Application.FormUrlEncoded
                 )
             }
