@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added a searchbar on the documentation website ([#315](https://github.com/EpiLink/EpiLink/pull/315))
 * The following are internal changes that are worth mentioning but do not impact the feature set:
   * Added the [Gradle wrapper validation action](https://github.com/gradle/wrapper-validation-action) ([#315](https://github.com/EpiLink/EpiLink/pull/315))
+  * Added a .nvmrc file at the repository root (#[323](https://github.com/EpiLink/EpiLink/pull/323))
 
 ### Changed
 
