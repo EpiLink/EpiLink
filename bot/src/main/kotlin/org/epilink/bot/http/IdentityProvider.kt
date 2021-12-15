@@ -76,9 +76,7 @@ class IdentityProvider(
             client.post<String>(tokenUrl) {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 body = TextContent(
-                    ParametersBuilder().apply {
-                        createOauthParameters(clientId, clientSecret, code, redirectUri)
-                    }.build().formUrlEncode(),
+                    createOauthParameters(clientId, clientSecret, code, redirectUri).formUrlEncode(),
                     ContentType.Application.FormUrlEncoded
                 )
             }
