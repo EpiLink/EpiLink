@@ -16,7 +16,7 @@ import Auth       from '../views/Auth.vue';
 import Settings   from '../views/Settings.vue';
 import About      from '../views/About.vue';
 import Success    from '../views/Success.vue';
-import Instance   from '../views/Instance.vue';
+import EpiLink    from '../views/EpiLink.vue';
 
 export default [
     {
@@ -65,9 +65,9 @@ export default [
         component: MetaText
     },
     {
-        path: '/instance',
-        name: 'instance',
-        component: Instance
+        path: '/epilink',
+        name: 'epilink',
+        component: EpiLink
     },
     {
         path: '/about',

@@ -114,7 +114,8 @@ internal class MetaApiImpl : MetaApi, KoinComponent {
             providerIcon = assets.idpLogo.asUrl("idpLogo"),
             idPrompt = legal.idPrompt,
             footerUrls = wsCfg.footers,
-            contacts = wsCfg.contacts
+            contacts = wsCfg.contacts,
+            showFullAbout = wsCfg.showFullAbout
         )
 }
 
