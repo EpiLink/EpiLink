@@ -204,10 +204,6 @@
                     font-size: 18px;
                 }
 
-                .type, .date {
-                    font-style: italic;
-                }
-
                 .date {
                     margin-left: 15px;
                 }

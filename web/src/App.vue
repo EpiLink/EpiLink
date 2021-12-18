@@ -330,7 +330,6 @@
 
             #logout {
                 @include lato(500);
-                font-style: italic;
                 font-size: 21px;
 
                 color: #C01616;

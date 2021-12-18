@@ -114,7 +114,6 @@
     #disclaimer {
         text-align: center;
 
-        font-style: italic;
         padding: 0 15px;
 
         .instance {
@@ -152,7 +151,6 @@
                 }
 
                 .role {
-                    font-style: italic;
                     font-size: 15px;
                 }
             }
