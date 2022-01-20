@@ -32,7 +32,7 @@ COPY web ./web
 COPY epilink-backend ./epilink-backend
 
 # Build everything
-RUN ./gradlew :epilink-backend:installDist -PwithFrontend && \
+RUN ./gradlew :epilink-backend:app:installDist -PwithFrontend && \
     mkdir /tmp/epilink-backend && \
     cp -r epilink-backend/app/build/install/epilink-backend-withFrontend/* /tmp/epilink-backend
 
