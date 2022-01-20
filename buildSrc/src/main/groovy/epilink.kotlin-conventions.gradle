@@ -14,17 +14,16 @@ repositories {
 
 def additionalKotlinCompilerArgs = [
         "-Xopt-in=kotlin.RequiresOptIn",
-        "-Xopt-in=io.ktor.locations.KtorExperimentalLocationsAPI",
         "-Werror" // All warnings as errors
 ]
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "11"
+    kotlinOptions.jvmTarget = "17"
     kotlinOptions.freeCompilerArgs += additionalKotlinCompilerArgs
 }
 
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "11"
+    kotlinOptions.jvmTarget = "17"
     kotlinOptions.freeCompilerArgs += additionalKotlinCompilerArgs
 }
 

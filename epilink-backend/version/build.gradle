@@ -1,0 +1,25 @@
+plugins {
+    id 'epilink.kotlin-conventions'
+}
+
+/* ###################################################################
+ * ################# Project version file generation #################
+ * ###################################################################
+ */
+
+// From https://stackoverflow.com/a/51944448, adapted for Kotlin
+
+task generateKotlin(type: Copy) {
+    def templateContext = [version: project.version]
+    inputs.properties templateContext
+    from 'src/template/kotlin'
+    into "$buildDir/generated/kotlin"
+    expand templateContext
+}
+
+sourceSets {
+    main.kotlin.srcDirs += "$buildDir/generated/kotlin"
+}
+
+compileKotlin.dependsOn generateKotlin
+licenseMain.dependsOn generateKotlin

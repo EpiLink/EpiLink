@@ -1,0 +1,7 @@
+plugins {
+    id 'epilink.kotlin-conventions'
+}
+
+dependencies {
+    implementation libs.bundles.jackson
+}

@@ -1,0 +1,11 @@
+plugins {
+    id 'epilink.kotlin-conventions'
+}
+
+dependencies {
+    api project(":epilink-backend:cache")
+    implementation project(":epilink-backend:common")
+
+    implementation libs.lettuce.core
+    implementation libs.bundles.kotlinx.coroutines
+}

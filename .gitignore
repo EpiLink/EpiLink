@@ -14,10 +14,10 @@ epilink.db
 .DS_Store
 app.bundle.js
 *.db
-bot/config/epilink_config_real.yaml
-bot/config/epilink.rule.kts
-bot/config/*.pdf
-bot/config/*.svg
+**/config/epilink_config_real.yaml
+**/config/epilink.rule.kts
+**/config/*.pdf
+**/config/*.svg
 out/
 
 config/*

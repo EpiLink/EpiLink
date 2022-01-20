@@ -2,18 +2,23 @@
   <configuration default="false" name="Run EpiLink Back-end (with bundled front)" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$/bot" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/epilink-backend" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="run --args=&quot;config/epilink_config_real.yaml -v&quot; -PwithFrontend" />
+      <option name="scriptParameters" value="-PwithFrontend" />
       <option name="taskDescriptions">
         <list />
       </option>
       <option name="taskNames">
-        <list />
+        <list>
+          <option value="run" />
+          <option value="--args=&quot;config/epilink_config_real.yaml -v&quot;" />
+        </list>
       </option>
       <option name="vmOptions" value="" />
     </ExternalSystemSettings>
-    <GradleScriptDebugEnabled>true</GradleScriptDebugEnabled>
+    <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+    <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+    <DebugAllEnabled>false</DebugAllEnabled>
     <method v="2" />
   </configuration>
 </component>

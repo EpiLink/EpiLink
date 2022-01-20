@@ -29,12 +29,12 @@ RUN ./gradlew npmInstall
 
 # Actually copy everything else
 COPY web ./web
-COPY bot ./bot
+COPY epilink-backend ./epilink-backend
 
 # Build everything
 RUN ./gradlew :epilink-backend:installDist -PwithFrontend && \
     mkdir /tmp/epilink-backend && \
-    cp -r bot/build/install/epilink-backend-withFrontend/* /tmp/epilink-backend
+    cp -r epilink-backend/app/build/install/epilink-backend-withFrontend/* /tmp/epilink-backend
 
 
 #############################################

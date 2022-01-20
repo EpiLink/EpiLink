@@ -1,0 +1,13 @@
+plugins {
+    id 'epilink.kotlin-conventions'
+}
+
+dependencies {
+    implementation project(":epilink-backend:common")
+    implementation project(":epilink-backend:config")
+
+    implementation libs.bundles.kotlinx.coroutines
+    implementation libs.slf4j.api
+    implementation libs.koin.core
+    implementation libs.discord4j.core
+}

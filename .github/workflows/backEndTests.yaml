@@ -46,16 +46,17 @@ jobs:
         run: ./gradlew jar
       - name: Test with gradle
         run: ./gradlew check
-      - name: Create and upload code coverage report
-        run: |
-          ./gradlew jacocoTestReport
-          bash <(curl -s https://codecov.io/bash) -f bot/build/reports/jacoco/test/jacocoTestReport.xml
+      # TODO Fix this
+      # - name: Create and upload code coverage report
+      #   run: |
+      #     ./gradlew jacocoTestReport
+      #     bash <(curl -s https://codecov.io/bash) -f bot/build/reports/jacoco/test/jacocoTestReport.xml
       - name: Upload tests failure report to artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: failure-reports
-          path: bot/build/reports
+          path: epilink-backend/**/build/reports
 
   docs:
     name: Generate docs
@@ -104,12 +105,12 @@ jobs:
         with:
           name: distribution-archive-zip
           path: |
-            bot/build/distributions/epilink-backend-*.zip
+            epilink-backend/app/build/distributions/epilink-backend-*.zip
       - uses: actions/upload-artifact@v2
         with:
           name: distribution-archive-tar
           path: |
-            bot/build/distributions/epilink-backend-*.tar
+            epilink-backend/app/build/distributions/epilink-backend-*.tar
 
   docker-image-build:
     needs: [license, backend-tests, frontend-build, docs]

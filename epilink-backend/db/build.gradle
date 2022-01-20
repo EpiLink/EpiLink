@@ -1,0 +1,14 @@
+plugins {
+    id 'epilink.kotlin-conventions'
+}
+
+dependencies {
+    api project(":epilink-backend:common")
+    implementation project(":epilink-backend:config")
+    implementation project(":epilink-backend:models")
+
+    implementation libs.bundles.exposed
+    implementation libs.commons.codec
+    implementation libs.commons.dbcp2
+    implementation libs.sqlite
+}

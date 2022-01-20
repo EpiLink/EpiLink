@@ -1,5 +1,23 @@
 enableFeaturePreview("VERSION_CATALOGS")
 rootProject.name = 'EpiLink'
-include 'bot', 'web', 'swagger', 'docs'
-project(":bot").name = "epilink-backend"
+
+// Backend projects
+include(
+    'epilink-backend:app',
+    'epilink-backend:cache-redis',
+    'epilink-backend:cache',
+    'epilink-backend:common',
+    'epilink-backend:config',
+    'epilink-backend:db',
+    'epilink-backend:discord',
+    'epilink-backend:models',
+    'epilink-backend:rulebook',
+    'epilink-backend:version',
+)
+
+// Frontend projects
+include 'web'
 project(":web").name = "epilink-frontend"
+
+// Documentation projects
+include 'swagger', 'docs'

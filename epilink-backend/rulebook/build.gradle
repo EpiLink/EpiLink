@@ -1,0 +1,14 @@
+plugins {
+    id 'epilink.kotlin-conventions'
+}
+
+dependencies {
+    implementation project(":epilink-backend:common")
+
+    api libs.bundles.kotlin.scripting
+    implementation libs.slf4j.api
+
+    // Utilities provided for rulebook users to have an easier time
+    implementation libs.bundles.ktor.client
+    implementation libs.bundles.jackson
+}

@@ -1,8 +1,8 @@
 [versions]
-kotlin = "1.6.0"
+kotlin = "1.6.10"
 jackson = "2.13.0"
 argparser = "2.0.7"
-coroutines = "1.6.0-RC" # TODO Not out yet
+coroutines = "1.6.0"
 dbcp2 = "2.9.0"
 discord4J = "3.2.1"
 exposed = "0.36.2" # For some reason a 0.36.1 is present on Central but not announced in GH Releases?
@@ -17,6 +17,8 @@ junit = "5.8.2"
 mockk = "1.12.1"
 detekt = "1.19.0"
 swaggerUi = "4.1.2"
+slf4j = "1.7.33"
+commonsCodec = "1.15"
 
 # Plugin versions
 
@@ -35,6 +37,7 @@ kotlin-scripting-common = { module = "org.jetbrains.kotlin:kotlin-scripting-comm
 kotlin-scripting-jvm = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm", version.ref = "kotlin" }
 kotlin-scripting-jvmHost = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm-host", version.ref = "kotlin" }
 
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-server-auth = { module = "io.ktor:ktor-auth", version.ref = "ktor" }
 ktor-server-jackson = { module = "io.ktor:ktor-jackson", version.ref = "ktor" }
@@ -47,6 +50,7 @@ jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", ver
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
 
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
@@ -72,7 +76,8 @@ ktorRateLimit = { module = "guru.zoroark:ktor-rate-limit", version.ref = "ktorRa
 
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
 
-commonsDbcp2 = { module = "org.apache.commons:commons-dbcp2", version.ref = "dbcp2" }
+commons-codec = { module = "commons-codec:commons-codec", version.ref = "commonsCodec" }
+commons-dbcp2 = { module = "org.apache.commons:commons-dbcp2", version.ref = "dbcp2" }
 
 # TEST CODE LIBRARIES
 

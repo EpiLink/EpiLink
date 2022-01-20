@@ -18,4 +18,4 @@ services:
       - "9090:9090"
       - "8080:8080"
     volumes:
-      - ./bot/config:/var/run/epilink/config
+      - "./epilink-backend/app/config:/var/run/epilink/config"

@@ -1,0 +1,58 @@
+plugins {
+    id 'epilink.kotlin-conventions'
+    id 'application'
+    id 'distribution'
+}
+
+application {
+    mainClass = "org.epilink.backend.MainKt"
+}
+
+dependencies {
+    implementation project(":epilink-backend:version")
+    implementation project(":epilink-backend:config")
+    implementation project(":epilink-backend:db")
+    implementation project(":epilink-backend:cache-redis")
+    implementation project(":epilink-backend:models")
+    implementation project(":epilink-backend:discord")
+    implementation project(":epilink-backend:rulebook")
+
+    implementation libs.bundles.ktor.server
+    implementation libs.bundles.ktor.client
+    implementation libs.bundles.jackson
+    implementation libs.bundles.koin
+
+    implementation libs.kotlin.reflect
+    implementation libs.logback
+    implementation libs.argparser
+    implementation libs.ktorRateLimit
+    implementation libs.jose4j
+
+    if (project.hasProperty("withFrontend"))
+        runtimeOnly project(path: ":epilink-frontend", configuration: "frontendJarCfg")
+
+    testImplementation libs.koin.test
+    testImplementation libs.ktor.server.testHost
+    testImplementation libs.ktor.client.mock.jvm
+}
+
+compileKotlin {
+    kotlinOptions.freeCompilerArgs += "-Xopt-in=io.ktor.locations.KtorExperimentalLocationsAPI"
+}
+
+license {
+    // Exclude front-end test files
+    exclude("frontend/*")
+}
+
+distributions {
+    main {
+        distributionBaseName = 'epilink-backend'
+        if (project.hasProperty("withFrontend"))
+            distributionBaseName = "epilink-backend-withFrontend"
+        contents {
+            from "../LICENSE"
+        }
+    }
+}
+

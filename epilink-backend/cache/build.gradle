@@ -1,0 +1,7 @@
+plugins {
+    id 'epilink.kotlin-conventions'
+}
+
+dependencies {
+    api libs.ktor.server.core
+}
