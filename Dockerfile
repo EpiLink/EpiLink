@@ -2,7 +2,10 @@
 # EpiLink building stage                    #
 #############################################
 
-FROM eclipse-temurin:17-jdk-alpine as BUILDER
+# Possible values: amd64, arm
+ARG build_mode=amd64
+
+FROM --platform=amd64 eclipse-temurin:17-jdk-alpine AS builder
 
 LABEL maintainer="Adrien Navratil <adrien1975@live.fr>"
 
@@ -37,14 +40,15 @@ RUN ./gradlew :epilink-backend:installDist -PwithFrontend && \
     mkdir /tmp/epilink-backend && \
     cp -r bot/build/install/epilink-backend-withFrontend/* /tmp/epilink-backend
 
+
 #############################################
 # JRE building stage                        #
 #############################################
-
+# TODO investigate if still useful now that there are JRE images from Temurin
 # Prepare a lightweightish JLink'd JRE image
 # From https://hub.docker.com/_/eclipse-temurin/
 # TODO Restrict list of modules to ship a lighter image, I'm not sure of which ones are strictly necessary here.
-FROM eclipse-temurin:17-jdk-alpine as JRE
+FROM --platform=amd64 eclipse-temurin:17-jdk-alpine AS jre
 
 RUN apk add --no-cache binutils && \
     $JAVA_HOME/bin/jlink \
@@ -57,12 +61,9 @@ RUN apk add --no-cache binutils && \
 
 
 #############################################
-# Actual stage where everything is ran      #
+# AMD64 (Alpine-based) runner               #
 #############################################
-
-# TODO Ubuntu is quite large. Alpine would be ideal, but the built JRE is made for glibc, not musl, and results in weird bugs.
-#      May be replaceable by distroless, but a) creating a user seems to be a pain b) we currently use multiple shell scripts as entrypoints.
-FROM alpine:3.15
+FROM alpine:3.15 as runner-amd64
 
 ENV USER epilink
 ENV LINK_ROOT /var/run/epilink
@@ -77,13 +78,13 @@ RUN mkdir -p $LINK_ROOT $JAVA_HOME && \
 USER $USER
 
 # Install the JRE.
-COPY --from=JRE /jre/ ${JAVA_HOME}/
+COPY --from=jre /jre/ ${JAVA_HOME}/
 
 # Get in the EpiLink folder for installation.
 WORKDIR $LINK_ROOT
 
 # Install files from BUILDER step.
-COPY --from=BUILDER /tmp/epilink-backend ./
+COPY --from=builder /tmp/epilink-backend ./
 
 # Then run the script.
 COPY docker/run.sh ./run
@@ -92,3 +93,33 @@ COPY docker/run.sh ./run
 EXPOSE 9090
 CMD ["/bin/sh", "./run"]
 
+#############################################
+# ARM (Ubuntu-based) runner                 #
+#############################################
+FROM eclipse-temurin:17-jre-focal as runner-arm
+
+ENV USER epilink
+ENV LINK_ROOT /var/run/epilink
+
+# Creating the app folder and runner user
+RUN mkdir -p $LINK_ROOT && \
+    addgroup --gid 1000 --system $USER && adduser --uid 1000 --system $USER --ingroup $USER && \
+    chown $USER:$USER $LINK_ROOT
+
+USER $USER
+
+# Get in the EpiLink folder for installation.
+WORKDIR $LINK_ROOT
+
+# Install files from BUILDER step.
+COPY --from=builder /tmp/epilink-backend ./
+
+# Then run the script.
+COPY docker/run.sh ./run
+
+# Final settings
+EXPOSE 9090
+CMD ["/bin/sh", "./run"]
+
+# Take the correct image according to the build mode
+FROM runner-${build_mode}
