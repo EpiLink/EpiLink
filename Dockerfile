@@ -1,10 +1,6 @@
 #############################################
 # EpiLink building stage                    #
 #############################################
-
-# Possible values: amd64, arm
-ARG build_mode=amd64
-
 FROM --platform=amd64 eclipse-temurin:17-jdk-alpine AS builder
 
 LABEL maintainer="Adrien Navratil <adrien1975@live.fr>"
@@ -44,7 +40,6 @@ RUN ./gradlew :epilink-backend:installDist -PwithFrontend && \
 #############################################
 # JRE building stage                        #
 #############################################
-# TODO investigate if still useful now that there are JRE images from Temurin
 # Prepare a lightweightish JLink'd JRE image
 # From https://hub.docker.com/_/eclipse-temurin/
 # TODO Restrict list of modules to ship a lighter image, I'm not sure of which ones are strictly necessary here.
@@ -96,7 +91,7 @@ CMD ["/bin/sh", "./run"]
 #############################################
 # ARM (Ubuntu-based) runner                 #
 #############################################
-FROM eclipse-temurin:17-jre-focal as runner-arm
+FROM eclipse-temurin:17-jre-focal as runner-arm-common
 
 ENV USER epilink
 ENV LINK_ROOT /var/run/epilink
@@ -121,5 +116,9 @@ COPY docker/run.sh ./run
 EXPOSE 9090
 CMD ["/bin/sh", "./run"]
 
-# Take the correct image according to the build mode
-FROM runner-${build_mode}
+FROM runner-arm-common AS runner-arm64
+FROM runner-arm-common AS runner-arm
+
+# Take the correct image according to the targeted architecture
+# See also https://github.com/docker/buildx/issues/805#issuecomment-946478949
+FROM runner-${TARGETARCH}
