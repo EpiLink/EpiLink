@@ -125,13 +125,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: false # Explicitly disable this just in case
-          outputs: type=oci,dest=/tmp/docker-image-epilink-backend.tar
           platforms: linux/amd64,linux/arm64,linux/arm/v7
-      - uses: actions/upload-artifact@v2
-        with:
-          name: docker-image
-          path: |
-            /tmp/docker-image-epilink-backend.tar
       - name: Detect stable or beta version
         id: check-version
         run: |
