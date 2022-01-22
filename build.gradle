@@ -2,7 +2,7 @@ plugins {
     id "com.github.ben-manes.versions"
 }
 
-version = "0.7.0-beta2"
+version = "0.7.0-beta4"
 
 // Versions config for the Gradle versions plugin, from the readme
 // https://github.com/ben-manes/gradle-versions-plugin
