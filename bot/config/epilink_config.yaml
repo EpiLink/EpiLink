@@ -51,7 +51,7 @@ server:
   # (Optional) Custom background that will be displayed to the user on the website. ~ means default, in which case a
   # simple grey background is shown. Same syntax as for the logo
   background: { file: bg.jpg }
-  
+
   # An optional list of custom footers that should be shown on the front-end
   footers: # optional
     - name: My Footer URL
@@ -142,7 +142,7 @@ tokens:
   # ID Prompt text disclaimer
   # identityPromptText: <p>My text...</p>
 
-# You can also add a "privacy:" section to enable/disable some notifications. See the maintainer guide for more details.
+# You can also add a "privacy:" section to enable/disable some notifications. See the documentation for more details.
 
 # Configuration for everything related to handling Discord servers
 # When something is optional, you can omit it entirely.

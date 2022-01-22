@@ -285,7 +285,8 @@ This section determines how EpiLink should react when some privacy-related event
 
 This entire section is optional. If omitted, all of its parameters take the default values.
 
-* `notifyAutomatedAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed automatically (e.g. to refresh rules). The identity of the requester is always disclosed (e.g. "EpiLink Discord bot"), and the message clarifies that this access was done automatically.
+* `notifyAutomatedAccess` *(optional, false by default)*: If true, sends a private message to a Discord user when their identity is accessed automatically (e.g. to refresh rules). The identity of the requester is always disclosed (e.g. "EpiLink Discord bot"), and the message clarifies that this access was done automatically.
+  * Until version 0.7.0 (excluded), this option was set to true by default. It is false by default since version 0.7.0 (included).
 * `notifyHumanAccess` *(optional, true by default)*: If true, sends a private message to a Discord user when their identity is accessed by a human (manual identity request). The identity of the requester may or may not be disclosed depending on the value of `discloseHumanRequesterIdentity`.
 * `discloseHumanRequesterIdentity` *(optional, false by default)*: If true, the private message sent when a human manual identity request occurs also indicates *who* initiated the request. If false, the private message does not contain that information. This value is unused when `notifyHumanAccess` is false.
 * `notifyBans` *(optional, true by default)*: If true, banning someone will send them a notification (this is done only if they are a known user). If false, banning someone never sends any notification to said user. *(since version 0.3.0)*
