@@ -36,7 +36,7 @@ task bundleWeb(type: NpmTask) {
 
 task serveWeb(type: NpmTask) {
     dependsOn npmInstall
-    args = ['run', 'serve']
+    args = ['run', 'dev']
 
     String backendUrl = backEndUrl()
     if (backendUrl != null)

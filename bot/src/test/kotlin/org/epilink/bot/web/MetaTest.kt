@@ -69,6 +69,7 @@ class MetaTest : KoinBaseTest<Unit>(
                 ContactInformation("Number One", "numberone@my-email.com"),
                 ContactInformation("The Two", "othernumber@eeeee.es")
             )
+            every { showFullAbout } returns true
         }
         withTestEpiLink {
             val call = handleRequest(HttpMethod.Get, "/api/v1/meta/info")
@@ -86,10 +87,13 @@ class MetaTest : KoinBaseTest<Unit>(
             assertEquals(2, footers.size)
             assertTrue(footers.any { it["name"] == "Hello" && it["url"] == "https://hello" })
             assertTrue(footers.any { it["name"] == "Heeeey" && it["url"] == "/macarena" })
+
             val contacts = data.getListOfMaps("contacts")
             assertEquals(2, contacts.size)
             assertTrue(contacts.any { it["name"] == "Number One" && it["email"] == "numberone@my-email.com" })
             assertTrue(contacts.any { it["name"] == "The Two" && it["email"] == "othernumber@eeeee.es" })
+
+            assertTrue(data["showFullAbout"] as Boolean)
         }
     }
 

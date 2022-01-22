@@ -85,7 +85,6 @@
     .message {
         text-align: center;
 
-        font-style: italic;
         color: #C01616;
     }
 

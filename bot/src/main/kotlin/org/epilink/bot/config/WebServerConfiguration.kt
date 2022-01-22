@@ -63,7 +63,11 @@ data class WebServerConfiguration(
     /**
      * List of hosts (including protocol) that will get whitelisted in the server's CORS settings
      */
-    val corsWhitelist: List<String> = listOf()
+    val corsWhitelist: List<String> = listOf(),
+    /**
+     * True to show both "Instance" and "About" tabs, false to show only "Instance" named as "About"
+     */
+    val showFullAbout: Boolean = false
 )
 
 /**

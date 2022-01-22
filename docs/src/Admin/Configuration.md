@@ -84,6 +84,7 @@ server:
       email: "schmidt@freddy.pizza"
     - name: William Afton
       email: "w_afton@circusbaby.pizza"
+  showFullAbout: false # optional
 ```
 
 * `address`: The address (aka host) on which the server should be bound, without the port. *(since version 0.7.0)*
@@ -113,6 +114,7 @@ server:
 * `corsWhitelist` *(optional, empty list by default)*: additional hosts to allow for [CORS](https://enable-cors.org/)-protected operations. The front-end's url is always allowed, you only need to change this if you have multiple URLs or want to expose the API via a Swagger somewhere. Add individual host + protocol combinations (e.g. `http://example.com`) or a star `*` to allow any host (not recommended) *(since version 0.7.0)*
 * `footers`: A list of custom footer URLs that are displayed on the front-end. You can omit the list, in which case no custom footers are set. Each footer takes a name and a URL.
 * `contacts` *(optional, empty list by default)*: A list of people users may contact for information about the instance. This will be displayed on the front-end. *(since version 0.2.0)*
+* `showFullAbout` *(optional, false by default)*: True to show the both the "About EpiLink" and "About this instance* pages on the front-end, false to only show the "About this instance" page. *(since version 0.7.0)*
 
 ## Identity provider
 

@@ -84,14 +84,12 @@
         }
 
         .tag {
-            font-style: italic;
             font-weight: normal;
         }
     }
 
     .email {
         font-size: 18px;
-        font-style: italic;
     }
 
     @media screen and (max-width: $height-wrap-breakpoint) {

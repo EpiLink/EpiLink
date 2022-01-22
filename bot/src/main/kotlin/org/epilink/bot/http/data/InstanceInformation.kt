@@ -23,5 +23,6 @@ data class InstanceInformation(
     val providerIcon: String?,
     val idPrompt: String,
     val footerUrls: List<FooterUrl>,
-    val contacts: List<ContactInformation>
+    val contacts: List<ContactInformation>,
+    val showFullAbout: Boolean
 )

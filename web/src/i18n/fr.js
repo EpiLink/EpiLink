@@ -74,7 +74,8 @@ export default {
     about: {
         sources: 'Sources originales',
         authors: 'Auteurs',
-        disclaimer: ["Pour toute question, merci de vous adresser en priorité aux mainteneurs de l'instance", '.']
+        disclaimer: ["Pour toute question, merci de vous adresser en priorité aux mainteneurs de l'instance", '.'],
+        website: 'Site web'
     },
 
     layout: {

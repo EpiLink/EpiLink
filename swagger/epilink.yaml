@@ -81,6 +81,7 @@ paths:
                       email: xavier.loginard@school.edu
                     - name: Mestel Bural-Nesfa
                       email: mester@lab.school.edu
+                  showFullAbout: false
 
   /meta/{legalText}:
     get:
@@ -994,6 +995,10 @@ components:
             $ref: '#/components/schemas/ContactInformation'
           description: |
             Contact information for the maintainers of the EpiLink instance
+        showFullAbout:
+          type: boolean
+          description: |
+            True if both the "about this instance" and "about EpiLink" pages should be available, false if "about this instance" should be the only one.
     FooterUrl:
       type: object
       properties:
