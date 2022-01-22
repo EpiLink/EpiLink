@@ -14,6 +14,14 @@ identity.
 
 EpiLink is available under the Mozilla Public License 2.0 (no copyleft exception) `MPL-2.0-no-copyleft-exception` [(info)](LICENSE).
 
+## Beta versions
+
+**NOTE:** Starting with version 0.7, we are publishing beta versions of EpiLink.
+
+- Beta documentation site: https://epilink-beta.zoroark.guru
+- Beta Docker images are available on Docker Hub and can be identified with their `-betaX` suffix.
+- Beta binary releases are available in the Releases tab as per usual
+
 ## Requirements
 
 - Java JDK >= 17, both for building and running. Do NOT use Oracle's JRE/JDK (licensing concerns), consider using [Eclipse Temurin](https://adoptium.net/) instead.

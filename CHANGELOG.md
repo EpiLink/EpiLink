@@ -11,8 +11,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - You may need to delete cached rulebooks. They will be regenerated on the next startup.
 - This release contains breaking changes. Please refer to our migration guide to know how to properly update to this version.
 
+### 🚀 **Highlights**
+
+- Official ARM support in our Docker images!
+- Swagger documentation for EpiLink APIs and a restructured EpiLink docs site!
+- `e!count` command to count how many users would be impacted by an update!
+- Beta releases!
+- Better configuration for custom roles that is 10x less annoying!
+- Java 17, Vue 3 and Kotlin 1.6 updates!
+- Fixed the `!everyone` user target!
+
 ### Added
 
+* Added support for ARM in our Docker images ([#329](https://github.com/EpiLink/EpiLink/issues/329))
 * Added new `httpGet` utility functions ([#241](https://github.com/EpiLink/EpiLink/pull/241))
 * Added a Swagger document in the documentation ([#256](https://github.com/EpiLink/EpiLink/pull/256))
 * Added a simple notice in `.hasFrontend` file telling people to not remove it ([#280](https://github.com/EpiLink/EpiLink/pull/280))
@@ -51,7 +62,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   
 ### Fixed
 
-* Fixed the `e!everyone` command not working due to privileged intents not being declared as such.
+* Fixed the `!everyone` user target not working due to privileged intents not being declared as such.
 
 ## [0.6.2] - 2021-04-14
 
