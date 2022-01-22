@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Migrated front-end to Vue 3 ([#316](https://github.com/EpiLink/EpiLink/pull/316))
 * Removed the italics on the front-end that were not used properly ([#325](https://github.com/EpiLink/EpiLink/pull/325))
 * The "About EpiLink" page is now opt-in and can be enabled in the configuration ([#325](https://github.com/EpiLink/EpiLink/pull/325))
+* The `privacy -> notifyAutomatedAccess` configuration option is now disabled by default ([#333](https://github.com/EpiLink/EpiLink/issues/333))
 * The following are worth mentioning, though they are internal changes that don't impact the actual feature set. ([#280](https://github.com/EpiLink/EpiLink/pull/280))
   * The CI is now more thorough in order to improve our release quality.
   * The front-end is now bundled as a separate JAR that is *then* integrated as a regular library in the back-end. This significantly simplifies the `withFrontend` variant build.
