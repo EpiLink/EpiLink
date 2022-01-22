@@ -47,8 +47,9 @@ You must provide the backendUrl with `-PbackendUrl="..."`. This is the URL under
 Launching the front-end can be done like so:
 
 ```bash
+# If you use NPM, you can use the "BACKEND_URL" environment variable to set the backend URL.
 $ npm install
-$ npm run serve
+$ npm run dev
 ### OR if you do not have NPM on your system ###
 $ ./gradlew serveWeb --no-daemon -PbackendUrl="https://..."
 ```

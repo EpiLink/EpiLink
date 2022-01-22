@@ -74,7 +74,8 @@ export default {
     about: {
         sources: 'Original sources',
         authors: 'Authors',
-        disclaimer: ['For any question, please refer to the', 'instance maintainers first.']
+        disclaimer: ['For any question, please refer to the', 'instance maintainers first.'],
+        website: 'Website'
     },
 
     layout: {
@@ -91,8 +92,8 @@ export default {
             profile: 'Profile',
             tos: 'Terms of Services',
             privacy: 'Privacy',
-            instance: 'Instance',
             about: 'About',
+            epilink: 'EpiLink',
             'not-found': 'Page not found'
         }
     },

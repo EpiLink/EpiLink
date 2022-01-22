@@ -9,40 +9,35 @@
 
 -->
 <template>
-    <div id="about">
+    <div id="instance">
         <div id="banner">
-            <img id="logo" alt="Logo" src="../../assets/logo.svg" />
-            <h1 class="title">EpiLink</h1>
+            <img id="instanceLogo" v-if="logo" :src="logo" />
+            <h1 class="title">{{ title }}</h1>
         </div>
-
-        <div id="button-container">
-            <a id="sources" href="https://github.com/EpiLink/EpiLink" rel="noreferrer" target="_blank">
-                <img id="github" alt="GitHub" src="../../assets/github.png" />
-                {{ $t('about.sources') }}
+        <div id="legal-links">
+            <router-link class="link" to="/tos">{{ $t('layout.navigation.tos') }}</router-link>
+            <router-link class="link" to="/privacy">{{ $t('layout.navigation.privacy') }}</router-link>
+        </div>
+        <div id="contact">
+            <h2 id="contact-info">{{ $t('instance.contactTitle') }}</h2>
+            <p id="contact-description">{{ $t('instance.contactDesc') }}</p>
+            <ul id="contacts">
+                <li v-for="p of people">
+                    {{ p.name }} (<a :href="'mailto:' + p.email">{{ p.email }}</a>)
+                </li>
+            </ul>
+        </div>
+        <div id="powered">
+            <router-link v-if="!redirectToGitHub" id="about" to="/about">
+                <span class="title">{{ $t('instance.poweredBy') }}</span>
+                <img id="epilinkLogo" src="../../assets/logo.svg" />
+                <span class="title" id="title-epilink">EpiLink</span>
+            </router-link>
+            <a v-else href="https://github.com/EpiLink/EpiLink" target="_blank" id="about">
+                <span class="title">{{ $t('instance.poweredBy') }}</span>
+                <img id="epilinkLogo" src="../../assets/logo.svg" />
+                <span class="title" id="title-epilink">EpiLink</span>
             </a>
-        </div>
-
-        <div id="disclaimer">
-            {{ $tm('about.disclaimer')[0] }}
-            '<span class="instance">{{ instance }}</span>'
-            {{ $tm('about.disclaimer')[1] }}
-        </div>
-
-        <div id="authors-section">
-            <h2 class="title" v-html="$t('about.authors')" />
-
-            <div id="authors">
-                <a class="author" href="https://github.com/utybo" rel="noreferrer" target="_blank">
-                    <img class="avatar" alt="Zoroark" src="../../assets/utybo.png" />
-                    <span class="name">Matthieu 'Zoroark' Stombellini</span>
-                    <span class="role">Back-end</span>
-                </a>
-                <a class="author" href="https://github.com/Litarvan" rel="noreferrer" target="_blank">
-                    <img class="avatar" alt="Litarvan" src="../../assets/litarvan.png" />
-                    <span class="name">Adrien 'Litarvan' Navratil</span>
-                    <span class="role">Front-end</span>
-                </a>
-            </div>
         </div>
     </div>
 </template>
@@ -51,26 +46,37 @@
     import { mapState } from 'vuex';
 
     export default {
-        name: 'link-about',
-        computed: mapState({ instance: state => state.meta && state.meta.title })
+        name: 'link-instance',
+        computed: mapState({
+            title: s => s.meta.title,
+            logo: s => s.meta.logo,
+            people: s => s.meta.contacts,
+            redirectToGitHub: s => !s.meta.showFullAbout
+        })
     };
 </script>
 
 <style lang="scss" scoped>
-    #about {
+    @import '../styles/vars';
+    @import '../styles/mixins';
+
+    #instance {
+        padding: 32px;
+
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: space-between;
     }
 
     #banner {
+        width: 100%;
+
         display: flex;
+        align-self: center;
         justify-content: center;
         align-items: center;
 
-        margin-top: 4px;
-
-        #logo {
+        #instanceLogo {
             width: 85px;
             margin-right: 20px;
 
@@ -78,178 +84,106 @@
         }
 
         .title {
-            font-size: 56px;
+            @include ellipsis();
+            font-size: 40px;
 
             margin: 0;
         }
     }
 
-    #button-container {
-        display: flex;
-        justify-content: center;
+    #powered {
+        align-self: center;
 
-        margin-top: 22px;
-        margin-bottom: 12px;
+        #about {
+            display: contents;
+        }
 
-        #sources {
-            display: flex;
-            justify-content: space-evenly;
-            align-items: center;
+        #epilinkLogo {
+            width: 27px;
+            height: 27px;
 
-            width: 185px;
+            margin: 0 6px 8px 12px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
 
-            padding: 10px 10px;
+        .title {
+            font-size: 23px;
+            @include lato(regular);
+        }
 
-            color: white;
-            background-color: black;
-
-            border-radius: 4px;
-
-            #github {
-                height: 25px;
-            }
+        #title-epilink {
+            @include lato(bold);
         }
     }
 
-    #disclaimer {
-        text-align: center;
+    #legal-links {
+        width: 100%;
 
-        font-style: italic;
-        padding: 0 15px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
 
-        .instance {
+        .link {
+            flex: 1 0;
+            text-align: center;
             font-weight: bold;
         }
     }
 
-    #authors-section {
-        .title {
-            text-align: center;
+    #contact {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
 
-            margin-top: 10px;
-            margin-bottom: 15px;
+        #contact-info {
+            margin-top: 0;
+            margin-bottom: 0;
         }
 
-        #authors {
-            display: flex;
-            justify-content: space-evenly;
-
-            .author {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-
-                .avatar {
-                    height: 100px;
-
-                    border-radius: 50%;
-                }
-
-                .name {
-                    font-size: 18px;
-
-                    margin-top: 10px;
-                }
-
-                .role {
-                    font-style: italic;
-                    font-size: 15px;
-                }
-            }
+        #contact-description {
+            margin-bottom: 0;
         }
     }
 
-    @media screen and (max-width: 535px) {
-        #authors-section {
-            .title {
-                margin-bottom: 0;
-            }
+    @media screen and (max-width: $height-wrap-breakpoint) {
+        #legal-links {
+            margin-top: 10px;
+        }
 
-            #authors {
-                flex-direction: column;
+        #contacts {
+            list-style: none;
+            padding: 0;
 
-                padding: 0 20px;
-
-                .author {
-                    flex-direction: row;
-                    justify-content: center;
-                    margin-top: 7px;
-
-                    .avatar {
-                        height: 45px;
-                    }
-
-                    .name {
-                        flex-grow: 1;
-
-                        font-size: 16px;
-
-                        margin-left: 10px;
-                        margin-top: 0;
-                    }
-
-                    .role {
-                        font-size: 14px;
-                    }
-                }
-            }
+            font-size: 14px;
         }
     }
 
     @media screen and (max-width: 425px) {
-        #authors-section {
-            .title {
-                font-size: 21px;
-            }
-
-            #authors {
-                padding: 0 11px;
-
-                .author {
-                    .avatar {
-                        height: 30px;
-                    }
-
-                    .name {
-                        font-size: 14px;
-                    }
-
-                    .role {
-                        font-size: 11px;
-                    }
-                }
-            }
+        #banner .title {
+            font-size: 32px;
         }
     }
 
-    @media screen and (max-width: 365px) {
-        #banner {
-            #logo {
-                width: 65px;
-            }
-
-            .title {
-                font-size: 46px;
-            }
+    @media screen and (max-width: 375px) {
+        #instance {
+            padding: 32px 25px;
         }
 
-        #disclaimer {
+        #contact-info {
+            font-size: 20px;
+        }
+
+        #powered #about .title {
+            font-size: 21px;
+        }
+
+        #contact-description {
             font-size: 14px;
         }
 
-        #button-container #sources {
-            width: 175px;
-            padding: 9px 10px;
-
-            font-size: 15px;
-
-            #github {
-                height: 22px;
-            }
-        }
-
-        #authors-section #authors .author .name {
-            font-size: 13px;
+        #contacts {
+            font-size: 12px;
         }
     }
 </style>

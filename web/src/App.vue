@@ -108,14 +108,15 @@
             routes() {
                 const meta = this.$store.state.meta;
                 const urls = meta && meta.footerUrls;
-                const instance = meta && [{ route: 'instance' }];
+                const about = meta && [{ route: 'about' }];
+                const epilink = meta && meta.showFullAbout && [{ route: 'epilink' }];
 
                 return [
                     { route: 'home' },
 
                     ...(urls || []),
-                    ...(instance || []),
-                    { route: 'about' }
+                    ...(about || []),
+                    ...(epilink || [])
                 ];
             },
             instance() {
@@ -330,7 +331,6 @@
 
             #logout {
                 @include lato(500);
-                font-style: italic;
                 font-size: 21px;
 
                 color: #C01616;

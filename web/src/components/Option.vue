@@ -44,8 +44,6 @@
 
     .option {
         display: flex;
-
-        font-style: italic;
     }
 
     .text {
