@@ -6,12 +6,16 @@ All security advisories are [available on GitHub](https://github.com/EpiLink/Epi
 
 ## Supported versions
 
-The following versions are supported with security updates. Please refer to the changelog file ([`CHANGELOG.md`](https://github.com/EpiLink/EpiLink/blob/dev/CHANGELOG.md)) for information on changes between versions.
+The following versions are supported with security updates until their "End of life" date. Please refer to the changelog file ([`CHANGELOG.md`](https://github.com/EpiLink/EpiLink/blob/dev/CHANGELOG.md)) for information on changes between versions.
 
-| Version | Supported? |
-| ------- | ---------- |
-| 0.6.x   | ✅ Yes     |
-| 0.5.x and lower | ❌ No      |
+| Version             | Supported? | End of life |
+| ------------------- | ---------- | ----------- |
+| Beta versions       | ❌ No (1)   | N/A         |
+| **0.7.x**           | ✅ Yes      | TBD (2)     |
+| **0.6.x**           | ✅ Yes      | 2022-07-01  |
+| **0.5.x** and lower | ❌ No       | N/A         |
+
+<small>(1) Beta versions (x.y.z-betaα) are unstable and do not count towards this security policy, although we will happily fix any security issue that arises within them. (2) Due to the irregular nature of version releases on EpiLink, end of life for the latest version is determined when the next version is released.</small>
 
 Please report potential vulnerabilities by contacting the project maintainers via Discord. You can find us via [EpiLink's public Discord server](https://discord.gg/CpHmSUt).
 
