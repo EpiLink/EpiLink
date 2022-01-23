@@ -17,7 +17,7 @@ data class PrivacyConfiguration(
     /**
      * True if automated accesses should send a notification
      */
-    val notifyAutomatedAccess: Boolean = true,
+    val notifyAutomatedAccess: Boolean = false,
     /**
      * True if human accesses should send a notification
      */
