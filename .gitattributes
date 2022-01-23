@@ -3,4 +3,6 @@
 #
 # These are explicitly windows files and should use crlf
 *.bat           text eol=crlf
+# Linux scripts that need to stay LF (or else Docker complains on Windows)
 *.sh            text eol=lf
+gradlew         text eol=lf

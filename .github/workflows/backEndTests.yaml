@@ -125,12 +125,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: false # Explicitly disable this just in case
-          outputs: type=docker,dest=/tmp/docker-image-epilink-backend.tar
-      - uses: actions/upload-artifact@v2
-        with:
-          name: docker-image
-          path: |
-            /tmp/docker-image-epilink-backend.tar
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
       - name: Detect stable or beta version
         id: check-version
         run: |
@@ -158,11 +153,13 @@ jobs:
         with:
           push: true
           tags: "litarvan/epilink:latest,litarvan/epilink:${{ env.RELEASE_VERSION }}"
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
       - name: Upload Docker image to Docker Hub (beta -> version)
         if: steps.check-version.outputs.beta == 'true'
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: "litarvan/epilink:${{ env.RELEASE_VERSION }}"
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

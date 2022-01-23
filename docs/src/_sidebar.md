@@ -1,10 +1,12 @@
 - [EpiLink](/)
 - **Administration**
 - [📖 Introduction](Admin/Introduction.md)
+- [🚀 Deployment](Admin/Deployment.md)
 - [⚙️ Configuration](Admin/Configuration.md)
 - [📇 Identity Providers](Admin/IdentityProviders.md)
 - [🎯 Rulebooks](Admin/Rulebooks.md)
 - [🪁 Rule Tester (IRT)](Admin/IRT.md)
+- [🚴 Admin Tools](Admin/AdminTools.md)
 - [💎 Discord commands](Admin/DiscordCommands.md)
 - [⚖ GDPR information](Admin/GDPR.md)
 - [⬆️ Migration guide](Admin/Migration.md)
@@ -14,4 +16,4 @@
 - [🛡️ Security](Contributing/Security.md)
 - **External links**
 - [📚 GitHub repository](https://github.com/EpiLink/EpiLink)
-- [🚀 Changelog](https://github.com/EpiLink/EpiLink/tree/dev/CHANGELOG.md)
+- [📣 Changelog](https://github.com/EpiLink/EpiLink/tree/dev/CHANGELOG.md)
