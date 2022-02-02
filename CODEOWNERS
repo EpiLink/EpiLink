@@ -8,4 +8,4 @@ gradle*             @utybo
 # Back-end is owned by @utybo
 /epilink-backend/               @utybo
 # Front-end is owned by @Litarvan
-/web/               @Litarvan
+/epilink-frontend/               @Litarvan

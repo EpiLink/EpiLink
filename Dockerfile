@@ -24,11 +24,11 @@ COPY *.gradle LICENSE LHEADER gradle.properties ${BUILD_ROOT}
 COPY buildSrc ${BUILD_ROOT}/buildSrc
 
 # Install the web app dependencies first before copying source files to speed up re-builds
-COPY web/package.json web/package-lock.json web/build.gradle ./web/
+COPY epilink-frontend/package.json epilink-frontend/package-lock.json epilink-frontend/build.gradle ./epilink-frontend/
 RUN ./gradlew npmInstall
 
 # Actually copy everything else
-COPY web ./web
+COPY epilink-frontend ./epilink-frontend
 COPY epilink-backend ./epilink-backend
 
 # Build everything

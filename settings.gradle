@@ -16,8 +16,7 @@ include(
 )
 
 // Frontend projects
-include 'web'
-project(":web").name = "epilink-frontend"
+include 'epilink-frontend'
 
 // Documentation projects
 include 'swagger', 'docs'
