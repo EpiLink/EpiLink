@@ -35,6 +35,10 @@ dependencies {
     testImplementation libs.mockk
 
     detektPlugins libs.detekt.formatting
+
+    // Workaround for detekt/detekt#4287 (see here: https://github.com/detekt/detekt/issues/4287#issuecomment-981657386)
+    detekt libs.kotlin.compiler.embeddable
+    detekt libs.detekt.cli
 }
 
 test {
@@ -50,6 +54,16 @@ jacocoTestReport {
     reports {
         xml.required = true
     }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+tasks.withType(io.gitlab.arturbosch.detekt.Detekt) {
+    jvmTarget = "17"
 }
 
 check.configure {

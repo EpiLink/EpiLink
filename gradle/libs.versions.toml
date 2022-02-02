@@ -97,6 +97,10 @@ ktor-client-mock-jvm = { module = "io.ktor:ktor-client-mock-jvm", version.ref = 
 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 
+# Workaround for detekt/detekt#4287 (see here: https://github.com/detekt/detekt/issues/4287#issuecomment-981657386)
+kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+detekt-cli = { module = "io.gitlab.arturbosch.detekt:detekt-cli", version.ref = "detekt" }
+
 # SWAGGER UI DEPENDENCY
 
 swaggerUi = { module = "org.webjars:swagger-ui", version.ref = "swaggerUi"}
