@@ -70,3 +70,5 @@ check.configure {
     dependsOn = dependsOn.findAll { it.name != 'detekt' }
     dependsOn += 'detektMain'
 }
+
+project.archivesBaseName = "epilink-backend-${project.name}"
