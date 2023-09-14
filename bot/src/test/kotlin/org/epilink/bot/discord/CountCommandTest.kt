@@ -8,59 +8,57 @@
  */
 package org.epilink.bot.discord
 
-import io.mockk.*
-import org.epilink.bot.KoinBaseTest
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.test.TegralSubjectTest
+import guru.zoroark.tegral.di.test.TestMutableInjectionEnvironment
+import guru.zoroark.tegral.di.test.mockk.putMock
+import io.mockk.MockKMatcherScope
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
 import org.epilink.bot.discord.cmd.CountCommand
-import org.epilink.bot.mockHere
-import org.epilink.bot.softMockHere
+import org.epilink.bot.putMockOrApply
 import org.epilink.bot.web.declareNoOpI18n
-import org.koin.dsl.module
 import kotlin.test.Test
 
-class CountCommandTest : KoinBaseTest<Command>(
-    Command::class,
-    module {
-        single<Command> { CountCommand() }
-    }
-) {
-    private fun mockMessagePipeline(
+class CountCommandTest : TegralSubjectTest<Command>(Command::class, { put<Command>(::CountCommand) }) {
+    private fun TestMutableInjectionEnvironment.mockMessagePipeline(
         channelId: String,
         discordMessagesReceiver: MockKMatcherScope.(DiscordMessages) -> DiscordEmbed
     ): Pair<DiscordClientFacade, DiscordEmbed> {
         val embed = mockk<DiscordEmbed>()
-        mockHere<DiscordMessages> {
-            every { discordMessagesReceiver(this@mockHere) } returns embed
+        putMock<DiscordMessages> {
+            every { discordMessagesReceiver(this@putMock) } returns embed
         }
         declareNoOpI18n()
-        val f = mockHere<DiscordClientFacade> {
+        val f = putMock<DiscordClientFacade> {
             coEvery { sendChannelMessage(channelId, embed) } returns ""
         }
         return f to embed
     }
 
     @Test
-    fun `Test wrong target command`() {
-        mockHere<DiscordTargets> {
+    fun `Test wrong target command`() = test {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("OWO OWO OWO") } returns TargetParseResult.Error
         }
         val (f, embed) = mockMessagePipeline("channel") { it.getWrongTargetCommandReply(any(), "OWO OWO OWO") }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "OWO OWO OWO",
-                sender = mockk(),
-                senderId = "",
-                channelId = "channel",
-                guildId = ""
-            )
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "OWO OWO OWO",
+            sender = mockk(),
+            senderId = "",
+            channelId = "channel",
+            guildId = ""
+        )
         coVerify { f.sendChannelMessage("channel", embed) }
     }
 
     @Test
-    fun `Test correct target command on everyone`() {
+    fun `Test correct target command on everyone`() = test {
         val members = ('a'..'j').map { it.toString() }.toList()
-        mockHere<DiscordTargets> {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("UWU UWU UWU") } returns TargetParseResult.Success.Everyone
             coEvery {
                 resolveDiscordTarget(
@@ -69,27 +67,27 @@ class CountCommandTest : KoinBaseTest<Command>(
                 )
             } returns TargetResult.Everyone
         }
-        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", listOf(10)) }
-        val f = softMockHere<DiscordClientFacade> {
+        val (_, embed) = mockMessagePipeline("the_channel") {
+            it.getSuccessCommandReply(any(), "count.success", listOf(10))
+        }
+        val f = putMockOrApply<DiscordClientFacade> {
             coEvery { getMembers("the_guild") } returns members
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "UWU UWU UWU",
-                sender = +"the_user",
-                senderId = "the_user",
-                channelId = "the_channel",
-                guildId = "the_guild"
-            )
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "UWU UWU UWU",
+            sender = +"the_user",
+            senderId = "the_user",
+            channelId = "the_channel",
+            guildId = "the_guild"
+        )
         coVerify { f.sendChannelMessage("the_channel", embed) }
     }
 
     @Test
-    fun `Test correct target command on role name`() {
+    fun `Test correct target command on role name`() = test {
         val members = ('a'..'j').map { it.toString() }.toList()
-        mockHere<DiscordTargets> {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("UWU UWU UWU") } returns TargetParseResult.Success.RoleByName("The Role")
             coEvery {
                 resolveDiscordTarget(
@@ -98,27 +96,28 @@ class CountCommandTest : KoinBaseTest<Command>(
                 )
             } returns TargetResult.Role("The Role Id")
         }
-        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", listOf(10)) }
-        val f = softMockHere<DiscordClientFacade> {
+        val (_, embed) = mockMessagePipeline("the_channel") {
+            it.getSuccessCommandReply(any(), "count.success", listOf(10))
+        }
+        val f = putMockOrApply<DiscordClientFacade> {
             coEvery { getMembersWithRole("The Role Id", "the_guild") } returns members
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "UWU UWU UWU",
-                sender = +"the_user",
-                senderId = "the_user",
-                channelId = "the_channel",
-                guildId = "the_guild"
-            )
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "UWU UWU UWU",
+            sender = +"the_user",
+            senderId = "the_user",
+            channelId = "the_channel",
+            guildId = "the_guild"
+        )
+
         coVerify { f.sendChannelMessage("the_channel", embed) }
     }
 
     @Test
-    fun `Test correct target command on role ID`() {
+    fun `Test correct target command on role ID`() = test {
         val members = ('a'..'j').map { it.toString() }.toList()
-        mockHere<DiscordTargets> {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("UWU UWU UWU") } returns TargetParseResult.Success.RoleById("The Role Id")
             coEvery {
                 resolveDiscordTarget(
@@ -127,26 +126,26 @@ class CountCommandTest : KoinBaseTest<Command>(
                 )
             } returns TargetResult.Role("The Role Id")
         }
-        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", listOf(10)) }
-        val f = softMockHere<DiscordClientFacade> {
+        val (_, embed) = mockMessagePipeline("the_channel") {
+            it.getSuccessCommandReply(any(), "count.success", listOf(10))
+        }
+        val f = putMockOrApply<DiscordClientFacade> {
             coEvery { getMembersWithRole("The Role Id", "the_guild") } returns members
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "UWU UWU UWU",
-                sender = +"the_user",
-                senderId = "the_user",
-                channelId = "the_channel",
-                guildId = "the_guild"
-            )
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "UWU UWU UWU",
+            sender = +"the_user",
+            senderId = "the_user",
+            channelId = "the_channel",
+            guildId = "the_guild"
+        )
         coVerify { f.sendChannelMessage("the_channel", embed) }
     }
 
     @Test
-    fun `Test correct target command on single user in guild`() {
-        mockHere<DiscordTargets> {
+    fun `Test correct target command on single user in guild`() = test {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("UWU UWU UWU") } returns TargetParseResult.Success.UserById("The User")
             coEvery {
                 resolveDiscordTarget(
@@ -155,26 +154,26 @@ class CountCommandTest : KoinBaseTest<Command>(
                 )
             } returns TargetResult.User("The User")
         }
-        val (_, embed) = mockMessagePipeline("the_channel") { it.getSuccessCommandReply(any(), "count.success", listOf(1)) }
-        val f = softMockHere<DiscordClientFacade> {
+        val (_, embed) = mockMessagePipeline("the_channel") {
+            it.getSuccessCommandReply(any(), "count.success", listOf(1))
+        }
+        val f = putMockOrApply<DiscordClientFacade> {
             coEvery { isUserInGuild("The User", "the_guild") } returns true
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "UWU UWU UWU",
-                sender = +"the_user",
-                senderId = "the_user",
-                channelId = "the_channel",
-                guildId = "the_guild"
-            )
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "UWU UWU UWU",
+            sender = +"the_user",
+            senderId = "the_user",
+            channelId = "the_channel",
+            guildId = "the_guild"
+        )
         coVerify { f.sendChannelMessage("the_channel", embed) }
     }
 
     @Test
-    fun `Test correct target command on single user not in guild`() {
-        mockHere<DiscordTargets> {
+    fun `Test correct target command on single user not in guild`() = test {
+        putMock<DiscordTargets> {
             every { parseDiscordTarget("UWU UWU UWU") } returns TargetParseResult.Success.UserById("The User")
             coEvery {
                 resolveDiscordTarget(
@@ -184,19 +183,17 @@ class CountCommandTest : KoinBaseTest<Command>(
             } returns TargetResult.User("The User")
         }
         val (_, embed) = mockMessagePipeline("the_channel") { it.getWrongTargetCommandReply(any(), "UWU UWU UWU") }
-        val f = softMockHere<DiscordClientFacade> {
+        val f = putMockOrApply<DiscordClientFacade> {
             coEvery { isUserInGuild("The User", "the_guild") } returns false
         }
-        test {
-            run(
-                fullCommand = "",
-                commandBody = "UWU UWU UWU",
-                sender = +"the_user",
-                senderId = "the_user",
-                channelId = "the_channel",
-                guildId = "the_guild"
-            )
-        }
+        subject.run(
+            fullCommand = "",
+            commandBody = "UWU UWU UWU",
+            sender = +"the_user",
+            senderId = "the_user",
+            channelId = "the_channel",
+            guildId = "the_guild"
+        )
         coVerify { f.sendChannelMessage("the_channel", embed) }
     }
 }

@@ -28,7 +28,7 @@
             </ul>
         </div>
         <div id="powered">
-            <router-link v-if="!redirectToGitHub" id="about" to="/about">
+            <router-link v-if="!redirectToGitHub" id="about" to="/epilink">
                 <span class="title">{{ $t('instance.poweredBy') }}</span>
                 <img id="epilinkLogo" src="../../assets/logo.svg" />
                 <span class="title" id="title-epilink">EpiLink</span>

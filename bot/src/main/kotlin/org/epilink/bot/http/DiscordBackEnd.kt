@@ -10,11 +10,15 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import io.ktor.client.HttpClient
-import io.ktor.client.call.receive
-import io.ktor.client.features.ClientRequestException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -27,22 +31,19 @@ import org.epilink.bot.StandardErrorCodes.DiscordApiFailure
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
 import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
  * The back-end, specifically for interacting with the Discord API
  */
-@OptIn(KoinApiExtension::class)
 class DiscordBackEnd(
+    scope: InjectionScope,
     private val clientId: String,
     private val secret: String
-) : KoinComponent {
+) {
     private val logger = LoggerFactory.getLogger("epilink.discordapi")
 
-    private val client: HttpClient by inject()
+    private val client: HttpClient by scope()
 
     private val authStubDiscord = "https://discord.com/api/oauth2/authorize?" + listOf(
         "response_type=code",
@@ -63,12 +64,12 @@ class DiscordBackEnd(
     suspend fun getDiscordToken(authcode: String, redirectUri: String): String {
         logger.debug { "Contacting Discord API for retrieving OAuth2 token..." }
         val res = runCatching {
-            client.post<String>("https://discord.com/api/v6/oauth2/token") {
+            client.post("https://discord.com/api/v6/oauth2/token") {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
                 val parameters = createOauthParameters(clientId, secret, authcode, redirectUri) +
                     parametersOf("scope", "identify")
-                body = TextContent(parameters.formUrlEncode(), ContentType.Application.FormUrlEncoded)
-            }
+                setBody(TextContent(parameters.formUrlEncode(), ContentType.Application.FormUrlEncoded))
+            }.bodyAsText()
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
                 handleClientRequestException(ex)
@@ -86,7 +87,7 @@ class DiscordBackEnd(
     }
 
     private suspend fun handleClientRequestException(ex: ClientRequestException): Nothing {
-        val received = ex.response.call.receive<String>()
+        val received = ex.response.call.body<String>()
         logger.debug { "Failed: received $received" }
         val data = ObjectMapper().readValue<Map<String, Any?>>(received)
         val error = data["error"] as? String

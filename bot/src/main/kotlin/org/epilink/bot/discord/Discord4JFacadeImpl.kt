@@ -26,6 +26,8 @@ import discord4j.gateway.intent.Intent
 import discord4j.gateway.intent.IntentSet
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Permission
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -39,29 +41,27 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
 import org.epilink.bot.EpiLinkException
 import org.epilink.bot.debug
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
 
 /**
  * Implementation of a Discord client facade that uses Discord4J
  */
-@OptIn(KoinApiExtension::class)
 @Suppress("TooManyFunctions")
 internal class Discord4JFacadeImpl(
+    scope: InjectionScope,
     private val discordClientId: String,
-    private val token: String
-) : DiscordClientFacade, KoinComponent {
+    private val token: String,
+) : DiscordClientFacade {
     private val logger = LoggerFactory.getLogger("epilink.bot.discord4j")
-    private val roleManager: RoleManager by inject()
-    private val commands: DiscordCommands by inject()
-    private val messages: DiscordMessages by inject()
+    private val roleManager: RoleManager by scope()
+    private val commands: DiscordCommands by scope()
+    private val messages: DiscordMessages by scope()
 
     /**
      * Coroutine scope used for firing things in events
      */
+    @Suppress("InjectDispatcher")
     private val scope =
         CoroutineScope(
             Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
@@ -111,6 +111,10 @@ internal class Discord4JFacadeImpl(
             }
 
         logger.info("Discord bot launched, invite link: " + getInviteLink())
+    }
+
+    override suspend fun stop() {
+        cclient?.logout()?.await()
     }
 
     override suspend fun isUserInGuild(userId: String, guildId: String): Boolean {
@@ -233,7 +237,7 @@ internal class Discord4JFacadeImpl(
             Permission.MANAGE_ROLES,
             Permission.KICK_MEMBERS,
             Permission.CHANGE_NICKNAME,
-            Permission.MANAGE_EMOJIS,
+            Permission.MANAGE_GUILD_EXPRESSIONS,
             Permission.VIEW_CHANNEL,
             Permission.EMBED_LINKS,
             Permission.READ_MESSAGE_HISTORY,
@@ -280,12 +284,15 @@ internal class Discord4JFacadeImpl(
         } catch (ex: ClientException) {
             if (ex.errorCode == "50007") {
                 throw UserDoesNotAcceptPrivateMessagesException(ex)
-            } else throw EpiLinkException("Unexpected exception on private channel retrieval", ex)
+            } else {
+                throw EpiLinkException("Unexpected exception on private channel retrieval", ex)
+            }
         }
 
     /**
      * Awaits the completion of a Publisher<Void>
      */
+    @Suppress("ForbiddenVoid") // False-positive, Discord4J returns Publisher<Void> objects we have to use
     private suspend fun Publisher<Void>.await() {
         if (awaitFirstOrNull() != null) error("Did not expect a return value here")
     }

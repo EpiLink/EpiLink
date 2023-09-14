@@ -12,7 +12,9 @@ import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.isMonitored
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class MonitoringTest {
     @Test

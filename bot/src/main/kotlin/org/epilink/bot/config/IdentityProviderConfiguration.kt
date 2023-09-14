@@ -27,5 +27,10 @@ data class IdentityProviderConfiguration(
     /**
      * Enable backwards compat, for msft only.
      */
-    val microsoftBackwardsCompatibility: Boolean = false
+    val microsoftBackwardsCompatibility: Boolean = false,
+    /**
+     * If set to true, the Identity Provider will not be required to provide HTTPS-only URLs. Only set to true for
+     * development purposes.
+     */
+    val relaxHttpsRequirement: Boolean = false // FIXME document in docsify
 )

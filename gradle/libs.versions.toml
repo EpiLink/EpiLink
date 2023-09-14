@@ -1,28 +1,27 @@
 [versions]
-kotlin = "1.6.0"
-jackson = "2.13.0"
+kotlin = "1.9.10"
+jackson = "2.15.2"
 argparser = "2.0.7"
-coroutines = "1.6.0-RC" # TODO Not out yet
-dbcp2 = "2.9.0"
-discord4J = "3.2.1"
-exposed = "0.36.2" # For some reason a 0.36.1 is present on Central but not announced in GH Releases?
-jose4j = "0.7.9"
-koin = "2.2.3"
-ktorRateLimit = "0.0.2"
-ktor = "1.6.6"
-lettuce = "6.1.5.RELEASE"
-logback = { strictly = "1.2.3-litarvan" }
-sqliteJdbc = "3.36.0.3"
-junit = "5.8.2"
-mockk = "1.12.1"
-detekt = "1.19.0"
-swaggerUi = "4.1.2"
+coroutines = "1.7.3"
+dbcp2 = "2.10.0"
+discord4J = "3.2.6"
+exposed = "0.43.0"
+jose4j = "0.9.3"
+ktorRateLimit = "0.0.3"
+ktor = "2.3.4"
+lettuce = "6.2.6.RELEASE"
+logback = "1.4.11"
+# /!\ 3.43+ is broken with Exposed due to EXPOSED-162. Ref: xerial/sqlite-jdbc#329, xerial/sqlite-jdbc#963
+sqliteJdbc = "3.42.0.1"
+junit = "5.10.0"
+mockk = "1.13.7"
+detekt = "1.23.1"
+swaggerUi = "5.6.1"
 
 # Plugin versions
 
 license = "0.16.1"
 node = "3.1.1"
-swaggerGenerator = "2.18.2"
 versions = "0.39.0"
 
 [libraries]
@@ -36,9 +35,12 @@ kotlin-scripting-jvm = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm", v
 kotlin-scripting-jvmHost = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm-host", version.ref = "kotlin" }
 
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
-ktor-server-auth = { module = "io.ktor:ktor-auth", version.ref = "ktor" }
-ktor-server-jackson = { module = "io.ktor:ktor-jackson", version.ref = "ktor" }
-ktor-server-locations = { module = "io.ktor:ktor-locations", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-jackson = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
+ktor-server-locations = { module = "io.ktor:ktor-server-locations", version.ref = "ktor" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+ktor-server-forwardedHeader = { module = "io.ktor:ktor-server-forwarded-header", version.ref = "ktor" }
 
 ktor-client-apache = { module = "io.ktor:ktor-client-apache", version.ref = "ktor" }
 ktor-client-auth-jvm = { module = "io.ktor:ktor-client-auth-jvm", version.ref = "ktor" }
@@ -63,9 +65,6 @@ discord4j-core = { module = "com.discord4j:discord4j-core", version.ref = "disco
 kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "coroutines" }
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "coroutines" }
 
-koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
-koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
-
 lettuce-core = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
 
 ktorRateLimit = { module = "guru.zoroark:ktor-rate-limit", version.ref = "ktorRateLimit"}
@@ -83,8 +82,6 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
-koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
-
 ktor-server-testHost = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 ktor-client-mock-jvm = { module = "io.ktor:ktor-client-mock-jvm", version.ref = "ktor" }
 
@@ -99,12 +96,11 @@ swaggerUi = { module = "org.webjars:swagger-ui", version.ref = "swaggerUi"}
 [bundles]
 
 kotlin-scripting = ["kotlin-scripting-common", "kotlin-scripting-jvm", "kotlin-scripting-jvmHost"]
-ktor-server = ["ktor-server-netty", "ktor-server-auth", "ktor-server-jackson", "ktor-server-locations"]
+ktor-server = ["ktor-server-netty", "ktor-server-auth", "ktor-server-contentNegotiation", "ktor-server-jackson", "ktor-server-locations", "ktor-server-cors", "ktor-server-forwardedHeader"]
 ktor-client = ["ktor-client-apache", "ktor-client-auth-jvm"]
 jackson = ["jackson-databind", "jackson-kotlin", "jackson-yaml"]
 exposed = ["exposed-core", "exposed-dao", "exposed-jdbc", "exposed-javaTime"]
 kotlinx-coroutines = ["kotlinx-coroutines-reactor", "kotlinx-coroutines-reactive"]
-koin = ["koin-core", "koin-logger-slf4j"]
 kotlin-test = ["kotlin-test-core", "kotlin-test-junit5"]
 
 [plugins]
@@ -113,5 +109,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 license = { id = "com.github.hierynomus.license", version.ref = "license" }
 versions = { id = "com.github.ben-manes.versions", version.ref = "versions" }
-swaggerGenerator = { id = "org.hidetake.swagger.generator", version.ref = "swaggerGenerator" }
 node = { id = "com.github.node-gradle.node", version.ref = "node"}

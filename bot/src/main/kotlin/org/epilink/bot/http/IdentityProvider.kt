@@ -10,11 +10,15 @@ package org.epilink.bot.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import io.ktor.client.HttpClient
-import io.ktor.client.call.receive
-import io.ktor.client.features.ClientRequestException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -27,40 +31,37 @@ import org.epilink.bot.UserEndpointException
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.getList
 import org.epilink.bot.rulebook.getString
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
  * This class is responsible for communicating with OIDC APIs, determined from the given metadata
  */
-@OptIn(KoinApiExtension::class)
 class IdentityProvider(
+    scope: InjectionScope,
     private val clientId: String,
     private val clientSecret: String,
     private val tokenUrl: String,
     authorizeUrl: String
-) : KoinComponent {
+) {
     private val logger = LoggerFactory.getLogger("epilink.identityProvider")
     private val authStub = "$authorizeUrl?" +
         listOf(
             "client_id=$clientId",
             "response_type=code",
-                /*
-                 * Only useful for Microsoft, which prompts the "select an account" screen, since users may have
-                 * multiple accounts (e.g. their work account and their personal account)
-                 *
-                 * From the RFC 6749:
-                 * > The authorization server MUST ignore unrecognized request parameters.
-                 * So we can leave it in, servers that do not support that parameter will ignore it.
-                 */
+            /*
+             * Only useful for Microsoft, which prompts the "select an account" screen, since users may have
+             * multiple accounts (e.g. their work account and their personal account)
+             *
+             * From the RFC 6749:
+             * > The authorization server MUST ignore unrecognized request parameters.
+             * So we can leave it in, servers that do not support that parameter will ignore it.
+             */
             "prompt=select_account",
             "scope=openid%20profile%20email"
         ).joinToString("&")
 
-    private val client: HttpClient by inject()
-    private val jwtVerifier: JwtVerifier by inject()
+    private val client: HttpClient by scope()
+    private val jwtVerifier: JwtVerifier by scope()
 
     /**
      * Consume the authcode and return the user info from the retrieved ID token.
@@ -72,16 +73,18 @@ class IdentityProvider(
      */
     suspend fun getUserIdentityInfo(code: String, redirectUri: String): UserIdentityInfo {
         val res = runCatching {
-            client.post<String>(tokenUrl) {
+            client.post(tokenUrl) {
                 header(HttpHeaders.Accept, ContentType.Application.Json)
-                body = TextContent(
-                    createOauthParameters(clientId, clientSecret, code, redirectUri).formUrlEncode(),
-                    ContentType.Application.FormUrlEncoded
+                setBody(
+                    TextContent(
+                        createOauthParameters(clientId, clientSecret, code, redirectUri).formUrlEncode(),
+                        ContentType.Application.FormUrlEncoded
+                    )
                 )
             }
         }.getOrElse { ex ->
             if (ex is ClientRequestException) {
-                val received = ex.response.call.receive<String>()
+                val received = ex.response.call.body<String>()
                 logger.debug { "Failed: received $received" }
                 val data = ObjectMapper().readValue<Map<String, Any?>>(received)
                 when (val error = data["error"] as? String) {
@@ -91,6 +94,7 @@ class IdentityProvider(
                         "oa.iac",
                         cause = ex
                     )
+
                     else -> {
                         val description = data["error_description"] ?: "no description"
                         identityProviderFailure("Identity Provider OAuth failed: $error ($description)", ex)
@@ -100,7 +104,7 @@ class IdentityProvider(
                 identityProviderFailure("Identity Provider API call failed", ex)
             }
         }
-        val data: Map<String, Any?> = ObjectMapper().readValue(res)
+        val data: Map<String, Any?> = ObjectMapper().readValue(res.bodyAsText())
         val jwt = data["id_token"] as String?
             ?: identityProviderFailure("Did not receive any ID token from the identity provider")
         return jwtVerifier.process(jwt)
@@ -164,7 +168,11 @@ sealed class MetadataOrFailure {
  * Determine the identity provider metadata from the contents of the discovery URL
  */
 @Suppress("ReturnCount")
-fun identityProviderMetadataFromDiscovery(discoveryContent: String, idClaim: String = "sub"): MetadataOrFailure {
+fun identityProviderMetadataFromDiscovery(
+    discoveryContent: String,
+    idClaim: String = "sub",
+    relaxHttpsRequirement: Boolean = false
+): MetadataOrFailure {
     val map: Map<String, *> = ObjectMapper().readValue(discoveryContent)
     val responseTypes = map.getList("response_types_supported")
     return if ("code" !in responseTypes) {
@@ -172,19 +180,22 @@ fun identityProviderMetadataFromDiscovery(discoveryContent: String, idClaim: Str
     } else {
         val metadata = IdentityProviderMetadata(
             issuer = map.getString("issuer"),
-            tokenUrl = map.getString("token_endpoint")
-                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
-            authorizeUrl = map.getString("authorization_endpoint")
-                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
-            jwksUri = map.getString("jwks_uri")
-                .ensureHttps { return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it") },
+            tokenUrl = map.getString("token_endpoint").ensureHttps(relaxHttpsRequirement) {
+                return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it")
+            },
+            authorizeUrl = map.getString("authorization_endpoint").ensureHttps(relaxHttpsRequirement) {
+                return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it")
+            },
+            jwksUri = map.getString("jwks_uri").ensureHttps(relaxHttpsRequirement) {
+                return MetadataOrFailure.IncompatibleProvider("HTTPS is required but got $it")
+            },
             idClaim = idClaim
         )
         MetadataOrFailure.Metadata(metadata)
     }
 }
 
-private inline fun String.ensureHttps(ifNotHttps: (String) -> Nothing): String {
-    if (!this.startsWith("https://")) ifNotHttps(this)
+private inline fun String.ensureHttps(relaxRequirement: Boolean, ifNotHttps: (String) -> Nothing): String {
+    if (!this.startsWith("https://") && !relaxRequirement) ifNotHttps(this)
     return this
 }

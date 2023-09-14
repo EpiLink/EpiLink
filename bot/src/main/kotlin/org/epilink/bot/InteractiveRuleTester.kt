@@ -124,6 +124,7 @@ private suspend fun handleQuery(l: String, rulebook: Rulebook) {
                     query.email
                 )
             }
+
             is WeakIdentityRule -> rule.determineRoles(
                 query.discordId,
                 query.discordUsername,
@@ -148,7 +149,10 @@ private fun loadRulebook(fileName: String): Rulebook? {
             println("(i) Rulebook loaded with ${it.rules.size} rule(s).")
         }
     }
-    return result.getOrElse { it.printStackTrace(System.out); null }
+    return result.getOrElse {
+        it.printStackTrace(System.out)
+        null
+    }
 }
 
 private data class Query(

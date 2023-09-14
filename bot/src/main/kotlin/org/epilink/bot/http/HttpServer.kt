@@ -8,69 +8,68 @@
  */
 package org.epilink.bot.http
 
-import io.ktor.application.install
-import io.ktor.features.ForwardedHeaderSupport
-import io.ktor.features.XForwardedHeaderSupport
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
+import guru.zoroark.tegral.services.api.TegralService
+import io.ktor.server.application.install
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.forwardedheaders.ForwardedHeaders
+import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
 import org.epilink.bot.config.ProxyType.Forwarded
 import org.epilink.bot.config.ProxyType.None
 import org.epilink.bot.config.ProxyType.XForwarded
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.debug
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
  * The HTTP server. Wraps the actual Ktor server and initializes it with injected dependencies, such as the back end
  * and the front end handler.
  */
-interface HttpServer {
-    /**
-     * Start the server. If wait is true, this function will block until the
-     * server stops.
-     */
-    fun startServer(wait: Boolean)
-}
+interface HttpServer
 
 /**
  * This class represents the Ktor server.
  */
-@OptIn(KoinApiExtension::class)
-internal class HttpServerImpl : HttpServer, KoinComponent {
+internal class HttpServerImpl(scope: InjectionScope) : HttpServer, TegralService {
     private val logger = LoggerFactory.getLogger("epilink.http")
-    private val wsCfg: WebServerConfiguration by inject()
+    private val wsCfg: WebServerConfiguration by scope()
 
-    private val frontEndHandler: FrontEndHandler by inject()
+    private val frontEndHandler: FrontEndHandler by scope()
 
-    private val backend: BackEnd by inject()
+    private val backend: BackEnd by scope()
 
     /**
      * The actual Ktor application instance
      */
-    private var server: ApplicationEngine = embeddedServer(Netty, wsCfg.port, wsCfg.address) {
-        when (wsCfg.proxyType) {
-            None -> logger.warn("Reverse proxy support is DISABLED. Use a reverse proxy and configure it for HTTPS!")
-            Forwarded -> install(ForwardedHeaderSupport)
-                .also { logger.debug { "'Forwarded' header support installed." } }
-            XForwarded -> install(XForwardedHeaderSupport)
-                .also { logger.debug { "'X-Forwarded-*' header support installed." } }
-        }
-        logger.debug("Installing EpiLink API")
-        with(backend) {
-            epilinkApiModule()
-        }
-        logger.debug("Installing EpiLink front-end handler")
-        with(frontEndHandler) { install() }
-    }
+    private lateinit var server: ApplicationEngine
 
-    override fun startServer(wait: Boolean) {
+    override suspend fun start() {
         if (frontEndHandler.serveIntegratedFrontEnd) {
             logger.info("Bundled front-end will be served. To disable that, set a front-end URL in the config file.")
         }
-        server.start(wait)
+        server = embeddedServer(Netty, wsCfg.port, wsCfg.address) {
+            when (wsCfg.proxyType) {
+                None -> logger.warn("Reverse proxy support is DISABLED. Use a reverse proxy and configure it for HTTPS!")
+                Forwarded -> install(ForwardedHeaders)
+                    .also { logger.debug { "'Forwarded' header support installed." } }
+
+                XForwarded -> install(XForwardedHeaders)
+                    .also { logger.debug { "'X-Forwarded-*' header support installed." } }
+            }
+            logger.debug("Installing EpiLink API")
+            with(backend) {
+                epilinkApiModule()
+            }
+            logger.debug("Installing EpiLink front-end handler")
+            with(frontEndHandler) { install() }
+        }
+        server.start()
+    }
+
+    override suspend fun stop() {
+        server.stop()
     }
 }

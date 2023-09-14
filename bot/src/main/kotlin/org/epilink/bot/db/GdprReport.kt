@@ -8,12 +8,11 @@
  */
 package org.epilink.bot.db
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import org.epilink.bot.ServerEnvironment
 import org.epilink.bot.config.IdentityProviderConfiguration
 import org.epilink.bot.config.PrivacyConfiguration
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Instant
 
 /**
@@ -55,14 +54,13 @@ interface GdprReport {
     suspend fun getLanguagePreferencesReport(id: String): String
 }
 
-@OptIn(KoinApiExtension::class)
-internal class GdprReportImpl : GdprReport, KoinComponent {
-    private val dbf: DatabaseFacade by inject()
-    private val idManager: IdentityManager by inject()
-    private val banLogic: BanLogic by inject()
-    private val privacy: PrivacyConfiguration by inject()
-    private val env: ServerEnvironment by inject()
-    private val idpCfg: IdentityProviderConfiguration by inject()
+internal class GdprReportImpl(scope: InjectionScope) : GdprReport {
+    private val dbf: DatabaseFacade by scope()
+    private val idManager: IdentityManager by scope()
+    private val banLogic: BanLogic by scope()
+    private val privacy: PrivacyConfiguration by scope()
+    private val env: ServerEnvironment by scope()
+    private val idpCfg: IdentityProviderConfiguration by scope()
 
     @Suppress("MaxLineLength")
     override suspend fun getFullReport(user: User, requester: String): String =
@@ -138,15 +136,20 @@ internal class GdprReportImpl : GdprReport, KoinComponent {
         |${makeBansList(user) ?: "No known bans."}
         """.trimMargin()
 
-    @Suppress("MaxLineLength")
     private suspend fun makeBansList(user: User): String? {
         val bans = dbf.getBansFor(user.idpIdHash)
         return if (bans.isEmpty()) {
             null
         } else {
             bans.joinToString("\n") {
+                val banStatusWord = when {
+                    it.revoked -> "(revoked, inactive)"
+                    banLogic.isBanActive(it) -> "(active)"
+                    else -> "(expired, inactive)"
+                }
+
                 """
-                |- Ban ${if (it.revoked) "(revoked, inactive)" else if (banLogic.isBanActive(it)) "(active)" else "(expired, inactive)"}
+                |- Ban $banStatusWord
                 |  - Reason: ${it.reason}
                 |  - Issued on: ${it.issued}
                 |  - Expires on: ${it.expiresOn ?: "Does not expire"}

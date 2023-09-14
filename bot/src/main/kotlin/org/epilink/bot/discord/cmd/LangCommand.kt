@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord.cmd
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import org.epilink.bot.db.DatabaseFacade
 import org.epilink.bot.db.User
 import org.epilink.bot.discord.Command
@@ -15,23 +17,19 @@ import org.epilink.bot.discord.DiscordClientFacade
 import org.epilink.bot.discord.DiscordMessages
 import org.epilink.bot.discord.DiscordMessagesI18n
 import org.epilink.bot.discord.PermissionLevel
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * The e!lang command that allows any user to change the EpiLink Discord bot's language.
  */
-@OptIn(KoinApiExtension::class)
-class LangCommand : Command, KoinComponent {
+class LangCommand(scope: InjectionScope) : Command {
     override val name = "lang"
     override val permissionLevel = PermissionLevel.Anyone
     override val requireMonitoredServer = false
 
-    private val client by inject<DiscordClientFacade>()
-    private val messages by inject<DiscordMessages>()
-    private val i18n by inject<DiscordMessagesI18n>()
-    private val db by inject<DatabaseFacade>()
+    private val client by scope<DiscordClientFacade>()
+    private val messages by scope<DiscordMessages>()
+    private val i18n by scope<DiscordMessagesI18n>()
+    private val db by scope<DatabaseFacade>()
 
     override suspend fun run(
         fullCommand: String,
@@ -46,6 +44,7 @@ class LangCommand : Command, KoinComponent {
             commandBody.isEmpty() ->
                 // e!lang
                 client.sendChannelMessage(channelId, messages.getLangHelpEmbed(previousLanguage))
+
             commandBody == "clear" -> {
                 // e!lang clear
                 db.clearLanguagePreference(senderId)
@@ -64,6 +63,7 @@ class LangCommand : Command, KoinComponent {
                     messages.getSuccessCommandReply(i18n.getLanguage(senderId), "lang.success")
                 )
             }
+
             else ->
                 client.sendChannelMessage(
                     channelId,

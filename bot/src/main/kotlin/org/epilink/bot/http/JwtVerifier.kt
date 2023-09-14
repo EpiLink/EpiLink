@@ -8,23 +8,18 @@
  */
 package org.epilink.bot.http
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.UserEndpointException
 import org.jose4j.jwk.HttpsJwks
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
 
 private const val ALLOWED_CLOCK_SKEW = 30
 
 /**
  * This class is responsible for verifying JWT tokens using a JWKS for keys.
  */
-@OptIn(KoinApiExtension::class)
-class JwtVerifier(clientId: String, jwksUri: String, private val idClaim: String) : KoinComponent {
+class JwtVerifier(clientId: String, jwksUri: String, private val idClaim: String) {
     private val jwtConsumer = JwtConsumerBuilder().apply {
         setRequireExpirationTime()
         setRequireIssuedAt()
@@ -45,8 +40,8 @@ class JwtVerifier(clientId: String, jwksUri: String, private val idClaim: String
     /**
      * Process a specific JWT and return the info retrieved. Throws an exception if the JWT is invalid.
      */
-    suspend fun process(jwt: String): UserIdentityInfo {
-        val claims = withContext(Dispatchers.Default) { jwtConsumer.processToClaims(jwt) }
+    fun process(jwt: String): UserIdentityInfo {
+        val claims = jwtConsumer.processToClaims(jwt)
         return UserIdentityInfo(
             claims.getClaimValueAsString(idClaim) ?: throw UserEndpointException(
                 StandardErrorCodes.AccountHasNoId,

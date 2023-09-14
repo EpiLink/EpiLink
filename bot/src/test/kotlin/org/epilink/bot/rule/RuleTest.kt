@@ -12,7 +12,9 @@ import kotlinx.coroutines.runBlocking
 import org.epilink.bot.rulebook.RuleException
 import org.epilink.bot.rulebook.StrongIdentityRule
 import org.epilink.bot.rulebook.WeakIdentityRule
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class RuleTest {
     @Test

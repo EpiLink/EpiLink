@@ -10,6 +10,7 @@ package org.epilink.bot.db.exposed
 
 import org.epilink.bot.db.DatabaseFacade
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transactionManager
 import org.sqlite.SQLiteConfig
 import org.sqlite.SQLiteDataSource
@@ -35,9 +36,12 @@ class SQLiteExposedFacadeImpl(db: String) : ExposedDatabaseFacade() {
         )
     ).apply {
         // Required for SQLite
-        transactionManager.defaultIsolationLevel =
-            Connection.TRANSACTION_SERIALIZABLE
+        transactionManager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
     }
 
     override val useMutex = true
+
+    override suspend fun stop() {
+        TransactionManager.closeAndUnregister(db)
+    }
 }

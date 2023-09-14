@@ -90,6 +90,7 @@ export default {
             settings: 'Paramètres',
             success: 'Terminé',
             profile: 'Profil',
+            epilink: 'EpiLink',
             tos: "Conditions d'utilisation",
             privacy: 'Confidentialité',
             instance: 'Instance',

@@ -8,11 +8,15 @@
  */
 package org.epilink.bot.discord
 
-import discord4j.core.spec.EmbedCreateSpec
 import discord4j.discordjson.json.EmbedData
 import discord4j.rest.util.Color
 import org.epilink.bot.EpiLinkException
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class DiscordEmbedTest {
     @Test
@@ -80,7 +84,7 @@ class DiscordEmbedTest {
     @Test
     fun `Test embed creation - author`() {
         embedFromAndTest(DiscordEmbed(author = DiscordEmbedAuthor("a", "b", "c")), "a" to "b" to "c") {
-            author().get().name().get() to author().get().url().get() to author().get().iconUrl().get()
+            author().get().name().get() to author().get().url().get().get() to author().get().iconUrl().get()
         }
     }
 

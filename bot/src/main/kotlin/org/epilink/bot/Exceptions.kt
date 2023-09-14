@@ -59,7 +59,7 @@ class UserEndpointException(
     val detailsI18n: String? = null,
     val detailsI18nData: Map<String, String> = mapOf(),
     cause: Throwable? = null
-) : EndpointException(errorCode, errorCode.description + (details?.let { " ($it)" } ?: ""), cause)
+) : EndpointException(errorCode, errorCode.description + (details?.let { " ($it)" }.orEmpty()), cause)
 
 /**
  * Turn the information of this exception into a proper ApiErrorResponse. If this exception does not have a message,
@@ -68,6 +68,7 @@ class UserEndpointException(
 fun EndpointException.toApiResponse(): ApiErrorResponse = when (this) {
     is InternalEndpointException ->
         ApiErrorResponse(errorCode.description, "err.${errorCode.code}", errorInfo = errorCode.toErrorData())
+
     is UserEndpointException ->
         ApiErrorResponse(
             details ?: errorCode.description,

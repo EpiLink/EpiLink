@@ -1,5 +1,16 @@
-enableFeaturePreview("VERSION_CATALOGS")
 rootProject.name = 'EpiLink'
 include 'bot', 'web', 'swagger', 'docs'
 project(":bot").name = "epilink-backend"
 project(":web").name = "epilink-frontend"
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+
+    versionCatalogs {
+        tegralLibs {
+            from("guru.zoroark.tegral:tegral-catalog:0.0.4")
+        }
+    }
+}

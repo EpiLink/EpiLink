@@ -10,6 +10,11 @@ package org.epilink.bot
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.environment.ScopedSupplier
+import guru.zoroark.tegral.di.environment.getOrNull
+import guru.zoroark.tegral.di.test.TestMutableInjectionEnvironment
+import guru.zoroark.tegral.di.test.mockk.putMock
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandler
@@ -21,14 +26,13 @@ import io.ktor.server.testing.TestApplicationCall
 import io.ktor.server.testing.TestApplicationRequest
 import io.ktor.server.testing.TestApplicationResponse
 import io.ktor.server.testing.setBody
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
-import org.epilink.bot.config.*
-import org.epilink.bot.discord.DiscordMessagesI18n
-import org.koin.core.component.KoinApiExtension
-import org.koin.test.KoinTest
-import org.koin.test.mock.declare
+import io.mockk.spyk
+import org.epilink.bot.config.Configuration
+import org.epilink.bot.config.DiscordConfiguration
+import org.epilink.bot.config.IdentityProviderConfiguration
+import org.epilink.bot.config.ProxyType
+import org.epilink.bot.config.TokensConfiguration
+import org.epilink.bot.config.WebServerConfiguration
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import kotlin.test.assertEquals
@@ -57,45 +61,33 @@ val minimalConfig = Configuration(
 val Url.hostWithPortIfRequired: String get() = if (port == protocol.defaultPort) host else hostWithPort
 val Url.fullUrl: String get() = "${protocol.name}://$hostWithPortIfRequired$fullPath"
 
-fun KoinTest.declareClientHandler(onlyMatchUrl: String? = null, handler: MockRequestHandler): HttpClient =
-    declare {
-        HttpClient(MockEngine) {
-            engine {
-                addHandler(
-                    onlyMatchUrl?.let {
-                        { request ->
-                            when (request.url.fullUrl) {
-                                onlyMatchUrl -> handler(request)
-                                else -> error("Url ${request.url.fullUrl} does not match expected URL $onlyMatchUrl")
-                            }
+fun TestMutableInjectionEnvironment.putClientHandler(
+    onlyMatchUrl: String? = null,
+    handler: MockRequestHandler
+): HttpClient =
+    HttpClient(MockEngine) {
+        expectSuccess = true
+        engine {
+            addHandler(
+                if (onlyMatchUrl == null) {
+                    handler
+                } else {
+                    { request ->
+                        when (request.url.fullUrl) {
+                            onlyMatchUrl -> handler(request)
+                            else -> error("Url ${request.url.fullUrl} does not match expected URL $onlyMatchUrl")
                         }
-                    } ?: handler
-                )
-            }
+                    }
+                }
+            )
         }
+    }.also {
+        put { it }
     }
 
 fun TestApplicationCall.assertStatus(status: HttpStatusCode) {
     val actual = this.response.status()
     assertEquals(status, actual, "Expected status $status, but got $actual instead")
-}
-
-@OptIn(KoinApiExtension::class)
-inline fun <reified T : Any> KoinTest.mockHere(crossinline body: T.() -> Unit): T {
-    if (getKoin().getOrNull<T>() != null) {
-        error("Duplicate definition for ${T::class}. Use softMockHere or combine the definitions.")
-    }
-    return declare { mockk(block = body) }
-}
-
-/**
- * Similar to mockHere, but if an instance of T is already injected, apply the initializer to it instead of
- * replacing it
- */
-@OptIn(KoinApiExtension::class)
-inline fun <reified T : Any> KoinTest.softMockHere(crossinline initializer: T.() -> Unit): T {
-    val injected = getKoin().getOrNull<T>()
-    return injected?.apply(initializer) ?: mockHere(initializer)
 }
 
 fun Map<String, Any?>.getString(key: String): String =
@@ -122,10 +114,22 @@ fun TestApplicationRequest.setJsonBody(json: String) {
     setBody(json)
 }
 
-/**
- * Mocks the default behavior for the get message: it will return the second argument (the i18n key)
- */
-fun DiscordMessagesI18n.defaultMock() {
-    val keySlot = slot<String>()
-    every { get(any(), capture(keySlot)) } answers { keySlot.captured }
+inline fun <reified T : Any> TestMutableInjectionEnvironment.putMockOrApply(mockSetup: T.() -> Unit): T {
+    val currentMock = this.getOrNull<T>()
+    return if (currentMock != null) {
+        currentMock.mockSetup()
+        currentMock
+    } else {
+        putMock(mockSetup = mockSetup)
+    }
+}
+
+inline fun <reified T : Any> TestMutableInjectionEnvironment.putSpy(
+    crossinline supplier: ScopedSupplier<T>,
+    mockSetup: T.() -> Unit
+): T {
+    val decl = put<T> { spyk(supplier(this)) }
+    val spy = get(decl.identifier)
+    spy.mockSetup()
+    return spy
 }

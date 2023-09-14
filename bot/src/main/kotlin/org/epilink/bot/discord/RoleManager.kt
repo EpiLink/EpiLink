@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +19,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.epilink.bot.CacheClient
 import org.epilink.bot.EndpointException
 import org.epilink.bot.config.DiscordConfiguration
@@ -32,10 +33,6 @@ import org.epilink.bot.debug
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.StrongIdentityRule
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -141,21 +138,21 @@ interface RoleManager {
 /**
  * This class is responsible for managing and updating the roles of Discord users.
  */
-@OptIn(KoinApiExtension::class)
 @Suppress("TooManyFunctions")
-internal class RoleManagerImpl : RoleManager, KoinComponent {
+internal class RoleManagerImpl(scope: InjectionScope) : RoleManager {
     private val logger = LoggerFactory.getLogger("epilink.bot.roles")
-    private val messages: DiscordMessages by inject()
-    private val i18n: DiscordMessagesI18n by inject()
-    private val config: DiscordConfiguration by inject()
-    private val rulebook: Rulebook by inject()
-    private val facade: DiscordClientFacade by inject()
-    private val idManager: IdentityManager by inject()
-    private val dbFacade: DatabaseFacade by inject()
-    private val perms: PermissionChecks by inject()
-    private val ruleMediator: RuleMediator by lazy {
-        get<CacheClient>().newRuleMediator("el_rc_")
-    }
+    private val messages: DiscordMessages by scope()
+    private val i18n: DiscordMessagesI18n by scope()
+    private val config: DiscordConfiguration by scope()
+    private val rulebook: Rulebook by scope()
+    private val facade: DiscordClientFacade by scope()
+    private val idManager: IdentityManager by scope()
+    private val dbFacade: DatabaseFacade by scope()
+    private val perms: PermissionChecks by scope()
+    private val cacheClient: CacheClient by scope()
+    private val ruleMediator by lazy { cacheClient.newRuleMediator("el_rc_") }
+
+    @Suppress("InjectDispatcher")
     private val scope = CoroutineScope(
         Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, ex ->
             logger.error("Uncaught exception in role manager launched coroutine", ex)
@@ -220,9 +217,8 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
 
     override suspend fun getRulesRelevantForGuilds(
         guilds: List<String>
-    ): List<RuleWithRequestingGuilds> = withContext(Dispatchers.Default) {
+    ): List<RuleWithRequestingGuilds> =
         // Maps role names to their rules in the global config
-        // val rolesInGlobalConfig = config.roles.associateBy({ it.name }, { it.rule })
         guilds
             // Get each guild's config, paired with the guild's ID
             .map { config.getConfigForGuild(it) }
@@ -233,7 +229,6 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
             }
             .groupBy({ it.second }, { it.first.id })
             .map { (k, v) -> RuleWithRequestingGuilds(k, v.toSet()) }
-    }
 
     override suspend fun updateUserWithRoles(
         discordId: String,
@@ -267,6 +262,7 @@ internal class RoleManagerImpl : RoleManager, KoinComponent {
             dbUser == null ->
                 // Unknown user
                 setOf<String>().also { logger.debug { "Unidentified user $userId roles determined: none" } } to true
+
             adv is Disallowed -> {
                 // Disallowed user
                 if (tellUserIfFailed) {

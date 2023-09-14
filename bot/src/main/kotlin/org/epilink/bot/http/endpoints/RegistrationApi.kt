@@ -8,22 +8,24 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.features.ContentTransformationException
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import io.ktor.http.HttpStatusCode
-import io.ktor.request.header
-import io.ktor.request.receive
-import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.delete
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.sessions.clear
-import io.ktor.sessions.get
-import io.ktor.sessions.getOrSet
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.plugins.ContentTransformationException
+import io.ktor.server.request.header
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.sessions.clear
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.getOrSet
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import org.epilink.bot.StandardErrorCodes.AccountCreationNotAllowed
 import org.epilink.bot.StandardErrorCodes.IncompleteRegistrationRequest
 import org.epilink.bot.StandardErrorCodes.UnknownService
@@ -45,9 +47,6 @@ import org.epilink.bot.http.data.RegistrationContinuation
 import org.epilink.bot.http.data.RegistrationInformation
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.toResponse
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -61,17 +60,16 @@ interface RegistrationApi {
     fun install(route: Route)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class RegistrationApiImpl : RegistrationApi, KoinComponent {
+internal class RegistrationApiImpl(scope: InjectionScope) : RegistrationApi {
     private val logger = LoggerFactory.getLogger("epilink.api.registration")
-    private val discordBackEnd: DiscordBackEnd by inject()
-    private val idProvider: IdentityProvider by inject()
-    private val roleManager: RoleManager by inject()
-    private val userApi: UserApi by inject()
-    private val userCreator: UserCreator by inject()
-    private val perms: PermissionChecks by inject()
-    private val dbFacade: DatabaseFacade by inject()
-    private val wsCfg: WebServerConfiguration by inject()
+    private val discordBackEnd: DiscordBackEnd by scope()
+    private val idProvider: IdentityProvider by scope()
+    private val roleManager: RoleManager by scope()
+    private val userApi: UserApi by scope()
+    private val userCreator: UserCreator by scope()
+    private val perms: PermissionChecks by scope()
+    private val dbFacade: DatabaseFacade by scope()
+    private val wsCfg: WebServerConfiguration by scope()
 
     override fun install(route: Route) {
         with(route) { registration() }

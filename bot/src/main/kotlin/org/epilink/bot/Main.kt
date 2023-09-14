@@ -18,10 +18,9 @@ import com.xenomachina.argparser.mainBody
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.request.get
-import kotlinx.coroutines.CoroutineScope
+import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.epilink.bot.config.ConfigError
@@ -115,7 +114,7 @@ fun main(args: Array<String>) = mainBody("epilink") {
     launchEpiLink(cliArgs)
 }
 
-fun launchEpiLink(cliArgs: CliArgs) = runBlockingWithScope {
+fun launchEpiLink(cliArgs: CliArgs) = runBlocking {
     logger.debug("Loading configuration")
 
     val cfgPath = Paths.get(cliArgs.config)
@@ -145,13 +144,14 @@ fun launchEpiLink(cliArgs: CliArgs) = runBlockingWithScope {
     env.start()
 }
 
-private suspend fun loadIdProviderMetadata(cfg: Configuration): IdentityProviderMetadata {
+private fun loadIdProviderMetadata(cfg: Configuration): IdentityProviderMetadata {
     logger.info("Loading identity provider information...")
     val discoveryContent = download(cfg.idProvider.url + "/.well-known/openid-configuration")
     return when (
         val m = identityProviderMetadataFromDiscovery(
             discoveryContent,
-            if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub"
+            if (cfg.idProvider.microsoftBackwardsCompatibility) "oid" else "sub",
+            cfg.idProvider.relaxHttpsRequirement
         )
     ) {
         is MetadataOrFailure.Metadata -> m.metadata
@@ -181,15 +181,13 @@ private fun loadConfig(cfgPath: Path) =
                 "Failed to load config, could not find config " +
                     "file $cfgPath"
             )
+
             is JsonParseException -> logger.error("Failed to parse YAML file, wrong syntax: ${exc.message}")
             is JsonMappingException -> logger.error("Failed to understand configuration file: ${exc.message}")
             else -> logger.error("Encountered an unexpected exception on config load", exc)
         }
         exitProcess(EXIT_CODE_CANNOT_LOAD_CONFIG)
     }
-
-private fun runBlockingWithScope(block: suspend CoroutineScope.() -> Unit) =
-    runBlocking { withContext(Dispatchers.Default) { coroutineScope { block() } } }
 
 private fun checkConfig(
     cfg: Configuration,
@@ -205,6 +203,7 @@ private fun checkConfig(
                 logger.error(it.message)
                 if (it.shouldFail) shouldExit = true
             }
+
             is ConfigWarning -> logger.warn(it.message)
             is ConfigInfo -> logger.info(it.message)
         }
@@ -215,7 +214,7 @@ private fun checkConfig(
     }
 }
 
-private fun download(url: String) = runBlocking { HttpClient(Apache).get<String>(url) }
+private fun download(url: String) = runBlocking { HttpClient(Apache).get(url).bodyAsText() }
 
 private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache: Boolean): Rulebook {
     val rb = when {
@@ -227,6 +226,7 @@ private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache:
                 loadRules(cfg.rulebook)
             }
         }
+
         cfg.rulebookFile != null -> cfg.rulebookFile.let { file ->
             withContext(Dispatchers.IO) { // toRealPath blocks, resolve is also blocking
                 val path = cfgPath.parent.resolve(file)
@@ -242,6 +242,7 @@ private suspend fun loadRulebook(cfg: Configuration, cfgPath: Path, enableCache:
                 }
             }
         }
+
         else -> null
     }
     if (rb != null) {

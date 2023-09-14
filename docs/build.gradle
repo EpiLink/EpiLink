@@ -15,16 +15,17 @@ repositories {
 
 dependencies {
     servine 'guru.zoroark.servine:servine:0.0.2-SNAPSHOT'
-    swagger project(path: ":swagger", configuration: "swagger")
+    // FIXME proper swagger thing
+    //swagger project(path: ":swagger", configuration: "swagger")
 }
 
 def needExpansion = [ "_coverpage.md" ]
 
 def docs = tasks.register("assembleDocs", Copy) {
     from project.layout.projectDirectory.dir("src")
-    from(configurations.swagger) {
-        into "swagger"
-    }
+    // FIXME from(configurations.swagger) {
+    //    into "swagger"
+    //}
     into project.layout.buildDirectory.dir("docs")
 
     exclude 'META-INF'

@@ -8,59 +8,79 @@
  */
 package org.epilink.bot.web
 
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.environment.get
+import guru.zoroark.tegral.di.test.TegralSubjectTest
+import guru.zoroark.tegral.di.test.TestMutableInjectionEnvironment
+import guru.zoroark.tegral.di.test.mockk.putMock
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.routing.routing
+import io.ktor.server.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.contentType
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.mockk.every
 import io.mockk.mockk
-import org.epilink.bot.*
-import org.epilink.bot.config.*
+import org.epilink.bot.Assets
+import org.epilink.bot.CacheClient
+import org.epilink.bot.LegalText
+import org.epilink.bot.LegalTexts
+import org.epilink.bot.MemoryCacheClient
+import org.epilink.bot.ResourceAsset
+import org.epilink.bot.ServerEnvironment
+import org.epilink.bot.assertStatus
+import org.epilink.bot.config.ContactInformation
+import org.epilink.bot.config.FooterUrl
+import org.epilink.bot.config.IdentityProviderConfiguration
+import org.epilink.bot.config.RateLimitingProfile
+import org.epilink.bot.config.WebServerConfiguration
+import org.epilink.bot.fromJson
+import org.epilink.bot.getListOfMaps
+import org.epilink.bot.getString
 import org.epilink.bot.http.BackEnd
 import org.epilink.bot.http.BackEndImpl
 import org.epilink.bot.http.DiscordBackEnd
 import org.epilink.bot.http.IdentityProvider
 import org.epilink.bot.http.endpoints.MetaApi
 import org.epilink.bot.http.endpoints.MetaApiImpl
-import org.koin.dsl.module
-import org.koin.test.get
-import org.koin.test.mock.declare
-import kotlin.test.*
+import org.epilink.bot.putMockOrApply
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
-class MetaTest : KoinBaseTest<Unit>(
+class MetaTest : TegralSubjectTest<Unit>(
     Unit::class,
-    module {
-        single<MetaApi> { MetaApiImpl() }
-        single<BackEnd> { BackEndImpl() }
-        single<CacheClient> { MemoryCacheClient() }
-        single<WebServerConfiguration> {
+    {
+        put<MetaApi>(::MetaApiImpl)
+        put<BackEnd>(::BackEndImpl)
+        put<CacheClient>(::MemoryCacheClient)
+        put<WebServerConfiguration> {
             mockk { every { rateLimitingProfile } returns RateLimitingProfile.Standard }
         }
     }
 ) {
     @Test
-    fun `Test meta information gathering`() {
+    fun `Test meta information gathering`() = test {
         defaultAssets()
-        mockHere<ServerEnvironment> {
+        putMock<ServerEnvironment> {
             every { name } returns "EpiLink Test Instance"
         }
-        mockHere<DiscordBackEnd> {
+        putMock<DiscordBackEnd> {
             every { getAuthorizeStub() } returns "I am a Discord authorize stub"
         }
-        mockHere<IdentityProvider> {
+        putMock<IdentityProvider> {
             every { getAuthorizeStub() } returns "I am a Microsoft authorize stub"
         }
-        mockHere<LegalTexts> {
+        putMock<LegalTexts> {
             every { idPrompt } returns "My id prompt text is the best"
         }
-        mockHere<IdentityProviderConfiguration> { every { name } returns "the_name" }
-        softMockHere<WebServerConfiguration> {
+        putMock<IdentityProviderConfiguration> { every { name } returns "the_name" }
+        putMockOrApply<WebServerConfiguration> {
             every { footers } returns listOf(
                 FooterUrl("Hello", "https://hello"),
                 FooterUrl("Heeeey", "/macarena")
@@ -98,10 +118,10 @@ class MetaTest : KoinBaseTest<Unit>(
     }
 
     @Test
-    fun `Test ToS retrieval`() {
+    fun `Test ToS retrieval`() = test {
         defaultAssets()
         val tos = "<p>ABCDEFG</p>"
-        mockHere<LegalTexts> {
+        putMock<LegalTexts> {
             every { termsOfServices } returns LegalText.Html(tos)
         }
         withTestEpiLink {
@@ -114,10 +134,10 @@ class MetaTest : KoinBaseTest<Unit>(
     }
 
     @Test
-    fun `Test ToS PDF retrieval`() {
+    fun `Test ToS PDF retrieval`() = test {
         defaultAssets()
         val tos = byteArrayOf(1, 2, 3)
-        mockHere<LegalTexts> {
+        putMock<LegalTexts> {
             every { termsOfServices } returns LegalText.Pdf(tos)
         }
         withTestEpiLink {
@@ -131,10 +151,10 @@ class MetaTest : KoinBaseTest<Unit>(
     }
 
     @Test
-    fun `Test PP retrieval`() {
+    fun `Test PP retrieval`() = test {
         defaultAssets()
         val pp = "<p>Privacy policyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</p>"
-        mockHere<LegalTexts> {
+        putMock<LegalTexts> {
             every { privacyPolicy } returns LegalText.Html(pp)
         }
         withTestEpiLink {
@@ -147,10 +167,10 @@ class MetaTest : KoinBaseTest<Unit>(
     }
 
     @Test
-    fun `Test PP PDF retrieval`() {
+    fun `Test PP PDF retrieval`() = test {
         defaultAssets()
         val pp = byteArrayOf(1, 2, 3)
-        mockHere<LegalTexts> {
+        putMock<LegalTexts> {
             every { privacyPolicy } returns LegalText.Pdf(pp)
         }
         withTestEpiLink {
@@ -167,7 +187,7 @@ class MetaTest : KoinBaseTest<Unit>(
     private val assetUrls = mapOf("logo" to "LogoURL", "background" to "BackgroundURL", "idpLogo" to "IDPLogoURL")
 
     @Test
-    fun `Test asset retrieval (url redirect)`() {
+    fun `Test asset retrieval (url redirect)`() = test {
         defaultAssets()
         withTestEpiLink {
             for ((assetUrlFragment, expected) in assetUrls) {
@@ -179,21 +199,19 @@ class MetaTest : KoinBaseTest<Unit>(
     }
 
     @Test
-    fun `Test asset retrieval (direct)`() {
-        val assets = declare {
-            Assets(
-                ResourceAsset.File(byteArrayOf(1, 2, 3), ContentType.Image.JPEG),
-                ResourceAsset.File(byteArrayOf(4, 5, 6), ContentType.Image.PNG),
-                ResourceAsset.File(byteArrayOf(7, 8, 9), ContentType.Image.GIF)
-            )
-        }
+    fun `Test asset retrieval (direct)`() = test {
+        val assets = Assets(
+            ResourceAsset.File(byteArrayOf(1, 2, 3), ContentType.Image.JPEG),
+            ResourceAsset.File(byteArrayOf(4, 5, 6), ContentType.Image.PNG),
+            ResourceAsset.File(byteArrayOf(7, 8, 9), ContentType.Image.GIF)
+        ).also { put { it } }
         withTestEpiLink {
             for (
-                (assetUrl, asset) in listOf(
-                    "logo" to assets.logo as ResourceAsset.File,
-                    "background" to assets.background as ResourceAsset.File,
-                    "idpLogo" to assets.idpLogo as ResourceAsset.File
-                )
+            (assetUrl, asset) in listOf(
+                "logo" to assets.logo as ResourceAsset.File,
+                "background" to assets.background as ResourceAsset.File,
+                "idpLogo" to assets.idpLogo as ResourceAsset.File
+            )
             ) {
                 val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$assetUrl")
                 call.assertStatus(OK)
@@ -205,8 +223,8 @@ class MetaTest : KoinBaseTest<Unit>(
     }
 
     @Test
-    fun `Test asset retrieval (no asset)`() {
-        declare { Assets(ResourceAsset.None, ResourceAsset.None, ResourceAsset.None) }
+    fun `Test asset retrieval (no asset)`() = test {
+        put { Assets(ResourceAsset.None, ResourceAsset.None, ResourceAsset.None) }
         withTestEpiLink {
             for (urlFragment in assetEndpoints) {
                 val call = handleRequest(HttpMethod.Get, "/api/v1/meta/$urlFragment")
@@ -215,7 +233,7 @@ class MetaTest : KoinBaseTest<Unit>(
         }
     }
 
-    private fun defaultAssets() = declare {
+    private fun TestMutableInjectionEnvironment.defaultAssets() = put {
         Assets(
             ResourceAsset.Url("LogoURL"),
             ResourceAsset.Url("BackgroundURL"),
@@ -223,7 +241,7 @@ class MetaTest : KoinBaseTest<Unit>(
         )
     }
 
-    private fun withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
+    private fun TestMutableInjectionEnvironment.withTestEpiLink(block: TestApplicationEngine.() -> Unit) =
         withTestApplication({
             with(get<BackEnd>()) { installFeatures() }
             routing { get<MetaApi>().install(this) }

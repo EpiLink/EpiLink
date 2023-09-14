@@ -1,0 +1,17 @@
+coroutines:
+  InjectDispatcher:
+    # Not useful. Our use of dispatchers is only for ensuring that blocking tasks happen on Dispatchers.IO and CPU-heavy tasks.dispatcherNames:
+    # However, this is useful for checking that Dispatchers.Default is only used in sensible places.
+    active: true
+    dispatcherNames:
+      - 'Default'
+
+complexity:
+  LongMethod:
+    # It's fine for test functions to get relatively big
+    excludes: ["**/src/test/kotlin/**"]
+
+empty-blocks:
+  EmptyFunctionBlock:
+    # Tegral Service start/stop functions can be empty
+    ignoreOverridden: true

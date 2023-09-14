@@ -8,17 +8,19 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.call
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
-import io.ktor.response.respond
-import io.ktor.response.respondBytes
-import io.ktor.response.respondRedirect
-import io.ktor.routing.Route
-import io.ktor.routing.get
+import io.ktor.server.application.call
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import org.epilink.bot.Assets
 import org.epilink.bot.LegalText
 import org.epilink.bot.LegalTexts
@@ -33,9 +35,6 @@ import org.epilink.bot.http.ApiSuccessResponse
 import org.epilink.bot.http.DiscordBackEnd
 import org.epilink.bot.http.IdentityProvider
 import org.epilink.bot.http.data.InstanceInformation
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -49,16 +48,15 @@ interface MetaApi {
     fun install(route: Route)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class MetaApiImpl : MetaApi, KoinComponent {
+internal class MetaApiImpl(scope: InjectionScope) : MetaApi {
     private val logger = LoggerFactory.getLogger("epilink.api.meta")
-    private val env: ServerEnvironment by inject()
-    private val legal: LegalTexts by inject()
-    private val discordBackEnd: DiscordBackEnd by inject()
-    private val idProvider: IdentityProvider by inject()
-    private val assets: Assets by inject()
-    private val wsCfg: WebServerConfiguration by inject()
-    private val providerConfig: IdentityProviderConfiguration by inject()
+    private val env: ServerEnvironment by scope()
+    private val legal: LegalTexts by scope()
+    private val discordBackEnd: DiscordBackEnd by scope()
+    private val idProvider: IdentityProvider by scope()
+    private val assets: Assets by scope()
+    private val wsCfg: WebServerConfiguration by scope()
+    private val providerConfig: IdentityProviderConfiguration by scope()
 
     override fun install(route: Route) =
         with(route) { meta() }
@@ -91,9 +89,11 @@ internal class MetaApiImpl : MetaApi, KoinComponent {
             ResourceAsset.None -> {
                 /* nothing */
             }
+
             is ResourceAsset.Url -> get(name) {
                 call.respondRedirect(asset.url)
             }.also { logger.debug { "Will serve asset $name as a URL redirect" } }
+
             is ResourceAsset.File -> get(name) {
                 call.respondBytes(asset.contents, asset.contentType)
             }.also { logger.debug { "Will serve asset $name as a file" } }

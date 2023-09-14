@@ -74,6 +74,7 @@ data class DiscordEmbed(
                 @Suppress("UnsafeCallOnNullableType")
                 Color.of(Integer.parseInt(this.color!!.substring(1), HEXADECIMAL))
             }.getOrElse { throw EpiLinkException("Invalid hexadecimal color format: $color", it) }
+
             else -> {
                 // Try and parse a Color static field
                 runCatching {
@@ -88,7 +89,7 @@ data class DiscordEmbed(
 /**
  * Apply the content of a [DiscordEmbed] into the passed [EmbedCreateSpec] object.
  */
-fun DiscordEmbed.toDiscord4J() =
+fun DiscordEmbed.toDiscord4J(): EmbedCreateSpec =
     EmbedCreateSpec.builder().apply {
         title?.let { title(it) }
         description?.let { description(it) }

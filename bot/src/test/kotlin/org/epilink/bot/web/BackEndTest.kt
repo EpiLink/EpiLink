@@ -9,56 +9,73 @@
 package org.epilink.bot.web
 
 import guru.zoroark.ratelimit.RateLimit
-import io.ktor.application.Application
-import io.ktor.application.featureOrNull
-import io.ktor.features.ContentNegotiation
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.environment.get
+import guru.zoroark.tegral.di.test.TegralSubjectTest
+import guru.zoroark.tegral.di.test.TestMutableInjectionEnvironment
+import guru.zoroark.tegral.di.test.mockk.putMock
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.ktor.routing.Route
-import io.ktor.routing.Routing
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.server.application.Application
+import io.ktor.server.application.pluginOrNull
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.Routing
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import io.ktor.server.sessions.Sessions
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
-import io.ktor.sessions.Sessions
-import io.mockk.*
-import org.epilink.bot.*
+import io.mockk.every
+import io.mockk.just
+import io.mockk.runs
+import io.mockk.spyk
+import io.mockk.verifyAll
+import org.epilink.bot.CacheClient
+import org.epilink.bot.InternalEndpointException
+import org.epilink.bot.MemoryCacheClient
+import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.StandardErrorCodes.InvalidAuthCode
+import org.epilink.bot.UserEndpointException
+import org.epilink.bot.assertStatus
 import org.epilink.bot.config.WebServerConfiguration
+import org.epilink.bot.fromJson
 import org.epilink.bot.http.BackEnd
 import org.epilink.bot.http.BackEndImpl
 import org.epilink.bot.http.endpoints.AdminEndpoints
 import org.epilink.bot.http.endpoints.MetaApi
 import org.epilink.bot.http.endpoints.RegistrationApi
 import org.epilink.bot.http.endpoints.UserApi
-import org.koin.core.KoinExperimentalAPI
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.get
-import org.koin.dsl.module
-import org.koin.test.mock.declare
-import kotlin.test.*
+import org.epilink.bot.putSpy
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
-@OptIn(KoinApiExtension::class)
-class BackEndTest : KoinBaseTest<Unit>(
+class BackEndTest : TegralSubjectTest<Unit>(
     Unit::class,
-    module {
-        single<CacheClient> { MemoryCacheClient() }
+    {
+        put<CacheClient> { MemoryCacheClient() }
     }
 ) {
     @Test
-    fun `Test feature installation`() {
-        declare<BackEnd> { BackEndImpl() }
+    fun `Test feature installation`() = test {
+        put<BackEnd>(::BackEndImpl)
         withTestApplication({
             with(get<BackEnd>()) { installFeatures() }
         }) {
-        assertNotNull(application.featureOrNull(ContentNegotiation))
-        assertNotNull(application.featureOrNull(Sessions))
-        assertNotNull(application.featureOrNull(RateLimit))
-    }
+            assertNotNull(application.pluginOrNull(ContentNegotiation))
+            assertNotNull(application.pluginOrNull(Sessions))
+            assertNotNull(application.pluginOrNull(RateLimit))
+        }
     }
 
-    private fun withErrorHandlingTestApplication(routing: Routing.() -> Unit, test: TestApplicationEngine.() -> Unit) =
+    private fun TestMutableInjectionEnvironment.withErrorHandlingTestApplication(
+        routing: Routing.() -> Unit,
+        test: TestApplicationEngine.() -> Unit
+    ) =
         withTestApplication({
             // Requires content negotiation
             with(get<BackEnd>()) { installFeatures() }
@@ -69,31 +86,31 @@ class BackEndTest : KoinBaseTest<Unit>(
         }, test)
 
     @Test
-    fun `Test error handling random error`() {
-        declare<BackEnd> { BackEndImpl() }
+    fun `Test error handling random error`() = test {
+        put<BackEnd>(::BackEndImpl)
         withErrorHandlingTestApplication({
             get("/one") {
                 error("You don't know me")
             }
         }) {
-        handleRequest(HttpMethod.Get, "/one").apply {
-            assertStatus(HttpStatusCode.InternalServerError)
-            val apiError = fromJson<ApiError>(response).apply {
-                assertTrue(message.contains("unknown", ignoreCase = true))
-                assertEquals("err.999", message_i18n)
-                assertTrue(message_i18n_data.isEmpty())
-            }
-            apiError.data.apply {
-                assertEquals(StandardErrorCodes.UnknownError.code, code)
-                assertEquals(StandardErrorCodes.UnknownError.description, description)
+            handleRequest(HttpMethod.Get, "/one").apply {
+                assertStatus(HttpStatusCode.InternalServerError)
+                val apiError = fromJson<ApiError>(response).apply {
+                    assertTrue(message.contains("unknown", ignoreCase = true))
+                    assertEquals("err.999", message_i18n)
+                    assertTrue(message_i18n_data.isEmpty())
+                }
+                apiError.data.apply {
+                    assertEquals(StandardErrorCodes.UnknownError.code, code)
+                    assertEquals(StandardErrorCodes.UnknownError.description, description)
+                }
             }
         }
     }
-    }
 
     @Test
-    fun `Test error handling user error`() {
-        declare<BackEnd> { BackEndImpl() }
+    fun `Test error handling user error`() = test {
+        put<BackEnd>(::BackEndImpl)
         withErrorHandlingTestApplication({
             get("/two") {
                 throw UserEndpointException(
@@ -104,75 +121,74 @@ class BackEndTest : KoinBaseTest<Unit>(
                 )
             }
         }) {
-        handleRequest(HttpMethod.Get, "/two").apply {
-            assertStatus(HttpStatusCode.BadRequest)
-            val apiError = fromJson<ApiError>(response).apply {
-                assertEquals("Oops", message)
-                assertEquals("oo.ps", message_i18n)
-                assertEquals(1, message_i18n_data.size)
-            }
-            apiError.message_i18n_data.entries.first().apply {
-                assertEquals("oo", key)
-                assertEquals("ps", value)
-            }
-            apiError.data.apply {
-                assertEquals(StandardErrorCodes.MissingAuthentication.code, code)
-                assertEquals(StandardErrorCodes.MissingAuthentication.description, description)
+            handleRequest(HttpMethod.Get, "/two").apply {
+                assertStatus(HttpStatusCode.BadRequest)
+                val apiError = fromJson<ApiError>(response).apply {
+                    assertEquals("Oops", message)
+                    assertEquals("oo.ps", message_i18n)
+                    assertEquals(1, message_i18n_data.size)
+                }
+                apiError.message_i18n_data.entries.first().apply {
+                    assertEquals("oo", key)
+                    assertEquals("ps", value)
+                }
+                apiError.data.apply {
+                    assertEquals(StandardErrorCodes.MissingAuthentication.code, code)
+                    assertEquals(StandardErrorCodes.MissingAuthentication.description, description)
+                }
             }
         }
     }
-    }
 
     @Test
-    fun `Test error handling internal error`() {
-        declare<BackEnd> { BackEndImpl() }
+    fun `Test error handling internal error`() = test {
+        put<BackEnd>(::BackEndImpl)
         withErrorHandlingTestApplication({
             get("/three") {
                 throw InternalEndpointException(InvalidAuthCode, "EEEE")
             }
         }) {
-        handleRequest(HttpMethod.Get, "/three").apply {
-            assertStatus(HttpStatusCode.InternalServerError)
-            val apiError = fromJson<ApiError>(response).apply {
-                assertFalse(message.contains("EEEE"))
-                assertEquals("err.102", message_i18n)
-                assertTrue(message_i18n_data.isEmpty())
-            }
-            apiError.data.apply {
-                assertEquals(InvalidAuthCode.code, code)
-                assertEquals(InvalidAuthCode.description, description)
+            handleRequest(HttpMethod.Get, "/three").apply {
+                assertStatus(HttpStatusCode.InternalServerError)
+                val apiError = fromJson<ApiError>(response).apply {
+                    assertFalse(message.contains("EEEE"))
+                    assertEquals("err.102", message_i18n)
+                    assertTrue(message_i18n_data.isEmpty())
+                }
+                apiError.data.apply {
+                    assertEquals(InvalidAuthCode.code, code)
+                    assertEquals(InvalidAuthCode.description, description)
+                }
             }
         }
     }
-    }
 
     @Test
-    fun `Test module installation, admin enabled`() {
+    fun `Test module installation, admin enabled`() = test {
         testModuleInstallation(true)
     }
 
     @Test
-    fun `Test module installation, admin disabled`() {
+    fun `Test module installation, admin disabled`() = test {
         testModuleInstallation(false)
     }
 
-    private fun testModuleInstallation(enableAdminEndpoints: Boolean) {
-        val back = declare<BackEnd> {
-            spyk(BackEndImpl()) {
-                every { any<Application>().installFeatures() } just runs
-                every { any<Route>().installErrorHandling() } just runs
-            }
+    private fun TestMutableInjectionEnvironment.testModuleInstallation(enableAdminEndpoints: Boolean) {
+        val back = putSpy<BackEnd>({ spyk(BackEndImpl(scope)) }) {
+            every { any<Application>().installFeatures() } just runs
+            every { any<Route>().installErrorHandling() } just runs
         }
-        val user = mockHere<UserApi> { every { install(any()) } just runs }
-        val meta = mockHere<MetaApi> { every { install(any()) } just runs }
-        val register = mockHere<RegistrationApi> { every { install(any()) } just runs }
+
+        val user = putMock<UserApi> { every { install(any()) } just runs }
+        val meta = putMock<MetaApi> { every { install(any()) } just runs }
+        val register = putMock<RegistrationApi> { every { install(any()) } just runs }
         val admin = if (enableAdminEndpoints) {
-            mockHere<AdminEndpoints> { every { install(any()) } just runs }
-        } else null
-        mockHere<WebServerConfiguration> { every { this@mockHere.enableAdminEndpoints } returns enableAdminEndpoints }
-        withTestApplication({
-            with(get<BackEnd>()) { epilinkApiModule() }
-        }) { }
+            putMock<AdminEndpoints> { every { install(any()) } just runs }
+        } else {
+            null
+        }
+        putMock<WebServerConfiguration> { every { this@putMock.enableAdminEndpoints } returns enableAdminEndpoints }
+        withTestApplication({ with(get<BackEnd>()) { epilinkApiModule() } }) {}
         verifyAll {
             with(back) {
                 any<Application>().epilinkApiModule()

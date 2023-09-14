@@ -8,12 +8,10 @@
  */
 package org.epilink.bot.db
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import org.epilink.bot.CacheClient
 import org.epilink.bot.config.WebServerConfiguration
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
-import org.koin.core.component.inject
 
 /**
  * Interface for managing the unlink cooldown feature of EpiLink.
@@ -44,11 +42,11 @@ interface UnlinkCooldown {
     suspend fun deleteCooldown(userId: String)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class UnlinkCooldownImpl : KoinComponent, UnlinkCooldown {
-    private val serverConfiguration: WebServerConfiguration by inject()
+internal class UnlinkCooldownImpl(scope: InjectionScope) : UnlinkCooldown {
+    private val serverConfiguration: WebServerConfiguration by scope()
+    private val cacheClient by scope<CacheClient>()
     private val storage: UnlinkCooldownStorage by lazy {
-        get<CacheClient>().newUnlinkCooldownStorage("el_ulc_")
+        cacheClient.newUnlinkCooldownStorage("el_ulc_")
     }
 
     override suspend fun canUnlink(userId: String): Boolean = storage.canUnlink(userId)

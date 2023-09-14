@@ -8,26 +8,39 @@
  */
 package org.epilink.bot.user
 
-import io.mockk.*
-import org.epilink.bot.KoinBaseTest
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.test.TegralSubjectTest
+import guru.zoroark.tegral.di.test.mockk.putMock
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.UserEndpointException
-import org.epilink.bot.db.*
-import org.epilink.bot.discord.*
-import org.epilink.bot.mockHere
+import org.epilink.bot.db.Ban
+import org.epilink.bot.db.BanLogic
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.UnlinkCooldown
+import org.epilink.bot.db.User
+import org.epilink.bot.discord.BanManager
+import org.epilink.bot.discord.BanManagerImpl
+import org.epilink.bot.discord.DiscordEmbed
+import org.epilink.bot.discord.DiscordMessageSender
+import org.epilink.bot.discord.DiscordMessages
+import org.epilink.bot.discord.RoleManager
 import org.epilink.bot.web.declareNoOpI18n
-import org.koin.dsl.module
-import java.util.*
-import kotlin.test.*
+import java.util.Base64
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
-class BanManagerTest : KoinBaseTest<BanManager>(
-    BanManager::class,
-    module {
-        single<BanManager> { BanManagerImpl() }
-    }
-) {
+class BanManagerTest : TegralSubjectTest<BanManager>(BanManager::class, { put<BanManager>(::BanManagerImpl) }) {
     @Test
-    fun `Test ban on existing user`() {
+    fun `Test ban on existing user`() = test {
         val idHash = byteArrayOf(1, 2, 3, 4)
         val idHashStr = Base64.getEncoder().encodeToString(idHash)
         val u = mockk<User> {
@@ -35,27 +48,25 @@ class BanManagerTest : KoinBaseTest<BanManager>(
         }
         val ban = mockk<Ban>()
         val embed = mockk<DiscordEmbed>()
-        val df = mockHere<DatabaseFacade> {
+        val df = putMock<DatabaseFacade> {
             coEvery { recordBan(idHash, null, "the_author", "the description") } returns ban
             coEvery { getUserFromIdpIdHash(any()) } returns u
         }
-        val rm = mockHere<RoleManager> {
+        val rm = putMock<RoleManager> {
             coEvery { invalidateAllRolesLater("targetid") } returns mockk()
         }
-        val cd = mockHere<UnlinkCooldown> {
+        val cd = putMock<UnlinkCooldown> {
             coEvery { refreshCooldown("targetid") } just runs
         }
         declareNoOpI18n()
-        mockHere<DiscordMessages> {
+        putMock<DiscordMessages> {
             every { getBanNotification(any(), "the description", null) } returns embed
         }
-        val dms = mockHere<DiscordMessageSender> {
+        val dms = putMock<DiscordMessageSender> {
             every { sendDirectMessageLater("targetid", embed) } returns mockk()
         }
-        test {
-            val realBan = ban(idHashStr, null, "the_author", "the description")
-            assertSame(ban, realBan)
-        }
+        val realBan = subject.ban(idHashStr, null, "the_author", "the description")
+        assertSame(ban, realBan)
         coVerify {
             df.recordBan(idHash, null, "the_author", "the description")
             rm.invalidateAllRolesLater("targetid")
@@ -65,60 +76,54 @@ class BanManagerTest : KoinBaseTest<BanManager>(
     }
 
     @Test
-    fun `Test revoke ban that does not exist`() {
-        mockHere<DatabaseFacade> {
+    fun `Test revoke ban that does not exist`() = test {
+        putMock<DatabaseFacade> {
             coEvery { getBan(any()) } returns null
         }
-        test {
-            val exc = assertFailsWith<UserEndpointException> {
-                revokeBan("blabla", 12345)
-            }
-            assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
+        val exc = assertFailsWith<UserEndpointException> {
+            subject.revokeBan("blabla", 12345)
         }
+        assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
     }
 
     @Test
-    fun `Test revoke ban that does not correspond to msft id hash`() {
-        mockHere<DatabaseFacade> {
+    fun `Test revoke ban that does not correspond to msft id hash`() = test {
+        putMock<DatabaseFacade> {
             coEvery { getBan(12) } returns mockk {
                 every { idpIdHash } returns byteArrayOf(1, 2, 3)
             }
         }
-        mockHere<BanLogic> {
+        putMock<BanLogic> {
             every { isBanActive(any()) } returns true
         }
-        test {
-            val exc = assertFailsWith<UserEndpointException> {
-                revokeBan("nope", 12)
-            }
-            assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
-            assertTrue(exc.message!!.contains("hash"))
+        val exc = assertFailsWith<UserEndpointException> {
+            subject.revokeBan("nope", 12)
         }
+        assertEquals(StandardErrorCodes.InvalidId, exc.errorCode)
+        assertTrue(exc.message!!.contains("hash"))
     }
 
     @Test
-    fun `Test revoke ban that does correspond to msft id hash`() {
+    fun `Test revoke ban that does correspond to msft id hash`() = test {
         val idHash = byteArrayOf(1, 2, 3, 4)
         val idHashStr = Base64.getUrlEncoder().encodeToString(idHash)
         val initialBan = mockk<Ban> {
             every { idpIdHash } returns idHash
         }
-        mockHere<BanLogic> {
+        putMock<BanLogic> {
             every { isBanActive(initialBan) } returns true
         }
-        val dbf = mockHere<DatabaseFacade> {
+        val dbf = putMock<DatabaseFacade> {
             coEvery { getBan(12) } returns initialBan
             coEvery { revokeBan(12) } just runs
             coEvery { getUserFromIdpIdHash(any()) } returns mockk {
                 every { discordId } returns "discordid"
             }
         }
-        val rm = mockHere<RoleManager> {
+        val rm = putMock<RoleManager> {
             coEvery { invalidateAllRolesLater("discordid") } returns mockk()
         }
-        test {
-            revokeBan(idHashStr, 12)
-        }
+        subject.revokeBan(idHashStr, 12)
         coVerify {
             dbf.revokeBan(12)
             rm.invalidateAllRolesLater("discordid")

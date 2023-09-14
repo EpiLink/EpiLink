@@ -8,13 +8,12 @@
  */
 package org.epilink.bot.db
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
+import guru.zoroark.tegral.di.environment.named
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.debug
 import org.epilink.bot.rulebook.Rulebook
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
 
 /**
@@ -70,13 +69,12 @@ enum class AdminStatus {
     Admin
 }
 
-@OptIn(KoinApiExtension::class)
-internal class PermissionChecksImpl : PermissionChecks, KoinComponent {
+internal class PermissionChecksImpl(scope: InjectionScope) : PermissionChecks {
     private val logger = LoggerFactory.getLogger("epilink.perms")
-    private val facade: DatabaseFacade by inject()
-    private val rulebook: Rulebook by inject()
-    private val banLogic: BanLogic by inject()
-    private val admins: List<String> by inject(named("admins"))
+    private val facade: DatabaseFacade by scope()
+    private val rulebook: Rulebook by scope()
+    private val banLogic: BanLogic by scope()
+    private val admins: List<String> by scope(named("admins"))
 
     override suspend fun isDiscordUserAllowedToCreateAccount(discordId: String): DatabaseAdvisory {
         return if (facade.doesUserExist(discordId)) {

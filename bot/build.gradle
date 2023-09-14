@@ -15,7 +15,6 @@ dependencies {
     implementation libs.bundles.jackson
     implementation libs.bundles.exposed
     implementation libs.bundles.kotlinx.coroutines
-    implementation libs.bundles.koin
 
     implementation libs.kotlin.reflect
     implementation libs.logback
@@ -27,14 +26,21 @@ dependencies {
     implementation libs.jose4j
     implementation libs.commonsDbcp2
 
+    implementation tegralLibs.di.core
+    implementation tegralLibs.di.services
+
     if (project.hasProperty("withFrontend"))
         runtimeOnly project(path: ":epilink-frontend", configuration: "frontendJarCfg")
 
-    testImplementation libs.koin.test
     testImplementation libs.ktor.server.testHost
     testImplementation libs.ktor.client.mock.jvm
+    testImplementation tegralLibs.di.test
+    testImplementation tegralLibs.di.test.mockk
 }
 
+test {
+    useJUnitPlatform()
+}
 
 license {
     // Exclude front-end test files
@@ -51,9 +57,9 @@ distributions {
     }
 }
 
-check.configure {
-    dependsOn = dependsOn.findAll { it != 'detekt' }
-    dependsOn += 'detektMain'
+detekt {
+    config.setFrom(rootProject.file("detekt.yml"))
+    buildUponDefaultConfig = true
 }
 
 /* ###################################################################

@@ -8,11 +8,13 @@
  */
 package org.epilink.bot.web
 
-import io.ktor.application.ApplicationCall
-import io.ktor.sessions.SessionStorage
-import io.ktor.sessions.defaultSessionSerializer
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.test.TestMutableInjectionEnvironment
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.sessions.SessionStorage
+import io.ktor.server.sessions.defaultSessionSerializer
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.mockk.CapturingSlot
@@ -22,24 +24,24 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.binary.Hex
 import org.epilink.bot.CacheClient
-import org.epilink.bot.db.*
+import org.epilink.bot.db.DatabaseFacade
+import org.epilink.bot.db.IdentityManager
+import org.epilink.bot.db.UnlinkCooldownStorage
+import org.epilink.bot.db.User
+import org.epilink.bot.db.UsesTrueIdentity
 import org.epilink.bot.discord.DiscordMessagesI18n
 import org.epilink.bot.discord.RuleMediator
-import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.http.sessions.ConnectedSession
-import org.epilink.bot.softMockHere
-import org.koin.core.scope.Scope
-import org.koin.test.KoinTest
-import org.koin.test.mock.declare
+import org.epilink.bot.putMockOrApply
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.Random
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.Map
 import kotlin.collections.set
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@Suppress("ConstructorParameterNaming")
 data class ApiSuccess(
     val success: Boolean,
     val message: String?,
@@ -52,6 +54,7 @@ data class ApiSuccess(
     }
 }
 
+@Suppress("ConstructorParameterNaming")
 data class ApiError(
     val success: Boolean,
     val message: String,
@@ -71,6 +74,7 @@ data class ApiErrorDetails(
 
 class DummyCacheClient(private val sessionStorageProvider: () -> SessionStorage) : CacheClient {
     override suspend fun start() {}
+    override suspend fun stop() {}
 
     override fun newRuleMediator(prefix: String): RuleMediator {
         error("Not supported")
@@ -83,19 +87,15 @@ class DummyCacheClient(private val sessionStorageProvider: () -> SessionStorage)
     }
 }
 
-// Not strictly necessary, but we require SimplifiedSessionStorage objects in tests
-internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
-    private val sessions = ConcurrentHashMap<String, ByteArray>()
-    override suspend fun read(id: String): ByteArray? {
-        return sessions[id]
+// Not strictly necessary, but we require SessionStorage objects in tests
+internal class UnsafeTestSessionStorage : SessionStorage {
+    private val sessions = ConcurrentHashMap<String, String>()
+    override suspend fun read(id: String): String {
+        return sessions[id] ?: throw NoSuchElementException("Session with id $id not found")
     }
 
-    override suspend fun write(id: String, data: ByteArray?) {
-        if (data == null) {
-            sessions.remove(id)
-        } else {
-            sessions[id] = data
-        }
+    override suspend fun write(id: String, value: String) {
+        sessions[id] = value
     }
 
     override suspend fun invalidate(id: String) {
@@ -103,11 +103,11 @@ internal class UnsafeTestSessionStorage : SimplifiedSessionStorage() {
     }
 }
 
-@OptIn(
-    UsesTrueIdentity::class // for setting up identity mocks
-)
-internal fun KoinTest.setupSession(
-    sessionStorage: SimplifiedSessionStorage,
+// for setting up identity mocks
+@OptIn(UsesTrueIdentity::class)
+@Suppress("LongParameterList")
+internal fun TestMutableInjectionEnvironment.setupSession(
+    sessionStorage: SessionStorage,
     discId: String = "discordid",
     discUsername: String = "discorduser#1234",
     discAvatarUrl: String? = "https://avatar/url",
@@ -120,14 +120,14 @@ internal fun KoinTest.setupSession(
         every { idpIdHash } returns msIdHash
         every { creationDate } returns created
     }
-    softMockHere<DatabaseFacade> {
+    putMockOrApply<DatabaseFacade> {
         coEvery { getUser(discId) } returns u
         if (trueIdentity != null) {
             coEvery { isUserIdentifiable(u) } returns true
         }
     }
     if (trueIdentity != null) {
-        softMockHere<IdentityManager> {
+        putMockOrApply<IdentityManager> {
             coEvery { accessIdentity(u, any(), any(), any()) } returns trueIdentity
         }
     }
@@ -138,20 +138,21 @@ internal fun KoinTest.setupSession(
     // Generate the session data
     val data = defaultSessionSerializer<ConnectedSession>().serialize(
         ConnectedSession(discId, discUsername, discAvatarUrl)
-    ).toByteArray()
+    )
     // Put that in our test session storage
     runBlocking { sessionStorage.write(id, data) }
     return id
 }
 
-suspend fun Scope.injectUserIntoAttributes(
+suspend fun injectUserIntoAttributes(
     slot: CapturingSlot<PipelineContext<Unit, ApplicationCall>>,
-    attribute: AttributeKey<User>
+    attribute: AttributeKey<User>,
+    db: DatabaseFacade
 ) {
     val call = slot.captured.context
     call.attributes.put(
         attribute,
-        get<DatabaseFacade>().getUser(call.sessions.get<ConnectedSession>()!!.discordId)!!
+        db.getUser(call.sessions.get<ConnectedSession>()!!.discordId)!!
     )
 }
 
@@ -171,6 +172,6 @@ object NoOpI18n : DiscordMessagesI18n {
     }
 }
 
-fun KoinTest.declareNoOpI18n() {
-    declare<DiscordMessagesI18n> { NoOpI18n }
+fun TestMutableInjectionEnvironment.declareNoOpI18n() {
+    put<DiscordMessagesI18n> { NoOpI18n }
 }

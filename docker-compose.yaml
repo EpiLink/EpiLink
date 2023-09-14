@@ -7,6 +7,11 @@ services:
   redis:
     image: redis:6.2-alpine
     restart: always
+  casdoor:
+    # FIXME Add Casdoor docs somewhere
+    image: casbin/casdoor-all-in-one:v1.415.0
+    ports:
+      - "8111:8000"
   epilink:
     build: .
     # image: epilink # You may use this one if you have built a local 'epilink' image already.

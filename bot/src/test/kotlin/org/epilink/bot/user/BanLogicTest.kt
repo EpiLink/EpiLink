@@ -8,63 +8,52 @@
  */
 package org.epilink.bot.user
 
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.test.TegralSubjectTest
 import io.mockk.every
 import io.mockk.mockk
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.db.Ban
 import org.epilink.bot.db.BanLogic
 import org.epilink.bot.db.BanLogicImpl
-import org.koin.dsl.module
 import java.time.Duration
 import java.time.Instant
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-class BanLogicTest : KoinBaseTest<BanLogic>(
-    BanLogic::class,
-    module {
-        single<BanLogic> { BanLogicImpl() }
-    }
-) {
+class BanLogicTest : TegralSubjectTest<BanLogic>(BanLogic::class, { put<BanLogic>(::BanLogicImpl) }) {
     @Test
-    fun `Revoked ban is not active`() {
+    fun `Revoked ban is not active`() = test {
         val ban = mockk<Ban> {
             every { revoked } returns true
         }
-        test {
-            assertFalse(isBanActive(ban))
-        }
+        assertFalse(subject.isBanActive(ban))
     }
 
     @Test
-    fun `Expired ban is not active`() {
+    fun `Expired ban is not active`() = test {
         val ban = mockk<Ban> {
             every { revoked } returns false
             every { expiresOn } returns Instant.now() - Duration.ofHours(1)
         }
-        test {
-            assertFalse(isBanActive(ban))
-        }
+        assertFalse(subject.isBanActive(ban))
     }
 
     @Test
-    fun `Ban with no expiry is active`() {
+    fun `Ban with no expiry is active`() = test {
         val ban = mockk<Ban> {
             every { revoked } returns false
             every { expiresOn } returns null
         }
-        test {
-            assertTrue(isBanActive(ban))
-        }
+        assertTrue(subject.isBanActive(ban))
     }
 
     @Test
-    fun `Ban with non-expired expiry is active`() {
+    fun `Ban with non-expired expiry is active`() = test {
         val ban = mockk<Ban> {
             every { revoked } returns false
             every { expiresOn } returns Instant.now() + Duration.ofHours(10)
         }
-        test {
-            assertTrue(isBanActive(ban))
-        }
+        assertTrue(subject.isBanActive(ban))
     }
 }

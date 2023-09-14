@@ -8,10 +8,9 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import org.epilink.bot.db.DatabaseFacade
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 import java.util.Locale
 
@@ -70,14 +69,14 @@ interface DiscordMessagesI18n {
     suspend fun setLanguage(discordId: String, language: String): Boolean
 }
 
-@OptIn(KoinApiExtension::class)
 internal class DiscordMessagesI18nImpl(
+    scope: InjectionScope,
     private val strings: Map<String, Map<String, String>>,
     override val defaultLanguage: String,
     preferred: List<String>
-) : DiscordMessagesI18n, KoinComponent {
+) : DiscordMessagesI18n {
 
-    private val db by inject<DatabaseFacade>()
+    private val db by scope<DatabaseFacade>()
 
     private val logger = LoggerFactory.getLogger("epilink.discord.i18n")
 
@@ -87,11 +86,10 @@ internal class DiscordMessagesI18nImpl(
 
     override fun get(language: String, key: String) =
         strings[language]?.get(key)
-            ?: strings[defaultLanguage]?.get(key).also {
-                logger.warn("Key $key not found in language $language")
-            } ?: key.also {
-            logger.error("Key $key not found for in default language $defaultLanguage")
-        }
+            ?: strings[defaultLanguage]?.get(key)
+                .also { logger.warn("Key $key not found in language $language") }
+            ?: key
+                .also { logger.error("Key $key not found for in default language $defaultLanguage") }
 
     override suspend fun setLanguage(discordId: String, language: String): Boolean {
         return if (language in availableLanguages) {

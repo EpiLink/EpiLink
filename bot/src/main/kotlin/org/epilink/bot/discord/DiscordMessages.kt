@@ -8,13 +8,12 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import org.epilink.bot.EpiLinkException
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.DiscordServerSpec
 import org.epilink.bot.config.PrivacyConfiguration
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -101,12 +100,11 @@ private const val HELLO_BLUE = "#3771C8"
 private const val NOTIFICATION_ORANGE = "#FF6600"
 private const val OK_GREEN = "#2B9B2B"
 
-@OptIn(KoinApiExtension::class)
 @Suppress("TooManyFunctions")
-internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
-    private val config: DiscordConfiguration by inject()
-    private val i18n: DiscordMessagesI18n by inject()
-    private val privacyConfig: PrivacyConfiguration by inject()
+internal class DiscordMessagesImpl(scope: InjectionScope) : DiscordMessages {
+    private val config: DiscordConfiguration by scope()
+    private val i18n: DiscordMessagesI18n by scope()
+    private val privacyConfig: PrivacyConfiguration by scope()
 
     private val DiscordI18nContext.poweredByEpiLink
         get() = DiscordEmbedFooter(i18n["poweredBy"], LOGO_URL)
@@ -128,25 +126,27 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
         val guildConfig = config.getConfigForGuild(guildId)
         if (!guildConfig.enableWelcomeMessage) {
             null
-        } else guildConfig.welcomeEmbed ?: DiscordEmbed(
-            title = i18n["greet.title"].f(listOf(guildName)),
-            description = i18n["greet.welcome"].f(listOf(guildName)),
-            fields = run {
-                val ml = mutableListOf<DiscordEmbedField>()
-                val welcomeUrl = config.welcomeUrl
-                if (welcomeUrl != null) {
-                    ml += DiscordEmbedField(i18n["greet.logIn"], welcomeUrl)
-                }
-                ml += DiscordEmbedField(
-                    i18n["greet.needHelp"],
-                    i18n["greet.contact"].f(listOf(guildName))
-                )
-                ml
-            },
-            thumbnail = UNKNOWN_USER_LOGO_URL,
-            footer = poweredByEpiLink,
-            color = HELLO_BLUE
-        )
+        } else {
+            guildConfig.welcomeEmbed ?: DiscordEmbed(
+                title = i18n["greet.title"].f(listOf(guildName)),
+                description = i18n["greet.welcome"].f(listOf(guildName)),
+                fields = run {
+                    val ml = mutableListOf<DiscordEmbedField>()
+                    val welcomeUrl = config.welcomeUrl
+                    if (welcomeUrl != null) {
+                        ml += DiscordEmbedField(i18n["greet.logIn"], welcomeUrl)
+                    }
+                    ml += DiscordEmbedField(
+                        i18n["greet.needHelp"],
+                        i18n["greet.contact"].f(listOf(guildName))
+                    )
+                    ml
+                },
+                thumbnail = UNKNOWN_USER_LOGO_URL,
+                footer = poweredByEpiLink,
+                color = HELLO_BLUE
+            )
+        }
     }
 
     override fun getIdentityAccessEmbed(
@@ -175,7 +175,9 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
                 thumbnail = ID_NOTIFY_LOGO_URL,
                 footer = poweredByEpiLink
             )
-        } else null
+        } else {
+            null
+        }
     }
 
     override fun getBanNotification(language: String, banReason: String, banExpiry: Instant?): DiscordEmbed? =
@@ -244,13 +246,17 @@ internal class DiscordMessagesImpl : DiscordMessages, KoinComponent {
         DiscordEmbed(
             title = i18n["help.title"],
             description = i18n["help.description"],
-            fields = if (withAdminHelp) listOf(
-                DiscordEmbedField(
-                    i18n["help.admin.title"],
-                    i18n["help.admin.description"].f(listOf(COMMANDS_DOCS_URL)),
-                    false
+            fields = if (withAdminHelp) {
+                listOf(
+                    DiscordEmbedField(
+                        i18n["help.admin.title"],
+                        i18n["help.admin.description"].f(listOf(COMMANDS_DOCS_URL)),
+                        false
+                    )
                 )
-            ) else listOf(),
+            } else {
+                listOf()
+            },
             color = HELP_GREY,
             footer = poweredByEpiLink
         )

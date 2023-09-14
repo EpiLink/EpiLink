@@ -8,21 +8,24 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.ApplicationCall
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.call
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
+import guru.zoroark.tegral.di.environment.named
 import io.ktor.http.HttpStatusCode
-import io.ktor.request.header
-import io.ktor.request.receive
-import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.delete
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.sessions.clear
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.call
+import io.ktor.server.request.header
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.sessions.clear
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.UserEndpointException
 import org.epilink.bot.config.WebServerConfiguration
@@ -42,10 +45,6 @@ import org.epilink.bot.http.data.UserInformation
 import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.http.user
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.qualifier.named
 import org.slf4j.LoggerFactory
 
 /**
@@ -65,16 +64,15 @@ interface UserApi {
     fun loginAs(call: ApplicationCall, user: User, username: String, avatar: String?)
 }
 
-@OptIn(KoinApiExtension::class)
-internal class UserApiImpl : UserApi, KoinComponent {
+internal class UserApiImpl(scope: InjectionScope) : UserApi {
     private val logger = LoggerFactory.getLogger("epilink.api.user")
-    private val roleManager: RoleManager by inject()
-    private val idProvider: IdentityProvider by inject()
-    private val sessionChecker: SessionChecker by inject()
-    private val idManager: IdentityManager by inject()
-    private val dbFacade: DatabaseFacade by inject()
-    private val wsCfg: WebServerConfiguration by inject()
-    private val admins: List<String> by inject(named("admins"))
+    private val roleManager: RoleManager by scope()
+    private val idProvider: IdentityProvider by scope()
+    private val sessionChecker: SessionChecker by scope()
+    private val idManager: IdentityManager by scope()
+    private val dbFacade: DatabaseFacade by scope()
+    private val wsCfg: WebServerConfiguration by scope()
+    private val admins: List<String> by scope(named("admins"))
 
     override fun install(route: Route) {
         with(route) { user() }
@@ -82,9 +80,9 @@ internal class UserApiImpl : UserApi, KoinComponent {
 
     @Suppress("LongMethod")
     fun Route.user() = limitedRoute("/api/v1/user", wsCfg.rateLimitingProfile.userApi, {
-        request.header("SessionId") ?: ""
+        request.header("SessionId").orEmpty()
     }) {
-        intercept(ApplicationCallPipeline.Features) {
+        intercept(ApplicationCallPipeline.Plugins) {
             if (sessionChecker.verifyUser(this)) proceed()
         }
 

@@ -9,11 +9,25 @@
 package org.epilink.bot.rulebooks
 
 import kotlinx.coroutines.runBlocking
-import org.epilink.bot.rulebook.*
+import org.epilink.bot.rulebook.RuleDeterminer
+import org.epilink.bot.rulebook.RuleDeterminerWithIdentity
+import org.epilink.bot.rulebook.StrongIdentityRule
+import org.epilink.bot.rulebook.WeakIdentityRule
+import org.epilink.bot.rulebook.cachedFor
+import org.epilink.bot.rulebook.compileRules
+import org.epilink.bot.rulebook.days
+import org.epilink.bot.rulebook.hours
+import org.epilink.bot.rulebook.minutes
+import org.epilink.bot.rulebook.rulebook
+import org.epilink.bot.rulebook.seconds
 import org.junit.jupiter.api.assertDoesNotThrow
 import java.time.Duration
 import kotlin.script.experimental.host.toScriptSource
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RulebookDslTest {
     @Test

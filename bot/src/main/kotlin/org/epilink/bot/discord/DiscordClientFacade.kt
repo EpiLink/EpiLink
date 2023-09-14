@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.tegral.services.api.TegralService
+
 /**
  * This interface should be implemented by facades that abstract away an actual Discord client for the EpiLink Discord
  * bot.
@@ -24,13 +26,7 @@ package org.epilink.bot.discord
  * - Guilds in which the bot is not but has configurations for are said to be **orphaned**. Not currently checked.
  */
 @Suppress("TooManyFunctions")
-interface DiscordClientFacade {
-
-    /**
-     * Start this client. This function should suspend until the bot is ready to process all other functions.
-     */
-    suspend fun start()
-
+interface DiscordClientFacade : TegralService {
     /**
      * Send a direct message to a user.
      *

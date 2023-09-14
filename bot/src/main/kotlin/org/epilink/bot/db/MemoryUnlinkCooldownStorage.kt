@@ -22,7 +22,9 @@ class MemoryUnlinkCooldownStorage : UnlinkCooldownStorage {
         return if (stopsAt <= Instant.now()) {
             map.remove(userId)
             true
-        } else false
+        } else {
+            false
+        }
     }
 
     override suspend fun refreshCooldown(userId: String, seconds: Long) {

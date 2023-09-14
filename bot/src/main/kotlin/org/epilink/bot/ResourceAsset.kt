@@ -89,6 +89,7 @@ suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): Res
     when {
         asset.file != null && asset.url != null ->
             error("Cannot define both a file and a url for the $name asset")
+
         asset.file != null ->
             ResourceAsset.File(
                 withContext(Dispatchers.IO) {
@@ -98,8 +99,10 @@ suspend fun loadAsset(asset: ResourceAssetConfig, name: String, root: Path): Res
                 },
                 asset.contentType?.let { ContentType.parse(it) }
             )
+
         asset.url != null ->
             ResourceAsset.Url(asset.url)
+
         else ->
             ResourceAsset.None
     }

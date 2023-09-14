@@ -86,6 +86,7 @@ suspend fun shouldUseCache(originalFile: Path): CacheAdvisory = withContext(Disp
                 CacheAdvisory.ReadCache(cachedFile)
             }
         }
+
         Files.notExists(cachedFile) -> CacheAdvisory.WriteCache(cachedFile)
         else -> CacheAdvisory.DoNotCache
     }
@@ -105,7 +106,7 @@ internal suspend fun readScriptFrom(path: Path): CompiledScript = withContext(Di
     }
 }
 
-internal suspend fun compileRules(source: SourceCode): CompiledScript = withContext(Dispatchers.Default) {
+internal suspend fun compileRules(source: SourceCode): CompiledScript = withContext(Dispatchers.IO) {
     val compileConfig = createJvmCompilationConfigurationFromTemplate<RulebookScript> {
         jvm {
             dependenciesFromCurrentContext(wholeClasspath = true)
@@ -157,7 +158,7 @@ private fun ResultValue.Error.handleFailure(): Nothing {
 /**
  * Execute the Rulebook script from the given source code, and return the rulebook that was created from it.
  */
-suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.Default) {
+suspend fun loadRules(source: SourceCode): Rulebook = withContext(Dispatchers.IO) {
     val script = compileRules(source)
     evaluateRules(script)
 }
@@ -191,6 +192,7 @@ private suspend fun loadRulesWithCache(
         )
         loadRules(source())
     }
+
     is CacheAdvisory.WriteCache -> {
         val compiled = compileRules(source())
         logger?.info(
@@ -202,6 +204,7 @@ private suspend fun loadRulesWithCache(
         }
         evaluateRules(compiled)
     }
+
     is CacheAdvisory.ReadCache -> {
         logger?.info(
             "Reading a pre-compiled cache from ${adv.cachePath}. You can disable caching by setting " +

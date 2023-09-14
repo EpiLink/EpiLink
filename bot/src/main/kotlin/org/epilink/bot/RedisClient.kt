@@ -8,7 +8,8 @@
  */
 package org.epilink.bot
 
-import io.ktor.sessions.SessionStorage
+import io.ktor.server.sessions.SessionStorage
+import io.ktor.util.encodeBase64
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import kotlinx.coroutines.Dispatchers
@@ -22,12 +23,10 @@ import org.epilink.bot.discord.CacheResult
 import org.epilink.bot.discord.RuleMediator
 import org.epilink.bot.discord.RuleResult
 import org.epilink.bot.discord.StandardRoles
-import org.epilink.bot.http.SimplifiedSessionStorage
 import org.epilink.bot.rulebook.Rule
 import org.epilink.bot.rulebook.run
 import org.slf4j.LoggerFactory
 import java.time.Duration
-import java.util.Base64
 
 /**
  * An implementation of a cache client for use with a Redis server.
@@ -40,6 +39,10 @@ class RedisClient(uri: String) : CacheClient {
     override suspend fun start() = withContext(Dispatchers.IO) {
         logger.debug("Starting Redis client")
         connection = client.connect()
+    }
+
+    override suspend fun stop() {
+        client.close()
     }
 
     override fun newSessionStorage(prefix: String): SessionStorage {
@@ -74,43 +77,35 @@ private class RedisSessionStorage(
     connection: StatefulRedisConnection<String, String>,
     val prefix: String,
     val ttlSeconds: Long = 3600
-) : SimplifiedSessionStorage() {
+) : SessionStorage {
     private val logger = LoggerFactory.getLogger("epilink.redis.sessions.$prefix")
     private val redis = connection.reactive()
-    private val b64enc = Base64.getEncoder()
-    private val b64dec = Base64.getDecoder()
 
     private fun buildKey(id: String) = "$prefix$id"
-    private fun String.decodeBase64(): ByteArray = b64dec.decode(this)
-    private fun ByteArray.encodeBase64(): String = b64enc.encodeToString(this)
 
-    override suspend fun read(id: String): ByteArray? {
+    override suspend fun read(id: String): String {
         val key = buildKey(id)
-        return redis.get(key).awaitSingle()?.decodeBase64()?.also {
+        return redis.get(key).awaitSingle()?.also {
             // Refresh TTL
             val success = redis.expire(key, ttlSeconds).awaitSingle()
             if (!success) {
                 logger.warn("Failed to set TTL for session $key")
             }
-        }
+        } ?: throw NoSuchElementException("No session found with ID $id")
     }
 
-    override suspend fun write(id: String, data: ByteArray?) {
+    override suspend fun write(id: String, value: String) {
         val key = buildKey(id)
-        if (data == null) {
-            redis.del(buildKey(id)).awaitSingle()
-        } else {
-            val encoded = data.encodeBase64()
-            logger.debug { "Setting $key to $encoded" }
-            redis.set(key, encoded).awaitSingle().also {
-                if (it != "OK") {
-                    logger.error("Got not OK response for setting key $key")
-                }
+        val encoded = value.encodeBase64()
+        logger.debug { "Setting $key to $encoded" }
+        redis.set(key, encoded).awaitSingle().also {
+            if (it != "OK") {
+                logger.error("Got not OK response for setting key $key")
             }
-            redis.expire(key, ttlSeconds).awaitSingle().also {
-                if (!it) {
-                    logger.error("Failed to set TTL for session $key")
-                }
+        }
+        redis.expire(key, ttlSeconds).awaitSingle().also {
+            if (!it) {
+                logger.error("Failed to set TTL for session $key")
             }
         }
     }
@@ -155,6 +150,7 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
                 logger.debug { "No cached results or cache disabled for rule $rule (ID $discordId): running rule" }
                 execAndCacheRule(rule, discordId, discordName, discordDisc, identity)
             }
+
             else -> {
                 logger.debug { "Returning cached results for ${rule.name} on $discordId: $cachedResult" }
                 cachedResult
@@ -215,9 +211,7 @@ private class RedisRuleMediator(connection: StatefulRedisConnection<String, Stri
             null
         } else {
             val list = redis.smembers(key).collectList().awaitSingle().also { logger.debug { "Cached $key = $it" } }
-            if (list == listOf(StandardRoles.None.roleName)) {
-                listOf()
-            } else list
+            if (list == listOf(StandardRoles.None.roleName)) listOf() else list
         }
     }
 

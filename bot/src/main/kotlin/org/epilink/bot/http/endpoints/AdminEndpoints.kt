@@ -8,20 +8,22 @@
  */
 package org.epilink.bot.http.endpoints
 
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.call
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.locations.Location
-import io.ktor.locations.delete
-import io.ktor.locations.get
-import io.ktor.request.receive
-import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.post
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.call
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.delete
+import io.ktor.server.locations.get
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.post
 import org.epilink.bot.StandardErrorCodes
 import org.epilink.bot.StandardErrorCodes.InvalidAdminRequest
 import org.epilink.bot.StandardErrorCodes.InvalidId
@@ -48,12 +50,9 @@ import org.epilink.bot.http.data.IdRequestResult
 import org.epilink.bot.http.data.RegisteredUserInfo
 import org.epilink.bot.http.data.UserBans
 import org.epilink.bot.toResponse
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Instant
 import java.util.Base64
-import io.ktor.locations.post as postl
+import io.ktor.server.locations.post as postl
 
 /**
  * Component that implements administration routes (that is, routes under /admin/). Administration routes
@@ -88,16 +87,15 @@ data class GdprReportLocation(val targetIdp: String)
 @Location("search/hash16/{searchTerm}")
 data class SearchByHash(val searchTerm: String)
 
-@OptIn(KoinApiExtension::class)
-internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
-    private val sessionChecker: SessionChecker by inject()
-    private val dbf: DatabaseFacade by inject()
-    private val idManager: IdentityManager by inject()
-    private val banLogic: BanLogic by inject()
-    private val banManager: BanManager by inject()
-    private val gdprReport: GdprReport by inject()
-    private val roleManager: RoleManager by inject()
-    private val wsCfg: WebServerConfiguration by inject()
+internal class AdminEndpointsImpl(scope: InjectionScope) : AdminEndpoints {
+    private val sessionChecker: SessionChecker by scope()
+    private val dbf: DatabaseFacade by scope()
+    private val idManager: IdentityManager by scope()
+    private val banLogic: BanLogic by scope()
+    private val banManager: BanManager by scope()
+    private val gdprReport: GdprReport by scope()
+    private val roleManager: RoleManager by scope()
+    private val wsCfg: WebServerConfiguration by scope()
 
     override fun install(route: Route) {
         with(route) { admin() }
@@ -135,8 +133,10 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
             when {
                 target == null ->
                     call.respond(BadRequest, StandardErrorCodes.TargetUserDoesNotExist.toResponse())
+
                 !dbf.isUserIdentifiable(target) ->
                     call.respond(BadRequest, StandardErrorCodes.TargetIsNotIdentifiable.toResponse())
+
                 else -> {
                     // Get the identity of the admin
                     val adminTid = idManager.accessIdentity(
@@ -232,6 +232,7 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
                             NotFound,
                             InvalidId.toResponse("No ban with given ID found.", "adm.nbi")
                         )
+
                     !ban.idpIdHash.contentEquals(idpHashBytes) ->
                         call.respond(
                             NotFound,
@@ -240,6 +241,7 @@ internal class AdminEndpointsImpl : AdminEndpoints, KoinComponent {
                                 "adm.hnc"
                             )
                         )
+
                     else ->
                         call.respond(OK, ApiSuccessResponse.of(ban.toBanInfo()))
                 }

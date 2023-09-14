@@ -13,6 +13,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.parametersOf
@@ -38,9 +39,9 @@ fun createOauthParameters(
  * turning the JSON result into a map and returning that map.
  */
 suspend fun HttpClient.getJson(url: String, bearer: String): Map<String, Any?> {
-    val result = get<String>(url) {
+    val result = get(url) {
         header("Authorization", "Bearer $bearer")
         header(HttpHeaders.Accept, ContentType.Application.Json)
     }
-    return ObjectMapper().readValue(result)
+    return ObjectMapper().readValue(result.bodyAsText())
 }

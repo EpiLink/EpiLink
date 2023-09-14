@@ -9,19 +9,21 @@
 package org.epilink.bot.http
 
 import guru.zoroark.ratelimit.RateLimit
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.ContentNegotiation
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import io.ktor.http.HttpStatusCode
-import io.ktor.jackson.jackson
-import io.ktor.locations.Locations
-import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.routing
-import io.ktor.sessions.Sessions
-import io.ktor.sessions.header
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.locations.Locations
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.routing
+import io.ktor.server.sessions.Sessions
+import io.ktor.server.sessions.header
 import kotlinx.coroutines.coroutineScope
 import org.epilink.bot.CacheClient
 import org.epilink.bot.EndpointException
@@ -37,9 +39,6 @@ import org.epilink.bot.http.sessions.ConnectedSession
 import org.epilink.bot.http.sessions.RegisterSession
 import org.epilink.bot.toApiResponse
 import org.epilink.bot.toResponse
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -74,16 +73,15 @@ interface BackEnd {
 /**
  * The back-end, defining API endpoints and more
  */
-@OptIn(KoinApiExtension::class)
-internal class BackEndImpl : BackEnd, KoinComponent {
+internal class BackEndImpl(scope: InjectionScope) : BackEnd {
 
     private val logger = LoggerFactory.getLogger("epilink.api")
-    private val cacheClient: CacheClient by inject()
-    private val registrationApi: RegistrationApi by inject()
-    private val metaApi: MetaApi by inject()
-    private val userApi: UserApi by inject()
-    private val adminEndpoints: AdminEndpoints by inject()
-    private val wsCfg: WebServerConfiguration by inject()
+    private val cacheClient: CacheClient by scope()
+    private val registrationApi: RegistrationApi by scope()
+    private val metaApi: MetaApi by scope()
+    private val userApi: UserApi by scope()
+    private val adminEndpoints: AdminEndpoints by scope()
+    private val wsCfg: WebServerConfiguration by scope()
 
     override fun Application.installFeatures() {
         /*

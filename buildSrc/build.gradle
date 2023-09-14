@@ -12,7 +12,7 @@ dependencies {
             libs.plugins.detekt,
             libs.plugins.license,
             libs.plugins.versions,
-            libs.plugins.swaggerGenerator,
+// FIXME           libs.plugins.swaggerGenerator,
             libs.plugins.node
     ]
 

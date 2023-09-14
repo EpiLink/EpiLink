@@ -8,29 +8,29 @@
  */
 package org.epilink.bot.discord
 
-import io.mockk.*
-import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.mockHere
-import org.koin.dsl.module
-import kotlin.test.*
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.test.TegralSubjectTest
+import guru.zoroark.tegral.di.test.mockk.putMock
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
+import kotlin.test.Test
 
-class MessageSenderTest : KoinBaseTest<DiscordMessageSender>(
+class MessageSenderTest : TegralSubjectTest<DiscordMessageSender>(
     DiscordMessageSender::class,
-    module {
-        single<DiscordMessageSender> { DiscordMessageSenderImpl() }
-    }
+    { put<DiscordMessageSender>(::DiscordMessageSenderImpl) }
 ) {
     @Test
-    fun `Test sending message later`() {
+    fun `Test sending message later`() = test {
         val embed = mockk<DiscordEmbed>()
-        val dcf = mockHere<DiscordClientFacade> {
+        val dcf = putMock<DiscordClientFacade> {
             coEvery { sendDirectMessage("userid", embed) } just runs
         }
-        test {
-            sendDirectMessageLater("userid", embed).join()
-            coVerify {
-                dcf.sendDirectMessage("userid", embed)
-            }
+        subject.sendDirectMessageLater("userid", embed).join()
+        coVerify {
+            dcf.sendDirectMessage("userid", embed)
         }
     }
 }

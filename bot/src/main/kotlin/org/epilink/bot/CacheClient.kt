@@ -8,8 +8,9 @@
  */
 package org.epilink.bot
 
-import io.ktor.sessions.SessionStorage
-import io.ktor.sessions.SessionStorageMemory
+import guru.zoroark.tegral.services.api.TegralService
+import io.ktor.server.sessions.SessionStorage
+import io.ktor.server.sessions.SessionStorageMemory
 import org.epilink.bot.db.UnlinkCooldownStorage
 import org.epilink.bot.discord.NoCacheRuleMediator
 import org.epilink.bot.discord.RuleMediator
@@ -17,12 +18,7 @@ import org.epilink.bot.discord.RuleMediator
 /**
  * A general interface for implementations that have the ability to provide caches for sessions and rule storage
  */
-interface CacheClient {
-    /**
-     * Start this client
-     */
-    suspend fun start()
-
+interface CacheClient : TegralService {
     /**
      * Create a new rule mediator that will use this client for storage
      */
@@ -47,6 +43,10 @@ interface CacheClient {
  */
 class MemoryCacheClient : CacheClient {
     override suspend fun start() {
+        // Does nothing
+    }
+
+    override suspend fun stop() {
         // Does nothing
     }
 

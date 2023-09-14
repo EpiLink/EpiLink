@@ -8,29 +8,29 @@
  */
 package org.epilink.bot.http
 
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.CORS
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.resolveResource
 import io.ktor.http.defaultForFileExtension
-import io.ktor.request.path
-import io.ktor.request.queryString
-import io.ktor.request.uri
-import io.ktor.response.respond
-import io.ktor.response.respondRedirect
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.http.content.resolveResource
+import io.ktor.server.plugins.cors.CORSConfig
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.request.path
+import io.ktor.server.request.queryString
+import io.ktor.server.request.uri
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
 import org.epilink.bot.config.WebServerConfiguration
 import org.epilink.bot.debug
 import org.epilink.bot.trace
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.slf4j.LoggerFactory
 
 /**
@@ -53,11 +53,10 @@ interface FrontEndHandler {
 /**
  * Front-end handling implementation
  */
-@OptIn(KoinApiExtension::class)
-internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
+internal class FrontEndHandlerImpl(scope: InjectionScope) : FrontEndHandler {
     private val logger = LoggerFactory.getLogger("epilink.fronthandler")
 
-    private val wsCfg: WebServerConfiguration by inject()
+    private val wsCfg: WebServerConfiguration by scope()
 
     override val serveIntegratedFrontEnd: Boolean by lazy {
         // Detect the presence of the frontend
@@ -66,13 +65,13 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
             wsCfg.frontendUrl == null
     }
 
-    private fun CORS.Configuration.applyCorsOptions() {
-        method(HttpMethod.Options)
-        method(HttpMethod.Delete)
+    private fun CORSConfig.applyCorsOptions() {
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Delete)
 
-        header("Content-Type")
-        header("RegistrationSessionId")
-        header("SessionId")
+        allowHeader("Content-Type")
+        allowHeader("RegistrationSessionId")
+        allowHeader("SessionId")
         exposeHeader("RegistrationSessionId")
         exposeHeader("SessionId")
     }
@@ -80,20 +79,22 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
     override fun Application.install() {
         val frontUrl = wsCfg.frontendUrl
         routing {
-            get("/{...}") {
+            get("/{...}") { _ ->
                 when {
                     serveIntegratedFrontEnd -> {
                         logger.debug("Serving bootstrapped front-end")
                         call.respondBootstrapped()
                     }
+
                     frontUrl == null -> {
                         logger.warn("Not serving bootstrapped front-end (none found and frontUrl was null)")
                         call.respond(HttpStatusCode.NotFound)
                     }
+
                     else -> {
                         logger.debug("Serving front-end as a redirection")
                         val redirectionUrl = frontUrl.dropLast(1) + call.request.path() +
-                            (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" } ?: "")
+                            (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" }.orEmpty())
                         logger.debug { "Redirecting ${call.request.uri} to $redirectionUrl" }
                         call.respondRedirect(redirectionUrl, permanent = false)
                     }
@@ -124,22 +125,26 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
 
                         if (frontUrl != null) {
                             logger.info("Also allowing frontUrl in addition to the whitelist")
-                            host(
-                                frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https")
+                            allowHost(
+                                frontUrl.dropLast(1).replace(Regex("https?://"), ""),
+                                schemes = listOf("http", "https")
                             )
                         }
                     }
                 }
             }
+
             serveIntegratedFrontEnd -> {
                 logger.debug("CORS is disabled because the integrated front end is being served.")
             }
+
             frontUrl == null -> {
                 logger.warn(
                     "CORS is disabled. Web browsers may deny calls to the back-end. Specify the front-end " +
                         "URL in the configuration files to fix this."
                 )
             }
+
             else -> {
                 logger.debug("CORS is enabled.")
                 /*
@@ -149,15 +154,15 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
                 install(CORS) {
                     applyCorsOptions()
 
-                    host(frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https"))
+                    allowHost(frontUrl.dropLast(1).replace(Regex("https?://"), ""), schemes = listOf("http", "https"))
                 }
             }
         }
     }
 
-    private fun CORS.Configuration.addHostWithProtocol(x: String) {
+    private fun CORSConfig.addHostWithProtocol(x: String) {
         val (protocol, path) = x.split("://", limit = 2)
-        host(path, listOf(protocol))
+        allowHost(path, listOf(protocol))
     }
 
     /**
@@ -168,9 +173,9 @@ internal class FrontEndHandlerImpl : FrontEndHandler, KoinComponent {
         logger.debug { "Responding to ${request.uri} with default index.html" }
         val def = resolveResource("index.html", "frontend") {
             ContentType.defaultForFileExtension("html")
-        } ?: throw IllegalStateException("Could not find front-end index in JAR file")
+        }
+        checkNotNull(def) { "Could not find front-end index in JAR file" }
         // The throw should not happen, unless the JAR was badly constructed
-
         respond(def)
     }
 

@@ -26,6 +26,7 @@ private val logger = LoggerFactory.getLogger("epilink.rules")
     displayName = "EpiLink Rulebook",
     fileExtension = "rules.kts"
 )
+@Suppress("UnnecessaryAbstractClass") // This is a Kotlin Script class and cannot be an interface
 abstract class RulebookScript
 
 /**
@@ -89,8 +90,10 @@ suspend fun Rule.run(discordId: String, discordName: String, discordDisc: String
     when {
         this is WeakIdentityRule ->
             determineRoles(discordId, discordName, discordDisc)
+
         this is StrongIdentityRule && identity != null ->
             determineRoles(discordId, discordName, discordDisc, identity)
+
         else ->
             listOf()
     }

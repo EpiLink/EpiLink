@@ -8,26 +8,24 @@
  */
 package org.epilink.bot.discord.cmd
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
+import guru.zoroark.tegral.di.environment.named
 import org.epilink.bot.db.User
 import org.epilink.bot.discord.Command
 import org.epilink.bot.discord.DiscordClientFacade
 import org.epilink.bot.discord.DiscordMessages
 import org.epilink.bot.discord.DiscordMessagesI18n
 import org.epilink.bot.discord.PermissionLevel
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.qualifier.named
 
 /**
  * Implementation for the help command
  */
-@OptIn(KoinApiExtension::class)
-class HelpCommand : Command, KoinComponent {
-    private val client: DiscordClientFacade by inject()
-    private val msg: DiscordMessages by inject()
-    private val i18n: DiscordMessagesI18n by inject()
-    private val admins by inject<List<String>>(named("admins"))
+class HelpCommand(scope: InjectionScope) : Command {
+    private val client: DiscordClientFacade by scope()
+    private val msg: DiscordMessages by scope()
+    private val i18n: DiscordMessagesI18n by scope()
+    private val admins by scope<List<String>>(named("admins"))
 
     override val name: String = "help"
     override val permissionLevel = PermissionLevel.Anyone

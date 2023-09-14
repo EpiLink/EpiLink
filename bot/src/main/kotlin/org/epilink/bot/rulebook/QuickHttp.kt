@@ -15,11 +15,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.utils.io.core.toByteArray
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.util.Base64
 
@@ -73,7 +72,7 @@ suspend inline fun <reified T> httpGetJson(url: String, auth: Auth? = null): T {
  */
 suspend fun <T> httpGetJson(url: String, auth: Auth?, responseType: TypeReference<T>): T {
     val response = runCatching {
-        client.get<String>(url) {
+        client.get(url) {
             header(HttpHeaders.Accept, ContentType.Application.Json)
 
             when (auth) {
@@ -84,7 +83,10 @@ suspend fun <T> httpGetJson(url: String, auth: Auth?, responseType: TypeReferenc
 
                     header(HttpHeaders.Authorization, "Basic $encoded")
                 }
-                null -> { /* No headers required */ }
+
+                null -> {
+                    // No headers required
+                }
             }
         }
     }.getOrElse {
@@ -92,10 +94,7 @@ suspend fun <T> httpGetJson(url: String, auth: Auth?, responseType: TypeReferenc
         throw RuleException("Encountered an error on httpGetJson call", it)
     }
 
-    return withContext(Dispatchers.Default) {
-        @Suppress("BlockingMethodInNonBlockingContext")
-        ObjectMapper().readValue(response, responseType)
-    }
+    return ObjectMapper().readValue(response.bodyAsText(), responseType)
 }
 
 // TODO test these functions

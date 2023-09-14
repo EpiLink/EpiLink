@@ -8,6 +8,7 @@
  */
 package org.epilink.bot.db
 
+import guru.zoroark.tegral.services.api.TegralService
 import org.epilink.bot.EpiLinkException
 import java.time.Instant
 
@@ -15,11 +16,7 @@ import java.time.Instant
  * The database facade is the interface that is used to communicate with the database.
  */
 @Suppress("TooManyFunctions")
-interface DatabaseFacade {
-    /**
-     * Starts the database and creates required elements
-     */
-    suspend fun start()
+interface DatabaseFacade : TegralService {
 
     /**
      * Returns the server user that has the given Discord account ID associated, or null if no such user exists.

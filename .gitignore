@@ -34,3 +34,6 @@ config/*
 
 # Cached rulebooks
 *__cached
+
+.sgp
+.direnv

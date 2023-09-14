@@ -8,28 +8,27 @@
  */
 package org.epilink.bot.discord
 
-import io.mockk.*
-import org.epilink.bot.KoinBaseTest
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.test.TegralSubjectTest
+import guru.zoroark.tegral.di.test.mockk.putMock
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
 import org.epilink.bot.discord.cmd.HelpCommand
-import org.epilink.bot.mockHere
 import org.epilink.bot.web.declareNoOpI18n
-import org.koin.dsl.module
 import kotlin.test.Test
 
-class HelpCommandTest : KoinBaseTest<Command>(
+class HelpCommandTest : TegralSubjectTest<Command>(
     Command::class,
-    module {
-        single<Command> { HelpCommand() }
-    }
+    { put<Command>(::HelpCommand) }
 ) {
     @Test
-    fun `Test help command`() {
+    fun `Test help command`() = test {
         val embed = mockk<DiscordEmbed>()
         declareNoOpI18n()
-        mockHere<DiscordMessages> { every { getHelpMessage(any(), false) } returns embed }
-        mockHere<DiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
-        test {
-            run("e!help", "", null, "", "1234", "")
-        }
+        putMock<DiscordMessages> { every { getHelpMessage(any(), false) } returns embed }
+        putMock<DiscordClientFacade> { coEvery { sendChannelMessage("1234", embed) } returns "" }
+
+        subject.run("e!help", "", null, "", "1234", "")
     }
 }

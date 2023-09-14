@@ -8,6 +8,8 @@
  */
 package org.epilink.bot.discord.cmd
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import org.epilink.bot.db.User
 import org.epilink.bot.discord.Command
 import org.epilink.bot.discord.DiscordClientFacade
@@ -18,16 +20,12 @@ import org.epilink.bot.discord.DiscordTargets
 import org.epilink.bot.discord.PermissionLevel
 import org.epilink.bot.discord.TargetParseResult
 import org.epilink.bot.discord.TargetResult
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
-@OptIn(KoinApiExtension::class)
-class CountCommand : Command, KoinComponent {
-    private val msg: DiscordMessages by inject()
-    private val i18n: DiscordMessagesI18n by inject()
-    private val discord: DiscordClientFacade by inject()
-    private val resolver: DiscordTargets by inject()
+class CountCommand(scope: InjectionScope) : Command {
+    private val msg: DiscordMessages by scope()
+    private val i18n: DiscordMessagesI18n by scope()
+    private val discord: DiscordClientFacade by scope()
+    private val resolver: DiscordTargets by scope()
 
     override val name = "count"
     override val permissionLevel = PermissionLevel.Admin
@@ -54,11 +52,17 @@ class CountCommand : Command, KoinComponent {
             when (result) {
                 is TargetResult.Everyone ->
                     success(senderId, discord.getMembers(guildId).size)
+
                 is TargetResult.Role ->
                     success(senderId, discord.getMembersWithRole(result.id, guildId).size)
+
                 is TargetResult.User ->
-                    if (discord.isUserInGuild(result.id, guildId)) success(senderId, 1)
-                    else msg.getWrongTargetCommandReply(i18n.getLanguage(senderId), commandBody)
+                    if (discord.isUserInGuild(result.id, guildId)) {
+                        success(senderId, 1)
+                    } else {
+                        msg.getWrongTargetCommandReply(i18n.getLanguage(senderId), commandBody)
+                    }
+
                 is TargetResult.RoleNotFound ->
                     error("Invalid state: cannot get to TargetResult.RoleNotFound here")
             }

@@ -8,33 +8,37 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.test.TegralSubjectTest
+import guru.zoroark.tegral.di.test.mockk.putMock
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import org.epilink.bot.EpiLinkException
-import org.epilink.bot.KoinBaseTest
 import org.epilink.bot.config.DiscordConfiguration
 import org.epilink.bot.config.DiscordServerSpec
 import org.epilink.bot.config.PrivacyConfiguration
-import org.epilink.bot.defaultMock
-import org.epilink.bot.mockHere
 import org.epilink.bot.web.declareNoOpI18n
-import org.koin.dsl.module
-import org.koin.test.get
 import java.time.Duration
 import java.time.Instant
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
-class MessagesTest : KoinBaseTest<DiscordMessages>(
+class MessagesTest : TegralSubjectTest<DiscordMessages>(
     DiscordMessages::class,
-    module {
-        single<DiscordMessages> { DiscordMessagesImpl() }
-    }
+    { put<DiscordMessages>(::DiscordMessagesImpl) }
 ) {
 
     @Test
-    fun `Test welcome generation does not output when`() {
-        mockHere<DiscordConfiguration> {
+    fun `Test welcome generation does not output when`() = test {
+        putMock<DiscordConfiguration> {
             every { servers } returns listOf(
                 mockk {
                     every { id } returns "guildid"
@@ -42,13 +46,12 @@ class MessagesTest : KoinBaseTest<DiscordMessages>(
                 }
             )
         }
-        val dm = get<DiscordMessages>()
-        assertNull(dm.getGreetingsEmbed("", "guildid", "My Guild"))
+        assertNull(subject.getGreetingsEmbed("", "guildid", "My Guild"))
     }
 
     @Test
-    fun `Test welcome generation outputs sane default message`() {
-        mockHere<DiscordConfiguration> {
+    fun `Test welcome generation outputs sane default message`() = test {
+        putMock<DiscordConfiguration> {
             every { welcomeUrl } returns "MyVeryTrueUrl"
             every { servers } returns listOf(
                 mockk {
@@ -58,14 +61,13 @@ class MessagesTest : KoinBaseTest<DiscordMessages>(
                 }
             )
         }
-        mockHere<DiscordMessagesI18n> {
+        putMock<DiscordMessagesI18n> {
             coEvery { getLanguage(any()) } returns ""
-            defaultMock()
+            mockGetMessage()
             every { get(any(), "greet.title") } returns "greet.title::%s"
             every { get(any(), "greet.welcome") } returns "greet.welcome::%s"
         }
-        val dm = get<DiscordMessages>()
-        val embed = dm.getGreetingsEmbed("", "guildid", "My Guild")
+        val embed = subject.getGreetingsEmbed("", "guildid", "My Guild")
         assertNotNull(embed)
         assertEquals("greet.title::My Guild", embed.title)
         assertEquals("greet.welcome::My Guild", embed.description)
@@ -76,9 +78,9 @@ class MessagesTest : KoinBaseTest<DiscordMessages>(
     }
 
     @Test
-    fun `Test welcome generation outputs custom message`() {
+    fun `Test welcome generation outputs custom message`() = test {
         val embed = DiscordEmbed()
-        mockHere<DiscordConfiguration> {
+        putMock<DiscordConfiguration> {
             every { welcomeUrl } returns "YEET"
             every { servers } returns listOf(
                 mockk {
@@ -88,146 +90,139 @@ class MessagesTest : KoinBaseTest<DiscordMessages>(
                 }
             )
         }
-        val dm = get<DiscordMessages>()
-        val embedReturned = dm.getGreetingsEmbed("", "guildid", "My Guild")
+        val embedReturned = subject.getGreetingsEmbed("", "guildid", "My Guild")
         assertSame(embed, embedReturned)
     }
 
     @Test
-    fun `Test could not join`() {
-        mockHere<DiscordMessagesI18n> {
+    fun `Test could not join`() = test {
+        putMock<DiscordMessagesI18n> {
             every { get(any(), "cnj.title") } returns "title::%s"
             every { get(any(), "cnj.description") } returns "description::%s"
             every { get(any(), "cnj.reason") } returns "reason"
             every { get(any(), "poweredBy") } returns "poweredBy"
         }
-        val dm = get<DiscordMessages>()
-        val embed = dm.getCouldNotJoinEmbed("", "My Guild", "My Reason")
+        val embed = subject.getCouldNotJoinEmbed("", "My Guild", "My Reason")
         assertEquals("description::My Guild", embed.description)
         assertEquals("title::My Guild", embed.title)
     }
 
     @Test
-    fun `Test identity access embed not sent on specific cases`() {
-        mockHere<PrivacyConfiguration> {
+    fun `Test identity access embed not sent on specific cases`() = test {
+        putMock<PrivacyConfiguration> {
             every { shouldNotify(any()) } returns false
         }
-        val dm = get<DiscordMessages>()
-        val embed = dm.getIdentityAccessEmbed("", true, "TestAuthor", "TestReason")
+        val embed = subject.getIdentityAccessEmbed("", true, "TestAuthor", "TestReason")
         assertNull(embed, "Should not give an embed")
-        val embed2 = dm.getIdentityAccessEmbed("", false, "TrueAuthor", "TestReason")
+        val embed2 = subject.getIdentityAccessEmbed("", false, "TrueAuthor", "TestReason")
         assertNull(embed2, "Should not give an embed")
     }
 
     @Test
-    fun `Test identity access embed`() {
-        mockHere<PrivacyConfiguration> {
+    fun `Test identity access embed`() = test {
+        putMock<PrivacyConfiguration> {
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(true) } returns true
         }
-        mockHere<DiscordMessagesI18n> {
-            defaultMock()
+        putMock<DiscordMessagesI18n> {
+            mockGetMessage()
             every { get(any(), "ida.accessAuthorAuto") } returns "authorauto::%s"
         }
-        val dm = get<DiscordMessages>()
-        val embed = dm.getIdentityAccessEmbed("", true, "TestAuthor", "TestReason")
+        val embed = subject.getIdentityAccessEmbed("", true, "TestAuthor", "TestReason")
         assertNotNull(embed)
         assertEquals("authorauto::TestAuthor", embed.description)
         assertTrue(embed.fields.any { it.value.contains("TestReason") })
     }
 
     @Test
-    fun `Test identity access embed not automated`() {
-        mockHere<PrivacyConfiguration> {
+    fun `Test identity access embed not automated`() = test {
+        putMock<PrivacyConfiguration> {
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(false) } returns true
         }
-        mockHere<DiscordMessagesI18n> {
-            defaultMock()
+        putMock<DiscordMessagesI18n> {
+            mockGetMessage()
             every { get(any(), "ida.accessAuthor") } returns "author::%s"
         }
-        val dm = get<DiscordMessages>()
-        val embed = dm.getIdentityAccessEmbed("", false, "TestAuthor", "TestReason")
+        val embed = subject.getIdentityAccessEmbed("", false, "TestAuthor", "TestReason")
         assertNotNull(embed)
         assertEquals("author::TestAuthor", embed.description)
         assertTrue(embed.fields.any { it.value.contains("TestReason") })
     }
 
     @Test
-    fun `Test identity access embed not automated, no disclose identity`() {
-        mockHere<PrivacyConfiguration> {
+    fun `Test identity access embed not automated, no disclose identity`() = test {
+        putMock<PrivacyConfiguration> {
             every { shouldNotify(any()) } returns true
             every { shouldDiscloseIdentity(false) } returns false
         }
         declareNoOpI18n()
-        val dm = get<DiscordMessages>()
-        val embed = dm.getIdentityAccessEmbed("", false, "TestAuthor", "TestReason")
+        val embed = subject.getIdentityAccessEmbed("", false, "TestAuthor", "TestReason")
         assertNotNull(embed)
         assertFalse(embed.description!!.contains("TestAuthor"))
         assertTrue(embed.fields.any { it.value == "TestReason" })
     }
 
     @Test
-    fun `Test disabled ban notification`() {
-        mockHere<PrivacyConfiguration> {
+    fun `Test disabled ban notification`() = test {
+        putMock<PrivacyConfiguration> {
             every { notifyBans } returns false
         }
-        val dm = get<DiscordMessages>()
-        val embed = dm.getBanNotification("", "Hello", Instant.now() + Duration.ofHours(230))
+        val embed = subject.getBanNotification("", "Hello", Instant.now() + Duration.ofHours(230))
         assertNull(embed)
     }
 
     @Test
-    fun `Test ban notification`() {
-        mockHere<PrivacyConfiguration> {
+    fun `Test ban notification`() = test {
+        putMock<PrivacyConfiguration> {
             every { notifyBans } returns true
         }
-        mockHere<DiscordMessagesI18n> {
-            defaultMock()
+        putMock<DiscordMessagesI18n> {
+            mockGetMessage()
             every { get(any(), "bn.expiry.date") } returns "date::%s::%s"
         }
-        val dm = get<DiscordMessages>()
-        val embed = dm.getBanNotification("", "You are now banned, RIP.", Instant.parse("2020-02-03T13:37:01.02Z"))
+        val embed = subject.getBanNotification("", "You are now banned, RIP.", Instant.parse("2020-02-03T13:37:01.02Z"))
         assertNotNull(embed)
         assertEquals("You are now banned, RIP.", embed.fields[0].value)
         assertEquals("date::2020-02-03::13:37", embed.fields[1].value)
     }
 
     @Test
-    fun `Test error command reply`() {
-        mockHere<DiscordMessagesI18n> {
-            defaultMock()
+    fun `Test error command reply`() = test {
+        putMock<DiscordMessagesI18n> {
+            mockGetMessage()
             every { get(any(), "kkk.title") } returns "title::%s::%s"
             every { get(any(), "kkk.description") } returns "desc::%s::%s"
         }
-        test {
-            val embed =
-                getErrorCommandReply("", "kkk", titleObjects = listOf("to1", "to2"), objects = listOf("obj1", "obj2"))
-            assertEquals("#8A0303", embed.color)
-            assertEquals("title::to1::to2", embed.title)
-            assertEquals("desc::obj1::obj2", embed.description)
-        }
+        val embed =
+            subject.getErrorCommandReply(
+                "",
+                "kkk",
+                titleObjects = listOf("to1", "to2"),
+                objects = listOf("obj1", "obj2")
+            )
+        assertEquals("#8A0303", embed.color)
+        assertEquals("title::to1::to2", embed.title)
+        assertEquals("desc::obj1::obj2", embed.description)
     }
 
     @Test
-    fun `Test wrong target command reply`() {
-        mockHere<DiscordMessagesI18n> {
-            defaultMock()
+    fun `Test wrong target command reply`() = test {
+        putMock<DiscordMessagesI18n> {
+            mockGetMessage()
             every { get(any(), "cr.wt.description") } returns "description::%s"
             every { get(any(), "cr.wt.help.description") } returns "helpDescription::%s"
         }
-        test {
-            val embed = getWrongTargetCommandReply("", "le target")
-            assertEquals("#8A0303", embed.color)
-            assertEquals("cr.wt.title", embed.title)
-            assertEquals("description::le target", embed.description)
-            assertEquals("cr.wt.help.title", embed.fields[0].name)
-            assertTrue(embed.fields[0].value.startsWith("helpDescription::https://"), "help description has a url")
-        }
+        val embed = subject.getWrongTargetCommandReply("", "le target")
+        assertEquals("#8A0303", embed.color)
+        assertEquals("cr.wt.title", embed.title)
+        assertEquals("description::le target", embed.description)
+        assertEquals("cr.wt.help.title", embed.fields[0].name)
+        assertTrue(embed.fields[0].value.startsWith("helpDescription::https://"), "help description has a url")
     }
 
     @Test
-    fun `Test config for guild found`() {
+    fun `Test config for guild found`() = test {
         val server = mockk<DiscordServerSpec> { every { id } returns "id2" }
         val cfg = mockk<DiscordConfiguration> {
             every { servers } returns listOf(
@@ -239,7 +234,7 @@ class MessagesTest : KoinBaseTest<DiscordMessages>(
     }
 
     @Test
-    fun `Test config for guild not found`() {
+    fun `Test config for guild not found`() = test {
         val cfg = mockk<DiscordConfiguration> {
             every { servers } returns listOf(
                 mockk { every { id } returns "id1" },
@@ -247,5 +242,10 @@ class MessagesTest : KoinBaseTest<DiscordMessages>(
             )
         }
         assertFailsWith<EpiLinkException> { cfg.getConfigForGuild("id3") }
+    }
+
+    private fun DiscordMessagesI18n.mockGetMessage() {
+        val keySlot = slot<String>()
+        every { get(any(), capture(keySlot)) } answers { keySlot.captured }
     }
 }

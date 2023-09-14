@@ -184,13 +184,16 @@ fun WebServerConfiguration.check(): List<ConfigReportElement> {
                 "Rate limiting profile set to Lenient, which may not be strict enough to " +
                     "protect EpiLink from DoS attacks."
             )
+
         RateLimitingProfile.Disabled ->
             reports += ConfigError(
                 false,
                 "Rate limiting profile set to Disabled. Spam protection is disabled, this leaves your server open " +
                     "for abuse!"
             )
-        else -> { /* nothing to report */
+
+        else -> {
+            // nothing to report
         }
     }
     corsWhitelist.forEach {

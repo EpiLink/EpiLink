@@ -8,14 +8,17 @@
  */
 package org.epilink.bot.config
 
-import io.ktor.http.*
+import io.ktor.http.ContentType
 import kotlinx.coroutines.runBlocking
 import org.epilink.bot.ResourceAsset
 import org.epilink.bot.asUrl
 import org.epilink.bot.loadAsset
 import java.io.File
 import java.nio.file.Paths
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AssetTest {
     @Test

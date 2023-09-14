@@ -8,13 +8,12 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.tegral.di.environment.InjectionScope
+import guru.zoroark.tegral.di.environment.invoke
 import org.epilink.bot.discord.TargetParseResult.Success.Everyone
 import org.epilink.bot.discord.TargetParseResult.Success.RoleById
 import org.epilink.bot.discord.TargetParseResult.Success.RoleByName
 import org.epilink.bot.discord.TargetParseResult.Success.UserById
-import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /*
  User selector:
@@ -114,9 +113,8 @@ sealed class TargetResult {
     data class RoleNotFound(val name: String) : TargetResult()
 }
 
-@OptIn(KoinApiExtension::class)
-internal class DiscordTargetsImpl : DiscordTargets, KoinComponent {
-    private val discord: DiscordClientFacade by inject()
+internal class DiscordTargetsImpl(scope: InjectionScope) : DiscordTargets {
+    private val discord: DiscordClientFacade by scope()
 
     private val angleBracketsPattern = Regex("""<@(?:(&)?|!?)(\d+)>""")
 
@@ -125,21 +123,17 @@ internal class DiscordTargetsImpl : DiscordTargets, KoinComponent {
         if (angled != null) {
             // Pinged someone or pinged a role
             val isRole = angled.groups[1] != null
+
             @Suppress("UnsafeCallOnNullableType") // Cannot be null on match due to Regex
             val id = angled.groups[2]!!.value
+
             return if (isRole) RoleById(id) else UserById(id)
         } else {
             return when (target.first()) {
                 '|' -> RoleByName(target.drop(1))
                 '/' -> RoleById(target.drop(1))
-                '!' ->
-                    if (target == "!everyone") {
-                        Everyone
-                    } else TargetParseResult.Error
-                else ->
-                    if (target.matches(Regex("\\d+"))) {
-                        UserById(target)
-                    } else TargetParseResult.Error
+                '!' -> if (target == "!everyone") Everyone else TargetParseResult.Error
+                else -> if (target.matches(Regex("\\d+"))) UserById(target) else TargetParseResult.Error
             }
         }
     }
@@ -148,11 +142,14 @@ internal class DiscordTargetsImpl : DiscordTargets, KoinComponent {
         when (parsedTarget) {
             is UserById ->
                 TargetResult.User(parsedTarget.id)
+
             is RoleByName ->
                 discord.getRoleIdByName(parsedTarget.name, guildId)?.let { TargetResult.Role(it) }
                     ?: TargetResult.RoleNotFound(parsedTarget.name)
+
             is RoleById ->
                 TargetResult.Role(parsedTarget.id)
+
             Everyone ->
                 TargetResult.Everyone
         }

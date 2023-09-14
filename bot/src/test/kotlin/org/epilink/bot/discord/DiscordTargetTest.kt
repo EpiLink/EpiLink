@@ -8,81 +8,82 @@
  */
 package org.epilink.bot.discord
 
+import guru.zoroark.tegral.di.dsl.put
+import guru.zoroark.tegral.di.test.TegralSubjectTest
+import guru.zoroark.tegral.di.test.mockk.putMock
 import io.mockk.coEvery
-import org.epilink.bot.KoinBaseTest
-import org.epilink.bot.mockHere
-import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DiscordTargetTest : KoinBaseTest<DiscordTargets>(
+class DiscordTargetTest : TegralSubjectTest<DiscordTargets>(
     DiscordTargets::class,
-    module {
-        single<DiscordTargets> { DiscordTargetsImpl() }
-    }
+    { put<DiscordTargets>(::DiscordTargetsImpl) }
 ) {
     @Test
     fun `Test parse Discord user ping (without !)`() = test {
-        assertEquals(TargetParseResult.Success.UserById("1234567890"), parseDiscordTarget("<@1234567890>"))
+        assertEquals(TargetParseResult.Success.UserById("1234567890"), subject.parseDiscordTarget("<@1234567890>"))
     }
 
     @Test
     fun `Test parse Discord user ping (with !)`() = test {
-        assertEquals(TargetParseResult.Success.UserById("1357924680"), parseDiscordTarget("<@!1357924680>"))
+        assertEquals(TargetParseResult.Success.UserById("1357924680"), subject.parseDiscordTarget("<@!1357924680>"))
     }
 
     @Test
     fun `Test parse Discord role ping`() = test {
-        assertEquals(TargetParseResult.Success.RoleById("0987654321"), parseDiscordTarget("<@&0987654321>"))
+        assertEquals(TargetParseResult.Success.RoleById("0987654321"), subject.parseDiscordTarget("<@&0987654321>"))
     }
 
     @Test
     fun `Test parse Discord ID directly`() = test {
-        assertEquals(TargetParseResult.Success.UserById("1234567890"), parseDiscordTarget("1234567890"))
+        assertEquals(TargetParseResult.Success.UserById("1234567890"), subject.parseDiscordTarget("1234567890"))
     }
 
     @Test
     fun `Test parse role ID`() = test {
-        assertEquals(TargetParseResult.Success.RoleById("0987654321"), parseDiscordTarget("/0987654321"))
+        assertEquals(TargetParseResult.Success.RoleById("0987654321"), subject.parseDiscordTarget("/0987654321"))
     }
 
     @Test
     fun `Test parse role by name`() = test {
-        assertEquals(TargetParseResult.Success.RoleByName("Role Name Yay"), parseDiscordTarget("|Role Name Yay"))
+        assertEquals(
+            TargetParseResult.Success.RoleByName("Role Name Yay"),
+            subject.parseDiscordTarget("|Role Name Yay")
+        )
     }
 
     @Test
     fun `Test parse special everyone`() = test {
-        assertEquals(TargetParseResult.Success.Everyone, parseDiscordTarget("!everyone"))
+        assertEquals(TargetParseResult.Success.Everyone, subject.parseDiscordTarget("!everyone"))
     }
 
     @Test
     fun `Test resolve user by id`() = test {
         assertEquals(
             TargetResult.User("12345"),
-            resolveDiscordTarget(TargetParseResult.Success.UserById("12345"), "" /* unused */)
+            subject.resolveDiscordTarget(TargetParseResult.Success.UserById("12345"), "") // guildId is unused
         )
     }
 
     @Test
     fun `Test resolve role by name`() = test {
-        mockHere<DiscordClientFacade> {
+        putMock<DiscordClientFacade> {
             coEvery { getRoleIdByName("Role Name Yay", "servid") } returns "roleid"
         }
         assertEquals(
             TargetResult.Role("roleid"),
-            resolveDiscordTarget(TargetParseResult.Success.RoleByName("Role Name Yay"), "servid")
+            subject.resolveDiscordTarget(TargetParseResult.Success.RoleByName("Role Name Yay"), "servid")
         )
     }
 
     @Test
     fun `Test resolve role by name not found`() = test {
-        mockHere<DiscordClientFacade> {
+        putMock<DiscordClientFacade> {
             coEvery { getRoleIdByName("Role50", "servid") } returns null
         }
         assertEquals(
             TargetResult.RoleNotFound("Role50"),
-            resolveDiscordTarget(TargetParseResult.Success.RoleByName("Role50"), "servid")
+            subject.resolveDiscordTarget(TargetParseResult.Success.RoleByName("Role50"), "servid")
         )
     }
 
@@ -90,7 +91,7 @@ class DiscordTargetTest : KoinBaseTest<DiscordTargets>(
     fun `Test resolve role by id`() = test {
         assertEquals(
             TargetResult.Role("09876"),
-            resolveDiscordTarget(TargetParseResult.Success.RoleById("09876"), "" /* unused */)
+            subject.resolveDiscordTarget(TargetParseResult.Success.RoleById("09876"), "") // guildId is unused
         )
     }
 
@@ -98,7 +99,7 @@ class DiscordTargetTest : KoinBaseTest<DiscordTargets>(
     fun `Test resolve everyone special value`() = test {
         assertEquals(
             TargetResult.Everyone,
-            resolveDiscordTarget(TargetParseResult.Success.Everyone, "" /* unused */)
+            subject.resolveDiscordTarget(TargetParseResult.Success.Everyone, "") // guildId is unused
         )
     }
 }

@@ -92,6 +92,7 @@ fun loadLegalText(textValue: String?, file: (() -> Path)?, defaultText: String):
                 LegalText.Html(Files.readString(it))
             }
         }
+
         else -> LegalText.Html(defaultText)
     }
 }

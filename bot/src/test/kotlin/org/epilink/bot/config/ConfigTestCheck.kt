@@ -12,7 +12,9 @@ import io.mockk.every
 import io.mockk.mockk
 import org.epilink.bot.rulebook.Rulebook
 import org.epilink.bot.rulebook.WeakIdentityRule
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ConfigTestCheck {
     @Test
@@ -67,7 +69,9 @@ class ConfigTestCheck {
             every { identityPromptText } returns null
         }
         val reports = config.check()
-        assertTrue(reports.any { it is ConfigError && it.shouldFail && it.message.contains("a policy and a policyFile") })
+        assertTrue(
+            reports.any { it is ConfigError && it.shouldFail && it.message.contains("a policy and a policyFile") }
+        )
     }
 
     @Test
@@ -134,7 +138,11 @@ class ConfigTestCheck {
             every { corsWhitelist } returns listOf()
         }
         val reports = config.check()
-        assertTrue(reports.any { it is ConfigInfo && it.message.contains("endpoints") && it.message.contains("enabled") })
+        assertTrue(
+            reports.any {
+                it is ConfigInfo && it.message.contains("endpoints") && it.message.contains("enabled")
+            }
+        )
     }
 
     @Test
@@ -147,7 +155,11 @@ class ConfigTestCheck {
             every { corsWhitelist } returns listOf()
         }
         val reports = config.check()
-        assertTrue(reports.any { it is ConfigInfo && it.message.contains("endpoints") && it.message.contains("disabled") })
+        assertTrue(
+            reports.any {
+                it is ConfigInfo && it.message.contains("endpoints") && it.message.contains("disabled")
+            }
+        )
     }
 
     private val defaultTokenValue = "..."
@@ -267,7 +279,8 @@ class ConfigTestCheck {
     }
 
     /**
-     * Create a fake TokensConfiguration with valid values for all parameters. To create invalid values, provide an argument.
+     * Create a fake TokensConfiguration with valid values for all parameters. To create invalid values, provide an
+     * argument.
      */
     private fun tokens(
         discordOAuthClientId: String = "a",

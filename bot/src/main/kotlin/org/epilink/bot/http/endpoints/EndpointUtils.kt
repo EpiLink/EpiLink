@@ -9,14 +9,14 @@
 package org.epilink.bot.http.endpoints
 
 import guru.zoroark.ratelimit.rateLimited
-import io.ktor.application.ApplicationCall
-import io.ktor.routing.Route
-import io.ktor.routing.route
-import io.ktor.util.pipeline.ContextDsl
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.route
+import io.ktor.util.KtorDsl
 import java.time.Duration
 
 /**
- * Convenience method for translating EpiLink ratelimiting settings into ktor-rate-limit calls
+ * Convenience method for translating EpiLink rate-limiting settings into ktor-rate-limit calls
  */
 fun Route.limited(
     limit: Int,
@@ -29,7 +29,8 @@ fun Route.limited(
         rateLimited(
             limit.toLong(),
             Duration.ofMinutes(1L),
-            additionalKeyExtractor, callback
+            additionalKeyExtractor,
+            callback
         )
     }
 
@@ -44,7 +45,7 @@ fun Route.limited(
  *
  * This takes less indentation in the code that declares endpoints.
  */
-@ContextDsl
+@KtorDsl
 fun Route.limitedRoute(
     path: String,
     limit: Int,

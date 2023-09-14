@@ -1,7 +1,10 @@
 plugins {
-    id 'org.hidetake.swagger.generator'
+
 }
 
+// FIXME use a different system for swagger generation
+
+/*
 configurations {
     swagger {
         canBeConsumed = true
@@ -41,3 +44,4 @@ artifacts {
 // Properly rebuild when the index.html/epilink.yaml changes
 // TODO epilink.yaml may not be necessary here
 tasks.generateSwaggerUIEpilink.inputs.files("index.html", "epilink.yaml")
+*/
